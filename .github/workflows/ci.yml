@@ -32,16 +32,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: supabase/setup-cli@v3.0.1
-        with:
-          version: 2.120.0
-      - run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
-      - run: supabase test db
       - uses: voidzero-dev/setup-vp@v1.21.1
         with:
           node-version: "22"
           cache: true
       - run: vp install
+      - run: vp exec supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
+      - run: vp exec supabase test db
       - name: bundled plugins' pgTAP
         run: |
           db=postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -71,22 +68,27 @@ jobs:
       - name: no release yet
         if: steps.release.outputs.tag == ''
         run: echo "No release tag yet, so there's nothing to upgrade from."
-      - uses: supabase/setup-cli@v3.0.1
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        if: steps.release.outputs.tag != ''
+        with:
+          node-version: "22"
+          cache: true
+      - run: vp install
         if: steps.release.outputs.tag != ''
       - name: start at the last release's schema
         if: steps.release.outputs.tag != ''
         run: |
           rm -rf supabase/migrations
           git checkout "${{ steps.release.outputs.tag }}" -- supabase/migrations
-          supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
+          vp exec supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
           rm -rf supabase/migrations
           git checkout HEAD -- supabase/migrations
       - name: apply this branch's migrations
         if: steps.release.outputs.tag != ''
-        run: supabase migration up
+        run: vp exec supabase migration up
       - name: pgTAP on the upgraded database
         if: steps.release.outputs.tag != ''
-        run: supabase test db
+        run: vp exec supabase test db
 
   image:
     name: docker image

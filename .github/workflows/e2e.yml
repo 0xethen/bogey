@@ -25,12 +25,11 @@ jobs:
         with:
           node-version: "22"
           cache: true
-      - uses: supabase/setup-cli@v3.0.1
       - run: vp install
-      - run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
+      - run: vp exec supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
       - name: .env from the local stack
         run: |
-          eval "$(supabase status -o env)"
+          eval "$(vp exec supabase status -o env)"
           {
             echo "SUPABASE_URL=$API_URL"
             echo "SUPABASE_PUBLISHABLE_KEY=$ANON_KEY"
@@ -57,7 +56,7 @@ jobs:
           node apps/web/.output/server/index.mjs &
           for i in $(seq 1 30); do curl --silent --fail localhost:3000/api/health && exit 0; sleep 1; done
           exit 1
-      - run: npx playwright install --with-deps chromium
+      - run: vp exec playwright install --with-deps chromium
         working-directory: apps/web
       - run: vp run e2e
       - uses: actions/upload-artifact@v4

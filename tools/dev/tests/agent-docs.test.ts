@@ -40,7 +40,9 @@ test("every repo path the agent docs name exists", () => {
     for (const match of readFileSync(join(root, doc), "utf8").matchAll(PATH)) {
       const path = checkablePrefix(match[1] ?? "");
       if (!path || path in ABSENT_BY_DESIGN) continue;
-      if (path.startsWith("packages/plugins/installed/")) continue;
+      if (path === "packages/plugins/installed" || path.startsWith("packages/plugins/installed/")) {
+        continue; // gitignored, so absent from a fresh checkout
+      }
       checked++;
       if (!existsSync(join(root, path.split("#")[0] ?? path))) missing.push(`${doc}: ${path}`);
     }

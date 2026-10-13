@@ -4,7 +4,8 @@ FROM ghcr.io/voidzero-dev/vite-plus:1.0.0-rc.1 AS build
 WORKDIR /app
 COPY --chown=vp:vp . .
 RUN vp install --frozen-lockfile
-RUN if [ -L packages/plugins/installed ]; then rm packages/plugins/installed && mkdir packages/plugins/installed; fi
+RUN if [ -L packages/plugins/installed ]; then rm packages/plugins/installed; fi \
+  && mkdir -p packages/plugins/installed
 RUN node tools/cli/src/bin.ts plugins install
 RUN cd apps/web && vp build
 RUN cd tools/cli && vp pack

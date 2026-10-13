@@ -82,7 +82,11 @@ Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 ## Thanks
 
-Devpost (hackathons), DOMjudge (contests), dribdat (open hackathons), CTFd, Gavel and Kaggle for
-inspiration; plugin authors; and you.
+Devpost (hackathons), DOMjudge (contests), dribdat (open hackathons), CTFd, Gavel, and Kaggle for
+inspiration
+
+Plugin authors
+
+You!
 
 <!-- > Learn more about Good Software and the Good Software Pledge at [ethen.app/gsp](https://ethen.app/gsp). -->
