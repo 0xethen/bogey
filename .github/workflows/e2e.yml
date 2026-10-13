@@ -41,6 +41,8 @@ jobs:
           for seed in packages/plugins/bundled/*/seed.sql; do
             psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -X -q -v ON_ERROR_STOP=1 -f "$seed"
           done
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -X -q -c "notify pgrst, 'reload schema'"
+          sleep 2
           node tools/cli/src/bin.ts org init --org e2e --name "E2E" --owner "$E2E_ORGANIZER" --host localhost --demo
           node tools/cli/src/bin.ts login "$E2E_PARTICIPANT" --create
           node tools/cli/src/bin.ts login "$E2E_JUDGE" --create
