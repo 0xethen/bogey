@@ -90,7 +90,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/0xethen/bogey
           subject-digest: ${{ steps.build.outputs.digest }}
@@ -108,7 +108,7 @@ jobs:
         run: git archive --format=tar.gz --prefix="bogey-${GITHUB_REF_NAME#v}/" -o "bogey-${GITHUB_REF_NAME#v}.tar.gz" "$GITHUB_REF_NAME"
       - name: pack the all-in-one files
         run: git archive --format=tar.gz --prefix="bogey-all-in-one/" -o "bogey-all-in-one-${GITHUB_REF_NAME#v}.tar.gz" "$GITHUB_REF_NAME:deploy/all-in-one"
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: bogey-*.tar.gz
       - name: publish the release
