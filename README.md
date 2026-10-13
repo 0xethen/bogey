@@ -29,7 +29,9 @@ Built for hackathons, algorithm programming competitions, and anything else with
 
 ## Quick start
 
-You need Node.js 22.18 or newer ([TS](https://nodejs.org/learn/typescript/run-natively)), [Vite+](https://viteplus.dev) (`vp`, with pnpm as the recommended package manager) and, on a server, Docker (if self-hosting). [Getting started](docs/getting-started.md#you-need) lists everything.
+You need [Node.js](https://nodejs.org/en/download) 22.18 or newer ([NTS](https://nodejs.org/learn/typescript/run-natively)), [Vite+](https://viteplus.dev) (`vp`, with pnpm as the recommended package manager) and, on a server, Docker (if self-hosting).
+
+Check out [Getting started](docs/getting-started.md#you-need) ([wiki](https://github.com/0xethen/bogey/wiki/getting-started)) for the full list and instructions.
 
 On a server (Supabase, Bogey and Caddy together):
 
