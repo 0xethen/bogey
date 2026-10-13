@@ -19,7 +19,6 @@
     "dev": "echo \"doesn't work with TanStack Devtools Source Inspector, cannot handle terminal input\" && concurrently -i -n web,console,bogey -c auto --kill-others \"vp run web#dev\" \"node tools/cli/src/bin.ts console\" \"node tools/cli/src/bin.ts watch\"",
     "webdev": "vp run web#dev",
     "test": "vp test",
-    "build": "vp build",
     "release": "vpr bogey release",
     "prepare": "vp config"
   },
