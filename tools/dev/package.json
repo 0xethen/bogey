@@ -2,7 +2,7 @@
   "name": "@bogey/dev",
   "version": "0.0.0",
   "private": true,
-  "description": "Developer-only scripts for working in this repo (find-text) and checks on the agent docs. Not shipped, not part of the CLI.",
+  "description": "Developer-only scripts for working in this repo (`vpr find`) and checks on the agent docs. Not shipped, not part of the CLI.",
   "type": "module",
   "scripts": {
     "test": "vp test",

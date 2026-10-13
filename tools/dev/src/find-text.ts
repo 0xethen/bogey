@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { en } from "@bogey/config/messages";
 
-export const USAGE = `vp run find-text <text or key> [--in <path part>] [--exact]
+export const USAGE = `vp run find <text or key> [--in <path part>] [--exact]
 
 Finds where a piece of UI text is rendered: looks the English up in
 packages/config/src/messages.ts, then lists every file:line that uses each

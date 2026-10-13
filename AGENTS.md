@@ -31,7 +31,7 @@ pnpm workspace, packages import via `@bogey/<name>`:
   would otherwise each define goes here.
 - `tools/runner` — the challenges runner: judges contest solutions in Docker
   sandboxes; plain Node, no dependencies, its own image.
-- `tools/dev` — developer-only scripts (find-text) and the check that paths
+- `tools/dev` — developer-only scripts (vpr find) and the check that paths
   named in the agent docs exist. Not shipped.
 - `tools/cli` — the `bogey` CLI. Run it with `vpr bogey ...`; commands are
   listed in [`docs/reference/cli.md`](docs/reference/cli.md) (generated).
@@ -39,7 +39,7 @@ pnpm workspace, packages import via `@bogey/<name>`:
   console too: `apps/console/src/server/commands.ts` (an entry, or
   `NOT_IN_CONSOLE` with the reason) and `docs/self-hosting/console.md`.
   `apps/console/tests/commands.test.ts` fails on a command it doesn't know.
-- `tools/dev` — developer-only scripts (`find-text`) and checks on these docs:
+- `tools/dev` — developer-only scripts (`vpr find`) and checks on these docs:
   `tests/agent-docs.test.ts` fails when an agent doc names a path that
   doesn't exist. Not part of the CLI, so no console entry.
 - `supabase/schemas` — the schema (RLS is the real authorization boundary);
@@ -50,7 +50,7 @@ pnpm workspace, packages import via `@bogey/<name>`:
 UI text is translated: the English lives in `packages/config/src/messages.ts`
 under message keys, and the same English often has several keys. When asked
 to change something by its visible label ("Overview on the manage page"), run
-`vp run find-text "<label>" --in <path part>` first. It prints each matching
+`vp run find "<label>" --in <path part>` first. It prints each matching
 key and every `file:line` that renders it, with the route's URL. Pass a key
 instead of text to skip the lookup.
 
@@ -70,16 +70,6 @@ Full self-hosting/config/deploy detail: [`docs/self-hosting.md`](docs/self-hosti
 This project is using Vite+, a unified toolchain built on top of Vite, Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps runtime management, package management, and frontend tooling in a single global CLI called `vp`. Vite+ is distinct from Vite, and it invokes Vite through `vp dev` and `vp build`. Run `vp help` to print a list of commands and `vp <command> --help` for information about a specific command.
 
 Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.dev/guide/.
-
-## Vite+ is the package manager. Never run pnpm, npm, npx or yarn
-
-Everything a package manager does goes through `vp`, which pins and runs pnpm itself:
-`vp install`, `vp add <pkg>` (`-D` for dev), `vp remove <pkg>`, `vp dedupe`, `vp update`,
-`vp outdated`, `vp why <pkg>`, `vp dlx <bin>` instead of `npx`, `vp exec <bin>` for a local binary.
-Calling `pnpm`, `npm`, `npx` or `yarn` directly is wrong here even when it seems to work: it bypasses
-the pinned version (root `devEngines` refuses npm outright) and the catalog in
-`pnpm-workspace.yaml`. When a tool's own docs say `npx foo` or `pnpm add foo`, translate it to
-`vp dlx foo` or `vp add foo`. Suggesting a fix to the user? Write it with `vp` too.
 
 ## Built-in Commands vs Scripts
 

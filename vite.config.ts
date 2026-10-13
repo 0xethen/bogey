@@ -34,7 +34,7 @@ export default defineConfig({
     tasks: {
       e2e: { command: "vp run web#e2e", cache: false },
       bogey: { command: "node tools/cli/src/bin.ts", cache: false },
-      "find-text": { command: "node tools/dev/src/find-text.ts", cache: false },
+      find: { command: "node tools/dev/src/find-text.ts", cache: false },
     },
   },
 });

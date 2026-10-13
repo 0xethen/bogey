@@ -8,6 +8,7 @@ const t = createTranslator(en, { locale: "en", overlay: {} });
 const all: Binding[] = [
   { id: "core.save", name: "Save changes", keys: "Mod+S" },
   { id: "core.shortcuts", name: "Keyboard shortcuts", keys: "Mod+/" },
+  { id: "core.copy", name: "Copy link", keys: "Mod+Shift+C" },
   { id: "core.off", name: "Switched off", keys: null },
 ];
 
@@ -23,7 +24,7 @@ test("a combination another shortcut uses is refused, naming it", () => {
 
 test("a shortcut can keep its own keys, and spellings of the same keys count as the same", () => {
   expect(bindingProblem("Mod+S", "core.save", all, t)).toBeNull();
-  expect(bindingProblem("Meta+S", "core.shortcuts", all, t)).toMatch(/Save changes/);
+  expect(bindingProblem("Mod+Shift+C", "core.shortcuts", all, t)).toMatch(/Copy link/);
 });
 
 test("an off shortcut doesn't hold its old keys", () => {

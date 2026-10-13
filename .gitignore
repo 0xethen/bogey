@@ -42,3 +42,4 @@ packages/plugins/installed
 backups/
 
 apps/web/test-results/
+.vitest/
