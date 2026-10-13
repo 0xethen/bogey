@@ -41,6 +41,8 @@ jobs:
           for seed in packages/plugins/bundled/*/seed.sql; do
             psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -X -q -v ON_ERROR_STOP=1 -f "$seed"
           done
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -X -q -c "notify pgrst, 'reload schema'"
+          sleep 2
           node tools/cli/src/bin.ts org init --org e2e --name "E2E" --owner "$E2E_ORGANIZER" --host localhost --demo
           node tools/cli/src/bin.ts login "$E2E_PARTICIPANT" --create
           node tools/cli/src/bin.ts login "$E2E_JUDGE" --create
@@ -56,7 +58,7 @@ jobs:
       - run: vp run web#build
       - name: start the app
         run: |
-          node apps/web/.output/server/index.mjs &
+          node --env-file=.env apps/web/.output/server/index.mjs &
           for i in $(seq 1 30); do curl --silent --fail localhost:3000/api/health && exit 0; sleep 1; done
           exit 1
       - run: vp exec playwright install --with-deps chromium
