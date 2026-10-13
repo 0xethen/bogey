@@ -1,0 +1,28 @@
+{
+  "name": "bogey-cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The bogey CLI. Scans packages/config, scaffolds events, generates Supabase migrations/types, imports participants, transforms themes, manages extensions, and more.",
+  "bin": {
+    "bogey": "./src/bin.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "vp pack",
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "@bogey/config": "workspace:*",
+    "@bogey/db": "workspace:*",
+    "@bogey/plugins": "workspace:*",
+    "@bogey/utils": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

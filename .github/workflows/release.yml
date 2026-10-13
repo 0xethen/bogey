@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: "22"
+          cache: true
+      - run: vp install
+      - run: node tools/cli/src/bin.ts release check "$GITHUB_REF_NAME"
+
+  runner:
+    needs: verify
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { name: bogey-runner, context: tools/runner, tag: "" }
+          - { name: bogey-runner-python, context: tools/runner/images/python, tag: "3.13" }
+          - { name: bogey-runner-node, context: tools/runner/images/node, tag: "22" }
+          - { name: bogey-runner-gcc, context: tools/runner/images/gcc, tag: "14" }
+          - { name: bogey-runner-java, context: tools/runner/images/java, tag: "21" }
+          - { name: bogey-runner-kotlin, context: tools/runner/images/kotlin, tag: "2.1" }
+          - { name: bogey-runner-rust, context: tools/runner/images/rust, tag: "1.85" }
+          - { name: bogey-runner-go, context: tools/runner/images/go, tag: "1.24" }
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: tags
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          image="ghcr.io/0xethen/${{ matrix.name }}"
+          if [ -n "${{ matrix.tag }}" ]; then
+            echo "list=$image:${{ matrix.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            case "$GITHUB_REF_NAME" in
+              *-*) echo "list=$image:$version" >> "$GITHUB_OUTPUT" ;;
+              *) echo "list=$image:$version,$image:latest" >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/0xethen/bogey
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ !contains(github.ref_name, '-') }}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/0xethen/bogey
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+      - name: notes from the changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## " v "( |$)" { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "No changelog entry for $version." > notes.md
+      - name: pack the source
+        run: git archive --format=tar.gz --prefix="bogey-${GITHUB_REF_NAME#v}/" -o "bogey-${GITHUB_REF_NAME#v}.tar.gz" "$GITHUB_REF_NAME"
+      - name: pack the all-in-one files
+        run: git archive --format=tar.gz --prefix="bogey-all-in-one/" -o "bogey-all-in-one-${GITHUB_REF_NAME#v}.tar.gz" "$GITHUB_REF_NAME:deploy/all-in-one"
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: bogey-*.tar.gz
+      - name: publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=""
+          case "$GITHUB_REF_NAME" in *-*) flags="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --notes-file notes.md $flags bogey-*.tar.gz
+          gh release edit "$GITHUB_REF_NAME" --draft=false

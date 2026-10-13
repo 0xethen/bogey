@@ -1,0 +1,14 @@
+**/node_modules
+**/.output
+**/dist
+**/.vinxi
+**/.tanstack
+.git
+.env
+.env.*
+!.env.example
+.eda
+.vault
+.claude
+supabase/.temp
+*.log

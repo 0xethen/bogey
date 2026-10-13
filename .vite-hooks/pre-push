@@ -1,0 +1,6 @@
+# a pushed v* tag must match package.json and CHANGELOG.md (bogey release check)
+while read -r local_ref _ _ _; do
+  case "$local_ref" in
+    refs/tags/v*) node tools/cli/src/bin.ts release check "${local_ref#refs/tags/}" || exit 1 ;;
+  esac
+done

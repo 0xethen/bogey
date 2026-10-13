@@ -1,0 +1,45 @@
+{
+  "name": "bogey",
+  "version": "0.0.0",
+  "private": true,
+  "description": "modern, extensible, self-hostable competition platform",
+  "homepage": "https://github.com/0xethen/bogey#readme",
+  "bugs": {
+    "url": "https://github.com/0xethen/bogey/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "Ethen Tseggai <public@ethen.app>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xethen/bogey.git"
+  },
+  "type": "module",
+  "scripts": {
+    "ready": "vp check && vp run -r test && vp run -r build",
+    "dev": "echo \"doesn't work with TanStack Devtools Source Inspector, cannot handle terminal input\" && concurrently -i -n web,console,bogey -c auto --kill-others \"vp run web#dev\" \"node tools/cli/src/bin.ts console\" \"node tools/cli/src/bin.ts watch\"",
+    "webdev": "vp run web#dev",
+    "test": "vp test",
+    "build": "vp build",
+    "release": "vpr bogey release",
+    "prepare": "vp config"
+  },
+  "dependencies": {
+    "supabase": "catalog:"
+  },
+  "devDependencies": {
+    "@bogey/config": "workspace:*",
+    "concurrently": "^10.0.6",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.17.0",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

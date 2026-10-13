@@ -1,0 +1,84 @@
+@import "@bogey/ui/globals.css";
+
+@theme {
+  --menubar-height: calc(var(--spacing) * 8);
+  --navbar-height: calc(var(--spacing) * 11);
+  --nav-height: calc(var(--menubar-height) + var(--navbar-height));
+
+  --layout-offset: 0px;
+  --previewbar-height: calc(var(--spacing) * 9);
+  --preview-offset: 0px;
+
+  --height-screen: 100vh;
+  --height-dvh: 100dvh;
+  --height-svh: 100svh;
+  --height-lvh: 100lvh;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-fg;
+  }
+  html {
+    @apply font-sans;
+  }
+
+  h1 {
+    @apply text-4xl font-bold;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold;
+  }
+
+  h3 {
+    @apply text-xl font-semibold;
+  }
+
+  /* body {
+    position: relative;
+  } */
+
+  .link {
+    @apply underline underline-offset-2 decoration-primary-text not-hover:decoration-dotted disabled:text-muted-fg/80 disabled:decoration-muted;
+  }
+
+  ::selection {
+    @apply bg-primary/50 text-fg;
+  }
+
+  .bg-primary::selection {
+    @apply bg-primary-fg/40 text-primary-fg;
+  }
+
+  .bg-sidebar-primary::selection {
+    @apply bg-primary-fg/40 text-sidebar-primary-fg;
+  }
+}
+
+:root[data-header-type="menubar"] {
+  --layout-offset: var(--menubar-height);
+}
+
+:root[data-header-type="nav"] {
+  --layout-offset: var(--nav-height);
+}
+
+:root[data-previewing="true"] {
+  --preview-offset: var(--previewbar-height);
+}
+
+@utility h-safe-* {
+  height: calc(--value(--height-*) - var(--layout-offset) - var(--preview-offset));
+}
+
+@utility min-h-safe-* {
+  min-height: calc(--value(--height-*) - var(--layout-offset) - var(--preview-offset));
+}
+
+@utility max-h-safe-* {
+  max-height: calc(--value(--height-*) - var(--layout-offset) - var(--preview-offset));
+}

@@ -1,0 +1,67 @@
+name: End-to-end (e2e)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      E2E_ORGANIZER: organizer@e2e.test
+      E2E_PARTICIPANT: participant@e2e.test
+      E2E_JUDGE: judge@e2e.test
+      E2E_EVENT: demo-hackathon
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: "22"
+          cache: true
+      - uses: supabase/setup-cli@v3.0.1
+      - run: vp install
+      - run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
+      - name: .env from the local stack
+        run: |
+          eval "$(supabase status -o env)"
+          {
+            echo "SUPABASE_URL=$API_URL"
+            echo "SUPABASE_PUBLISHABLE_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } > .env
+      - name: an org, its demo event and two accounts
+        run: |
+          node tools/cli/src/bin.ts db migrate --db-url postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          node tools/cli/src/bin.ts org init --org e2e --name "E2E" --owner "$E2E_ORGANIZER" --host localhost --demo
+          node tools/cli/src/bin.ts login "$E2E_PARTICIPANT" --create
+          node tools/cli/src/bin.ts login "$E2E_JUDGE" --create
+          psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -c "
+            insert into public.event_members (event_id, user_id, role)
+            select e.id, u.id, 'participant' from public.events e, auth.users u
+            where e.slug = '$E2E_EVENT' and u.email = '$E2E_PARTICIPANT'
+            on conflict do nothing;
+          insert into public.event_members (event_id, user_id, role)
+            select e.id, u.id, 'judge' from public.events e, auth.users u
+            where e.slug = '$E2E_EVENT' and u.email = '$E2E_JUDGE'
+            on conflict do nothing;"
+      - run: vp run web#build
+      - name: start the app
+        run: |
+          node apps/web/.output/server/index.mjs &
+          for i in $(seq 1 30); do curl --silent --fail localhost:3000/api/health && exit 0; sleep 1; done
+          exit 1
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: vp run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/web/test-results

@@ -1,0 +1,12 @@
+{$CADDY_SITES} {
+	encode zstd gzip
+
+	@supabase path /auth/v1/* /rest/v1/* /realtime/v1/* /storage/v1/* /.well-known/oauth-authorization-server
+	handle @supabase {
+		reverse_proxy kong:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

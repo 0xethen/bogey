@@ -1,0 +1,42 @@
+{
+  "name": "@bogey/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#instance": {
+      "browser": "./src/browser.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "exports": {
+    ".": {
+      "browser": "./src/browser.ts",
+      "default": "./src/index.ts"
+    },
+    "./load": "./src/load.ts",
+    "./resolve": "./src/resolve.ts",
+    "./settings": "./src/settings.ts",
+    "./email": "./src/email.ts",
+    "./notifications": "./src/notifications.ts",
+    "./windows": "./src/windows.ts",
+    "./define": "./src/define.ts",
+    "./sign-in": "./src/sign-in.ts",
+    "./themes": "./src/themes.gen.ts",
+    "./messages": "./src/messages.ts"
+  },
+  "scripts": {
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "@bogey/utils": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

@@ -1,0 +1,13 @@
+@import "@bogey/ui/globals.css";
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply min-h-dvh bg-background text-fg antialiased;
+  }
+}

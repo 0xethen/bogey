@@ -1,0 +1,18 @@
+services:
+  runner:
+    image: ${BOGEY_RUNNER_IMAGE:-ghcr.io/0xethen/bogey-runner:latest}
+    restart: unless-stopped
+    depends_on:
+      kong:
+        condition: service_healthy
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      BOGEY_RUNNER_ID: ${BOGEY_RUNNER_ID:-runner}
+      BOGEY_RUNNER_CONCURRENCY: ${BOGEY_RUNNER_CONCURRENCY:-2}
+      BOGEY_RUNNER_WORK_DIR: /var/lib/bogey-runner
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/bogey-runner:/var/lib/bogey-runner
+    group_add:
+      - "${DOCKER_GID:-999}"

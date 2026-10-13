@@ -1,0 +1,13 @@
+{
+	on_demand_tls {
+		ask http://web:3000/api/tls/ask
+	}
+}
+
+https:// {
+	tls {
+		on_demand
+	}
+	encode zstd gzip
+	reverse_proxy web:3000
+}

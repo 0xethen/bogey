@@ -1,0 +1,43 @@
+{
+  "name": "@bogey/utils",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Framework-free helpers shared across Bogey packages. No runtime dependencies.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./keys": "./src/keys.ts",
+    "./time": "./src/time.ts",
+    "./answers": "./src/answers.ts",
+    "./roster": "./src/roster.ts",
+    "./roster-rules": "./src/roster-rules.ts",
+    "./network": "./src/network.ts",
+    "./text": "./src/text.ts",
+    "./email-template": "./src/email-template.ts",
+    "./email-layout": "./src/email-layout.ts",
+    "./markdown": "./src/markdown.ts",
+    "./csv": "./src/csv.ts",
+    "./awards": "./src/awards.ts",
+    "./rounds": "./src/rounds.ts",
+    "./pending": "./src/pending.ts",
+    "./fairness": "./src/fairness.ts",
+    "./score-scale": "./src/score-scale.ts",
+    "./registration-form": "./src/registration-form.ts",
+    "./ical": "./src/ical.ts",
+    "./feeds": "./src/feeds.ts",
+    "./profile-links": "./src/profile-links.ts",
+    "./certificate": "./src/certificate.ts",
+    "./locale": "./src/locale.ts",
+    "./messages": "./src/messages.ts",
+    "./team-matcher": "./src/team-matcher.ts"
+  },
+  "scripts": {
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

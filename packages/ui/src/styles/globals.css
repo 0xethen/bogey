@@ -1,0 +1,126 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@import "@fontsource-variable/atkinson-hyperlegible-next";
+@import "@fontsource/opendyslexic/400.css";
+@import "@fontsource/opendyslexic/700.css";
+@import "@fontsource/opendyslexic/400-italic.css";
+
+@import "./themes.css";
+@import "./typeset.css";
+@import "./utilities.css";
+
+@source "../../../apps/**/*.{ts,tsx}";
+/*@source "../../../components/**[SLASH]*.{ts,tsx}";*/
+@source "../**/*.{ts,tsx}";
+@source "../../../plugins/bundled/*/**/*.{ts,tsx}";
+@source "../../../plugins/installed/*/**/*.{ts,tsx}";
+
+@theme inline {
+  --font-heading: var(--font-heading);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-xs: calc(var(--radius) * 0.3);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-pill: calc(var(--radius) * 1000);
+
+  --color-background: var(--background);
+  --color-fg: var(--fg);
+  --color-card: var(--card);
+  --color-card-fg: var(--card-fg);
+  --color-popover: var(--popover);
+  --color-popover-fg: var(--popover-fg);
+  --color-primary: var(--primary);
+  --color-primary-lite: var(--primary-lite);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-text: var(--primary-text);
+  --color-primary-emphasis: var(--primary-emphasis);
+  --color-secondary: var(--secondary);
+  --color-secondary-fg: var(--secondary-fg);
+  --color-muted: var(--muted);
+  --color-muted-fg: var(--muted-fg);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-fg: var(--sidebar-fg);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-fg: var(--sidebar-primary-fg);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-fg: var(--sidebar-accent-fg);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root[data-font="system"] {
+  --font-heading: system-ui, sans-serif;
+  --font-sans: system-ui, sans-serif;
+}
+:root[data-font="readable"] {
+  --font-heading: "Atkinson Hyperlegible Next Variable", Verdana, sans-serif;
+  --font-sans: "Atkinson Hyperlegible Next Variable", Verdana, sans-serif;
+}
+:root[data-font="dyslexia"] {
+  --font-heading: "OpenDyslexic", "Comic Sans MS", sans-serif;
+  --font-sans: "OpenDyslexic", "Comic Sans MS", sans-serif;
+}
+:root[data-font="serif"] {
+  --font-heading: ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: ui-serif, Georgia, "Times New Roman", serif;
+}
+:root[data-font="mono"] {
+  --font-heading: ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+:root[data-spacing="wide"] body {
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  word-spacing: 0.12em;
+}
+:root[data-spacing="wide"] :is(p, li, dd) {
+  margin-block-end: 0.5em;
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+:root[data-links="underline"] a:not([data-slot="button"]) {
+  text-decoration-line: underline;
+  text-underline-offset: 0.2em;
+}
+
+:root[data-contrast="more"][data-contrast="more"] {
+  --muted-fg: color-mix(in oklab, var(--fg) 82%, var(--background));
+  --border: color-mix(in oklab, var(--fg) 45%, var(--background));
+  --input: color-mix(in oklab, var(--fg) 30%, var(--background));
+}
+:root[data-contrast="more"] :focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}

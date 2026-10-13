@@ -1,0 +1,20 @@
+{
+  "name": "@bogey/dev",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Developer-only scripts for working in this repo (find-text) and checks on the agent docs. Not shipped, not part of the CLI.",
+  "type": "module",
+  "scripts": {
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "@bogey/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

@@ -1,0 +1,37 @@
+name: Wiki
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", "tools/cli/src/commands/docs.ts"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: "22"
+          cache: true
+      - run: vp install
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+      - name: build pages
+        run: |
+          find wiki -maxdepth 1 -name "*.md" -delete
+          node tools/cli/src/bin.ts docs wiki --out wiki --repo "${{ github.repository }}"
+      - name: push
+        working-directory: wiki
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "docs: ${{ github.sha }}"
+          git push

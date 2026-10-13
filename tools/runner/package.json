@@ -1,0 +1,22 @@
+{
+  "name": "@bogey/runner",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Judges solutions for the challenges extension: claims queued judgings, runs them in Docker sandboxes, records verdicts. Runs on plain Node with no dependencies; see README.md.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.ts",
+    "self-test": "node src/main.ts --self-test",
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

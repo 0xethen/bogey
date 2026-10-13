@@ -1,0 +1,40 @@
+{
+  "name": "console",
+  "private": true,
+  "description": "The operator console: a page for the machine Bogey runs on. Started with `bogey console`; never imported by apps/web.",
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "dev": "vp dev --host 127.0.0.1 --port 3737",
+    "build": "vp build",
+    "test": "vp test run --passWithNoTests",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "@bogey/ui": "workspace:*",
+    "@bogey/utils": "workspace:*",
+    "@tabler/icons-react": "catalog:",
+    "@tanstack/react-router": "catalog:",
+    "@tanstack/react-start": "catalog:",
+    "@xterm/addon-fit": "catalog:",
+    "@xterm/xterm": "catalog:",
+    "bogey-cli": "workspace:*",
+    "nitro": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/router-cli": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

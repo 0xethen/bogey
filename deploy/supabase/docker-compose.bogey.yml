@@ -1,0 +1,13 @@
+services:
+  auth:
+    environment:
+      GOTRUE_HOOK_BEFORE_USER_CREATED_ENABLED: "true"
+      GOTRUE_HOOK_BEFORE_USER_CREATED_URI: "pg-functions://postgres/private/before_user_created"
+      GOTRUE_HOOK_SEND_EMAIL_ENABLED: "true"
+      GOTRUE_HOOK_SEND_EMAIL_URI: "${BOGEY_URL:?set BOGEY_URL in Supabase's .env}/api/auth/send-email"
+      GOTRUE_HOOK_SEND_EMAIL_SECRETS: "${SEND_EMAIL_HOOK_SECRET:?set SEND_EMAIL_HOOK_SECRET in Supabase's .env}"
+      GOTRUE_MAILER_OTP_LENGTH: "6"
+      GOTRUE_SECURITY_MANUAL_LINKING_ENABLED: "true"
+      GOTRUE_MAILER_EXTERNAL_HOSTS: "${BOGEY_HOSTS:-}"
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"

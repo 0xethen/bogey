@@ -1,0 +1,103 @@
+name: Continuous Integration (CI)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ready:
+    name: check, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: "22"
+          cache: true
+      - run: vp install
+      - run: vp check
+      - run: vp run -r test
+      - run: vp run -r build
+
+  database:
+    name: schema / pgTAP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: supabase/setup-cli@v3.0.1
+        with:
+          version: 2.120.0
+      - run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
+      - run: supabase test db
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: "22"
+          cache: true
+      - run: vp install
+      - name: bundled plugins' pgTAP
+        run: |
+          db=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          node tools/cli/src/bin.ts db migrate --db-url "$db"
+          for test in packages/plugins/bundled/*/tests/*.test.sql; do
+            psql "$db" -X -q -t -v ON_ERROR_STOP=1 -f "$test" | tee -a pgtap.out
+          done
+          ! grep -q "not ok" pgtap.out
+      - name: generated types are current
+        run: |
+          node tools/cli/src/bin.ts types --local
+          git diff --exit-code -- packages/db/src/types/database.gen.ts || {
+            echo "::error::database.gen.ts is out of date: run bogey types (docs/contributing.md#generating-types) and commit it"
+            exit 1
+          }
+
+  upgrade:
+    name: upgrade from the last release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: find the last release
+        id: release
+        run: echo "tag=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+      - name: no release yet
+        if: steps.release.outputs.tag == ''
+        run: echo "No release tag yet, so there's nothing to upgrade from."
+      - uses: supabase/setup-cli@v3.0.1
+        if: steps.release.outputs.tag != ''
+      - name: start at the last release's schema
+        if: steps.release.outputs.tag != ''
+        run: |
+          rm -rf supabase/migrations
+          git checkout "${{ steps.release.outputs.tag }}" -- supabase/migrations
+          supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor
+          rm -rf supabase/migrations
+          git checkout HEAD -- supabase/migrations
+      - name: apply this branch's migrations
+        if: steps.release.outputs.tag != ''
+        run: supabase migration up
+      - name: pgTAP on the upgraded database
+        if: steps.release.outputs.tag != ''
+        run: supabase test db
+
+  image:
+    name: docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: docker build --tag bogey-web:ci .
+      - name: health check
+        run: |
+          docker run --detach --name web --publish 3000:3000 \
+            --env SUPABASE_URL=http://localhost:54321 --env SUPABASE_PUBLISHABLE_KEY=ci bogey-web:ci
+          for i in $(seq 1 20); do curl --silent --fail localhost:3000/api/health && exit 0; sleep 1; done
+          docker logs web
+          exit 1
