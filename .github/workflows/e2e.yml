@@ -58,7 +58,7 @@ jobs:
       - run: vp run web#build
       - name: start the app
         run: |
-          node apps/web/.output/server/index.mjs &
+          node --env-file=.env apps/web/.output/server/index.mjs &
           for i in $(seq 1 30); do curl --silent --fail localhost:3000/api/health && exit 0; sleep 1; done
           exit 1
       - run: vp exec playwright install --with-deps chromium
