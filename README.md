@@ -29,11 +29,30 @@ Built for hackathons, algorithm programming competitions, and anything else with
 
 ## Quick start
 
-You need [Node.js](https://nodejs.org/en/download) 22.18 or newer ([NTS](https://nodejs.org/learn/typescript/run-natively)), [Vite+](https://viteplus.dev) (`vp`, with pnpm as the recommended package manager) and, on a server, Docker (if self-hosting).
+Pick the path that matches what you want:
 
-Check out [Getting started](docs/getting-started.md#you-need) ([wiki](https://github.com/0xethen/bogey/wiki/getting-started)) for the full list and instructions.
+| You want                                           | Start from                                                                        |
+| -------------------------------------------------- | --------------------------------------------------------------------------------- |
+| To try Bogey on your machine                       | [A clone of this repository](#on-your-machine)                                    |
+| To run Bogey on a server, with your name and theme | [The all-in-one compose](#on-a-server)                                            |
+| Your own logo files, extra themes or plugins       | [bogey-instance](https://github.com/0xethen/bogey-instance) ("Use this template") |
+| To change Bogey's code                             | A fork of this repository                                                         |
 
-On a server (Supabase, Bogey and Caddy together):
+The clone and fork paths need [Node.js](https://nodejs.org/en/download) 22.18 or newer ([NTS](https://nodejs.org/learn/typescript/run-natively)) and [Vite+](https://viteplus.dev) (`vp`, with pnpm as the recommended package manager); a server needs Docker. [Getting started](docs/getting-started.md#you-need) ([wiki](https://github.com/0xethen/bogey/wiki/getting-started)) has the full list.
+
+### On your machine
+
+```sh
+git clone https://github.com/0xethen/bogey && cd bogey
+vp install
+vpr bogey setup        # writes .env, then creates your first organization
+vpr bogey seed demo    # optional: try out demo hackathon to look around in
+vpr dev
+```
+
+### On a server
+
+Supabase, Bogey and Caddy together, in one compose file:
 
 ```sh
 git clone https://github.com/0xethen/bogey && cd bogey
@@ -43,15 +62,9 @@ cd deploy/all-in-one && docker compose up -d
 docker compose exec web bogey org init --org acme --name "Acme Hacks" --owner you@acme.org --host hack.example.com
 ```
 
-To try it on your machine:
-
-```sh
-git clone https://github.com/0xethen/bogey && cd bogey
-vp install
-vpr bogey setup        # writes .env, then creates your first organization
-vpr bogey seed demo    # optional: try out demo hackathon to look around in
-vpr dev
-```
+Your logo files, extra themes and plugins are part of the build, so they need
+[bogey-instance](https://github.com/0xethen/bogey-instance): a small repository holding only your
+config, logo and plugins, which builds a Bogey release with them.
 
 [Getting started](docs/getting-started.md) has the details, and
 [Self-hosting](docs/self-hosting.md) covers the all-in-one stack, Supabase Cloud, email and domains. All

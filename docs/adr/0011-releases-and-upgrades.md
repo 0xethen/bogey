@@ -33,7 +33,7 @@ after one, because a self-hoster's database can't be regenerated.
   isn't attested (`--require-verified` refuses).
 - **An image is published per tag** to `ghcr.io/0xethen/bogey`, with build
   provenance. Instances that need plugins or their own themes build from the
-  tag through a small instance template repo (compose, `bogey.config.ts`, plugin
+  tag through a [small instance template repo](https://github.com/0xethen/bogey-instance) (compose, `bogey.config.ts`, plugin
   lockfile, Dockerfile). Everyone else runs the image with config mounted.
 - **License:** Apache-2.0, replacing the Unlicense, with a `NOTICE` file.
 - **No telemetry.** The update check (Instance → Overview, Instance →

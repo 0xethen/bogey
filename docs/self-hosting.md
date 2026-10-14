@@ -1,7 +1,9 @@
 # Self-hosting
 
 A Bogey instance is the published image (or one built from a small
-instance repository) plus a Supabase project. Pick one path:
+instance repository, made from
+[bogey-instance](https://github.com/0xethen/bogey-instance)) plus a
+Supabase project. Pick one path:
 
 - **[All in one](self-hosting/all-in-one.md):** one compose file with Bogey,
   the Supabase services it needs and Caddy. The shortest way from a bare

@@ -13,7 +13,7 @@ How you upgrade depends on how you run Bogey.
   With your own Supabase, run `docker compose run --rm web bogey db migrate` (and
   `bogey plugins migrate`) first, from the new image.
 
-- **An instance repository** (the template in `deploy/instance-template`): change `BOGEY_VERSION`, build,
+- **An instance repository** (made from [bogey-instance](https://github.com/0xethen/bogey-instance)): change `BOGEY_VERSION`, build,
   migrate from the new image, start. Its README has the commands.
 - **A fork of Bogey**: `bogey upgrade`, below. This is for people who change Bogey's code.
 
