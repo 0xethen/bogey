@@ -7,6 +7,8 @@ This means you fork maintainers... I'm watching you! -->
 
 ## Unreleased
 
+## 2.0.0 (2026-10-14)
+
 Bogey 2.0 is the first release: hackathons run properly and installable in one sitting, contests that actually judge, and the
 other formats as plugins. This is the draft of its notes.
 
