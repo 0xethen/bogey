@@ -30,6 +30,7 @@ import {
   type Icon,
 } from "@tabler/icons-react";
 import { BrandMark } from "#/components/brand-mark.tsx";
+import { useAuthCaptcha } from "#/components/plugins/auth-captcha.tsx";
 
 const searchSchema = z.object({
   error: z.literal("auth").optional().catch(undefined),
@@ -70,6 +71,7 @@ const FAILURE_KEYS = {
   rate_limited: "auth.failure.rateLimited",
   closed: "auth.failure.closed",
   refused: "auth.failure.refused",
+  captcha: "auth.failure.captcha",
   unknown: "auth.failure.unknown",
 } as const satisfies Record<Exclude<SendLinkResult, { ok: true }>["reason"], MessageKey>;
 
@@ -84,6 +86,7 @@ function RouteComponent() {
   });
   const brandName = org?.name ?? settings.data?.branding.name ?? brand.name;
   const newAccounts = !!org && settings.data?.registration.signup !== "closed";
+  const captcha = useAuthCaptcha();
 
   const form = useAppForm({
     defaultValues: { email: "" },
@@ -91,9 +94,10 @@ function RouteComponent() {
     validators: [rewardEarlyPunishLate(emailSchema)],
     onSubmit: async ({ value, createValidationError }) => {
       stashRedirect(redirect);
-      const result = await sendSignInLinkFn({ data: { email: value.email, invite } }).catch(
-        requestFailure,
-      );
+      const result = await sendSignInLinkFn({
+        data: { email: value.email, invite, captchaToken: captcha.token() },
+      }).catch(requestFailure);
+      captcha.reset();
       if ("reason" in result) {
         return createValidationError(result.message ?? t(FAILURE_KEYS[result.reason]));
       }
@@ -112,7 +116,9 @@ function RouteComponent() {
   const providerSignIn = useMutation({
     mutationFn: async (input: { provider: SignInProvider; email?: string }) => {
       stashRedirect(redirect);
-      const result = await signInProviderUrlFn({ data: input });
+      const captchaToken = input.provider === "sso" ? captcha.token() : undefined;
+      const result = await signInProviderUrlFn({ data: { ...input, captchaToken } });
+      if (input.provider === "sso") captcha.reset();
       if (!result.ok) throw new Error(result.message);
       window.location.assign(result.url);
     },
@@ -146,6 +152,8 @@ function RouteComponent() {
                 </AlertDescription>
               </Alert>
             )}
+
+            {captcha.widget}
 
             <Field>
               <form.FormAlert title={t("auth.sendFailedTitle")} />

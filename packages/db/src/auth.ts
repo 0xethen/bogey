@@ -126,6 +126,11 @@ export const verifyEmailOtpFn = createServerFn({ method: "POST" })
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Supabase Auth checks it against the provider when captcha protection is on
+export function captchaToken(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 && value.length <= 4096 ? value : undefined;
+}
+
 async function adminStatus(
   supabase: ReturnType<typeof createServerClient>,
 ): Promise<{ admin: boolean; required: boolean; aal: string } | null> {
@@ -142,23 +147,29 @@ export const PASSWORD_MIN = 12;
 
 export type PasswordSignInResult =
   | { ok: true }
-  | { ok: false; reason: "invalid" | "not_admin" | "unreachable" | "rate_limited" };
+  | { ok: false; reason: "invalid" | "not_admin" | "unreachable" | "rate_limited" | "captcha" };
 
 export const signInWithPasswordFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
-    const { email, password } = (input ?? {}) as { email?: unknown; password?: unknown };
+    const raw = (input ?? {}) as { email?: unknown; password?: unknown; captchaToken?: unknown };
+    const { email, password } = raw;
     if (typeof email !== "string" || !EMAIL.test(email)) throw new Error("Enter your email");
     if (typeof password !== "string" || !password || password.length > 200) {
       throw new Error("Enter your password");
     }
-    return { email: email.trim(), password };
+    return { email: email.trim(), password, captchaToken: captchaToken(raw.captchaToken) };
   })
   .handler(async ({ data }): Promise<PasswordSignInResult> => {
     const supabase = createServerClient();
-    const { error } = await supabase.auth.signInWithPassword(data);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+      options: { captchaToken: data.captchaToken },
+    });
     if (error) {
       if (isAuthRetryableFetchError(error)) return { ok: false, reason: "unreachable" };
       if (error.status === 429) return { ok: false, reason: "rate_limited" };
+      if (error.code === "captcha_failed") return { ok: false, reason: "captcha" };
       return { ok: false, reason: "invalid" };
     }
     const status = await adminStatus(supabase);
@@ -200,18 +211,18 @@ export type SendLinkResult =
   | { ok: true }
   | {
       ok: false;
-      reason: "unreachable" | "rate_limited" | "closed" | "refused" | "unknown";
+      reason: "unreachable" | "rate_limited" | "closed" | "refused" | "captcha" | "unknown";
       message?: string;
     };
 
 export const sendSignInLinkFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
-    const raw = (input ?? {}) as { email?: unknown; invite?: unknown };
+    const raw = (input ?? {}) as { email?: unknown; invite?: unknown; captchaToken?: unknown };
     const email = typeof raw.email === "string" ? raw.email.trim().toLowerCase() : "";
     if (!EMAIL.test(email) || email.length > 254) throw new Error("Enter your email address");
     const invite =
       typeof raw.invite === "string" && /^[0-9a-f]{24}$/.test(raw.invite) ? raw.invite : undefined;
-    return { email, invite };
+    return { email, invite, captchaToken: captchaToken(raw.captchaToken) };
   })
   .handler(async ({ data }): Promise<SendLinkResult> => {
     const supabase = createServerClient();
@@ -237,6 +248,7 @@ export const sendSignInLinkFn = createServerFn({ method: "POST" })
       options: {
         emailRedirectTo: `${origin}/auth/confirm`,
         shouldCreateUser: !!current && signup !== "closed",
+        captchaToken: data.captchaToken,
         data: current
           ? { org: current.slug, ...(data.invite ? { invite: data.invite } : {}) }
           : undefined,
@@ -246,6 +258,7 @@ export const sendSignInLinkFn = createServerFn({ method: "POST" })
     if (isAuthRetryableFetchError(error)) return { ok: false, reason: "unreachable" };
     if (error.code === "over_email_send_rate_limit") return { ok: false, reason: "rate_limited" };
     if (error.code === "otp_disabled") return { ok: false, reason: "closed" };
+    if (error.code === "captcha_failed") return { ok: false, reason: "captcha" };
     if (error.status === 403 && error.message) {
       return { ok: false, reason: "refused", message: error.message };
     }

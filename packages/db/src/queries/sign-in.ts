@@ -7,6 +7,7 @@ import {
   SIGN_IN_PROVIDERS,
   type SignInProvider,
 } from "@bogey/config/sign-in";
+import { captchaToken } from "../auth.ts";
 import { createAdminClient } from "../admin.ts";
 import { getPublicEnv } from "../env.ts";
 import { timeoutFetch } from "../fetch.ts";
@@ -86,14 +87,14 @@ export type ProviderUrl = { ok: true; url: string } | { ok: false; message: stri
 
 export const signInProviderUrlFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
-    const raw = (input ?? {}) as { provider?: unknown; email?: unknown };
+    const raw = (input ?? {}) as { provider?: unknown; email?: unknown; captchaToken?: unknown };
     if (!isSignInProvider(raw.provider)) throw new Error("Unknown sign-in method");
     const domain =
       typeof raw.email === "string" ? (raw.email.trim().toLowerCase().split("@").at(-1) ?? "") : "";
     if (raw.provider === "sso" && !DOMAIN.test(domain)) {
       throw new Error("Enter your work email address");
     }
-    return { provider: raw.provider, domain };
+    return { provider: raw.provider, domain, captchaToken: captchaToken(raw.captchaToken) };
   })
   .handler(async ({ data }): Promise<ProviderUrl> => {
     const org = await getOrgFn();
@@ -108,11 +109,14 @@ export const signInProviderUrlFn = createServerFn({ method: "POST" })
     if (data.provider === "sso") {
       const { data: sso, error } = await supabase.auth.signInWithSSO({
         domain: data.domain,
-        options,
+        options: { ...options, captchaToken: data.captchaToken },
       });
       if (error || !sso?.url) {
         if (error?.code === "sso_provider_not_found") {
           return { ok: false, message: "Single sign-on isn't set up for that address." };
+        }
+        if (error?.code === "captcha_failed") {
+          return { ok: false, message: "Complete the check above, then try again." };
         }
         if (error) console.error("[bogey] starting single sign-on failed:", error);
         return { ok: false, message: "Couldn't start single sign-on." };

@@ -102,6 +102,8 @@ inspiration
 
 Plugin authors
 
+The authors of the [original Bogey](https://github.com/hackgwinnett/bogey-flask) (scoring tool)
+
 You!
 
 <!-- > Learn more about Good Software and the Good Software Pledge at [ethen.app/gsp](https://ethen.app/gsp). -->

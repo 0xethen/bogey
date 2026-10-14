@@ -155,8 +155,15 @@ export interface PluginSessionPanelContext<
   kind: string;
 }
 
+// settings are the instance's; tokens are single-use, so Bogey remounts the widget after each try
+export interface PluginAuthCaptchaContext<TSettings = Record<string, unknown>> {
+  settings: TSettings;
+  onToken: (token: string | null) => void;
+}
+
 export interface PluginSlots<TSettings = Record<string, unknown>> {
   pending?: ComponentType;
+  authCaptcha?: ComponentType<PluginAuthCaptchaContext<TSettings>>;
   wrapper?: ComponentType<{ children: ReactNode }>;
   eventWrapper?: ComponentType<PluginContext<TSettings> & { children: ReactNode }>;
   preferencesPanel?: PluginPreferencesPage<TSettings>;

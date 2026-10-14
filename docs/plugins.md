@@ -22,15 +22,15 @@ installed/<key>/
 
 `packages/plugins/installed` isn't tracked, so a development checkout can point it anywhere. The
 maintainer keeps the [bogeyx](https://github.com/0xethen/bogeyx) repository in
-`extensions/` next to `monorepo/`, and links it in:
+`plugins/` next to `monorepo/`, and links it in:
 
 ```sh
-cd monorepo && bogey plugins link ../extensions
+cd monorepo && bogey plugins link ../plugins
 ```
 
 That makes `installed` a symlink to the checkout's `plugins/` folder (or to the folder itself when it has none), and gives the folder a `node_modules` of links to
 the plugins package's dependencies and to `@bogey/plugins` itself, since a plugin outside the
-monorepo couldn't otherwise resolve its imports. It also writes a `tsconfig.json` there if none exists (an existing one is left alone; delete it and link again to regenerate). A folder in `extensions/plugins/` is then picked up like
+monorepo couldn't otherwise resolve its imports. It also writes a `tsconfig.json` there if none exists (an existing one is left alone; delete it and link again to regenerate). A folder in `plugins/plugins/` is then picked up like
 any installed plugin (dot-folders are skipped). `bogey plugins add` writes into
 the linked folder, and the Docker build ignores the link and restores plugins from
 `bogey.plugins.lock` instead.
@@ -354,12 +354,18 @@ until one does. A panel gets `{ eventId, settings, session }` and renders only w
 | `accountMenu`       | items in the account menu (`DropdownMenu*`)            | `{ settings, session }` (settings are defaults)                         |
 | `menubar`           | an icon button left of the notifications bell          | `{ settings, session }` (settings are defaults)                         |
 | `pending`           | replaces the loading skeleton; first plugin wins       | nothing                                                                 |
+| `authCaptcha`       | the sign-in forms, above the button; first plugin wins | `{ settings, onToken }` (settings are the instance's)                   |
 
 An `eventWrapper` can guard a page (lockdown covers it until its rules are met). If one throws, the
 page stays covered for everyone but organizers, who get it unwrapped with the error so they can reach
 Manage → Plugins and switch the plugin off. Panels that throw are replaced by a notice; the rest of
 the page keeps working. Render nothing you wouldn't want seen before your own checks pass: the server
 renders the wrapper too, so a guard's first render (before the browser answers) should be the covered one.
+
+`authCaptcha` draws a captcha widget and calls `onToken` with its token (or `null` when it expires).
+Bogey sends the token with the sign-in request, and Supabase Auth checks it with the provider when captcha
+protection is on there, so Bogey never sees the secret and nobody can skip the check by calling Supabase directly.
+Tokens are single-use, so Bogey remounts the widget after every try. The `captcha` plugin is the example.
 
 Keep per-person choices with `createPluginPreferences(manifest)`, whose
 `usePreference(key, fallback)` reads and saves one value for the signed-in

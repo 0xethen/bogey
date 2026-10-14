@@ -64,6 +64,7 @@ export { definePluginRuntime } from "./runtime.tsx";
 export type {
   PluginActionContext,
   PluginActionHandler,
+  PluginAuthCaptchaContext,
   PluginContext,
   PluginLoaderContext,
   PluginPage,

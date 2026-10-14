@@ -11,6 +11,7 @@ import {
 import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { BrandMark } from "#/components/brand-mark.tsx";
+import { useAuthCaptcha } from "#/components/plugins/auth-captcha.tsx";
 import { msg, useT, type PlainKey, type T } from "#/lib/translate.tsx";
 
 const searchSchema = z.object({
@@ -39,6 +40,7 @@ const FAILURE = {
   not_admin: "passwordSignIn.notAdmin",
   unreachable: "auth.failure.unreachable",
   rate_limited: "passwordSignIn.rateLimited",
+  captcha: "passwordSignIn.captcha",
 } as const satisfies Record<Extract<PasswordSignInResult, { ok: false }>["reason"], PlainKey>;
 
 function RouteComponent() {
@@ -47,14 +49,16 @@ function RouteComponent() {
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const captcha = useAuthCaptcha();
   const form = useAppForm({
     defaultValues: { email: "", password: "" },
     errorVisibility,
     validators: [rewardEarlyPunishLate(schema)],
     onSubmit: async ({ value, createValidationError }) => {
-      const result = await signInWithPasswordFn({ data: value }).catch(
-        (): PasswordSignInResult => ({ ok: false, reason: "unreachable" }),
-      );
+      const result = await signInWithPasswordFn({
+        data: { ...value, captchaToken: captcha.token() },
+      }).catch((): PasswordSignInResult => ({ ok: false, reason: "unreachable" }));
+      captcha.reset();
       if (!result.ok) return createValidationError(t(FAILURE[result.reason]));
       queryClient.removeQueries({ queryKey: sessionQueryKey });
       await navigate({ to: safeInternalPath(redirect) ?? "/admin" });
@@ -81,6 +85,7 @@ function RouteComponent() {
           <form.Field name="password">
             {(field) => <field.TextField type="password" autoComplete="current-password" />}
           </form.Field>
+          {captcha.widget}
           <form.FormAlert title={t("passwordSignIn.failed")} />
           <form.Submit pending={t("passwordSignIn.signingIn")}>{t("nav.signIn")}</form.Submit>
         </form.Form>

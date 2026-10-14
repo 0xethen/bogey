@@ -7,6 +7,9 @@ This means you fork maintainers... I'm watching you! -->
 
 ## Unreleased
 
+- Plugins can put a captcha on the sign-in forms with the new `authCaptcha` slot. The `captcha` plugin adds Cloudflare
+  Turnstile or hCaptcha; Supabase Auth checks the token, so turn on its captcha protection after the plugin is set up. Check it out at [0xethen/bogeyx](https://github.com/0xethen/bogeyx)
+
 ## 2.0.0 (2026-10-14)
 
 Bogey 2.0 is the first release: hackathons run properly and installable in one sitting, contests that actually judge, and the

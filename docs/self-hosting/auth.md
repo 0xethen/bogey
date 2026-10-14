@@ -76,14 +76,14 @@ create anyone.
 Every provider's redirect (callback) address is the same:
 
 ```
-<API_EXTERNAL_URL>/callback        e.g. https://bogey.example.org/auth/v1/callback
+<API_EXTERNAL_URL>/callback (e.g. https://bogey.example.org/auth/v1/callback)
 ```
 
 On the all-in-one compose and Bogey's overlay, a provider is a few lines in `.env`. On Supabase Cloud
 it's Authentication → Sign In / Providers → the provider; paste the same client ID and secret there.
 Restart the `auth` service after changing its environment (`docker compose up -d auth`).
 
-| Provider  | In the provider's console                                                                                                                                          | `.env` (all-in-one)                                                                                                                                          |
+| Provider  | In the provider's console                                                                                                                                          | `.env` (all-in-one only)                                                                                                                                     |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Google    | Google Cloud → APIs & Services → Credentials → OAuth client ID, type _Web application_; authorized redirect URI is the callback                                    | `GOOGLE_ENABLED=true`, `GOOGLE_CLIENT_ID`, `GOOGLE_SECRET`                                                                                                   |
 | GitHub    | Settings → Developer settings → OAuth Apps → New; _Authorization callback URL_ is the callback                                                                     | `GITHUB_ENABLED=true`, `GITHUB_CLIENT_ID`, `GITHUB_SECRET`                                                                                                   |

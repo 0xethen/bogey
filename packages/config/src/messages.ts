@@ -28,6 +28,7 @@ export const en = {
   "auth.failure.closed":
     "There's no account for that address, and sign-ups are closed. Ask an organizer for an invite.",
   "auth.failure.refused": "That address can't sign in here.",
+  "auth.failure.captcha": "Complete the check above, then try again.",
   "auth.failure.unknown": "Something went wrong sending that link. Try again in a moment.",
   "auth.notSetUpTitle": "This instance isn't set up yet",
   "auth.notSetUpBody":
@@ -1541,6 +1542,7 @@ export const en = {
   "passwordSignIn.notAdmin":
     "Passwords are only for instance admins. Sign in with an email link instead.",
   "passwordSignIn.rateLimited": "Too many tries just now. Wait a few minutes and try again.",
+  "passwordSignIn.captcha": "Complete the check above, then try again.",
   "passwordSignIn.linkInstead": "Email me a link instead",
   "passwordSignIn.failed": "Couldn't sign in",
   "passwordSignIn.signingIn": "Signing in...",
