@@ -9,11 +9,9 @@ on:
 permissions:
   contents: write
 
-# Each run rebuilds every page, so only the newest one matters; two at once
-# would race to push and the second would be rejected.
 concurrency:
   group: wiki
-  cancel-in-progress: true
+  cancel-in-progress: true # prio newest
 
 jobs:
   publish:
