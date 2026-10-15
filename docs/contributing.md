@@ -186,6 +186,13 @@ publishes the release from a draft. The repository has _immutable releases_ on
 and files lock when it's published and GitHub signs a release attestation. Check with
 `gh release verify v<version>`.
 
+After a stable release (not a prerelease), the workflow commits to
+[bogey-instance](https://github.com/0xethen/bogey-instance) so new instances build that
+release by default (`BOGEY_VERSION` in its `Dockerfile`, `compose.yml` and README). That needs
+the `INSTANCE_TEMPLATE_TOKEN` secret: a fine-grained token with _Contents: read and write_ on
+bogey-instance. Without it the job warns and skips. Template changes beyond the version, like a
+new `bogey.config.ts` key, are still made by hand.
+
 Nothing can be amended afterwards: a mistake is a new patch release.
 
 ### Security releases
