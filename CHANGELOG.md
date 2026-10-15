@@ -37,7 +37,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 Welcome to Bogey 2! We're out of alpha: Hackathons that run properly and are installable in one sitting, contests that actually judge, and try other formats and features with plugins.
 
-> If you're curious, this was [Bogey 1](https://github.com/hackgwinnett/bogey-flask).
+> If you're curious, [this](https://github.com/hackgwinnett/bogey-flask) was "v1", a project scoring tool and Bogey's namesake/inspiration.
 
 ### Highlights
 
