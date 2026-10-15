@@ -29,7 +29,8 @@
     "./certificate": "./src/certificate.ts",
     "./locale": "./src/locale.ts",
     "./messages": "./src/messages.ts",
-    "./team-matcher": "./src/team-matcher.ts"
+    "./team-matcher": "./src/team-matcher.ts",
+    "./versions": "./src/versions.ts"
   },
   "scripts": {
     "test": "vp test",

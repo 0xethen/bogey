@@ -1,5 +1,30 @@
 # Upgrading
 
+## Knowing when to upgrade
+
+Bogey asks GitHub (the `upstream` repository in `bogey.config.ts`) for its latest release and for the
+[security advisories](https://github.com/0xethen/bogey/security/advisories) published against it:
+
+- **A security advisory that names the version you run** puts a red banner at the top of every page
+  for instance admins, with each advisory, how severe it is and the release that fixes it.
+  Dismissing it hides those advisories in that browser until another one is published.
+  `bogey doctor` reports it as an issue (so it exits non-zero), and the console shows it next to the
+  version.
+- **A newer release** shows on Instance → Overview with a link to its notes, as a note from
+  `bogey doctor`, and next to the version in the console.
+
+Each release's notes on [GitHub Releases](https://github.com/0xethen/bogey/releases) are its section of
+`CHANGELOG.md`: what changed, a **Security** section when the release fixes a vulnerability (naming
+the affected versions and the advisory), and **Upgrade notes** when you need to do something.
+
+The checks are plain requests to GitHub's public API with no instance data; `updates.check: false`
+or `BOGEY_UPDATE_CHECK=false` turns them off ([configuration](../configuration.md)). If you turn them
+off, or nobody signs in as an instance admin for a while, watch the repository instead: **Watch →
+Custom → Releases** and **Security alerts** on GitHub, or subscribe to the
+[releases feed](https://github.com/0xethen/bogey/releases.atom).
+
+## How to upgrade
+
 How you upgrade depends on how you run Bogey.
 
 - **The published image** (the [all-in-one](all-in-one.md) compose, or the image with your own Supabase):
@@ -74,9 +99,7 @@ transaction. Both use the table the Supabase CLI keeps, so `supabase db push`
 and `bogey db migrate` agree about what's applied.
 
 Instance → Overview warns when the database is behind the app (or ahead of
-it), and `bogey doctor` does too when `DATABASE_URL` is set. It also says when
-a newer Bogey release is out, read from `upstream` in `bogey.config.ts`
-(Bogey's own repository unless you set another).
+it), and `bogey doctor` does too when `DATABASE_URL` is set.
 
 A database set up by hand (pasting the baseline into psql) has no record of
 what it applied. Once it matches the app, record that once:

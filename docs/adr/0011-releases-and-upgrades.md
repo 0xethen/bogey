@@ -39,6 +39,12 @@ after one, because a self-hoster's database can't be regenerated.
 - **No telemetry.** The update check (Instance → Overview, Instance →
   Plugins) is a plain request to the GitHub Releases API with no instance
   data. It can be turned off in `bogey.config.ts` or `.env`.
+- **Vulnerabilities are GitHub security advisories.** A fix ships as a release
+  whose changelog has a **Security** section, and an advisory on the repository
+  records the affected range (`>= 2.0.0, < 2.0.2`) and the patched version. The
+  update check also reads the published advisories, so an instance running an
+  affected version tells its admins (a banner on every page, `bogey doctor`,
+  the console) without Bogey knowing which instances exist. _(Added 2026-10-15.)_
 
 ## Consequences
 

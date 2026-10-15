@@ -1,4 +1,5 @@
 import {
+  Suspense,
   useEffect,
   useRef,
   useState,
@@ -6,7 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Await, createFileRoute } from "@tanstack/react-router";
 import { Badge } from "@bogey/ui/components/badge";
 import { cn } from "@bogey/ui/lib/utils";
 import {
@@ -17,15 +18,21 @@ import {
   ResizablePanelGroup,
 } from "@bogey/ui/components/resizable";
 import { useMediaQuery } from "@bogey/ui/hooks/media";
-import { IconAlertTriangle, IconLock, IconTerminal2 } from "@tabler/icons-react";
-import { consoleInfo } from "#/server/info.ts";
+import {
+  IconAlertTriangle,
+  IconLock,
+  IconShieldExclamation,
+  IconSparkles,
+  IconTerminal2,
+} from "@tabler/icons-react";
+import { consoleInfo, consoleRelease } from "#/server/info.ts";
 import { CommandPanel } from "#/components/command-panel.tsx";
 import { Screen, type CommandsToggle } from "#/components/screen.tsx";
 import { RunsProvider } from "#/lib/runs.tsx";
 import { TERMINAL_FLAG } from "#/lib/terminal-flag.ts";
 
 export const Route = createFileRoute("/")({
-  loader: () => consoleInfo(),
+  loader: async () => ({ ...(await consoleInfo()), release: consoleRelease() }),
   component: Console,
 });
 
@@ -129,8 +136,41 @@ function Panels({
   );
 }
 
+type ReleaseCheck = Awaited<ReturnType<typeof consoleRelease>>;
+
+function ReleaseBadges({ check }: { check: ReleaseCheck }) {
+  if (!check) return null;
+  const advisory = check.advisories[0];
+  if (advisory) {
+    const more = check.advisories.length - 1;
+    return (
+      <Badge
+        variant="destructive"
+        render={<a href={advisory.url} target="_blank" rel="noreferrer noopener" />}
+        title={check.advisories.map((each) => `${each.id}: ${each.summary}`).join("\n")}
+      >
+        <IconShieldExclamation data-icon="inline-start" />
+        {advisory.patched
+          ? `Security fix in v${advisory.patched}`
+          : `Security issue in v${check.current}`}
+        {more > 0 && ` (+${more})`}
+      </Badge>
+    );
+  }
+  if (!check.newer || !check.latest) return null;
+  return (
+    <Badge
+      variant="outline"
+      render={<a href={check.url} target="_blank" rel="noreferrer noopener" />}
+      title={`What changed in Bogey ${check.latest}`}
+    >
+      <IconSparkles data-icon="inline-start" />v{check.latest} is out
+    </Badge>
+  );
+}
+
 function Console() {
-  const { version, root, plugins, terminal } = Route.useLoaderData();
+  const { version, root, plugins, terminal, release } = Route.useLoaderData();
   const narrow = useMediaQuery("(max-width: 767px)");
   const orientation = narrow ? "vertical" : "horizontal";
   const mounted = useSyncExternalStore(
@@ -160,6 +200,9 @@ function Console() {
                   Terminal on
                 </Badge>
               )}
+              <Suspense fallback={null}>
+                <Await promise={release}>{(check) => <ReleaseBadges check={check} />}</Await>
+              </Suspense>
               {version && (
                 <Badge variant="secondary" title={`Bogey ${version}`}>
                   v{version}

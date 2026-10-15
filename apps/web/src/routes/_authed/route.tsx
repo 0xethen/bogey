@@ -8,6 +8,7 @@ import { rolesQueryOptions } from "@bogey/db/queries/roles";
 import { negotiateLocale } from "@bogey/utils/locale";
 import { localizationFn, localizationQueryOptions } from "#/lib/i18n.ts";
 import { CmdK } from "#/components/app/CmdK.tsx";
+import { SecurityNotice } from "#/components/app/SecurityNotice.tsx";
 import { SignOutDialog } from "#/components/app/SignOutDialog.tsx";
 import { AccountMenu } from "#/components/navigation/header/AccountMenu.tsx";
 import { NotificationBell } from "#/components/navigation/header/NotificationBell.tsx";
@@ -69,6 +70,7 @@ function RouteComponent() {
   const { session } = Route.useRouteContext();
   return (
     <AccessibilityPreferences>
+      <SecurityNotice platformAdmin={session.platformAdmin} />
       <OrgStatusNotice org={session.org} />
       <Outlet />
       <CmdK session={session} />

@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, test } from "vite-plus/test";
-import { addedChangelog, latestTag, runUpgrade } from "../../src/commands/upgrade.ts";
+import { addedChangelog, runUpgrade } from "../../src/commands/upgrade.ts";
+import { latestTag } from "../../src/lib/release-status.ts";
 import type { ProcessResult, Runner } from "../../src/lib/migrations.ts";
 
 let root: string;

@@ -187,3 +187,26 @@ and files lock when it's published and GitHub signs a release attestation. Check
 `gh release verify v<version>`.
 
 Nothing can be amended afterwards: a mistake is a new patch release.
+
+### Security releases
+
+Reports arrive as private advisories ([SECURITY.md](../SECURITY.md)). To ship a fix:
+
+1. In the advisory's draft, fill in **Affected products**: ecosystem _Other_, package `bogey`,
+   affected versions as a range (`>= 2.0.0, < 2.0.2`) and the patched version (`2.0.2`). Instances
+   read these fields: the affected range is how a running Bogey knows it's vulnerable, so write it
+   with `>=`, `>`, `<=`, `<` and `=`, separating the bounds with commas. Request a CVE there if you want one.
+2. Fix it in the advisory's temporary private fork and merge that, so the fix isn't public before the release.
+3. Under Unreleased in `CHANGELOG.md`, add a `### Security` section: one bullet per advisory with
+   what an operator should know, the affected versions and the advisory's link, for example
+   `- Org admins could read another organization's registrations. Affects 2.0.0 to 2.0.1. ([GHSA-xxxx-xxxx-xxxx](https://github.com/0xethen/bogey/security/advisories/GHSA-xxxx-xxxx-xxxx))`.
+   The link works once the advisory is published. Release notes come from this section, and the
+   release workflow adds "(security fix)" to the release's title when it has one.
+4. Cut the patch release (`vpr bogey release patch --push`).
+5. When the release is published, publish the advisory. From then on, every instance running an
+   affected version shows it to its admins, `bogey doctor` fails, and the console shows it.
+
+An advisory reaches instances only once it's published, and is read from the `upstream`
+repository in their `bogey.config.ts`. An advisory can list more than one affected range (one
+**Affected products** entry each); a version in any of them counts as affected. A range Bogey
+can't read (`~2.0`, prose) is skipped rather than guessed at, so stick to the forms in step 1.

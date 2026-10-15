@@ -11,9 +11,10 @@ import { runPlugins } from "./plugins.ts";
 import { runDoctor } from "./doctor.ts";
 import { runEmail } from "./email.ts";
 import { runThemes } from "./themes.ts";
-import { compareVersions, parseRepository } from "@bogey/plugins/api";
+import { parseRepository } from "@bogey/plugins/api";
 import { upstream } from "@bogey/config";
 import { verifyRelease } from "../lib/attestation.ts";
+import { latestTag } from "../lib/release-status.ts";
 import type { CliResult } from "../cli.ts";
 
 export const USAGE = `bogey upgrade [--to <tag> | --pre | --branch <name>] [--remote upstream]
@@ -53,36 +54,6 @@ function result(status: number | null, stdout: string, stderr: string) {
       .join("\n")
       .trim(),
   };
-}
-
-export function compareSemver(a: string, b: string): number {
-  const [coreA = "", preA] = a.split("-", 2);
-  const [coreB = "", preB] = b.split("-", 2);
-  const byCore = compareVersions(coreA, coreB);
-  if (byCore !== 0) return byCore;
-  if (preA === undefined || preB === undefined) {
-    return preA === preB ? 0 : preA === undefined ? 1 : -1;
-  }
-  const partsA = preA.split(".");
-  const partsB = preB.split(".");
-  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
-    const x = partsA[i];
-    const y = partsB[i];
-    if (x === undefined || y === undefined) return x === undefined ? -1 : 1;
-    const numeric = /^\d+$/.test(x) && /^\d+$/.test(y);
-    const order = numeric ? Number(x) - Number(y) : x.localeCompare(y);
-    if (order !== 0) return order > 0 ? 1 : -1;
-  }
-  return 0;
-}
-
-export function latestTag(tags: Tuple<string>, prerelease: boolean): string | null {
-  const versions = tags
-    .map((tag) => ({ tag, version: /^v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(tag)?.[1] }))
-    .filter((entry): entry is { tag: string; version: string } => entry.version !== undefined)
-    .filter((entry) => prerelease || !entry.version.includes("-"));
-  versions.sort((a, b) => compareSemver(b.version, a.version));
-  return versions[0]?.tag ?? null;
 }
 
 export function addedChangelog(diff: string): string {
@@ -237,7 +208,7 @@ export async function runUpgrade(
     {
       title: "bogey doctor",
       run: async () => {
-        const doctor = runDoctor(root);
+        const doctor = await runDoctor(root);
         return { ok: doctor.exitCode === 0, output: doctor.output };
       },
     },

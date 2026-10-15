@@ -31,4 +31,19 @@ Releases are immutable and attested; see
 ## Supported versions
 
 The latest release gets security fixes. Instances follow release tags, so
-upgrading is `bogey upgrade`.
+upgrading is pulling the new image, or `bogey upgrade` for a fork (see
+[Upgrading](docs/self-hosting/upgrading.md)).
+
+## How a fix reaches you
+
+A fix ships as a patch release, and the vulnerability is published as a
+[GitHub security advisory](https://github.com/0xethen/bogey/security/advisories)
+naming the affected versions and the release that fixes them. The release's
+notes (its `CHANGELOG.md` section) have a **Security** section that links the
+advisory.
+
+A running instance reads the published advisories. While the version it runs is
+affected, instance admins see a banner on every page, `bogey doctor` fails, and
+the operator console shows it. See
+[Knowing when to upgrade](docs/self-hosting/upgrading.md#knowing-when-to-upgrade),
+including what to watch if you turned the update check off.
