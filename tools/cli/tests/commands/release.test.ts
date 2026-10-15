@@ -5,6 +5,7 @@ import { beforeEach, expect, test } from "vite-plus/test";
 import {
   changelogSection,
   nextVersion,
+  notesDrift,
   runRelease,
   stampChangelog,
   touchesUpgradeSurface,
@@ -218,4 +219,9 @@ test("a release that changes the database must have Upgrade notes", () => {
 test("the first release has nothing to upgrade from", () => {
   const { run } = fake({ "git describe": { status: 128 } });
   expect(upgradeNotesProblem(root, "HEAD", "HEAD", "- First.", run)).toBeNull();
+});
+
+test("notes drift ignores line endings and trailing space, and shows what differs", () => {
+  expect(notesDrift("- A.\n- B.", "- A. \r\n- B.\r\n")).toBeNull();
+  expect(notesDrift("- A.\n- B.", "- A.\n- C.")).toBe("- - C.\n+ - B.");
 });

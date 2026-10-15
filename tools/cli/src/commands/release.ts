@@ -9,6 +9,7 @@ import type { CliResult } from "../cli.ts";
 export const USAGE = `bogey release [patch | minor | major | pre | <version>] [--pre <id>]
               [--push] [--skip-checks] [--no-freeze] [--dry-run]
 bogey release check <tag>
+bogey release sync <tag> [--yes]
 
 Releases Bogey from main, in order:
 
@@ -29,7 +30,12 @@ prerelease number (0.2.0-beta.0 → 0.2.0-beta.1). Without a version it asks.
 
 \`bogey release check <tag>\` checks a tag is releasable: its package.json
 version and CHANGELOG.md section match (with Upgrade notes where the rule above asks). The pre-push hook and the release
-workflow run it, so a mismatched tag never reaches GitHub.`;
+workflow run it, so a mismatched tag never reaches GitHub.
+
+\`bogey release sync <tag>\` compares the GitHub release's notes with that version's
+CHANGELOG.md section (the local file is the source of truth) and, when they differ,
+shows the difference and asks before overwriting them (--yes overwrites without asking).
+It needs the gh CLI, signed in.`;
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/;
 
@@ -78,6 +84,72 @@ export function changelogSection(changelog: string, version: string): string {
     "m",
   ).exec(changelog);
   return match?.[2]?.trim() ?? "";
+}
+
+function normalizeNotes(text: string): string {
+  return text
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .trim();
+}
+
+export function notesDrift(local: string, remote: string): string | null {
+  const want = normalizeNotes(local);
+  const have = normalizeNotes(remote);
+  if (want === have) return null;
+  const wantLines = want.split("\n");
+  const haveLines = have.split("\n");
+  const removed = haveLines.filter((line) => !wantLines.includes(line));
+  const added = wantLines.filter((line) => !haveLines.includes(line));
+  return [...removed.map((line) => `- ${line}`), ...added.map((line) => `+ ${line}`)].join("\n");
+}
+
+async function syncNotes(
+  root: string,
+  tag: string,
+  yes: boolean,
+  prompter: Prompter | null,
+  run: Runner,
+): Promise<CliResult> {
+  const version = /^v(.+)$/.exec(tag)?.[1];
+  if (!version || !SEMVER.test(version)) {
+    return { exitCode: 1, output: `bogey release: ${tag} isn't v<major>.<minor>.<patch>.` };
+  }
+  const local = changelogSection(readFileSync(join(root, "CHANGELOG.md"), "utf-8"), version);
+  if (!local) {
+    return {
+      exitCode: 1,
+      output: `bogey release: CHANGELOG.md has no entries under "## ${version}".`,
+    };
+  }
+  const view = run("gh", ["release", "view", tag, "--json", "body", "--jq", ".body"]);
+  if (view.status !== 0) {
+    return {
+      exitCode: 1,
+      output: `bogey release: couldn't read the ${tag} release (is gh installed and signed in, and is it published?)\n${view.stderr.trim()}`,
+    };
+  }
+  const drift = notesDrift(local, view.stdout);
+  if (!drift) return { exitCode: 0, output: `${tag}'s GitHub notes match CHANGELOG.md.` };
+  const proceed =
+    yes ||
+    (prompter !== null &&
+      (await prompter.confirm({
+        message: `${tag}'s GitHub notes differ from CHANGELOG.md:\n${drift}\nOverwrite them?`,
+      })));
+  if (!proceed) {
+    return {
+      exitCode: 0,
+      output: `${tag}'s GitHub notes differ from CHANGELOG.md:\n${drift}\n\nLeft as they were.`,
+    };
+  }
+  const edit = run("gh", ["release", "edit", tag, "--notes-file", "-"], `${local}\n`);
+  if (edit.status !== 0) {
+    return { exitCode: 1, output: `bogey release: couldn't update ${tag}\n${edit.stderr.trim()}` };
+  }
+  return { exitCode: 0, output: `✓ ${tag}'s GitHub notes now match CHANGELOG.md.` };
 }
 
 const UPGRADE_NOTES = /upgrade notes/i;
@@ -194,6 +266,12 @@ export async function runRelease(
           output: `bogey release: ${tag} can't be released:\n  ✗ ${problems.join("\n  ✗ ")}`,
         }
       : { exitCode: 0, output: `${tag} is ready to release.` };
+  }
+
+  if (positional[0] === "sync") {
+    const tag = positional[1];
+    if (!tag) return { exitCode: 1, output: "bogey release sync <tag> [--yes]" };
+    return syncNotes(root, tag, flags.yes === true, prompter, run);
   }
 
   const packagePath = join(root, "package.json");
