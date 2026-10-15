@@ -67,7 +67,7 @@ describe("what the hook renders", () => {
   test("uses Bogey's templates and layout when nothing is set", () => {
     const context = emailContext(null, []);
     const mail = renderAuthEmail(context, "signIn", { ...values, origin: "https://acme.test" });
-    expect(mail.subject).toBe("Your Example Org sign-in link");
+    expect(mail.subject).toBe("Your Example Organization sign-in link");
     expect(mail.html).toContain("482913");
     expect(mail.html).toContain("https://acme.test/auth/confirm?x=1");
     expect(mail.html).toContain("Sent by");
