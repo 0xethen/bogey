@@ -117,5 +117,7 @@ jobs:
         run: |
           flags=""
           case "$GITHUB_REF_NAME" in *-*) flags="--prerelease" ;; esac
-          gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --notes-file notes.md $flags bogey-*.tar.gz
+          title="$GITHUB_REF_NAME"
+          if grep -q '^### Security' notes.md; then title="$title (security fix)"; fi
+          gh release create "$GITHUB_REF_NAME" --draft --title "$title" --notes-file notes.md $flags bogey-*.tar.gz
           gh release edit "$GITHUB_REF_NAME" --draft=false

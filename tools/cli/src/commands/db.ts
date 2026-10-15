@@ -163,10 +163,10 @@ export function runDb(
         return {
           exitCode: 0,
           output: [
-            "Regenerated the setting defaults and notification kinds in supabase/schemas.",
-            `The baseline migration shipped in ${released}, so it stays as-is.`,
-            "Put the schema change in a new migration instead: bogey db migration <name>.",
-            "See docs/contributing.md#changing-the-schema.",
+            "baseline: Regenerated the setting defaults and notification kinds in supabase/schemas.",
+            `baseline: The baseline migration shipped in ${released}, so it stays as-is.`,
+            "baseline: Put the schema change in a new migration instead: bogey db migration <name>.",
+            "baseline: See docs/contributing.md#changing-the-schema.",
           ].join("\n"),
         };
       }
