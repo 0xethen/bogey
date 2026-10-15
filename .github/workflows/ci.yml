@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: voidzero-dev/setup-vp@v1.21.1
+      - uses: voidzero-dev/setup-vp@v1.21.2
         with:
           node-version: "22"
           cache: true
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: voidzero-dev/setup-vp@v1.21.1
+      - uses: voidzero-dev/setup-vp@v1.21.2
         with:
           node-version: "22"
           cache: true
@@ -68,7 +68,7 @@ jobs:
       - name: no release yet
         if: steps.release.outputs.tag == ''
         run: echo "No release tag yet, so there's nothing to upgrade from."
-      - uses: voidzero-dev/setup-vp@v1.21.1
+      - uses: voidzero-dev/setup-vp@v1.21.2
         if: steps.release.outputs.tag != ''
         with:
           node-version: "22"
