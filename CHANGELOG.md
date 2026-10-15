@@ -12,6 +12,11 @@ advisory (see docs/contributing.md#security-releases). -->
 
 - Fixed the all-in-one `auth` service exiting at startup (`only localhost, 127.0.0.1, and ::1 are supported with http`): GoTrue refuses plain-http hook URLs to other hosts, so the Send Email hook now calls `web` through the `host.docker.internal` alias. Replace `compose.yml` with the one from this release's `bogey-all-in-one` tarball.
 
+### Upgrade notes
+
+- No database changes. Only the example fallback email templates in `supabase/templates` were regenerated (they now say "Example Organization"); instances using the Send Email hook aren't affected.
+- All-in-one: replace `compose.yml` with the one from `bogey-all-in-one-<version>.tar.gz`, then `docker compose up -d`.
+
 ## 2.1.1 (2026-10-15)
 
 - Fixed the all-in-one `compose.yml` failing to load (`services.realtime.healthcheck.test.1 must be a string`): the Realtime healthcheck is now quoted. Run `bogey setup --all-in-one` again (from the new image) to get the fixed file; your `.env` and secrets are kept.
