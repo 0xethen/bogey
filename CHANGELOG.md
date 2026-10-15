@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.1.0 (2026-10-15)
+
 - `bogey release sync <tag>` compares a GitHub release's notes with that version's section in `CHANGELOG.md` and, after showing the difference, overwrites them (`--yes` skips the question).
 - Plugins can put a captcha on the sign-in forms with the new `authCaptcha` slot. The `captcha` plugin adds Cloudflare Turnstile or hCaptcha; Supabase Auth checks the token, so turn on its captcha protection after the plugin is set up. Check it out at [0xethen/bogeyx](https://github.com/0xethen/bogeyx)
 - The Bogey Plugins repo ([0xethen/bogeyx](https://github.com/0xethen/bogeyx)) is now a Vite+ project, making it easier to link it directly in your project and getting rid of duplicate dependencies. Also some miscellanious changes to plugins
