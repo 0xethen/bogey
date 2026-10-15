@@ -119,3 +119,25 @@ test("a folder that doesn't exist is refused", () => {
   const result = linkPluginFolder(root, join(folder, "nope"));
   expect(result.ok).toBe(false);
 });
+
+test("a package keeps its node_modules and tsconfig; links fill in only what it doesn't install", () => {
+  writeFileSync(
+    join(folder, "package.json"),
+    JSON.stringify({ devDependencies: { react: "1.0.0" } }),
+  );
+  writeFileSync(join(folder, "tsconfig.json"), "{}\n");
+  const modules = join(folder, "node_modules");
+  mkdirSync(join(modules, ".pnpm"), { recursive: true });
+  mkdirSync(join(modules, "react"));
+  writeFileSync(join(modules, "react", "own.js"), "// the package's react\n");
+
+  expect(linkPluginFolder(root, folder).ok).toBe(true);
+  expect(existsSync(join(modules, ".pnpm"))).toBe(true);
+  expect(existsSync(join(modules, "react", "own.js"))).toBe(true);
+  expect(existsSync(join(modules, "@bogey", "ui"))).toBe(true);
+  expect(realpathSync(join(modules, "@bogey", "plugins"))).toBe(
+    realpathSync(join(root, "packages", "plugins")),
+  );
+  expect(readFileSync(join(folder, "tsconfig.json"), "utf-8")).toBe("{}\n");
+  expect(linkPluginFolder(root, folder).ok).toBe(true);
+});

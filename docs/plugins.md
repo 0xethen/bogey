@@ -30,7 +30,7 @@ cd monorepo && bogey plugins link ../plugins
 
 That makes `installed` a symlink to the checkout's `plugins/` folder (or to the folder itself when it has none), and gives the folder a `node_modules` of links to
 the plugins package's dependencies and to `@bogey/plugins` itself, since a plugin outside the
-monorepo couldn't otherwise resolve its imports. It also writes a `tsconfig.json` there if none exists (an existing one is left alone; delete it and link again to regenerate). A folder in `plugins/plugins/` is then picked up like
+monorepo couldn't otherwise resolve its imports. When the folder is a package (it has a `package.json`, as bogeyx does), the links go into its own `node_modules` beside what it installs, skipping anything it depends on itself, and its `tsconfig.json` is left alone; otherwise the command writes a `tsconfig.json` if none exists (delete it and link again to regenerate). A folder in `plugins/plugins/` is then picked up like
 any installed plugin (dot-folders are skipped). `bogey plugins add` writes into
 the linked folder, and the Docker build ignores the link and restores plugins from
 `bogey.plugins.lock` instead.
@@ -54,7 +54,7 @@ full then), and libraries that can't be read are reported and skipped. A library
 app's privileges, so add only ones you trust; everything below still applies to what it publishes.
 
 Both files have JSON Schemas (`bogey plugins schema` for `index.json`, `bogey plugins schema libraries` for
-`bogey.libraries.json`); the plugins repository's `build-index.mjs` writes `index.json`, so a library of your own is a
+`bogey.libraries.json`); the plugins repository's `scripts/index.ts` writes `index.json`, so a library of your own is a
 repository with that script (or the same shape by hand), plugins in `plugins/<key>/`, and the release workflow.
 
 This downloads the release tagged `<plugin>-v<version>` from that repository
