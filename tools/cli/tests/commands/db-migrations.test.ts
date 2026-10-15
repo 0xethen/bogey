@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
@@ -67,7 +67,12 @@ test("before a release, migrations go into the baseline", () => {
 
 test("freezing stops baseline rebuilds and starts append-only migrations", () => {
   expect(runDb(root, ["freeze", "v1.0.0"]).exitCode).toBe(0);
-  expect(runDb(root, ["baseline"]).output).toContain("shipped in v1.0.0");
+  const baseline = runDb(root, ["baseline"]);
+  expect(baseline.output).toContain("shipped in v1.0.0");
+  expect(baseline.output).toContain("docs/contributing.md#changing-the-schema");
+  expect(readFileSync(join(migrations(), "20260924000000_baseline.sql"), "utf-8")).toBe(
+    "select 1;",
+  );
 
   const result = runDb(root, ["migration", "Add Judges!"], () => {}, fakePsql([]).run, at);
   expect(result.exitCode).toBe(0);

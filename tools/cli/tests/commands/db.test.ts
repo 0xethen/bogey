@@ -36,9 +36,9 @@ test("studio opens the Studio URL rather than spawning a real browser", () => {
   expect(result.output).toContain("http://127.0.0.1:54323");
 });
 
-test("the committed baseline migration matches supabase/schemas", () => {
+test("the committed baseline and generated schema files are current", () => {
   const result = runDb(cliDir, ["baseline", "--check"]);
 
-  expect(result.output).toBe("Baseline migration is up to date.");
+  expect(result.output).toMatch(/up to date/);
   expect(result.exitCode).toBe(0);
 });

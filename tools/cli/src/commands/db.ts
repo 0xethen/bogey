@@ -33,8 +33,8 @@ export const USAGE = `bogey db <subcommand>
   bogey db studio              Open Supabase Studio in a browser
   bogey db baseline [--check]  Build supabase/migrations/${BASELINE_NAME} from
                                supabase/schemas, after regenerating the setting
-                               defaults and notification kinds (--check: fail if either is stale).
-                               Refused once a release has shipped it.
+                               defaults and notification kinds (--check: fail if any is stale).
+                               Once a release has shipped the baseline, only regenerates those two
   bogey db freeze <version>    Mark the baseline as shipped in <version>; from then on
                                schema changes are new migrations
   bogey db migration <name>    Add supabase/migrations/<timestamp>_<name>.sql, from
@@ -137,28 +137,41 @@ export function runDb(
 
     case "baseline": {
       const path = join(root, "supabase", "migrations", BASELINE_NAME);
+      const released = releasedVersion(root);
 
       if (args.includes("--check")) {
+        const generatedCurrent = !settingDefaultsStale(root) && !notificationKindsStale(root);
+        // a shipped baseline is frozen, so supabase/schemas moves ahead of it through migrations
+        if (released) {
+          return generatedCurrent
+            ? {
+                exitCode: 0,
+                output: `Generated schema files are up to date (the baseline is frozen at ${released}).`,
+              }
+            : { exitCode: 1, output: "Generated schema files are stale: run `bogey db baseline`." };
+        }
         const current = existsSync(path) ? readFileSync(path, "utf-8") : "";
-        return !settingDefaultsStale(root) &&
-          !notificationKindsStale(root) &&
-          current === buildBaseline(root)
+        return generatedCurrent && current === buildBaseline(root)
           ? { exitCode: 0, output: "Baseline migration is up to date." }
           : { exitCode: 1, output: "Baseline migration is stale: run `bogey db baseline`." };
       }
 
-      const released = releasedVersion(root);
+      writeSettingDefaults(root);
+      writeNotificationKinds(root);
+
       if (released) {
         return {
-          exitCode: 1,
-          output: `The baseline shipped in ${released}, so it can't change. Add a migration: bogey db migration <name>.`,
+          exitCode: 0,
+          output: [
+            "Regenerated the setting defaults and notification kinds in supabase/schemas.",
+            `The baseline migration shipped in ${released}, so it stays as-is.`,
+            "Put the schema change in a new migration instead: bogey db migration <name>.",
+            "See docs/contributing.md#changing-the-schema.",
+          ].join("\n"),
         };
       }
 
-      writeSettingDefaults(root);
-      writeNotificationKinds(root);
       const built = buildBaseline(root);
-
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, built);
       return { exitCode: 0, output: `Wrote supabase/migrations/${BASELINE_NAME}.` };

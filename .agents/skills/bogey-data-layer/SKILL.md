@@ -42,8 +42,10 @@ description: Bogey (hackathon platform) database and packages/db conventions —
      table stays; say so rather than dropping it by hand.
   2. Run the pgTAP suites.
   3. Regenerate types (`vpr bogey types --db-url ...`, from any database with the
-     current schema; never by hand, CI checks it; `docs/contributing.md#generating-types`)
-     and the baseline (`vpr bogey db baseline`, offline).
+     current schema; never by hand, CI checks it; `docs/contributing.md#generating-types`).
+  4. If `supabase/RELEASED` exists (a release has shipped), add a migration
+     (`vpr bogey db migration <name>`); otherwise rebuild the baseline
+     (`vpr bogey db baseline`, offline).
 - Schema-file `do` blocks must stay rerunnable, or `repair` breaks.
 
 ## Permissions (`packages/db/src/permissions.tsx`)
