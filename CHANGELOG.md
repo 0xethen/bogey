@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.1.1 (2026-10-15)
+
 - Fixed the all-in-one `compose.yml` failing to load (`services.realtime.healthcheck.test.1 must be a string`): the Realtime healthcheck is now quoted. Run `bogey setup --all-in-one` again (from the new image) to get the fixed file; your `.env` and secrets are kept.
 - `bogey setup --all-in-one` run from the image no longer tells you to `cd /out`; it says to run `docker compose up -d` in the folder you mounted.
 
