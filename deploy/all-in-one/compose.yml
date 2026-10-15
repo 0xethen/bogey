@@ -77,7 +77,8 @@ services:
       GOTRUE_HOOK_BEFORE_USER_CREATED_ENABLED: "true"
       GOTRUE_HOOK_BEFORE_USER_CREATED_URI: pg-functions://postgres/private/before_user_created
       GOTRUE_HOOK_SEND_EMAIL_ENABLED: "true"
-      GOTRUE_HOOK_SEND_EMAIL_URI: http://web:3000/api/auth/send-email
+      # GoTrue only allows http hooks on localhost or host.docker.internal; web carries that alias
+      GOTRUE_HOOK_SEND_EMAIL_URI: http://host.docker.internal:3000/api/auth/send-email
       GOTRUE_HOOK_SEND_EMAIL_SECRETS: ${SEND_EMAIL_HOOK_SECRET}
       GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
       GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"
@@ -275,6 +276,10 @@ services:
       SEND_EMAIL_HOOK_SECRET: ${SEND_EMAIL_HOOK_SECRET}
     volumes:
       - ./bogey.config.ts:/app/bogey.config.ts:ro
+    networks:
+      default:
+        aliases:
+          - host.docker.internal
 
   caddy:
     image: caddy:2
