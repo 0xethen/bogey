@@ -196,7 +196,10 @@ async function runAllInOne(
   lines.push(
     "",
     "Next:",
-    `  cd ${out} && docker compose up -d`,
+    // in the image, `out` is the mount point, not a host path
+    existsSync("/.dockerenv")
+      ? "  docker compose up -d   (in the folder you mounted)"
+      : `  cd ${out} && docker compose up -d`,
     '  docker compose exec web bogey org init --org <slug> --name "<Name>" --owner <you@example.org> --host ' +
       (hosts[0] ?? ""),
   );
