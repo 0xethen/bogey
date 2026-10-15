@@ -113,10 +113,7 @@ test("it asks for the version and before pushing", async () => {
   const { run, calls } = fake();
   const result = await runRelease(root, ["--skip-checks"], prompter, run, at);
   expect(result.exitCode).toBe(0);
-  expect(asked).toEqual([
-    "Release which version? (now 0.1.0)",
-    "Push main and v0.1.1 to origin? That publishes it.",
-  ]);
+  expect(asked).toEqual(["Release which version? (now 0.1.0)", "Push main and v0.1.1 to origin?"]);
   expect(calls.some((call) => call.startsWith("git push"))).toBe(false);
 });
 

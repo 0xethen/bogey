@@ -387,8 +387,7 @@ export async function runRelease(
 
   const push =
     flags.push === true ||
-    (prompter !== null &&
-      (await prompter.confirm({ message: `Push main and ${tag} to origin? That publishes it.` })));
+    (prompter !== null && (await prompter.confirm({ message: `Push main and ${tag} to origin?` })));
   if (!push) {
     log.push(
       "",
