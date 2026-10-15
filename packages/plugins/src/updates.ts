@@ -34,7 +34,7 @@ export const httpFetcher: Fetcher = async (url, init) => {
   };
 };
 
-const COMPARABLE = /^\d+\.\d+(\.\d+)?([-+][0-9A-Za-z.-]+)*$/;
+const COMPARABLE = /^\d+\.\d+(\.\d+)?(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/;
 
 const GITHUB_HEADERS = {
   accept: "application/vnd.github+json",
@@ -87,7 +87,7 @@ export async function fetchLatestVersion(
     return { error: `couldn't reach GitHub (${String(error)})` };
   }
 
-  const directory = manifest.source.directory?.replace(/^\/+|\/+$/g, "");
+  const directory = manifest.source.directory?.split("/").filter(Boolean).join("/");
   const path = directory ? `${directory}/manifest.ts` : "manifest.ts";
 
   for (const branch of ["main", "master"]) {

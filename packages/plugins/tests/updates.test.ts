@@ -59,7 +59,7 @@ describe("fetchLatestVersion", () => {
   test("looks in the plugin's sub-directory for a monorepo", async () => {
     let requested = "";
     const handler: Fetcher = async (url) => {
-      if (url.includes("raw.githubusercontent.com")) requested = url;
+      if (new URL(url).hostname === "raw.githubusercontent.com") requested = url;
       return {
         ok: url.includes("raw."),
         status: url.includes("raw.") ? 200 : 404,

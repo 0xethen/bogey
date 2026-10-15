@@ -142,14 +142,15 @@ export function namedObjectsIn(files: Tuple<PluginMigration>): NamedObject[] {
 }
 
 export function quote(text: string): string {
-  return `'${text.replace(/'/g, "''")}'`;
+  const body = text.replace(/'/g, "''");
+  return text.includes("\\") ? `E'${body.replace(/\\/g, "\\\\")}'` : `'${body}'`;
 }
 
 export function adoptStatement(plugin: string, objects: Tuple<NamedObject> | null): string {
   if (objects) {
     return `create temp table bogey_adopted on commit drop as select * from private.plugin_adopt(${quote(plugin)}, ${quote(JSON.stringify(objects))}::jsonb) a(line);`;
   }
-  const prefix = `${plugin.replace(/-/g, "_")}_`.replace(/_/g, "\\_");
+  const prefix = `${plugin.replace(/-/g, "_")}_`.replace(/[\\_]/g, "\\$&");
   const like = quote(`${prefix}%`);
   return `create temp table bogey_adopted on commit drop as select * from private.plugin_adopt(${quote(plugin)}, (
   select coalesce(jsonb_agg(o), '[]') from (
@@ -174,7 +175,7 @@ export function adoptStatement(plugin: string, objects: Tuple<NamedObject> | nul
     where not t.tgisinternal and t.tgname like ${like}
     union all
     select 'cron job', null, j.jobname, null from cron.job j
-    where j.jobname = ${quote(`bogey-${plugin}`)} or j.jobname like ${quote(`bogey-${plugin}-%`.replace(/_/g, "\\_"))}
+    where j.jobname = ${quote(`bogey-${plugin}`)} or j.jobname like ${quote(`bogey-${plugin}-%`.replace(/[\\_]/g, "\\$&"))}
     union all
     select 'storage bucket', null, b.id, null from storage.buckets b where b.id = ${quote(plugin)}
   ) o)) a(line);`;

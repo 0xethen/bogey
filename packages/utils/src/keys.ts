@@ -6,7 +6,7 @@ export const SNAKE_KEBAB = /^[a-z][a-z0-9_]*(-[a-z0-9_]+)*$/;
 
 export const NAMESPACED_KEY = /^[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
-export const SEMVER = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)*$/;
+export const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

@@ -6,7 +6,7 @@ test("times are UTC without separators", () => {
 });
 
 test("text escapes the characters iCalendar reserves", () => {
-  expect(escapeText("a, b; c\\d\nnext")).toBe("a\\, b; c\\\\d\\nnext");
+  expect(escapeText("a, b; c\\d\nnext")).toBe("a\\, b\\; c\\\\d\\nnext");
 });
 
 test("long lines fold at 75 octets and unfold to the original", () => {

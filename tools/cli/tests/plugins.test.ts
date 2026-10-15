@@ -360,7 +360,7 @@ test("remove clears what a deleted plugin left, finding it by name when there's 
   );
   expect(result.exitCode).toBe(0);
   const removal = scripts.find((script) => script.includes("plugin_remove('discord')")) ?? "";
-  expect(removal).toContain("discord\\_%");
+  expect(removal).toContain("discord\\\\_%");
   expect(removal).toContain("'bogey-discord'");
 });
 

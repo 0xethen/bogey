@@ -19,7 +19,7 @@ export function invocation(
 export function withInvocation(text: string, prefix: string, commands: Tuple<Suggestable>): string {
   if (prefix === "bogey") return text;
   const names = [...commands.map((entry) => entry.name), "<command>"]
-    .map((name) => name.replace(/[<>]/g, "\\$&"))
+    .map((name) => name.replace(/[\\<>]/g, "\\$&"))
     .join("|");
   const pattern = new RegExp(`(?<![\\w@/.-])bogey (?=(?:${names})(?![\\w:-]))`, "g");
   return text.replace(pattern, prefix ? `${prefix} ` : "");

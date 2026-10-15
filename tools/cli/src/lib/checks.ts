@@ -4,7 +4,7 @@ export interface ConsistencyIssue {
 }
 
 function readTomlBoolean(content: string, section: string, key: string): boolean | undefined {
-  const sectionRe = new RegExp(`^\\[${section.replace(/\./g, "\\.")}\\]\\s*$`, "m");
+  const sectionRe = new RegExp(`^\\[${section.replace(/[\\.]/g, "\\$&")}\\]\\s*$`, "m");
   const sectionMatch = sectionRe.exec(content);
   if (!sectionMatch) return undefined;
 

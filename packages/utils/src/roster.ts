@@ -4,7 +4,7 @@ import { sayEnglish, type Say } from "./messages.ts";
 export type RosterRole = "participant" | "judge" | "staff" | "organizer";
 const ROLES: Tuple<RosterRole> = ["participant", "judge", "staff", "organizer"];
 
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const EMAIL = /^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$/;
 export const isEmail = (text: string) => EMAIL.test(text.trim());
 
 export interface TableRow {
