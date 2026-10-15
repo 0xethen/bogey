@@ -82,7 +82,14 @@ function RouteComponent() {
             vpr bogey plugins add github:&lt;owner&gt;/&lt;repo&gt;/&lt;plugin&gt;@&lt;version&gt;
           </code>
           {t("adminExt.noneOr")} <code>vpr bogey plugins new &lt;key&gt;</code>.{" "}
-          {t("adminExt.noneSee")}
+          <a
+            href="https://github.com/0xethen/bogey/wiki/plugins"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="link"
+          >
+            {t("adminExt.noneLink")}
+          </a>
         </p>
       ) : (
         <DisclosureList>

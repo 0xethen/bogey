@@ -12,7 +12,14 @@ import {
 import { loadConfig } from "@bogey/config/load";
 import { imageHome } from "../lib/image.ts";
 import { findRepoRoot } from "../lib/repo-root.ts";
-import { databaseUrl, hostOf, readEnv, serviceCredentials } from "../lib/credentials.ts";
+import {
+  databaseUrl,
+  hostOf,
+  readEnv,
+  serviceCredentials,
+  type Credentials,
+} from "../lib/credentials.ts";
+import type { OperatorSettings } from "@bogey/config/resolve";
 import { remoteChecks } from "../lib/remote-checks.ts";
 import { lockProblems } from "../lib/plugin-install.ts";
 import {
@@ -23,8 +30,11 @@ import {
   type Runner,
 } from "../lib/migrations.ts";
 import { describeDrift, schemaDrift } from "../lib/repair.ts";
+import { describeRelease, releaseCheck } from "../lib/release-status.ts";
+import { httpFetcher, type Fetcher } from "@bogey/plugins/updates";
 import { bundledPluginKeys, pluginDir, pluginFolders } from "../lib/plugin-dirs.ts";
 import { changedNotice, pluginMigrationState } from "./plugins.ts";
+import { operatorDrift } from "./config.ts";
 import type { CliResult } from "../cli.ts";
 
 export const USAGE = `bogey doctor [--remote]
@@ -33,12 +43,14 @@ Checks that this instance is wired up: bogey.config.ts reads and is valid (BOGEY
 names another file), the sign-up hook in supabase/config.toml
 (and, when GOTRUE_* variables are set, the self-hosted equivalent), .env
 safety, that disabled plugins are installed, and, when DATABASE_URL is set (environment or .env),
-that the database has applied every migration (needs psql). Exits non-zero on
-any issue.
+that the database has applied every migration (needs psql). It also asks GitHub whether a
+security advisory names this version (an issue) and whether a newer release is out (a note),
+unless update checks are off. Exits non-zero on any issue.
 
   --remote   Also check the project .env points at, through its API with the service key:
              sign-ups and auto-confirm, that the schema is applied and an organization exists,
-             the app address, and whether mail has gone through the Send Email hook. With
+             the app address, whether the keys only bogey.config.ts sets match the database,
+             and whether mail has gone through the Send Email hook. With
              SUPABASE_ACCESS_TOKEN (a Management API token, Supabase Cloud only) it reads the
              dashboard's hook, OTP length and authenticator-app settings too.`;
 
@@ -158,18 +170,44 @@ function report(issues: Tuple<ConsistencyIssue>, notes: Tuple<string> = []): Cli
   };
 }
 
-export function runDoctor(cwd: string, run: Runner = spawnRunner): CliResult {
-  return report(busy("Check this instance", () => localIssues(cwd, run)));
+async function releaseFindings(
+  cwd: string,
+  releases: Fetcher | null,
+): Promise<{ issues: ConsistencyIssue[]; notes: string[] }> {
+  if (!releases) return { issues: [], notes: [] };
+  const check = await step("Check for releases and advisories", () =>
+    releaseCheck(findRepoRoot(cwd), releases),
+  );
+  if (!check) return { issues: [], notes: [] };
+  const notices = describeRelease(check);
+  return {
+    issues: notices.advisories.map((message) => ({ message })),
+    notes: notices.newer ? [notices.newer] : [],
+  };
+}
+
+/** `releases: null` skips asking GitHub about releases and advisories. */
+export async function runDoctor(
+  cwd: string,
+  run: Runner = spawnRunner,
+  releases: Fetcher | null = httpFetcher,
+): Promise<CliResult> {
+  const issues = busy("Check this instance", () => localIssues(cwd, run));
+  const release = await releaseFindings(cwd, releases);
+  return report([...issues, ...release.issues], release.notes);
 }
 
 export async function runDoctorRemote(
   cwd: string,
   run: Runner = spawnRunner,
   fetcher: typeof fetch = fetch,
+  releases: Fetcher | null = httpFetcher,
 ): Promise<CliResult> {
   const issues = step("Check this checkout", () => localIssues(cwd, run));
+  const release = await releaseFindings(cwd, releases);
+  issues.push(...release.issues);
   const resolved = serviceCredentials(cwd);
-  if (!resolved.ok) return report([...issues, { message: resolved.error }]);
+  if (!resolved.ok) return report([...issues, { message: resolved.error }], release.notes);
   const root = findRepoRoot(cwd);
   const env = readEnv(join(root, ".env"));
   const remote = await step(`Check ${hostOf(resolved.credentials.url)}`, () =>
@@ -180,5 +218,21 @@ export async function runDoctorRemote(
       fetcher,
     }),
   );
-  return report([...issues, ...remote.issues], remote.notes);
+  issues.push(...(await operatorIssues(resolved.credentials, root)));
+  return report([...issues, ...remote.issues], [...release.notes, ...remote.notes]);
+}
+
+async function operatorIssues(credentials: Credentials, root: string): Promise<ConsistencyIssue[]> {
+  let operator: OperatorSettings;
+  try {
+    operator = loadConfig(process.env, root).config.operator;
+  } catch {
+    return [];
+  }
+  const drift = await operatorDrift(credentials, operator);
+  if (!drift.ok)
+    return [{ message: `Couldn't compare bogey.config.ts with the database: ${drift.error}` }];
+  return drift.data.changes.map((change) => ({
+    message: `The database's ${change.keys.map((key) => `${change.namespace}.${key}`).join(", ")} differ from bogey.config.ts: restart the server or run bogey config apply`,
+  }));
 }

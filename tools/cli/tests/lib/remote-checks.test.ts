@@ -54,7 +54,7 @@ test("signups off, autoconfirm on and a rejected service key are each reported",
   expect(text).toMatch(/email provider is off/);
   expect(text).toMatch(/service key was refused/);
   expect(text).toMatch(/no organization yet/);
-  expect(text).toMatch(/App address/);
+  expect(text).toMatch(/app address/);
   expect(notes.join(" ")).toMatch(/No email has gone through/);
 });
 
@@ -97,7 +97,7 @@ test("with a token it reads the dashboard's settings from the Management API", a
     ],
   ]);
   const report = await remoteChecks({ ...input, accessToken: "sbp_x", fetcher });
-  expect(seen.some((url) => url.includes("api.supabase.com"))).toBe(true);
+  expect(seen.some((url) => new URL(url).hostname === "api.supabase.com")).toBe(true);
   expect(report.issues).toEqual([]);
   expect(report.notes.join(" ")).not.toMatch(/SUPABASE_ACCESS_TOKEN/);
 });

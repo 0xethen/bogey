@@ -5,7 +5,12 @@ import { fileURLToPath } from "node:url";
 import { expect, test, vi } from "vite-plus/test";
 import { runDoctor } from "../../src/commands/doctor.ts";
 import { installedPlugins } from "../../src/commands/plugins.ts";
-import { migrationFiles, pluginMigrationFiles, type Runner } from "../../src/lib/migrations.ts";
+import {
+  migrationFiles,
+  pluginMigrationFiles,
+  spawnRunner,
+  type Runner,
+} from "../../src/lib/migrations.ts";
 import { parseEnum, parseTable, schemaStatements } from "../../src/lib/repair.ts";
 import { findRepoRoot } from "../../src/lib/repo-root.ts";
 import { pluginDir } from "../../src/lib/plugin-dirs.ts";
@@ -40,10 +45,10 @@ function upToDate(root: string): Runner {
   };
 }
 
-test("runDoctor passes against this repo's actual config", () => {
+test("runDoctor passes against this repo's actual config", async () => {
   vi.stubEnv("DATABASE_URL", "postgresql://postgres.test:pw@localhost:5432/postgres");
   try {
-    const result = runDoctor(cliDir, upToDate(findRepoRoot(cliDir)));
+    const result = await runDoctor(cliDir, upToDate(findRepoRoot(cliDir)), null);
     expect(result.output).toContain("no issues found");
     expect(result.exitCode).toBe(0);
   } finally {
@@ -51,17 +56,17 @@ test("runDoctor passes against this repo's actual config", () => {
   }
 });
 
-test("runDoctor fails outside a repo checkout", () => {
-  expect(() => runDoctor("/")).toThrow();
+test("runDoctor fails outside a repo checkout", async () => {
+  await expect(runDoctor("/", spawnRunner, null)).rejects.toThrow();
 });
 
-test("runDoctor reports a bogey.config that the server couldn't start with", () => {
+test("runDoctor reports a bogey.config that the server couldn't start with", async () => {
   const dir = mkdtempSync(join(tmpdir(), "bogey-doctor-"));
   const file = join(dir, "bogey.config.json");
   writeFileSync(file, JSON.stringify({ brand: { name: "" }, upstream: "nope" }));
   vi.stubEnv("BOGEY_CONFIG", file);
   try {
-    const result = runDoctor(cliDir);
+    const result = await runDoctor(cliDir, spawnRunner, null);
     expect(result.exitCode).toBe(1);
     expect(result.output).toMatch(/isn't valid/);
     expect(result.output).toMatch(/brand\.name/);
@@ -71,7 +76,7 @@ test("runDoctor reports a bogey.config that the server couldn't start with", () 
   }
 });
 
-test("runDoctor says a database that recorded every migration still lacks the schema's tables", () => {
+test("runDoctor says a database that recorded every migration still lacks the schema's tables", async () => {
   vi.stubEnv("DATABASE_URL", "postgresql://postgres.test:pw@localhost:5432/postgres");
   try {
     const root = findRepoRoot(cliDir);
@@ -84,7 +89,7 @@ test("runDoctor says a database that recorded every migration still lacks the sc
       catalog.tables = catalog.tables.filter((table) => table !== "public.events");
       return { ...result, stdout: JSON.stringify(catalog) };
     };
-    const result = runDoctor(cliDir, behind);
+    const result = await runDoctor(cliDir, behind, null);
     expect(result.exitCode).toBe(1);
     expect(result.output).toMatch(
       /differs from supabase\/schemas in 1 thing\(s\).*table public\.events.*bogey db repair/,

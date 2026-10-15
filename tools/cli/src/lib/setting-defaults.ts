@@ -1,8 +1,23 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { settingDefaults } from "@bogey/config/settings";
+import {
+  isCoreNamespace,
+  operatorKeys,
+  settingDefaults,
+  settingsRegistry,
+} from "@bogey/config/settings";
 
 export const DEFAULTS_FILE = "04_settings.defaults.gen.sql";
+
+function operatorKeysJson(): string {
+  const out: Record<string, Tuple<string>> = {};
+  for (const namespace of Object.keys(settingsRegistry)) {
+    if (!isCoreNamespace(namespace)) continue;
+    const keys = operatorKeys(namespace);
+    if (keys.length > 0) out[namespace] = keys;
+  }
+  return JSON.stringify(out);
+}
 
 export function settingDefaultsSql(): string {
   const json = JSON.stringify(settingDefaults());
@@ -19,6 +34,17 @@ as $$
 $$;
 grant execute on function private.setting_defaults(text)
 to anon, authenticated, service_role, supabase_auth_admin;
+
+-- instance-level keys only the operator sets, from bogey.config.ts or the CLI
+create function private.operator_keys(p_namespace text)
+returns text[]
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(array(select jsonb_array_elements_text($json$${operatorKeysJson()}$json$::jsonb -> p_namespace)), '{}');
+$$;
+grant execute on function private.operator_keys(text) to anon, authenticated, service_role;
 `;
 }
 

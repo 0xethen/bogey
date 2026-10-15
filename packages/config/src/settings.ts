@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { layoutProblem } from "@bogey/utils/email-layout";
-import { brand } from "#instance";
 import { SIGN_IN_PROVIDER_KEYS } from "./sign-in.ts";
 
 export { DEFAULT_EMAIL_TEMPLATES, type EmailTemplateKey } from "./email.ts";
@@ -28,6 +27,7 @@ export interface SettingsNamespace<S extends z.ZodObject, D extends Partial<z.in
   defaults: D;
   schema: S;
   fields?: SettingFields<z.infer<S>>;
+  operator?: Tuple<keyof z.infer<S> & string>;
 }
 
 function namespace<S extends z.ZodObject, const D extends Partial<z.infer<S>>>(
@@ -258,7 +258,7 @@ export const settingsRegistry = {
   branding: namespace({
     label: "Branding",
     scopes: ["instance", "org", "event"],
-    defaults: { name: brand.name },
+    defaults: {},
     schema: z.object({
       name: z
         .string()
@@ -277,11 +277,10 @@ export const settingsRegistry = {
       accent: hex.optional().describe("Accent color"),
     }),
     fields: {
-      name: { label: "Name", placeholder: brand.name },
+      name: { label: "Name" },
       shortName: {
         label: "Short name",
         description: "Used where space is tight, like breadcrumbs.",
-        placeholder: brand.shortName ?? brand.name,
       },
     },
   }),
@@ -382,6 +381,7 @@ export const settingsRegistry = {
     label: "Tenancy",
     scopes: ["instance"],
     defaults: {},
+    operator: ["appUrl"],
     schema: z.object({
       defaultOrg: z.uuid().optional().describe("Org used when a host matches no domain"),
       appUrl: webAddress
@@ -403,6 +403,7 @@ export const settingsRegistry = {
     label: "Accounts",
     scopes: ["instance"],
     defaults: { deletionRequests: true, requireAdminMfa: true, portfolios: false },
+    operator: ["requireAdminMfa"],
     schema: z.object({
       portfolios: z
         .boolean()
@@ -495,6 +496,7 @@ export const settingsRegistry = {
     label: "Client IPs",
     scopes: ["instance"],
     defaults: { clientIpHeader: "x-forwarded-for", trustedHops: 1, trustedProxies: [] },
+    operator: ["clientIpHeader", "trustedHops", "trustedProxies"],
     schema: z.object({
       clientIpHeader: z
         .enum(["x-forwarded-for", "cf-connecting-ip", "x-real-ip"])
@@ -1313,6 +1315,15 @@ export function scopesBelow(namespace: CoreNamespace, scope: SettingScope): Sett
   const below = SCOPE_ORDER.slice(SCOPE_ORDER.indexOf(scope) + 1);
   const allowed: Tuple<SettingScope> = settingsRegistry[namespace].scopes;
   return below.filter((level) => allowed.includes(level));
+}
+
+export function operatorKeys(namespace: CoreNamespace): Tuple<string> {
+  const definition: { operator?: Tuple<string> } = settingsRegistry[namespace];
+  return definition.operator ?? [];
+}
+
+export function isOperatorKey(namespace: CoreNamespace, scope: SettingScope, key: string): boolean {
+  return scope === "instance" && operatorKeys(namespace).includes(key);
 }
 
 export function isSettingKey(namespace: CoreNamespace, key: string): boolean {

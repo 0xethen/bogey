@@ -1,4 +1,6 @@
+import { loadConfig } from "@bogey/config/load";
 import { step } from "../lib/activity.ts";
+import { findRepoRoot } from "../lib/repo-root.ts";
 import type { Prompter } from "../lib/prompt.ts";
 import { serviceCredentials } from "../lib/credentials.ts";
 import { insert, select, update } from "../lib/rest.ts";
@@ -9,7 +11,9 @@ export const USAGE = `bogey mfa [status | on | off]
 Whether instance admins need an authenticator app before the database treats
 them as admins (Instance > Settings > Accounts). It's on by default. If every
 admin is locked out, \`bogey mfa off\` lets them back in with their email
-sign-in alone; turn it back on after they've set one up in Account.`;
+sign-in alone; turn it back on after they've set one up in Account. Admins can't
+change it in the app. When bogey.config.ts sets security.requireAdminMfa, the
+server puts that value back when it next starts, so change it there too.`;
 
 interface Row {
   value: Record<string, unknown> | null;
@@ -75,10 +79,27 @@ export async function runMfa(
         }),
   );
   if (!written.ok) return { exitCode: 1, output: written.error };
+  const declared = declaredRequirement(cwd);
+  const reverts =
+    declared !== null && declared !== want
+      ? `\nbogey.config.ts sets security.requireAdminMfa: ${declared}, so the server turns it ${declared ? "on" : "off"} again when it next starts. Change it there to keep this.`
+      : "";
   return {
     exitCode: 0,
-    output: want
-      ? "✓ Instance admins need an authenticator app again."
-      : "✓ Instance admins can use the Instance pages with email sign-in alone. Turn it back on with `bogey mfa on` once they've set up an authenticator app.",
+    output:
+      (want
+        ? "✓ Instance admins need an authenticator app again."
+        : "✓ Instance admins can use the Instance pages with email sign-in alone. Turn it back on with `bogey mfa on` once they've set up an authenticator app.") +
+      reverts,
   };
+}
+
+function declaredRequirement(cwd: string): boolean | null {
+  try {
+    const value = loadConfig(process.env, findRepoRoot(cwd)).config.operator.accounts
+      ?.requireAdminMfa;
+    return typeof value === "boolean" ? value : null;
+  } catch {
+    return null;
+  }
 }

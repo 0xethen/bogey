@@ -1,9 +1,11 @@
+import { loadConfig } from "@bogey/config/load";
 import { SLUG, toSlug } from "@bogey/utils/keys";
 import { step } from "../lib/activity.ts";
 import { rpc, serviceCredentials } from "../lib/credentials.ts";
 import { intro, type Prompter } from "../lib/prompt.ts";
 import { ensureUser, insert, select, update } from "../lib/rest.ts";
 import type { Credentials } from "../lib/credentials.ts";
+import { findRepoRoot } from "../lib/repo-root.ts";
 import { seedDemo } from "./seed.ts";
 import { parseFlags } from "../lib/flags.ts";
 import type { CliResult } from "../cli.ts";
@@ -17,8 +19,9 @@ admin. Safe to run again. --demo also seeds a demo hackathon and contest.
 At a terminal, it asks for whatever the flags leave out.
 
 --app-url (or BOGEY_APP_URL, which the all-in-one compose sets to http://web:3000) is the
-address the database calls to send Bogey's own email. It fills in Instance → Settings →
-Tenancy → App address when that is empty, and --app-url replaces one that is set.
+address the database calls to send Bogey's own email. It fills in the instance's app
+address when that is empty, and --app-url replaces one that is set. When bogey.config.ts
+sets appUrl, that wins and neither is used.
 
 Example (self-hosted):
   bogey org init --org acme --name "Acme Hack Club" --owner you@acme.org --host hacks.acme.org`;
@@ -176,13 +179,16 @@ export async function runOrgInit(
 
   const appUrl =
     typeof flags["app-url"] === "string" ? flags["app-url"] : process.env.BOGEY_APP_URL;
-  if (appUrl) {
+  const declared = declaredAppUrl(cwd);
+  if (declared) {
+    lines.push(`Queued email is sent by calling ${declared}, from appUrl in bogey.config.ts.`);
+  } else if (appUrl) {
     const set = await setAppUrl(credentials, appUrl, typeof flags["app-url"] === "string");
     if (!set.ok) return { exitCode: 1, output: set.error };
     if (set.changed) lines.push(`Queued email is sent by calling ${appUrl}.`);
   } else {
     lines.push(
-      "Queued email and webhooks need Instance → Settings → Tenancy → App address (or run again with --app-url <address>).",
+      "Queued email and webhooks need appUrl in bogey.config.ts (or run again with --app-url <address>).",
     );
   }
 
@@ -197,4 +203,13 @@ export async function runOrgInit(
   lines.push("", `Sign in: bogey login ${owner}`);
   if (asked) lines.push(`Next time, without the questions: ${orgInitCommand(answers)}`);
   return { exitCode: 0, output: lines.join("\n") };
+}
+
+function declaredAppUrl(cwd: string): string | null {
+  try {
+    const value = loadConfig(process.env, findRepoRoot(cwd)).config.operator.tenancy?.appUrl;
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
 }

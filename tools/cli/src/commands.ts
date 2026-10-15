@@ -1,4 +1,5 @@
 import { runBackup, USAGE as backup } from "./commands/backup.ts";
+import { runConfig, USAGE as configUsage } from "./commands/config.ts";
 import { runConsole, USAGE as consoleUsage } from "./commands/console.ts";
 import { runDb, USAGE as db } from "./commands/db.ts";
 import { runUpgrade, USAGE as upgrade } from "./commands/upgrade.ts";
@@ -42,6 +43,13 @@ export const COMMANDS: Tuple<Command> = [
     summary: "Copy Storage files, and with a database URL its data, to a folder",
     usage: backup,
     run: runBackup,
+  },
+  {
+    name: "config",
+    summary: "Check bogey.config.ts, and write the keys only it sets to the database",
+    usage: configUsage,
+    subcommands: ["check", "apply"],
+    run: (cwd, args) => runConfig(cwd, args),
   },
   {
     name: "console",

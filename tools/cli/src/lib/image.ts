@@ -6,6 +6,7 @@ export function imageHome(env: Readonly<Record<string, string | undefined>> = pr
 
 export const WHERE: Readonly<Record<string, string>> = {
   backup: "checkout, container",
+  config: "checkout, container",
   console: "checkout",
   db: "checkout; container: `status`, `migrate`, `mark-applied`, `repair`",
   docs: "checkout",

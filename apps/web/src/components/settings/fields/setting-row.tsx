@@ -14,7 +14,8 @@ export interface SettingLock {
 export type SettingSource =
   | { kind: "own"; onReset: () => void }
   | { kind: "inherited"; from?: string }
-  | { kind: "locked"; by: string };
+  | { kind: "locked"; by: string }
+  | { kind: "operator" };
 
 function Label({
   id,
@@ -87,6 +88,9 @@ function Origin({ source }: { source: SettingSource }) {
   const t = useT();
   if (source.kind === "locked") {
     return <p className="text-xs text-muted-fg">{t("settingRow.lockedBy", { by: source.by })}</p>;
+  }
+  if (source.kind === "operator") {
+    return <p className="text-xs text-muted-fg">{t("settingRow.operator")}</p>;
   }
   if (source.kind === "inherited" && source.from) {
     return <p className="text-xs text-muted-fg">{t("settingRow.from", { from: source.from })}</p>;

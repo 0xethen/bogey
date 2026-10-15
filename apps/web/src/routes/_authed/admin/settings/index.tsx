@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { brand } from "@bogey/config";
 import { ownSettingsQueryOptions } from "@bogey/db/queries/settings";
 import { instanceOrgsQueryOptions } from "@bogey/db/queries/instance";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
@@ -55,7 +56,12 @@ function RouteComponent() {
         title={t("adminSettings.identity")}
         description={t("adminSettings.identityHelp")}
       >
-        <SettingFields scope={INSTANCE} namespace="branding" keys={["name", "shortName"]} />
+        <SettingFields
+          scope={INSTANCE}
+          namespace="branding"
+          keys={["name", "shortName"]}
+          placeholders={{ name: brand.name, shortName: brand.shortName ?? brand.name }}
+        />
       </Screen.Section>
       <DefaultOrg current={tenancy.defaultOrg} />
       <Screen.Section id="audit-log" title={t("orgTab.audit")}>

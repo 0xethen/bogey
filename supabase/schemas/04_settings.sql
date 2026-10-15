@@ -21,6 +21,32 @@ create index settings_event_id_idx on public.settings (event_id) where event_id 
 create trigger settings_touch before update on public.settings
   for each row execute function private.touch_updated_at();
 
+create function private.guard_operator_keys()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_row public.settings := case when tg_op = 'DELETE' then old else new end;
+  v_old jsonb := case when tg_op = 'INSERT' then '{}' else old.value end;
+  v_new jsonb := case when tg_op = 'DELETE' then '{}' else new.value end;
+  v_key text;
+begin
+  if v_row.scope = 'instance' and current_user in ('anon', 'authenticated') then
+    foreach v_key in array private.operator_keys(v_row.namespace) loop
+      if (v_old -> v_key) is distinct from (v_new -> v_key) then
+        raise exception '%.% is set in bogey.config.ts or with the CLI, not in the app',
+          v_row.namespace, v_key using errcode = '42501';
+      end if;
+    end loop;
+  end if;
+  return v_row;
+end;
+$$;
+
+create trigger settings_operator_keys before insert or update or delete on public.settings
+  for each row execute function private.guard_operator_keys();
+
 create function private.is_public_namespace(p_namespace text)
 returns boolean
 language sql
@@ -28,6 +54,15 @@ immutable
 set search_path = ''
 as $$
   select p_namespace in ('branding', 'registration', 'seo', 'privacy', 'plugin.i18n');
+$$;
+
+create function private.is_admin_only_namespace(p_namespace text)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select p_namespace in ('network', 'tenancy', 'limits') or p_namespace like 'plugin.%.limits';
 $$;
 
 create function private.merge_setting(p_lower jsonb, p_lower_locked text[], p_upper jsonb)
@@ -120,6 +155,7 @@ $$;
 
 grant execute on function
   private.is_public_namespace(text),
+  private.is_admin_only_namespace(text),
   private.merge_setting(jsonb, text[], jsonb),
   private.instance_setting(text),
   private.org_setting(uuid, text),
@@ -435,7 +471,8 @@ alter table public.secrets enable row level security;
 create policy settings_select on public.settings for select to anon, authenticated
   using (
     case scope
-      when 'instance' then true
+      when 'instance' then not private.is_admin_only_namespace(namespace)
+        or (select private.is_platform_admin())
       when 'org' then private.is_public_namespace(namespace) or (select private.is_org_member(org_id))
       when 'event' then (select private.can_view_event(event_id))
         and (private.is_public_namespace(namespace)

@@ -197,8 +197,8 @@ Adults never see the guardian questions, and the database enforces the same rule
 ### Email
 
 Registration status, invitations, deadlines and results are emailed by Bogey itself, from a queue
-(the outbox) that the app empties every minute. Set the **App address** under **Instance → Settings**
-so the database can wake the app (see [Email](../self-hosting/email.md)). Each message's wording is under
+(the outbox) that the app empties every minute. Whoever runs the instance sets `appUrl` in
+`bogey.config.ts` so the database can wake the app (see [Email](../self-hosting/email.md)). Each message's wording is under
 **Manage → Email**, **Organization → Settings**, and **Instance → Settings**; blank fields use the level
 above. People choose what reaches them in **Account → Notifications**; mail about someone's registration
 can't be turned off, and every other kind has an unsubscribe link.

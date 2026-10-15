@@ -214,6 +214,15 @@ export const COMMANDS: Tuple<ConsoleCommand> = [
     cli: ["mfa", "status"],
   },
   {
+    id: "config-check",
+    group: "status",
+    label: "Instance config",
+    description:
+      "bogey config check: whether bogey.config.ts is valid and the database has the keys only it sets.",
+    kind: "read",
+    cli: ["config", "check"],
+  },
+  {
     id: "org-list",
     group: "status",
     label: "Organizations",
@@ -602,6 +611,15 @@ export const COMMANDS: Tuple<ConsoleCommand> = [
     ],
   },
 
+  {
+    id: "config-apply",
+    group: "host",
+    label: "Apply the instance config",
+    description:
+      "bogey config apply: writes appUrl, network and security.requireAdminMfa from bogey.config.ts to the database, without a restart.",
+    kind: "change",
+    cli: ["config", "apply"],
+  },
   {
     id: "restart",
     group: "host",

@@ -1,5 +1,7 @@
 Keep everything type-safe, always. No `any`, no arbitrary type-defining. Use imported types from the packages you use whenever possible. `Tuple<T>` (`ReadonlyArray<T>`) is an ambient global (for reasons that you probably shouldn't question).
 
+In `CHANGELOG.md`, write each entry as one line per bullet or paragraph. Don't hard-wrap sentences at a column or break lines between them; GitHub renders the breaks and it looks awkward.
+
 After changing `supabase/schemas`, run `vpr bogey db repair --yes` to apply it to the dev database (`DATABASE_URL` in `.env`) unless told not to, then regenerate `packages/db/src/types/database.gen.ts` with `vpr bogey types` (it reads `DATABASE_URL`); never hand-edit it. CI fails when the committed types differ from what `supabase/schemas` makes. See `docs/contributing.md#generating-types`. The rest of the schema workflow is in the `bogey-data-layer` skill.
 
 ## What Bogey is
@@ -13,7 +15,8 @@ pnpm workspace, packages import via `@bogey/<name>`:
 - `apps/web` — the app. TanStack Start/Router, file-based routes in `src/routes`.
 - `apps/console` — the operator console (`bogey console`): a 127.0.0.1-only
   page on `@bogey/ui` that runs the CLI from a fixed list (ADR 0025).
-- `bogey.config.ts` — this instance's name, logo, theme, disabled plugins.
+- `bogey.config.ts` — this instance's name, logo, theme, disabled plugins,
+  and its trust boundary (`appUrl`, `network`, `security`; ADR 0029).
   Hand-edited, never written to from the web UI. Secrets are in the root `.env`.
 - `packages/config` — defines configuration: `defineConfig`, the settings
   registry (DB settings' schemas and defaults), the generated theme list.

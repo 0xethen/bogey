@@ -5,9 +5,11 @@ import { expect, test } from "vite-plus/test";
 import { findConfigFile, loadConfig } from "../src/load.ts";
 import {
   configProblems,
+  operatorChanges,
   publicConfigOf,
   publicConfigScript,
   resolveConfig,
+  securityHeadersOf,
   updateChecksOn,
 } from "../src/resolve.ts";
 
@@ -108,4 +110,72 @@ test("a file that isn't valid names itself and the problem", () => {
   const broken = folder({ "bogey.config.json": "{ nope" });
   expect(() => loadConfig({}, broken)).toThrow(/Couldn't read/);
   expect(() => loadConfig({ BOGEY_CONFIG: join(dir, "gone.json") }, dir)).toThrow(/doesn't exist/);
+});
+
+test("only the operator keys the file declares go to the database", () => {
+  const config = resolveConfig({
+    brand: { name: "Acme" },
+    appUrl: "https://hacks.acme.org",
+    network: { trustProxy: true, trustedProxies: ["10.0.0.0/8"] },
+    security: { verboseErrors: true },
+  });
+  expect(config.operator).toEqual({
+    tenancy: { appUrl: "https://hacks.acme.org" },
+    network: { trustedProxies: ["10.0.0.0/8"] },
+  });
+  expect(config.trustProxy).toBe(true);
+  expect(resolveConfig({ brand: { name: "Acme" } }).operator).toEqual({});
+});
+
+test("operator keys are checked like the settings they become", () => {
+  expect(
+    configProblems({ brand: { name: "A" }, network: { trustedProxies: ["nope"] } })[0],
+  ).toMatch(/^network\.trustedProxies/);
+  expect(configProblems({ brand: { name: "A" }, network: { trustedHops: 0 } })[0]).toMatch(
+    /^network\.trustedHops/,
+  );
+  expect(configProblems({ brand: { name: "A" }, security: { requireAdminMFA: true } })[0]).toMatch(
+    /security/,
+  );
+});
+
+test("a change keeps the database's other keys and names only what differs", () => {
+  const changes = operatorChanges(
+    { accounts: { requireAdminMfa: true }, network: { trustedHops: 2 } },
+    { accounts: { requireAdminMfa: true, portfolios: true }, network: { trustedHops: 1 } },
+  );
+  expect(changes).toEqual([
+    { namespace: "network", value: { trustedHops: 2 }, keys: ["trustedHops"] },
+  ]);
+  expect(operatorChanges({ accounts: { requireAdminMfa: false } }, {})).toEqual([
+    { namespace: "accounts", value: { requireAdminMfa: false }, keys: ["requireAdminMfa"] },
+  ]);
+});
+
+test("security headers default to same-origin framing and no HSTS", () => {
+  const headers = securityHeadersOf(resolveConfig({ brand: { name: "A" } }).security.headers);
+  expect(headers["content-security-policy"]).toBe("frame-ancestors 'self'");
+  expect(headers["x-frame-options"]).toBe("SAMEORIGIN");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["strict-transport-security"]).toBeUndefined();
+});
+
+test("a policy and framing origins combine into one header", () => {
+  const headers = securityHeadersOf(
+    resolveConfig({
+      brand: { name: "A" },
+      security: {
+        headers: {
+          frameAncestors: ["https://lms.acme.org"],
+          hsts: true,
+          contentSecurityPolicy: "default-src 'self'",
+        },
+      },
+    }).security.headers,
+  );
+  expect(headers["content-security-policy"]).toBe(
+    "default-src 'self'; frame-ancestors https://lms.acme.org",
+  );
+  expect(headers["x-frame-options"]).toBeUndefined();
+  expect(headers["strict-transport-security"]).toBe("max-age=15552000");
 });

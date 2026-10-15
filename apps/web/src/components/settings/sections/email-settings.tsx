@@ -162,7 +162,17 @@ function HookStatus() {
       <Alert>
         <IconAlertTriangle />
         <AlertTitle>{t("email.noneYet")}</AlertTitle>
-        <AlertDescription>{t("email.noneYetHelp")}</AlertDescription>
+        <AlertDescription>
+          {t("email.noneYetHelp")}{" "}
+          <a
+            href="https://github.com/0xethen/bogey/wiki/self-hosting-email"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="link"
+          >
+            {t("email.noneYetHelpLink")}
+          </a>
+        </AlertDescription>
       </Alert>
     );
   }

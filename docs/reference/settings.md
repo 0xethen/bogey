@@ -41,6 +41,8 @@ Set at: instance, org, event.
 
 Set at: instance.
 
+Only the operator sets `appUrl` for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.
+
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `defaultOrg` | text | — | Org used when a host matches no domain |
@@ -49,6 +51,8 @@ Set at: instance.
 ## Accounts (`accounts`)
 
 Set at: instance.
+
+Only the operator sets `requireAdminMfa` for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
@@ -86,6 +90,8 @@ Set at: org, event.
 ## Client IPs (`network`)
 
 Set at: instance.
+
+Only the operator sets `clientIpHeader`, `trustedHops`, `trustedProxies` for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |

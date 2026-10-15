@@ -7,6 +7,7 @@
     "./env": "./src/env.ts",
     "./server": "./src/server.ts",
     "./admin": "./src/admin.ts",
+    "./instance-config": "./src/instance-config.ts",
     "./anon": "./src/anon.ts",
     "./archive": "./src/archive/index.ts",
     "./auth": "./src/auth.ts",

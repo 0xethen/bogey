@@ -72,8 +72,8 @@ at tag `self-hosted/v0.8.2`, which is what this was written against.
    docker compose exec web bogey login you@acme.org     # a sign-in code, without email
    ```
 
-   `org init` also sets Instance → Settings → Tenancy → App address to `http://web:3000`, so the
-   database can reach the app to send queued email. The owner becomes an instance admin; set up an
+   `org init` also sets the instance's app address to `http://web:3000` (unless `bogey.config.ts`
+   sets `appUrl`), so the database can reach the app to send queued email. The owner becomes an instance admin; set up an
    authenticator app when asked (see [Sign-in and auth](auth.md)).
 
 6. **Check it.** `docker compose exec web bogey doctor`.

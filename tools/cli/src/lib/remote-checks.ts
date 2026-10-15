@@ -169,7 +169,7 @@ export async function remoteChecks(input: RemoteInput): Promise<RemoteReport> {
     if (!rows?.[0]?.value.appUrl) {
       issues.push({
         message:
-          "Tenancy → App address isn't set, so Bogey's own email waits in the queue (docs/self-hosting/email.md).",
+          "The app address isn't set, so Bogey's own email waits in the queue: set appUrl in bogey.config.ts (docs/self-hosting/email.md).",
       });
     }
     const sends = await getJson(

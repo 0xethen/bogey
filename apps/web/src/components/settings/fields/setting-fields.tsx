@@ -17,6 +17,7 @@ import {
 } from "@bogey/db/queries/settings";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import {
+  isOperatorKey,
   scopesBelow,
   settingControl,
   type CoreNamespace,
@@ -77,11 +78,13 @@ export function SettingFields<N extends CoreNamespace>({
   scope,
   namespace,
   keys,
+  placeholders,
   onSaved,
 }: {
   scope: OwnScope;
   namespace: N;
   keys: Tuple<keyof SettingsValue<N> & string>;
+  placeholders?: Partial<Record<keyof SettingsValue<N> & string, string>>;
   onSaved?: () => void;
 }) {
   const t = useT();
@@ -160,7 +163,7 @@ export function SettingFields<N extends CoreNamespace>({
         const id = `${namespace}-${key}`;
         const drafted = key in draft;
         const ownNow = drafted ? { ...own, [key]: draft[key] ?? undefined } : own;
-        const { value, source } = resolve(
+        const resolved = resolve(
           scope.scope,
           key,
           ownNow,
@@ -171,7 +174,13 @@ export function SettingFields<N extends CoreNamespace>({
           },
           t,
         );
-        const disabled = source.kind === "locked";
+        const value = resolved.value;
+        const source: SettingSource = isOperatorKey(namespace, scope.scope, key)
+          ? { kind: "operator" }
+          : resolved.source;
+        const disabled = source.kind === "locked" || source.kind === "operator";
+        const placeholder =
+          placeholders?.[key] ?? ("placeholder" in control ? control.placeholder : undefined);
         const label = sayOr(t, `setting.${namespace}.${key}`, control.label);
         const description = control.description
           ? sayOr(t, `setting.${namespace}.${key}.help`, control.description)
@@ -186,7 +195,7 @@ export function SettingFields<N extends CoreNamespace>({
             label={label}
             description={description}
             source={source}
-            lock={lockFor(key)}
+            lock={source.kind === "operator" ? undefined : lockFor(key)}
             inline
           >
             <Switch
@@ -205,7 +214,7 @@ export function SettingFields<N extends CoreNamespace>({
             label={label}
             description={description}
             source={source}
-            lock={lockFor(key)}
+            lock={source.kind === "operator" ? undefined : lockFor(key)}
           >
             <NumberSetting
               key={generation}
@@ -214,7 +223,7 @@ export function SettingFields<N extends CoreNamespace>({
               min={control.min}
               max={control.max}
               step={control.integer ? 1 : "any"}
-              placeholder={control.placeholder}
+              placeholder={placeholder}
               disabled={disabled}
               scrub={scope.scope !== "event"}
               onValueChange={(next) => change({ [key]: next })}
@@ -229,13 +238,13 @@ export function SettingFields<N extends CoreNamespace>({
             label={label}
             description={description}
             source={source}
-            lock={lockFor(key)}
+            lock={source.kind === "operator" ? undefined : lockFor(key)}
           >
             <TextSetting
               key={generation}
               id={id}
               value={typeof value === "string" ? value : ""}
-              placeholder={control.placeholder}
+              placeholder={placeholder}
               disabled={disabled}
               onValueChange={(next) => change({ [key]: next })}
             />
@@ -249,7 +258,7 @@ export function SettingFields<N extends CoreNamespace>({
             label={label}
             description={description}
             source={source}
-            lock={lockFor(key)}
+            lock={source.kind === "operator" ? undefined : lockFor(key)}
           >
             <OptSelect
               id={id}

@@ -3,7 +3,7 @@ import { dirname, join, posix, relative } from "node:path";
 import { z } from "zod";
 import { EMAIL_KINDS } from "@bogey/config/email";
 import { NOTIFICATION_KINDS } from "@bogey/config/notifications";
-import { settingsRegistry } from "@bogey/config/settings";
+import { isCoreNamespace, operatorKeys, settingsRegistry } from "@bogey/config/settings";
 import { CORE_WINDOW_INFO } from "@bogey/config/windows";
 import { WHERE } from "../lib/image.ts";
 import { findRepoRoot } from "../lib/repo-root.ts";
@@ -41,10 +41,14 @@ const INSTANCE_DEFAULTS: Record<string, string> = {
   "branding.name": "`brand.name` in bogey.config.ts",
 };
 
+function escapePipes(text: string): string {
+  return text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+}
+
 function cell(value: unknown): string {
   if (value === undefined) return "—";
   const text = typeof value === "string" ? `\`${value}\`` : `\`${JSON.stringify(value)}\``;
-  return text.replace(/\|/g, "\\|");
+  return escapePipes(text);
 }
 
 export function settingsReference(): string {
@@ -56,12 +60,19 @@ export function settingsReference(): string {
     const rows = Object.entries(shape).map(([key, schema]) => {
       const text = schema.description ?? fields[key]?.description ?? fields[key]?.label ?? "";
       const fallback = INSTANCE_DEFAULTS[`${namespace}.${key}`];
-      return `| \`${key}\` | ${describeType(schema)} | ${fallback ?? cell(defaults[key])} | ${text.replace(/\|/g, "\\|")} |`;
+      return `| \`${key}\` | ${describeType(schema)} | ${fallback ?? cell(defaults[key])} | ${escapePipes(text)} |`;
     });
+    const operator = isCoreNamespace(namespace) ? operatorKeys(namespace) : [];
     return [
       `## ${definition.label} (\`${namespace}\`)`,
       "",
       `Set at: ${definition.scopes.join(", ")}.`,
+      ...(operator.length
+        ? [
+            "",
+            `Only the operator sets ${operator.map((key) => `\`${key}\``).join(", ")} for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.`,
+          ]
+        : []),
       "",
       "| Key | Type | Default | What it does |",
       "| --- | --- | --- | --- |",
@@ -120,11 +131,11 @@ export function notificationsReference(): string {
     const channels = [kind.channels.inApp ? "bell" : null, kind.channels.email ? "email" : null]
       .filter(Boolean)
       .join(" and ");
-    return `| \`${key}\` | ${kind.label} | ${kind.group} | ${channels || "none"} | ${kind.transactional ? "always sent" : "can be turned off"} | ${kind.description.replace(/\|/g, "\\|")} |`;
+    return `| \`${key}\` | ${kind.label} | ${kind.group} | ${channels || "none"} | ${kind.transactional ? "always sent" : "can be turned off"} | ${escapePipes(kind.description)} |`;
   });
   const emails = Object.entries(EMAIL_KINDS).map(([key, kind]) => {
     const variables = kind.variables.map((variable) => `\`{{${variable.name}}}\``).join(", ");
-    return `| \`${key}\` | ${kind.label} | ${variables} | ${kind.description.replace(/\|/g, "\\|")} |`;
+    return `| \`${key}\` | ${kind.label} | ${variables} | ${escapePipes(kind.description)} |`;
   });
   return [
     "# Notifications and email",
@@ -293,6 +304,8 @@ export async function runDocs(cwd: string, args: string[]): Promise<CliResult> {
   }
   return {
     exitCode: 0,
-    output: stale.length ? `Wrote ${stale.join(", ")}.` : "Generated docs were already up to date.",
+    output: stale.length
+      ? `Wrote ${stale.join(", ")}.`
+      : "Generated docs up to date (nothing changed).",
   };
 }

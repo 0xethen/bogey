@@ -76,15 +76,16 @@ same matrix, so the UI and RLS never disagree about who is a judge.
 
 ## Write paths that must not be forged
 
-| Risk                                           | Guard                                                                                                                                                                                                                       |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A participant sets their own verdict           | `challenges_solutions` and `challenges_judgings` have no client insert or update policy. `challenges_submit()` inserts the solution, and only the runner (service role) writes judgings, and only while it holds the lease. |
-| Hidden test data leaks                         | `challenges_testcases` has no participant policy. The runner stores output excerpts for samples only, and compile output is shown only to the solution's own team.                                                          |
-| Score out of range, or scoring as someone else | A trigger forces `judge_id = auth.uid()` and checks the range. The `judging` window must be open.                                                                                                                           |
-| Messages posted with a fake role               | `author_role` is set by a trigger from `has_permission`.                                                                                                                                                                    |
-| Writing to another org's audit log             | `log_event()` requires membership in the named event. Core actions come from the RPCs themselves, not from clients.                                                                                                         |
-| Reading secrets                                | Secrets are stored in Vault. No policy exposes `vault.secrets`, and the `secrets` table returns names, never values.                                                                                                        |
-| Registration answers that break the form       | `submit_registration()` validates the answers against the stored form version.                                                                                                                                              |
+| Risk                                             | Guard                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A participant sets their own verdict             | `challenges_solutions` and `challenges_judgings` have no client insert or update policy. `challenges_submit()` inserts the solution, and only the runner (service role) writes judgings, and only while it holds the lease.                                                            |
+| Hidden test data leaks                           | `challenges_testcases` has no participant policy. The runner stores output excerpts for samples only, and compile output is shown only to the solution's own team.                                                                                                                     |
+| Score out of range, or scoring as someone else   | A trigger forces `judge_id = auth.uid()` and checks the range. The `judging` window must be open.                                                                                                                                                                                      |
+| Messages posted with a fake role                 | `author_role` is set by a trigger from `has_permission`.                                                                                                                                                                                                                               |
+| Writing to another org's audit log               | `log_event()` requires membership in the named event. Core actions come from the RPCs themselves, not from clients.                                                                                                                                                                    |
+| An admin session widens what the database trusts | A trigger refuses changes to operator keys (`network`, `tenancy.appUrl`, `accounts.requireAdminMfa`) at the instance level from `anon` and `authenticated`; they come from `bogey.config.ts`. Instance rows of `network`, `tenancy` and `limits` are readable by platform admins only. |
+| Reading secrets                                  | Secrets are stored in Vault. No policy exposes `vault.secrets`, and the `secrets` table returns names, never values.                                                                                                                                                                   |
+| Registration answers that break the form         | `submit_registration()` validates the answers against the stored form version.                                                                                                                                                                                                         |
 
 ## Anti-cheat is a deterrent and a record
 
@@ -103,7 +104,11 @@ up on, and nothing in lockdown is presented as proof.
 - **Never prefix a secret with `PUBLIC_`.** Anything with that prefix is
   compiled into the client bundle.
 - `bogey.config.ts` holds no secrets. It is the plugin allowlist plus the
-  instance security floor.
+  instance's trust boundary: the app address the database calls, which proxies
+  it believes about a visitor's address, whether admins need a second factor,
+  and the response headers. The database refuses changes to those settings from
+  any session (`settings_operator_keys`), so only the server and the CLI, with
+  the service key, write them ([ADR 0029](../adr/0029-operator-keys.md)).
 
 ## Advisor findings that are expected
 

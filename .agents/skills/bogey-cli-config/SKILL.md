@@ -102,12 +102,20 @@ description: Bogey (hackathon platform) tools/cli and packages/config convention
 
 ## Config
 
-- Three tiers: secrets in the root `.env`; instance identity in
-  `bogey.config.ts` (`defineConfig`: brand, theme, `plugins.disabled`,
-  `security.verboseErrors`); runtime settings in the `settings` table.
+- Three tiers: secrets in the root `.env`; instance identity and trust boundary in
+  `bogey.config.ts` (`defineConfig`: brand, theme, `appUrl`, `plugins.disabled`,
+  `network`, `security`); runtime settings in the `settings` table.
+- Operator keys (ADR 0029): a namespace's `operator` list in the registry names
+  instance-level keys a web session must never change. `private.operator_keys()` is
+  generated from it, and the `settings_operator_keys` trigger refuses `anon` and
+  `authenticated` writes to them. The file declares them; the server writes them with the
+  service role on its first request (`@bogey/db/instance-config`), `bogey config apply`
+  without a restart. A key the file omits keeps the database's value. Add a key there only
+  when an admin session changing it would widen what the database trusts.
 - `packages/config` only *defines*: `define.ts`, the settings registry
   (`settings.ts`, schemas + `defaults`), generated `themes.gen.ts`. It must
-  stay load-free (shared by CLI, server, browser).
+  stay load-free (shared by CLI, server, browser): `settings.ts` never imports
+  `#instance`, or `bogey db baseline` copies the checkout's brand into shared SQL.
 - Settings resolve defaults → instance → org → event. Defaults live only in
   the registry; `bogey db baseline` generates
   `supabase/schemas/04_settings.defaults.gen.sql` from them. Never write a

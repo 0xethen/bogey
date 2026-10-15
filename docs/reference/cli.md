@@ -15,6 +15,7 @@ commands that author Bogey (schema, themes, types, release) and the ones that co
 | Command | What it does | Works in |
 | --- | --- | --- |
 | [`backup`](#backup) | Copy Storage files, and with a database URL its data, to a folder | checkout, container |
+| [`config`](#config) | Check bogey.config.ts, and write the keys only it sets to the database | checkout, container |
 | [`console`](#console) | Start the operator console on this machine (127.0.0.1 only) | checkout |
 | [`db`](#db) | The schema baseline and migrations: freeze, add, status, migrate, repair | checkout; container: `status`, `migrate`, `mark-applied`, `repair` |
 | [`docs`](#docs) | Regenerate the settings and CLI references, or build the wiki | checkout |
@@ -54,6 +55,18 @@ psql (rows that already exist are skipped), then upload the storage folder.
 Short flags: -d --db-url, -o --out
 ```
 
+## config
+
+```
+bogey config [check | apply]
+
+Reads bogey.config.ts (or the file BOGEY_CONFIG names) and checks it against the
+schema. The keys an admin can't change in the app (appUrl, network, and
+security.requireAdminMfa) are written to the database by the server when it
+starts; check compares them with the database .env points at, and apply writes
+them now, without a restart. Keys the file leaves out keep the database's value.
+```
+
 ## console
 
 ```
@@ -75,8 +88,8 @@ bogey db <subcommand>
   bogey db studio              Open Supabase Studio in a browser
   bogey db baseline [--check]  Build supabase/migrations/20260924000000_baseline.sql from
                                supabase/schemas, after regenerating the setting
-                               defaults and notification kinds (--check: fail if either is stale).
-                               Refused once a release has shipped it.
+                               defaults and notification kinds (--check: fail if any is stale).
+                               Once a release has shipped the baseline, only regenerates those two
   bogey db freeze <version>    Mark the baseline as shipped in <version>; from then on
                                schema changes are new migrations
   bogey db migration <name>    Add supabase/migrations/<timestamp>_<name>.sql, from
@@ -146,12 +159,14 @@ Checks that this instance is wired up: bogey.config.ts reads and is valid (BOGEY
 names another file), the sign-up hook in supabase/config.toml
 (and, when GOTRUE_* variables are set, the self-hosted equivalent), .env
 safety, that disabled plugins are installed, and, when DATABASE_URL is set (environment or .env),
-that the database has applied every migration (needs psql). Exits non-zero on
-any issue.
+that the database has applied every migration (needs psql). It also asks GitHub whether a
+security advisory names this version (an issue) and whether a newer release is out (a note),
+unless update checks are off. Exits non-zero on any issue.
 
   --remote   Also check the project .env points at, through its API with the service key:
              sign-ups and auto-confirm, that the schema is applied and an organization exists,
-             the app address, and whether mail has gone through the Send Email hook. With
+             the app address, whether the keys only bogey.config.ts sets match the database,
+             and whether mail has gone through the Send Email hook. With
              SUPABASE_ACCESS_TOKEN (a Management API token, Supabase Cloud only) it reads the
              dashboard's hook, OTP length and authenticator-app settings too.
 
@@ -217,7 +232,9 @@ bogey mfa [status | on | off]
 Whether instance admins need an authenticator app before the database treats
 them as admins (Instance > Settings > Accounts). It's on by default. If every
 admin is locked out, `bogey mfa off` lets them back in with their email
-sign-in alone; turn it back on after they've set one up in Account.
+sign-in alone; turn it back on after they've set one up in Account. Admins can't
+change it in the app. When bogey.config.ts sets security.requireAdminMfa, the
+server puts that value back when it next starts, so change it there too.
 ```
 
 ## org
@@ -313,6 +330,7 @@ failure of each. Reads the tables with the service key.
 bogey release [patch | minor | major | pre | <version>] [--pre <id>]
               [--push] [--skip-checks] [--no-freeze] [--dry-run]
 bogey release check <tag>
+bogey release sync <tag> [--yes]
 
 Releases Bogey from main, in order:
 
@@ -335,7 +353,12 @@ prerelease number (0.2.0-beta.0 → 0.2.0-beta.1). Without a version it asks.
 version and CHANGELOG.md section match (with Upgrade notes where the rule above asks). The pre-push hook and the release
 workflow run it, so a mismatched tag never reaches GitHub.
 
-Short flags: -n --dry-run
+`bogey release sync <tag>` compares the GitHub release's notes with that version's
+CHANGELOG.md section (the local file is the source of truth) and, when they differ,
+shows the difference and asks before overwriting them (--yes overwrites without asking).
+It needs the gh CLI, signed in.
+
+Short flags: -y --yes, -n --dry-run
 ```
 
 ## reset

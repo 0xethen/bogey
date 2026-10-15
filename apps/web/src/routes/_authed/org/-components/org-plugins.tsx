@@ -35,7 +35,14 @@ export function OrgPlugins({ orgId }: { orgId: string }) {
     sameKeys,
   );
   if (plugins.length === 0) {
-    return <p className="text-sm text-muted-fg">{t("orgExt.none")}</p>;
+    return (
+      <p className="text-sm text-muted-fg">
+        {t("orgExt.none")}{" "}
+        <a href="docs/plugins.md" className="text-primary hover:underline">
+          {t("orgExt.noneLink")}
+        </a>
+      </p>
+    );
   }
 
   const toggle = (key: string, on: boolean) =>

@@ -3,6 +3,7 @@ import { IconAlertTriangle, IconDatabase, IconSparkles } from "@tabler/icons-rea
 import { releaseCheckQueryOptions } from "#/lib/release.ts";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { useT } from "#/lib/translate.tsx";
+import { UPGRADING } from "#/components/app/SecurityNotice.tsx";
 
 export function schemaDrift(expected: Tuple<string>, applied: Tuple<string> | null) {
   if (applied === null) return { kind: "untracked" } as const;
@@ -57,15 +58,18 @@ export function ReleaseStatus() {
       <IconSparkles />
       <AlertTitle>{t("schema.releaseOut", { version: data.latest })}</AlertTitle>
       <AlertDescription>
-        {t("schema.runs", { version: data.current })} <code>bogey upgrade</code>{" "}
-        {t("schema.toUpdate")}{" "}
+        {t("schema.runsSee", { version: data.current })}{" "}
         {data.url ? (
           <a href={data.url} target="_blank" rel="noreferrer noopener" className="link">
             {t("schema.whatChanged")}
           </a>
         ) : (
           t("schema.changelog")
-        )}
+        )}{" "}
+        {t("schema.and")}{" "}
+        <a href={UPGRADING} target="_blank" rel="noreferrer noopener" className="link">
+          {t("schema.howToUpgrade")}
+        </a>
         .
       </AlertDescription>
     </Alert>

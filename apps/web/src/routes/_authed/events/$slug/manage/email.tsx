@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { brand } from "@bogey/config";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ownSettingsQueryOptions, settingsQueryOptions } from "@bogey/db/queries/settings";
 import { installedPlugins, pluginEmailKinds } from "@bogey/plugins";
@@ -47,8 +48,8 @@ function RouteComponent() {
         scope={{ scope: "event", eventId: event.id }}
         current={own}
         inheritedLayout={settings.email.layout}
-        orgName={session.org?.name ?? settings.branding.name}
-        platform={settings.branding.name}
+        orgName={session.org?.name ?? settings.branding.name ?? brand.name}
+        platform={settings.branding.name ?? brand.name}
         pluginKinds={pluginEmailKinds(installedPlugins())}
       />
       <PluginSettingSections page="email" />

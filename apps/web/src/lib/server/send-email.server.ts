@@ -127,11 +127,12 @@ export function emailContext(
     layout: instanceEmail.layout,
   });
   const branding = resolveSettings("branding", merged("branding"));
-  const orgName = org?.name ?? branding.name;
+  const platform = resolveSettings("branding", find("branding", "instance")).name ?? brand.name;
+  const orgName = org?.name ?? branding.name ?? platform;
   return {
     orgId: org?.id,
     orgName,
-    platform: resolveSettings("branding", find("branding", "instance")).name,
+    platform,
     senderName: email.senderName ?? orgName,
     accent: branding.accent,
     layout: email.layout ?? DEFAULT_EMAIL_LAYOUT,

@@ -106,13 +106,15 @@ reminders, results, announcements that an organizer chose to email) is written t
 database, the **outbox**, and sent from there with the same SMTP settings and the same
 per-organization daily limit.
 
-Every minute, if mail is waiting, the database calls the app at `<App address>/api/email/drain`
+Every minute, if mail is waiting, the database calls the app at `<appUrl>/api/email/drain`
 (`pg_cron` and `pg_net`), signed with a secret it keeps in Vault; the app reads the same secret
 from the database, so there is nothing to configure except the address:
 
-1. Open **Instance → Settings → Tenancy** and set **App address** to the URL the database can use
-   to reach Bogey, such as `https://hacks.example.com`. On a local Supabase stack, the database runs
-   in Docker, so use `http://host.docker.internal:3000`.
+1. Set `appUrl` in [`bogey.config.ts`](../configuration.md#keys-only-the-file-sets) to the URL the
+   database can use to reach Bogey, such as `https://hacks.example.com`, and restart the server (or
+   run `bogey config apply`). On a local Supabase stack, the database runs in Docker, so use
+   `http://host.docker.internal:3000`. Admins can't change it in the app, because a session that
+   could would decide where the database sends requests.
 2. Check **Instance → Overview**: the **Email outbox** line shows how many messages are queued, how
    old the oldest is, and the last failure.
 

@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ownSettingsQueryOptions, updateSettings } from "@bogey/db/queries/settings";
+import { ownSettingsQueryOptions } from "@bogey/db/queries/settings";
 import { Screen } from "@bogey/ui/components/screen";
+import { Textarea } from "@bogey/ui/components/textarea";
 import {
   prefetchSettingFields,
   SettingFields,
 } from "#/components/settings/fields/setting-fields.tsx";
-import { NetworkListForm } from "#/components/settings/fields/network-list.tsx";
+import { SettingRow } from "#/components/settings/fields/setting-row.tsx";
 import { searchSettings } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT } from "#/lib/translate.tsx";
 
@@ -32,7 +33,19 @@ function RouteComponent() {
     <Screen
       title={t("network.title")}
       // todo: switch to 0xethen/bogey repo wiki link
-      description={t("network.intro")}
+      description={
+        <>
+          {t("network.intro")}{" "}
+          <a
+            href="https://github.com/0xethen/bogey/wiki/self-hosting/network"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="link"
+          >
+            {t("network.introLink")}
+          </a>
+        </>
+      }
       width="embedded"
     >
       <SettingFields
@@ -40,13 +53,24 @@ function RouteComponent() {
         namespace="network"
         keys={["clientIpHeader", "trustedHops"]}
       />
-      <NetworkListForm
-        saved={network.trustedProxies}
-        onSave={(trustedProxies) => updateSettings(INSTANCE, "network", { trustedProxies })}
+      <SettingRow
+        id="network-trustedProxies"
+        anchor="network.trustedProxies"
+        keyName="trustedProxies"
         label={t("network.appServers")}
-        placeholder="172.18.0.0/16"
         description={t("network.appServersHelp")}
-      />
+        source={{ kind: "operator" }}
+      >
+        <Textarea
+          id="network-trustedProxies"
+          value={network.trustedProxies?.join("\n") ?? ""}
+          placeholder={t("network.none")}
+          rows={Math.max(2, network.trustedProxies?.length ?? 0)}
+          className="font-mono"
+          readOnly
+          disabled
+        />
+      </SettingRow>
     </Screen>
   );
 }

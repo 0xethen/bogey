@@ -2,24 +2,24 @@
 
 Each kind of setting has one home.
 
-| Tier        | Where                                                   | Changed by                | Examples                                      |
-| ----------- | ------------------------------------------------------- | ------------------------- | --------------------------------------------- |
-| Environment | `.env` at the repo root, or the container's environment | whoever deploys           | Supabase URL and keys, SMTP, hook secret      |
-| Instance    | `bogey.config.ts` at the repo root                      | whoever runs the instance | name, logo, theme, disabled plugins           |
-| Settings    | the database, edited in the app                         | admins and organizers     | sign-ups, email templates, deletion, networks |
+| Tier        | Where                                                   | Changed by                | Examples                                       |
+| ----------- | ------------------------------------------------------- | ------------------------- | ---------------------------------------------- |
+| Environment | `.env` at the repo root, or the container's environment | whoever deploys           | Supabase URL and keys, SMTP, hook secret       |
+| Instance    | `bogey.config.ts` at the repo root                      | whoever runs the instance | name, theme, plugins, trusted proxies, headers |
+| Settings    | the database, edited in the app                         | admins and organizers     | sign-ups, email templates, deletion, networks  |
 
 ## Environment
 
 See `.env.example` for the full list.
 
-| Variable                           | Used by              |                                                                  |
-| ---------------------------------- | -------------------- | ---------------------------------------------------------------- |
-| `SUPABASE_URL`                     | server, browser, CLI | Must be reachable from both the server and visitors' browsers.   |
-| `SUPABASE_PUBLISHABLE_KEY`         | server, browser      | The publishable (anon) key.                                      |
-| `SUPABASE_SERVICE_ROLE_KEY`        | server, CLI          | Secret. Never exposed to the browser.                            |
-| `SMTP_*`, `SEND_EMAIL_HOOK_SECRET` | server               | Sign-in email; see [Email](self-hosting/email.md).               |
-| `BOGEY_TRUST_PROXY`                | server               | `1` when a proxy that overwrites X-Forwarded-For fronts the app. |
-| `BOGEY_UPDATE_CHECK`               | server               | `false` stops the release and plugin update checks.              |
+| Variable                           | Used by              |                                                                        |
+| ---------------------------------- | -------------------- | ---------------------------------------------------------------------- |
+| `SUPABASE_URL`                     | server, browser, CLI | Must be reachable from both the server and visitors' browsers.         |
+| `SUPABASE_PUBLISHABLE_KEY`         | server, browser      | The publishable (anon) key.                                            |
+| `SUPABASE_SERVICE_ROLE_KEY`        | server, CLI          | Secret. Never exposed to the browser.                                  |
+| `SMTP_*`, `SEND_EMAIL_HOOK_SECRET` | server               | Sign-in email; see [Email](self-hosting/email.md).                     |
+| `BOGEY_TRUST_PROXY`                | server               | `1` is the same as `network.trustProxy: true` in `bogey.config.ts`.    |
+| `BOGEY_UPDATE_CHECK`               | server               | `false` stops the release, security advisory and plugin update checks. |
 
 Nothing is inlined into the browser bundle at build time: the server reads
 these when it starts and hands the browser only the URL and publishable key.
@@ -37,8 +37,19 @@ export default defineConfig({
     theme: "default",
     icons: { default: "/brand/logo.svg" },
   },
+  appUrl: "https://hacks.acme.org",
   plugins: { disabled: [] },
-  security: { verboseErrors: false },
+  network: {
+    trustProxy: true,
+    clientIpHeader: "x-forwarded-for",
+    trustedHops: 1,
+    trustedProxies: ["172.18.0.0/16"],
+  },
+  security: {
+    verboseErrors: false,
+    requireAdminMfa: true,
+    headers: { frameAncestors: ["'self'"], hsts: true },
+  },
   repository: "github:acme/bogey",
   updates: { check: true },
 });
@@ -52,12 +63,45 @@ export default defineConfig({
 - **`repository`:** this instance's repository as `github:owner/repo`. ⌘K's
   "Report an issue" opens its issues. It defaults to `upstream` (Bogey's own);
   `false` removes the entry.
-- **`updates.check`:** whether Instance → Overview and Instance → Plugins ask
-  GitHub for newer releases. It's one plain request to the public Releases API
-  with no instance data, and Bogey has no telemetry. `false`, or
-  `BOGEY_UPDATE_CHECK=false`, turns it off.
+- **`updates.check`:** whether Bogey asks GitHub for newer releases and for
+  security advisories that name the version it runs (Instance → Overview, a
+  banner for instance admins, Instance → Plugins, `bogey doctor` and the
+  console). They're plain requests to the public Releases and security
+  advisories APIs with no instance data, and Bogey has no telemetry. `false`, or
+  `BOGEY_UPDATE_CHECK=false`, turns it off; then watch the repository yourself
+  (see [Knowing when to upgrade](self-hosting/upgrading.md#knowing-when-to-upgrade)).
 - **`security.verboseErrors`:** show real errors on the error page in
   production. They're always shown in development.
+- **`security.headers`:** headers the server adds to every response.
+  `frameAncestors` lists who may put Bogey in a frame (default `["'self'"]`;
+  `[]` allows no one); `hsts: true` sends `Strict-Transport-Security`, so only
+  turn it on once the site is served over HTTPS for good;
+  `contentSecurityPolicy` is a full policy string, off by default because plugins
+  load their own scripts. `X-Content-Type-Options` and `Referrer-Policy` are always sent.
+- **`network.trustProxy`:** `true` when a proxy that overwrites X-Forwarded-For
+  (like `deploy/compose.yml`'s Caddy) fronts the app, so the app forwards the
+  visitor's address to the database.
+
+### Keys only the file sets
+
+Some settings decide who the database trusts, so a stolen admin session must not be
+able to change them. Admins see them read-only in the app, labeled "Set in
+bogey.config.ts" ([ADR 0029](adr/0029-operator-keys.md)):
+
+| Key                        | Setting                    | What it decides                                                                                                  |
+| -------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `appUrl`                   | `tenancy.appUrl`           | Where the database calls the app to send queued email ([Email](self-hosting/email.md)), and the link in webhooks |
+| `network.clientIpHeader`   | `network.clientIpHeader`   | Which header the database reads a visitor's address from                                                         |
+| `network.trustedHops`      | `network.trustedHops`      | How many proxies in front of Supabase append to X-Forwarded-For                                                  |
+| `network.trustedProxies`   | `network.trustedProxies`   | The app servers whose forwarded visitor address the database believes                                            |
+| `security.requireAdminMfa` | `accounts.requireAdminMfa` | Whether instance admins need an authenticator app (default `true`)                                               |
+
+The server writes the ones the file sets to the database on its first request after it
+starts. `bogey config apply` writes them without a restart, and `bogey config check` and
+`bogey doctor --remote` say when the database differs. A key the file leaves out keeps
+whatever the database has, and only the CLI can change it. `bogey mfa off` still lets
+locked-out admins back in; if the file says `requireAdminMfa: true`, change it there too,
+or the next restart turns it back on.
 
 ### When a change applies
 
@@ -65,11 +109,11 @@ The server reads the file once, when it starts. Edit it and restart the server (
 there is no rebuild. The browser is handed only what it needs: the brand, the repository, the disabled
 plugin list and whether errors are verbose. `updates` and `upstream` stay on the server.
 
-| Key                                                                                                                 | Needs                                                                                       |
-| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `brand.name`, `brand.shortName`, `brand.theme`, `repository`, `upstream`, `updates`, `security`, `plugins.disabled` | a restart                                                                                   |
-| `brand.icons` (the path)                                                                                            | a restart; the files themselves are in `apps/web/public`, so changing those needs a rebuild |
-| which themes exist, which plugins are installed                                                                     | a rebuild                                                                                   |
+| Key                                                                                                                                      | Needs                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `brand.name`, `brand.shortName`, `brand.theme`, `appUrl`, `network`, `repository`, `upstream`, `updates`, `security`, `plugins.disabled` | a restart (or `bogey config apply` for the keys only the file sets)                         |
+| `brand.icons` (the path)                                                                                                                 | a restart; the files themselves are in `apps/web/public`, so changing those needs a rebuild |
+| which themes exist, which plugins are installed                                                                                          | a rebuild                                                                                   |
 
 In a container the file is at `/app/bogey.config.ts`, with a copy baked in as the default. Mount yours over
 it read-only (`./bogey.config.ts:/app/bogey.config.ts:ro`, as the compose files do), or point
