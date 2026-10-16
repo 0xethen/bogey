@@ -14,10 +14,24 @@ export function schemaDrift(expected: Tuple<string>, applied: Tuple<string> | nu
   return { kind: "current" } as const;
 }
 
-export function SchemaStatus({ applied }: { applied: Tuple<string> | null }) {
-  const t = useT();
+type Drift = ReturnType<typeof schemaDrift>;
+
+// the instance's alerts in one stack, or nothing when there are none
+export function InstanceAlerts({ applied }: { applied: Tuple<string> | null }) {
   const drift = schemaDrift(__BOGEY_MIGRATIONS__, applied);
-  if (drift.kind === "current") return null;
+  const { data: release } = useQuery(releaseCheckQueryOptions());
+  const newer = release?.newer && release.latest ? release : null;
+  if (drift.kind === "current" && !newer) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      {drift.kind !== "current" && <SchemaStatus drift={drift} />}
+      {newer && <ReleaseStatus latest={newer.latest!} current={newer.current} url={newer.url} />}
+    </div>
+  );
+}
+
+function SchemaStatus({ drift }: { drift: Exclude<Drift, { kind: "current" }> }) {
+  const t = useT();
   if (drift.kind === "untracked") {
     return (
       <Alert>
@@ -49,18 +63,24 @@ export function SchemaStatus({ applied }: { applied: Tuple<string> | null }) {
   );
 }
 
-export function ReleaseStatus() {
+function ReleaseStatus({
+  latest,
+  current,
+  url,
+}: {
+  latest: string;
+  current: string;
+  url?: string | null;
+}) {
   const t = useT();
-  const { data } = useQuery(releaseCheckQueryOptions());
-  if (!data?.newer || !data.latest) return null;
   return (
     <Alert>
       <IconSparkles />
-      <AlertTitle>{t("schema.releaseOut", { version: data.latest })}</AlertTitle>
+      <AlertTitle>{t("schema.releaseOut", { version: latest })}</AlertTitle>
       <AlertDescription>
-        {t("schema.runsSee", { version: data.current })}{" "}
-        {data.url ? (
-          <a href={data.url} target="_blank" rel="noreferrer noopener" className="link">
+        {t("schema.runsSee", { version: current })}{" "}
+        {url ? (
+          <a href={url} target="_blank" rel="noreferrer noopener" className="link">
             {t("schema.whatChanged")}
           </a>
         ) : (

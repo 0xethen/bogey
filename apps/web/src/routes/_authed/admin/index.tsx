@@ -12,7 +12,7 @@ import { Screen } from "@bogey/ui/components/screen";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
 import { formatDateTime } from "@bogey/utils/time";
 import { IconBuilding, IconCalendarEvent, IconShieldCheck, IconUsers } from "@tabler/icons-react";
-import { ReleaseStatus, SchemaStatus } from "./-components/schema-status.tsx";
+import { InstanceAlerts } from "./-components/schema-status.tsx";
 import { msg, useT } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/admin/")({
@@ -34,8 +34,7 @@ function RouteComponent() {
 
   return (
     <Screen title={t("adminHome.title")} description={t("adminHome.intro")}>
-      <SchemaStatus applied={overview.migrations} />
-      <ReleaseStatus />
+      <InstanceAlerts applied={overview.migrations} />
       <StatGroup>
         <Stat
           icon={IconBuilding}
