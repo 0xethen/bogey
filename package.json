@@ -17,6 +17,7 @@
   "scripts": {
     "ready": "vp check && vp run -r test && vp run -r build",
     "dev": "echo \"doesn't work with TanStack Devtools Source Inspector, cannot handle terminal input\" && concurrently -i -n web,console,bogey -c auto --kill-others \"vp run web#dev\" \"node tools/cli/src/bin.ts console\" \"node tools/cli/src/bin.ts watch\"",
+    "devn": "echo \"doesn't work with TanStack Devtools Source Inspector, cannot handle terminal input\" && concurrently -i -n web,console,bogey -c auto --kill-others \"vp run web#dev --host\" \"node tools/cli/src/bin.ts console\" \"node tools/cli/src/bin.ts watch\"",
     "webdev": "vp run web#dev",
     "test": "vp test",
     "release": "vpr bogey release",
