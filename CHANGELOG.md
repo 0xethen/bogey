@@ -23,6 +23,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - Participants can leave and join teams as often as they like by default; set Teams → Times someone can leave a team to cap it.
 - The check-in desk's button says Check in, instead of keeping the last person's name after a scan.
 - Your badge is its own home block (Badge), shown while the event has a Check-in window. New in-person events put it at the top of the side column; for an existing event, add it in Customize home. The format presets now only add session types several sessions share (workshops, talks, livestreams, office hours).
+- Instance admins can turn on password sign-in for anyone in Instance → People, and set the password for them or let them set their own in Account → Security. Admins' own passwords (Account → Security) now actually work: the database used to throw every password away.
 - Manage → People lists the event's people in a table: check people (or all of them) to set their role or division, check them in, or remove them at once. Role changes and removal skip you.
 - Events can set the words before the submission countdown in the header (Manage → Agenda → What participants see → Countdown label). Tablets and computers show them; phones show only the time.
 - Programming contests:
@@ -36,7 +37,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ### Upgrade notes
 
-- Adds the `session_announcements`, `rubrics_and_deliberation`, `about_for_members`, `clear_event_data`, `session_levels`, `chat_blocks`, `limit_wording` and `unlimited_team_leaves` migrations; `bogey upgrade` applies them.
+- Adds the `session_announcements`, `rubrics_and_deliberation`, `about_for_members`, `clear_event_data`, `session_levels`, `chat_blocks`, `limit_wording`, `unlimited_team_leaves` and `password_logins` migrations; `bogey upgrade` applies them.
 - The bundled `challenges` plugin adds the `2_golf_ranges_and_errors` migration; `bogey upgrade` applies it.
 - `about_for_members` puts each event's old About in front of its For participants text. Events that only had About stay public (Before approval → About is set to share it); events that had both start members-only, so check those if part of About should stay public and move that part to a Text block. A homepage's For participants block becomes About, or is removed when the page already has one. `events.description_md` is dropped.
 

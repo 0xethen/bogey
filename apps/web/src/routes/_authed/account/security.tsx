@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { myPasswordLoginFn } from "@bogey/db/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { SIGN_IN_PROVIDERS } from "@bogey/config/sign-in";
@@ -31,12 +33,17 @@ function RouteComponent() {
   const t = useT();
   const { session } = Route.useRouteContext();
   const { mfa } = Route.useSearch();
+  const passwordLogin = useQuery({
+    queryKey: ["password-login", session.user.id] as const,
+    queryFn: () => myPasswordLoginFn(),
+    enabled: !session.platformAdmin,
+  });
   return (
     <Screen title={t("accountNav.signInSecurity")} width="embedded">
       {mfa === "admin" && <TwoFactorSection forAdmin />}
       <LinkedSignIns />
       {mfa !== "admin" && <TwoFactorSection />}
-      {session.platformAdmin && <AdminPasswordSection />}
+      {(session.platformAdmin || passwordLogin.data) && <AdminPasswordSection />}
     </Screen>
   );
 }

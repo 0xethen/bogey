@@ -180,6 +180,14 @@ The first admin comes from `bogey org init`, which uses the service role and
 needs no second factor; they set one up from Account the first time they open
 Instance. The CLI and the service role aren't affected by the setting.
 
+## Passwords
+
+Bogey signs people in by email link or code, and the database throws away any password set on an account, with two
+exceptions: instance admins, and people an instance admin turned on **Password** for in **Instance → People**. That
+dialog can set the password for them, or they set their own in **Account → Security**; either way they sign in from
+**use your password** on the sign-in page. Turning it off clears the password. Instance admins still need their
+authenticator app when the instance requires one.
+
 ## When no email arrives
 
 A `POST /auth/v1/otp` returning `{}` means GoTrue accepted the request, not

@@ -111,12 +111,28 @@ create trigger org_members_guard_owners
   before insert or update or delete on public.org_members
   for each row execute function private.guard_org_owners();
 
+-- people a platform admin let sign in with a password; everyone else signs in by email
+create table public.password_logins (
+  user_id uuid primary key references public.profiles on delete cascade,
+  granted_by uuid references public.profiles on delete set null,
+  created_at timestamptz not null default now()
+);
+create index password_logins_granted_by_fk_idx on public.password_logins (granted_by);
+alter table public.password_logins enable row level security;
+create policy password_logins_select on public.password_logins for select to authenticated
+  using (user_id = (select auth.uid()) or (select private.is_platform_admin()));
+
 create function private.strip_password()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 begin
+  if exists (select 1 from public.password_logins where user_id = new.id)
+    or exists (select 1 from public.platform_admins where user_id = new.id) then
+    return new;
+  end if;
   new.encrypted_password := null;
   return new;
 end;

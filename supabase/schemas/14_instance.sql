@@ -73,7 +73,7 @@ $$;
 
 create function public.instance_people(p_search text default null, p_limit integer default 100)
 returns table (
-  id uuid, name text, email text, joined_at timestamptz, orgs text[], admin boolean
+  id uuid, name text, email text, joined_at timestamptz, orgs text[], admin boolean, password_login boolean
 )
 language plpgsql
 stable
@@ -90,7 +90,8 @@ begin
     select p.id, p.display_name, u.email::text, u.created_at,
       coalesce((select array_agg(o.name order by o.name)
         from public.org_members m join public.orgs o on o.id = m.org_id where m.user_id = p.id), '{}'),
-      exists (select 1 from public.platform_admins a where a.user_id = p.id)
+      exists (select 1 from public.platform_admins a where a.user_id = p.id),
+      exists (select 1 from public.password_logins l where l.user_id = p.id)
     from public.profiles p
     join auth.users u on u.id = p.id
     where p_search is null or trim(p_search) = ''
@@ -208,6 +209,28 @@ begin
   end if;
 end;
 $$;
+
+-- turning it off also clears the password, so it can't be used again later
+create function public.set_password_login(p_user uuid, p_enabled boolean)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not private.is_platform_admin() then
+    raise exception 'only platform admins can change password logins' using errcode = '42501';
+  end if;
+  if p_enabled then
+    insert into public.password_logins (user_id, granted_by) values (p_user, (select auth.uid()))
+    on conflict do nothing;
+  else
+    delete from public.password_logins where user_id = p_user;
+    update auth.users set encrypted_password = null where id = p_user;
+  end if;
+end;
+$$;
+grant execute on function public.set_password_login(uuid, boolean) to authenticated;
 
 create table public.org_limit_overrides (
   org_id uuid primary key references public.orgs on delete cascade,

@@ -508,7 +508,7 @@ export const en = {
   "password.confirm": "Confirm password",
   "password.mismatch": "The passwords don't match",
   "password.intro":
-    "As an instance admin, you can also sign in with a password, from the sign-in page. Your authenticator app is still asked for when the instance requires one.",
+    "You can also sign in with a password, from the sign-in page. Instance admins are still asked for their authenticator app when the instance requires one.",
   "password.failed": "Couldn't set the password",
   "password.saved": "Saved. Use it next time you sign in.",
   "password.set": "Set password",
@@ -1570,11 +1570,11 @@ export const en = {
   "otp.checking": "Checking...",
   "passwordSignIn.title": "Sign in with a password",
   "passwordSignIn.intro":
-    "If you manage this application, you can sign in with your email and password.",
+    "If an admin turned on password sign-in for you, sign in with your email and password.",
   "passwordSignIn.needPassword": "Enter your password",
   "passwordSignIn.invalid": "That email and password don't match.",
   "passwordSignIn.notAdmin":
-    "Passwords are only for instance admins. Sign in with an email link instead.",
+    "Password sign-in isn't on for this account. Sign in with an email link instead.",
   "passwordSignIn.rateLimited": "Too many tries just now. Wait a few minutes and try again.",
   "passwordSignIn.captcha": "Complete the check above, then try again.",
   "passwordSignIn.linkInstead": "Email me a link instead",
@@ -1703,6 +1703,19 @@ export const en = {
   "adminPeople.makeBody":
     "They'll be able to manage every organization, event and instance setting.",
   "adminPeople.makeLabel": "Make admin",
+  "adminPeople.password": "Password",
+  "adminPeople.passwordOn": "Password sign-in",
+  "adminPeople.passwordOff": "Email only",
+  "adminPeople.passwordButton": "Password...",
+  "adminPeople.passwordTitle": "Password sign-in for {name}",
+  "adminPeople.passwordBody":
+    "They can sign in with their email and a password as well as an email link. Set one here and share it with them, or leave it empty and they set their own in Account > Security.",
+  "adminPeople.passwordField": "Password",
+  "adminPeople.passwordFieldHelp": "Optional. At least {min} characters.",
+  "adminPeople.passwordAllow": "Turn on",
+  "adminPeople.passwordSave": "Save password",
+  "adminPeople.passwordTurnOff": "Turn off and clear it",
+  "adminPeople.passwordFailed": "Couldn't change password sign-in",
   "adminPeople.makeButton": "Make admin...",
   "deletions.title": "Pending Deletions",
   "deletions.intro": "People who asked for their account to be deleted from Account settings.",

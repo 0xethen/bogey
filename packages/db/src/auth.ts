@@ -143,6 +143,19 @@ async function adminStatus(
   };
 }
 
+// a platform admin turned on password sign-in for this account (Instance → People)
+async function hasPasswordLogin(supabase: ReturnType<typeof createServerClient>): Promise<boolean> {
+  const { data: userData } = await supabase.auth.getUser();
+  const id = userData.user?.id;
+  if (!id) return false;
+  const { data } = await supabase.from("password_logins").select("user_id").eq("user_id", id);
+  return (data?.length ?? 0) > 0;
+}
+
+export const myPasswordLoginFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<boolean> => hasPasswordLogin(createServerClient()),
+);
+
 export const PASSWORD_MIN = 12;
 
 export type PasswordSignInResult =
@@ -173,7 +186,7 @@ export const signInWithPasswordFn = createServerFn({ method: "POST" })
       return { ok: false, reason: "invalid" };
     }
     const status = await adminStatus(supabase);
-    if (!status?.admin) {
+    if (!status?.admin && !(await hasPasswordLogin(supabase))) {
       await supabase.auth.signOut({ scope: "local" });
       return { ok: false, reason: "not_admin" };
     }
@@ -191,8 +204,10 @@ export const setAdminPasswordFn = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ ok: true } | { ok: false; message: string }> => {
     const supabase = createServerClient();
     const status = await adminStatus(supabase);
-    if (!status?.admin) return { ok: false, message: "Only instance admins can set a password." };
-    if (status.required && status.aal !== "aal2") {
+    if (!status?.admin && !(await hasPasswordLogin(supabase))) {
+      return { ok: false, message: "Password sign-in isn't on for this account." };
+    }
+    if (status?.admin && status.required && status.aal !== "aal2") {
       return { ok: false, message: "Verify your authenticator app first, then set a password." };
     }
     const { error } = await supabase.auth.updateUser({ password: data.password });

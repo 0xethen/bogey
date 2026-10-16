@@ -1,6 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { createServerClient } from "../server.ts";
+import { createAdminClient } from "../admin.ts";
+import { PASSWORD_MIN } from "../auth.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import { jsonRecord, type Enums, type Json } from "../types.ts";
 import { requireId, requireOneOf, requireSlug, requireText } from "./validate.ts";
@@ -114,6 +116,7 @@ export interface InstancePerson {
   joinedAt: string;
   orgs: string[];
   admin: boolean;
+  passwordLogin: boolean;
 }
 
 export const instancePeopleFn = createServerFn({ method: "GET" })
@@ -133,6 +136,7 @@ export const instancePeopleFn = createServerFn({ method: "GET" })
         joinedAt: row.joined_at,
         orgs: row.orgs ?? [],
         admin: row.admin,
+        passwordLogin: row.password_login,
       })),
     );
   });
@@ -142,6 +146,32 @@ export const instancePeopleQueryOptions = (search: string) =>
     queryKey: ["instance", "people", search] as const,
     queryFn: async () => unwrap(await instancePeopleFn({ data: search })),
     retry: retryPolicy,
+  });
+
+/** Turns someone's password sign-in on or off; with `password`, also sets it. Platform admins only. */
+export const setPasswordLoginFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as { userId?: unknown; enabled?: unknown; password?: unknown };
+    const password = typeof raw.password === "string" && raw.password ? raw.password : null;
+    if (password !== null && (password.length < PASSWORD_MIN || password.length > 200)) {
+      throw new Error(`Use at least ${PASSWORD_MIN} characters`);
+    }
+    return { userId: requireId(raw.userId, "userId"), enabled: raw.enabled === true, password };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    // the RPC checks the caller is a platform admin before the service key sets anything
+    const { error } = await createServerClient().rpc("set_password_login", {
+      p_user: data.userId,
+      p_enabled: data.enabled,
+    });
+    if (error) return toFailure(error, "changing password sign-in");
+    if (data.enabled && data.password) {
+      const { error: setError } = await createAdminClient().auth.admin.updateUserById(data.userId, {
+        password: data.password,
+      });
+      if (setError) return fail("invalid", setError.message);
+    }
+    return ok(null);
   });
 
 export const addOrgDomainFn = createServerFn({ method: "POST" })

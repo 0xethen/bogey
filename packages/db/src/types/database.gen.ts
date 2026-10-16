@@ -2135,6 +2135,40 @@ export type Database = {
           },
         ];
       };
+      password_logins: {
+        Row: {
+          created_at: string;
+          granted_by: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          granted_by?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          granted_by?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "password_logins_granted_by_fkey";
+            columns: ["granted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "password_logins_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       platform_admins: {
         Row: {
           created_at: string;
@@ -4103,6 +4137,7 @@ export type Database = {
           joined_at: string;
           name: string;
           orgs: string[];
+          password_login: boolean;
         }[];
       };
       instance_reports: {
@@ -4485,6 +4520,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      set_password_login: { Args: { p_enabled: boolean; p_user: string }; Returns: undefined };
       set_platform_admin: { Args: { p_admin: boolean; p_email: string }; Returns: undefined };
       set_report_handled: { Args: { p_handled: boolean; p_id: string }; Returns: undefined };
       set_role_grants: {

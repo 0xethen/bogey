@@ -13,10 +13,21 @@ import { z } from "zod";
 import {
   instanceAdminsQueryOptions,
   instancePeopleQueryOptions,
+  setPasswordLoginFn,
   setPlatformAdminFn,
   type InstancePerson,
 } from "@bogey/db/queries/instance";
-import { unwrap } from "@bogey/db/errors";
+import { requestFailure, unwrap } from "@bogey/db/errors";
+import { PASSWORD_MIN } from "@bogey/db/auth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@bogey/ui/components/dialog";
+import { FieldGroup } from "@bogey/ui/components/field";
+import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { formatDate, type FormatOptions } from "@bogey/utils/time";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Badge } from "@bogey/ui/components/badge";
@@ -189,6 +200,11 @@ function peopleColumns(options: {
       ),
     }),
     column.display({
+      id: "password",
+      header: t("adminPeople.password"),
+      cell: (info) => <PasswordLogin person={info.row.original} />,
+    }),
+    column.display({
       id: "actions",
       header: () => <span className="sr-only">{t("adminPeople.actions")}</span>,
       cell: (info) => {
@@ -235,4 +251,97 @@ function peopleColumns(options: {
       },
     }),
   ]);
+}
+
+const passwordSchema = (t: T) =>
+  z.object({
+    password: z
+      .string()
+      .refine(
+        (value) => value === "" || (value.length >= PASSWORD_MIN && value.length <= 200),
+        t("password.min", { min: PASSWORD_MIN }),
+      )
+      .meta({ label: t("adminPeople.passwordField") })
+      .describe(t("adminPeople.passwordFieldHelp", { min: PASSWORD_MIN })),
+  });
+
+// turns someone's password sign-in on or off, and can set the password for them
+function PasswordLogin({ person }: { person: InstancePerson }) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const schema = useMemo(() => passwordSchema(t), [t]);
+  const [open, setOpen] = useState(false);
+  const on = person.passwordLogin || person.admin;
+  const done = async () => {
+    setOpen(false);
+    await queryClient.invalidateQueries({ queryKey: ["instance", "people"] });
+  };
+  const form = useAppForm({
+    defaultValues: { password: "" },
+    errorVisibility,
+    validators: [rewardEarlyPunishLate(schema)],
+    onSubmit: async ({ value, formApi, createValidationError }) => {
+      const result = await setPasswordLoginFn({
+        data: { userId: person.id, enabled: true, password: value.password },
+      }).catch(requestFailure);
+      if (!result.ok) return createValidationError(result.error.message);
+      formApi.reset();
+      await done();
+      return undefined;
+    },
+  });
+  const turnOff = useMutation({
+    mutationFn: async () =>
+      unwrap(await setPasswordLoginFn({ data: { userId: person.id, enabled: false } })),
+    onSuccess: done,
+  });
+  return (
+    <div className="-my-1.5 flex items-center gap-2">
+      <span className="whitespace-nowrap text-muted-fg">
+        {on ? t("adminPeople.passwordOn") : t("adminPeople.passwordOff")}
+      </span>
+      {!person.admin && (
+        <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+          {t("adminPeople.passwordButton")}
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("adminPeople.passwordTitle", { name: person.name })}</DialogTitle>
+            <DialogDescription>{t("adminPeople.passwordBody")}</DialogDescription>
+          </DialogHeader>
+          <form.AppForm>
+            <form.Form>
+              <FieldGroup>
+                <form.Field name="password">
+                  {(field) => <field.TextField type="password" autoComplete="new-password" />}
+                </form.Field>
+                <form.FormAlert title={t("adminPeople.passwordFailed")} />
+                <ErrorAlert error={turnOff.error} title={t("adminPeople.passwordFailed")} />
+                <div className="flex flex-wrap gap-2">
+                  <form.Submit pending={t("common.saving")}>
+                    {person.passwordLogin
+                      ? t("adminPeople.passwordSave")
+                      : t("adminPeople.passwordAllow")}
+                  </form.Submit>
+                  {person.passwordLogin && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="text-destructive"
+                      disabled={turnOff.isPending}
+                      onClick={() => turnOff.mutate()}
+                    >
+                      {t("adminPeople.passwordTurnOff")}
+                    </Button>
+                  )}
+                </div>
+              </FieldGroup>
+            </form.Form>
+          </form.AppForm>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
