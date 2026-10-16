@@ -31,7 +31,9 @@ export function Clock({ placement }: { placement: "center" | "end" }) {
         role="timer"
         aria-live="off"
       >
-        <span className="hidden xl:inline text-muted-fg">{t("clock.closeIn")} </span>
+        <span className="hidden sm:inline text-muted-fg">
+          {event?.countdownLabel ?? t("clock.closeIn")}{" "}
+        </span>
         {formatRemaining(closing - now)}
       </span>
     );

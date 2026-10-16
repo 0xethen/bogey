@@ -98,7 +98,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
         id: "windows",
       }),
       searchSection(t("manageAgenda.participantsSee"), { id: "what-participants-see" }),
-      ...searchSettings("schedule", ["display", "showEventTimezone"], t),
+      ...searchSettings("schedule", ["display", "showEventTimezone", "countdownLabel"], t),
       searchSection(t("manageAgenda.attendance"), {
         keywords: ["check-in", "codes"],
         id: "attendance",
@@ -1275,7 +1275,7 @@ function ParticipantView() {
       <SettingFields
         scope={{ scope: "event", eventId: event.id }}
         namespace="schedule"
-        keys={["display", "showEventTimezone"]}
+        keys={["display", "showEventTimezone", "countdownLabel"]}
       />
       {current.display !== "hidden" && (
         <ul className="flex flex-col gap-2">

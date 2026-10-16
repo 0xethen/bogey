@@ -721,8 +721,19 @@ export const settingsRegistry = {
         .max(50)
         .optional()
         .describe("Windows participants never see listed"),
+      countdownLabel: z
+        .string()
+        .max(40, "Keep it under 40 characters")
+        .optional()
+        .describe("The words before the time left in the header, on tablets and computers"),
     }),
     fields: {
+      countdownLabel: {
+        label: "Countdown label",
+        placeholder: "Submissions close in",
+        description:
+          'Shown before the time left in the header while submissions are open, on tablets and computers. Phones show only the time. Empty uses "Submissions close in".',
+      },
       showEventTimezone: {
         label: "Times in the event's timezone",
         description:

@@ -20,6 +20,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - Asking about a problem now opens the new conversation in Messages right away instead of the announcements channel until a refresh, and "About" on a problem's conversation is a link.
 - The announcements channel's bottom bar explains itself, with New announcement... on the right.
 - A scanned check-in code stays in the code box when it doesn't check anyone in, so it can be checked or fixed by hand.
+- Events can set the words before the submission countdown in the header (Manage → Agenda → What participants see → Countdown label). Tablets and computers show them; phones show only the time.
 - Programming contests:
   - Code golf is scored by total length by default (problems solved, then the fewest characters), and the leaderboard shows it. A new **Length ranges** score gives points for each range of lengths, set per problem in the jury editor. Events that kept the old default ("in proportion") switch to total length; pick **In proportion** again to keep it.
   - **Run** uses the code as it is now: Python starts from a fresh namespace each run, so names from earlier versions no longer linger. Errors show only the lines from the participant's code, with a checkbox for the runner's lines.

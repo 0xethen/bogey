@@ -17,6 +17,8 @@ export interface EventViewer {
   pluginSettings: Record<string, Record<string, unknown>>;
   hasAgenda: boolean;
   chat: ResolvedValue<"chat">;
+  /** The event's own words before the submission countdown, if it set any. */
+  countdownLabel: string | null;
 }
 
 export interface Viewer {
@@ -65,6 +67,7 @@ export function useEventViewer(): EventViewer | undefined {
     pluginSettings: context.pluginSettings,
     hasAgenda: context.hasAgenda,
     chat: context.chat,
+    countdownLabel: context.countdownLabel,
   };
 }
 

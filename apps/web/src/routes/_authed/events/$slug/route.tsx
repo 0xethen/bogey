@@ -93,6 +93,7 @@ export const Route = createFileRoute("/_authed/events/$slug")({
       missing: missingPlugins(settings.plugins),
       chat: settings.chat,
       announcements: settings.announcements,
+      countdownLabel: settings.schedule.countdownLabel?.trim() || null,
       hasAgenda: agenda.slots.length > 0 || agendaMilestones(windows, settings.schedule).length > 0,
     };
   },

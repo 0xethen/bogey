@@ -48,6 +48,7 @@ const inEvent: EventViewer = {
   pluginSettings: {},
   hasAgenda: false,
   chat: resolveSettings("chat", undefined),
+  countdownLabel: null,
 };
 
 const root: CommandRoute = { id: "__root__", fullPath: "/", staticData: {} };

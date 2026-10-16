@@ -144,6 +144,7 @@ Set at: instance, org, event.
 | `showEventTimezone` | on / off | `false` | Show times in the event's timezone, named, instead of each viewer's own |
 | `display` | `hidden` · `list` · `timeline` | `list` | How the event home and agenda show windows to participants |
 | `hiddenWindows` | list | `[]` | Windows participants never see listed |
+| `countdownLabel` | text | — | The words before the time left in the header, on tablets and computers |
 
 ## Agenda (`agenda`)
 
