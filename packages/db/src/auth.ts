@@ -89,7 +89,15 @@ export const sessionQueryKey = ["session"] as const;
 export const sessionQueryOptions = () =>
   queryOptions({
     queryKey: sessionQueryKey,
-    queryFn: () => getSessionFn(),
+    queryFn: async (): Promise<SessionResult> => {
+      // a dev-server reload can briefly answer server functions with nothing; ask once more
+      let result: SessionResult | undefined = await getSessionFn();
+      if (!result) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        result = await getSessionFn();
+      }
+      return result ?? { status: "unavailable" };
+    },
     staleTime: 10_000,
   });
 
