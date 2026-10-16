@@ -23,7 +23,8 @@ advisory (see docs/contributing.md#security-releases). -->
 - Participants can leave and join teams as often as they like by default; set Teams → Times someone can leave a team to cap it.
 - The check-in desk's button says Check in, instead of keeping the last person's name after a scan.
 - Your badge is its own home block (Badge), shown while the event has a Check-in window. New in-person events put it at the top of the side column; for an existing event, add it in Customize home. The format presets now only add session types several sessions share (workshops, talks, livestreams, office hours).
-- Instance admins can turn on password sign-in for anyone in Instance → People, and set the password for them or let them set their own in Account → Security. Admins' own passwords (Account → Security) now actually work: the database used to throw every password away.
+- Instance admins can allow password sign-in for anyone in Instance → People; the person sets their own password in Account → Security, and turning it off clears it and signs them out everywhere. Admins' own passwords (Account → Security) now actually work: the database used to throw every password away. Admin grants and password changes are listed under Instance → People → Changes.
+- Account → Security shows where you're signed in, and signs out one device, every other one, or everywhere.
 - Manage → People lists the event's people in a table: check people (or all of them) to set their role or division, check them in, or remove them at once. Role changes and removal skip you.
 - Events can set the words before the submission countdown in the header (Manage → Agenda → What participants see → Countdown label). Tablets and computers show them; phones show only the time.
 - Programming contests:

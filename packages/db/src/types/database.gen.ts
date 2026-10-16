@@ -1511,6 +1511,42 @@ export type Database = {
           },
         ];
       };
+      instance_audit: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          created_at: string;
+          id: number;
+          meta: NonNullable<Json>;
+          target_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          created_at?: string;
+          id?: never;
+          meta?: NonNullable<Json>;
+          target_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          created_at?: string;
+          id?: never;
+          meta?: NonNullable<Json>;
+          target_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "instance_audit_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       invite_links: {
         Row: {
           auto_approve: boolean;
@@ -4050,6 +4086,7 @@ export type Database = {
         Args: { p_error?: string; p_id: number; p_max_attempts?: number; p_outcome: string };
         Returns: undefined;
       };
+      end_my_session: { Args: { p_session: string }; Returns: boolean };
       event_agenda: { Args: { p_event: string }; Returns: Json };
       event_archive_people: {
         Args: { p_event: string };
@@ -4244,6 +4281,18 @@ export type Database = {
           code: string;
           kind: string;
           label: string;
+        }[];
+      };
+      my_sessions: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          aal: string;
+          created_at: string;
+          current: boolean;
+          id: string;
+          ip: string;
+          last_active: string;
+          user_agent: string;
         }[];
       };
       new_team_code: { Args: { p_event: string }; Returns: string };

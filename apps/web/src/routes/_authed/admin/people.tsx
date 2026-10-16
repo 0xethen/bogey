@@ -13,23 +13,15 @@ import { z } from "zod";
 import {
   instanceAdminsQueryOptions,
   instancePeopleQueryOptions,
+  instanceAuditQueryOptions,
   setPasswordLoginFn,
   setPlatformAdminFn,
   type InstancePerson,
 } from "@bogey/db/queries/instance";
-import { requestFailure, unwrap } from "@bogey/db/errors";
-import { PASSWORD_MIN } from "@bogey/db/auth";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@bogey/ui/components/dialog";
-import { FieldGroup } from "@bogey/ui/components/field";
-import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
+import { unwrap } from "@bogey/db/errors";
 import { formatDate, type FormatOptions } from "@bogey/utils/time";
 import { NameAvatar } from "@bogey/ui/components/avatar";
+import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Badge } from "@bogey/ui/components/badge";
 import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
@@ -49,6 +41,7 @@ export const Route = createFileRoute("/_authed/admin/people")({
     Promise.all([
       context.query.ensureQueryData(instanceAdminsQueryOptions()),
       context.query.ensureQueryData(instancePeopleQueryOptions(deps.q)),
+      context.query.ensureQueryData(instanceAuditQueryOptions()),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="wide" layout="table" />,
@@ -152,6 +145,8 @@ function RouteComponent() {
           <p className="text-sm text-muted-fg">{t("adminPeople.first200")}</p>
         )}
       </Screen.Section>
+
+      <InstanceChanges />
     </Screen>
   );
 }
@@ -253,95 +248,108 @@ function peopleColumns(options: {
   ]);
 }
 
-const passwordSchema = (t: T) =>
-  z.object({
-    password: z
-      .string()
-      .refine(
-        (value) => value === "" || (value.length >= PASSWORD_MIN && value.length <= 200),
-        t("password.min", { min: PASSWORD_MIN }),
-      )
-      .meta({ label: t("adminPeople.passwordField") })
-      .describe(t("adminPeople.passwordFieldHelp", { min: PASSWORD_MIN })),
-  });
-
-// turns someone's password sign-in on or off, and can set the password for them
+// someone sets their own password once this is on; turning it off clears it and signs them out
 function PasswordLogin({ person }: { person: InstancePerson }) {
   const t = useT();
   const queryClient = useQueryClient();
-  const schema = useMemo(() => passwordSchema(t), [t]);
-  const [open, setOpen] = useState(false);
-  const on = person.passwordLogin || person.admin;
-  const done = async () => {
-    setOpen(false);
-    await queryClient.invalidateQueries({ queryKey: ["instance", "people"] });
-  };
-  const form = useAppForm({
-    defaultValues: { password: "" },
-    errorVisibility,
-    validators: [rewardEarlyPunishLate(schema)],
-    onSubmit: async ({ value, formApi, createValidationError }) => {
-      const result = await setPasswordLoginFn({
-        data: { userId: person.id, enabled: true, password: value.password },
-      }).catch(requestFailure);
-      if (!result.ok) return createValidationError(result.error.message);
-      formApi.reset();
-      await done();
-      return undefined;
-    },
-  });
-  const turnOff = useMutation({
-    mutationFn: async () =>
-      unwrap(await setPasswordLoginFn({ data: { userId: person.id, enabled: false } })),
-    onSuccess: done,
+  const change = useMutation({
+    mutationFn: async (enabled: boolean) =>
+      unwrap(await setPasswordLoginFn({ data: { userId: person.id, enabled } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["instance"] }),
   });
   return (
-    <div className="-my-1.5 flex items-center gap-2">
-      <span className="whitespace-nowrap text-muted-fg">
-        {on ? t("adminPeople.passwordOn") : t("adminPeople.passwordOff")}
-      </span>
-      {!person.admin && (
-        <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-          {t("adminPeople.passwordButton")}
-        </Button>
-      )}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("adminPeople.passwordTitle", { name: person.name })}</DialogTitle>
-            <DialogDescription>{t("adminPeople.passwordBody")}</DialogDescription>
-          </DialogHeader>
-          <form.AppForm>
-            <form.Form>
-              <FieldGroup>
-                <form.Field name="password">
-                  {(field) => <field.TextField type="password" autoComplete="new-password" />}
-                </form.Field>
-                <form.FormAlert title={t("adminPeople.passwordFailed")} />
-                <ErrorAlert error={turnOff.error} title={t("adminPeople.passwordFailed")} />
-                <div className="flex flex-wrap gap-2">
-                  <form.Submit pending={t("common.saving")}>
-                    {person.passwordLogin
-                      ? t("adminPeople.passwordSave")
-                      : t("adminPeople.passwordAllow")}
-                  </form.Submit>
-                  {person.passwordLogin && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="text-destructive"
-                      disabled={turnOff.isPending}
-                      onClick={() => turnOff.mutate()}
-                    >
-                      {t("adminPeople.passwordTurnOff")}
-                    </Button>
-                  )}
-                </div>
-              </FieldGroup>
-            </form.Form>
-          </form.AppForm>
-        </DialogContent>
-      </Dialog>
+    <div className="-my-1.5 flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className="whitespace-nowrap text-muted-fg">
+          {person.admin
+            ? t("adminPeople.passwordAdmin")
+            : person.passwordLogin
+              ? t("adminPeople.passwordOn")
+              : t("adminPeople.passwordOff")}
+        </span>
+        {!person.admin &&
+          (person.passwordLogin ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive"
+              disabled={change.isPending}
+              confirm={{
+                title: t("adminPeople.passwordOffTitle", { name: person.name }),
+                description: t("adminPeople.passwordOffBody"),
+                label: t("adminPeople.passwordTurnOff"),
+              }}
+              onClick={() => change.mutate(false)}
+            >
+              {t("adminPeople.passwordTurnOff")}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={change.isPending}
+              confirm={{
+                title: t("adminPeople.passwordOnTitle", { name: person.name }),
+                description: t("adminPeople.passwordOnBody"),
+                label: t("adminPeople.passwordAllow"),
+                variant: "default",
+              }}
+              onClick={() => change.mutate(true)}
+            >
+              {t("adminPeople.passwordAllow")}
+            </Button>
+          ))}
+      </div>
+      <ErrorAlert error={change.error} title={t("adminPeople.passwordFailed")} />
     </div>
+  );
+}
+
+const CHANGE_LABELS = {
+  "platform.admin_added": "adminPeople.changeAdminAdded",
+  "platform.admin_removed": "adminPeople.changeAdminRemoved",
+  "platform.password_on": "adminPeople.changePasswordOn",
+  "platform.password_off": "adminPeople.changePasswordOff",
+} as const;
+
+function isKnownChange(action: string): action is keyof typeof CHANGE_LABELS {
+  return action in CHANGE_LABELS;
+}
+
+function InstanceChanges() {
+  const t = useT();
+  const { data: changes } = useSuspenseQuery(instanceAuditQueryOptions());
+  return (
+    <Screen.Section
+      id="changes"
+      title={t("adminPeople.changes")}
+      description={t("adminPeople.changesHelp")}
+    >
+      {changes.length === 0 ? (
+        <p className="text-sm text-muted-fg">{t("adminPeople.noChanges")}</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-border text-sm">
+          {changes.map((change) => (
+            <li key={change.id} className="flex flex-wrap items-baseline gap-x-2 py-2">
+              <span>
+                {t(
+                  isKnownChange(change.action)
+                    ? CHANGE_LABELS[change.action]
+                    : "adminPeople.changeOther",
+                  {
+                    actor: change.actor ?? t("adminPeople.someone"),
+                    target: change.target ?? t("adminPeople.someone"),
+                    action: change.action,
+                  },
+                )}
+              </span>
+              <span className="text-muted-fg">
+                <RelativeTime value={change.createdAt} />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Screen.Section>
   );
 }

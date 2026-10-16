@@ -122,6 +122,42 @@ alter table public.password_logins enable row level security;
 create policy password_logins_select on public.password_logins for select to authenticated
   using (user_id = (select auth.uid()) or (select private.is_platform_admin()));
 
+-- the caller's own signed-in sessions, newest activity first; `current` is the one asking
+create function public.my_sessions()
+returns table (
+  id uuid, created_at timestamptz, last_active timestamptz, user_agent text, ip text, aal text,
+  current boolean
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select s.id, s.created_at,
+    coalesce(s.refreshed_at at time zone 'utc', s.updated_at, s.created_at),
+    s.user_agent, host(s.ip), s.aal::text,
+    s.id = nullif((select auth.jwt()) ->> 'session_id', '')::uuid
+  from auth.sessions s
+  where s.user_id = (select auth.uid()) and (s.not_after is null or s.not_after > now())
+  order by 3 desc
+  limit 50;
+$$;
+grant execute on function public.my_sessions() to authenticated;
+
+-- signs one of the caller's own sessions out; its refresh token goes with it
+create function public.end_my_session(p_session uuid)
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  with gone as (
+    delete from auth.sessions where id = p_session and user_id = (select auth.uid()) returning 1
+  )
+  select exists (select 1 from gone);
+$$;
+grant execute on function public.end_my_session(uuid) to authenticated;
+
 create function private.strip_password()
 returns trigger
 language plpgsql

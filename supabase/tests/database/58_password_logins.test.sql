@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(10);
 
 select tests.create_user(tests.u(n), n || '@pw.test') from unnest(array['boss','pat','sam']) n;
 insert into public.platform_admins (user_id) values (tests.u('boss')) on conflict do nothing;
@@ -25,6 +25,12 @@ select tests.as_user(tests.u('boss'));
 select lives_ok($$select public.set_password_login(tests.u('pat'), false)$$, 'and turns it off');
 reset role;
 select is((select encrypted_password from auth.users where id = tests.u('pat')), null, 'which clears the password');
+
+select tests.as_user(tests.u('boss'));
+select throws_ok($$select public.set_password_login(tests.u('boss'), true)$$, '22023', null, 'instance admins manage their own password');
+reset role;
+select is((select count(*)::integer from public.instance_audit where target_id = tests.u('pat')), 2, 'turning it on and off is recorded');
+select is(public.end_my_session(gen_random_uuid()), false, 'signing out a session that isn''t yours does nothing');
 
 select * from finish();
 rollback;

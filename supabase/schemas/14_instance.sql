@@ -71,6 +71,32 @@ begin
 end;
 $$;
 
+-- who changed what across the instance (admins, password sign-in); only platform admins read it
+create table public.instance_audit (
+  id bigint generated always as identity primary key,
+  actor_id uuid references public.profiles on delete set null,
+  action text not null check (action ~ '^[a-z][a-z0-9-]*(\.[a-z][a-z0-9_-]*)+$'),
+  target_id uuid,
+  meta jsonb not null default '{}' check (octet_length(meta::text) <= 4096),
+  created_at timestamptz not null default now()
+);
+create index instance_audit_created_idx on public.instance_audit (created_at desc);
+create index instance_audit_actor_id_fk_idx on public.instance_audit (actor_id);
+alter table public.instance_audit enable row level security;
+create policy instance_audit_select on public.instance_audit for select to authenticated
+  using ((select private.is_platform_admin()));
+
+create function private.audit_instance(p_action text, p_target uuid, p_meta jsonb)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  insert into public.instance_audit (actor_id, action, target_id, meta)
+  values ((select auth.uid()), p_action, p_target, coalesce(p_meta, '{}'));
+$$;
+revoke execute on function private.audit_instance(text, uuid, jsonb) from anon, authenticated;
+
 create function public.instance_people(p_search text default null, p_limit integer default 100)
 returns table (
   id uuid, name text, email text, joined_at timestamptz, orgs text[], admin boolean, password_login boolean
@@ -201,16 +227,23 @@ begin
   if p_admin then
     insert into public.platform_admins (user_id, granted_by) values (v_user, (select auth.uid()))
     on conflict do nothing;
+    if found then
+      perform private.audit_instance('platform.admin_added', v_user, '{}');
+    end if;
   else
     if (select count(*) from public.platform_admins) <= 1 then
       raise exception 'an instance needs at least one admin' using errcode = '23514';
     end if;
     delete from public.platform_admins where user_id = v_user;
+    if found then
+      perform private.audit_instance('platform.admin_removed', v_user, '{}');
+    end if;
   end if;
 end;
 $$;
 
--- turning it off also clears the password, so it can't be used again later
+-- lets someone set their own password; admins never pick it. Turning it off clears the password
+-- and ends their sessions. Instance admins manage their own, behind their authenticator app.
 create function public.set_password_login(p_user uuid, p_enabled boolean)
 returns void
 language plpgsql
@@ -221,12 +254,22 @@ begin
   if not private.is_platform_admin() then
     raise exception 'only platform admins can change password logins' using errcode = '42501';
   end if;
+  if exists (select 1 from public.platform_admins where user_id = p_user) then
+    raise exception 'instance admins manage their own password' using errcode = '22023';
+  end if;
   if p_enabled then
     insert into public.password_logins (user_id, granted_by) values (p_user, (select auth.uid()))
     on conflict do nothing;
+    if found then
+      perform private.audit_instance('platform.password_on', p_user, '{}');
+    end if;
   else
     delete from public.password_logins where user_id = p_user;
-    update auth.users set encrypted_password = null where id = p_user;
+    if found then
+      update auth.users set encrypted_password = null where id = p_user;
+      delete from auth.sessions where user_id = p_user;
+      perform private.audit_instance('platform.password_off', p_user, '{}');
+    end if;
   end if;
 end;
 $$;

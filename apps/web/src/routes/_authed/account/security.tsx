@@ -7,6 +7,7 @@ import { Screen } from "@bogey/ui/components/screen";
 import { msg, useT } from "#/lib/translate.tsx";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { AdminPasswordSection } from "./-components/admin-password.tsx";
+import { DevicesSection } from "./-components/devices.tsx";
 import { LinkedSignIns } from "./-components/linked-sign-ins.tsx";
 import { TwoFactorSection } from "./-components/two-factor.tsx";
 
@@ -44,6 +45,7 @@ function RouteComponent() {
       <LinkedSignIns />
       {mfa !== "admin" && <TwoFactorSection />}
       {(session.platformAdmin || passwordLogin.data) && <AdminPasswordSection />}
+      <DevicesSection />
     </Screen>
   );
 }

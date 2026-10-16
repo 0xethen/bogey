@@ -183,10 +183,18 @@ Instance. The CLI and the service role aren't affected by the setting.
 ## Passwords
 
 Bogey signs people in by email link or code, and the database throws away any password set on an account, with two
-exceptions: instance admins, and people an instance admin turned on **Password** for in **Instance → People**. That
-dialog can set the password for them, or they set their own in **Account → Security**; either way they sign in from
-**use your password** on the sign-in page. Turning it off clears the password. Instance admins still need their
-authenticator app when the instance requires one.
+exceptions: instance admins, and people an instance admin allowed in **Instance → People** (Password → Allow). Admins
+never pick or see the password: the person sets it in **Account → Security** after signing in by email, then can use
+**use your password** on the sign-in page. Turning it off clears the password and signs them out everywhere. Instance
+admins manage their own password there too, behind their authenticator app when the instance requires one.
+
+Every admin grant and password change is listed under **Instance → People → Changes**.
+
+## Signed-in devices
+
+**Account → Security → Where you're signed in** lists each browser or app signed in to the account, with its IP and when
+it was last active. Sign out one, every other one, or everywhere. A signed-out device's refresh token stops working at
+once; a page it already has open keeps working until its access token expires (an hour by default).
 
 ## When no email arrives
 

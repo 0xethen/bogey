@@ -1,8 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { createServerClient } from "../server.ts";
-import { createAdminClient } from "../admin.ts";
-import { PASSWORD_MIN } from "../auth.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import { jsonRecord, type Enums, type Json } from "../types.ts";
 import { requireId, requireOneOf, requireSlug, requireText } from "./validate.ts";
@@ -148,30 +146,62 @@ export const instancePeopleQueryOptions = (search: string) =>
     retry: retryPolicy,
   });
 
-/** Turns someone's password sign-in on or off; with `password`, also sets it. Platform admins only. */
+/** Lets someone set their own password, or turns that off (clearing it and signing them out). Platform admins only. */
 export const setPasswordLoginFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
-    const raw = (input ?? {}) as { userId?: unknown; enabled?: unknown; password?: unknown };
-    const password = typeof raw.password === "string" && raw.password ? raw.password : null;
-    if (password !== null && (password.length < PASSWORD_MIN || password.length > 200)) {
-      throw new Error(`Use at least ${PASSWORD_MIN} characters`);
-    }
-    return { userId: requireId(raw.userId, "userId"), enabled: raw.enabled === true, password };
+    const raw = (input ?? {}) as { userId?: unknown; enabled?: unknown };
+    return { userId: requireId(raw.userId, "userId"), enabled: raw.enabled === true };
   })
   .handler(async ({ data }): Promise<DbResult<null>> => {
-    // the RPC checks the caller is a platform admin before the service key sets anything
     const { error } = await createServerClient().rpc("set_password_login", {
       p_user: data.userId,
       p_enabled: data.enabled,
     });
     if (error) return toFailure(error, "changing password sign-in");
-    if (data.enabled && data.password) {
-      const { error: setError } = await createAdminClient().auth.admin.updateUserById(data.userId, {
-        password: data.password,
-      });
-      if (setError) return fail("invalid", setError.message);
-    }
     return ok(null);
+  });
+
+export interface InstanceChange {
+  id: number;
+  action: string;
+  actor: string | null;
+  target: string | null;
+  createdAt: string;
+}
+
+export const instanceAuditFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<DbResult<InstanceChange[]>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("instance_audit")
+      .select("id, action, actor_id, target_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) return toFailure(error, "loading instance changes");
+    const ids = [
+      ...new Set(data.flatMap((row) => [row.actor_id, row.target_id]).filter((id) => id !== null)),
+    ];
+    const { data: profiles } = ids.length
+      ? await supabase.from("profiles").select("id, display_name").in("id", ids)
+      : { data: [] };
+    const names = new Map((profiles ?? []).map((row) => [row.id, row.display_name]));
+    return ok(
+      data.map((row) => ({
+        id: row.id,
+        action: row.action,
+        actor: row.actor_id ? (names.get(row.actor_id) ?? null) : null,
+        target: row.target_id ? (names.get(row.target_id) ?? null) : null,
+        createdAt: row.created_at,
+      })),
+    );
+  },
+);
+
+export const instanceAuditQueryOptions = () =>
+  queryOptions({
+    queryKey: ["instance", "audit"] as const,
+    queryFn: async () => unwrap(await instanceAuditFn()),
+    retry: retryPolicy,
   });
 
 export const addOrgDomainFn = createServerFn({ method: "POST" })

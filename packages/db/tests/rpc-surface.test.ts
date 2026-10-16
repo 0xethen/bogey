@@ -107,6 +107,8 @@ const SIGNED_IN = {
     "participants move themselves between divisions the event lets them pick and leave",
   set_division: "organizers move someone, and a team of just them, between divisions",
   post_announcement: "posts with its audience rows in one transaction and audits it",
+  my_sessions: "the caller's own signed-in sessions, which live in the auth schema",
+  end_my_session: "signs one of the caller's own sessions out of the auth schema",
   set_password_login:
     "platform admins let someone keep a password, which the database otherwise strips, and clear it",
   block_from_chat: "organizers stop a person or team from messaging, audited",
