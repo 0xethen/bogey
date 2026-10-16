@@ -2230,6 +2230,22 @@ export const en = {
   "managePeople.showingLink": "Showing who registered with “{label}”.",
   "managePeople.showingOneLink": "Showing who registered with one invite link.",
   "managePeople.showEveryone": "Show everyone",
+  "managePeople.roleColumn": "Role",
+  "managePeople.teamColumn": "Team",
+  "managePeople.divisionColumn": "Division",
+  "managePeople.checkInColumn": "Check-in",
+  "managePeople.noneShown": "No one matches this filter.",
+  "managePeople.selectedCount": "{count} selected",
+  "managePeople.bulkRole": "Set role...",
+  "managePeople.bulkDivision": "Set division...",
+  "managePeople.bulkRemoveTitle":
+    "{count, plural, one {Remove # person?} other {Remove # people?}}",
+  "managePeople.bulkRemoveBody":
+    "They lose access to the event and leave their teams. Their registrations stay, so you can add them back.",
+  "managePeople.bulkFailed":
+    "{count, plural, one {# change didn't go through.} other {# changes didn't go through.}}",
+  "managePeople.bulkNotYou": "You're selected too, but role changes and removal skip you.",
+  "managePeople.clearSelection": "Clear",
   "managePeople.failed": "Couldn't update that person",
   "managePeople.waitingHelp":
     "Self-registrations that need an organizer's decision. Open one to read the answers.",
@@ -2928,6 +2944,8 @@ export const en = {
   "ui.editNamed": "Edit {name}",
   "ui.empty": "(empty)",
   "ui.noRows": "Nothing here yet.",
+  "ui.selectAll": "Select all",
+  "ui.selectRow": "Select {name}",
   "ui.formatting": "Formatting",
   "ui.from": "From {date}",
   "ui.highest": "Highest",

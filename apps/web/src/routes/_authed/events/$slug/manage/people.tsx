@@ -37,6 +37,8 @@ import { Badge } from "@bogey/ui/components/badge";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
+import { checkInFn } from "@bogey/db/queries/checkin";
 import { Facts, type Fact } from "@bogey/ui/components/facts";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
@@ -144,7 +146,6 @@ function RouteComponent() {
     async (input: { userId: string; divisionId: string | undefined }) =>
       unwrap(await setDivisionFn({ data: { eventId: event.id, ...input } })),
   );
-  const divisionName = new Map(divisions.map((division) => [division.id, division.name]));
   const { data: roster } = useSuspenseQuery(checkinRosterQueryOptions(event.id));
   const arrival = new Map(roster.map((entry) => [entry.userId, entry]));
   const [filter, setFilter] = useState<"everyone" | "absent" | "here">("everyone");
@@ -154,6 +155,11 @@ function RouteComponent() {
     if (filter === "absent") return !here || !isCheckedIn(here);
     return true;
   });
+
+  const [pickedMembers, setPickedMembers] = useState<ReadonlySet<string>>(new Set());
+  const picked = people.members
+    .filter((member) => pickedMembers.has(member.userId))
+    .map((member) => member.userId);
 
   const pending = people.registrations.filter((row) => row.status === "pending");
   const waitlist = people.registrations
@@ -322,103 +328,42 @@ function RouteComponent() {
         {people.members.length === 0 ? (
           <p className="text-sm text-muted-fg">{t("managePeople.none")}</p>
         ) : (
-          <DisclosureList>
-            {shown.map((member) => {
-              const you = member.userId === session.user.id;
-              return (
-                <DisclosureRow
-                  key={member.userId}
-                  leading={<NameAvatar name={member.name} />}
-                  title={
-                    <>
-                      {member.name}
-                      {you && (
-                        <span className="font-normal text-muted-fg"> {t("welcome.you")}</span>
-                      )}
-                    </>
-                  }
-                  meta={
-                    [
-                      member.email,
-                      ...member.extraRoles.map(roleLabel),
-                      member.team ? t("managePeople.team", { team: member.team }) : undefined,
-                      member.divisionId ? divisionName.get(member.divisionId) : undefined,
-                      checkInText(arrival.get(member.userId), t),
-                    ]
-                      .filter(Boolean)
-                      .join(", ") || undefined
-                  }
-                  actions={
-                    <OptSelect
-                      size="sm"
-                      ariaLabel={t("members.roleFor", { name: member.name })}
-                      value={member.role}
-                      options={ROLES.map((role) => ({ value: role, label: roleLabel(role) }))}
-                      disabled={setRole.isPending}
-                      onChange={(role) => setRole.mutate({ userId: member.userId, role })}
-                    />
-                  }
-                >
-                  <div className="flex flex-wrap items-center gap-3 pl-11">
-                    {pluginRoleOptions.length > 0 && (
-                      <div className="min-w-56">
-                        <label htmlFor={`extra-roles-${member.userId}`} className="sr-only">
-                          {t("managePeople.extraRolesFor", { name: member.name })}
-                        </label>
-                        <MultiSelect
-                          id={`extra-roles-${member.userId}`}
-                          options={pluginRoleOptions}
-                          value={member.extraRoles}
-                          placeholder={t("managePeople.extraRoles")}
-                          onValueChange={(roles) =>
-                            setExtraRoles.mutate({ userId: member.userId, roles })
-                          }
-                        />
-                      </div>
-                    )}
-                    {member.role === "participant" && divisions.length > 0 && (
-                      <OptSelect
-                        size="sm"
-                        ariaLabel={t("managePeople.divisionFor", { name: member.name })}
-                        value={member.divisionId ?? NO_DIVISION}
-                        options={[
-                          { value: NO_DIVISION, label: t("checkin.noDivision") },
-                          ...divisions.map((division) => ({
-                            value: division.id,
-                            label: division.name,
-                          })),
-                        ]}
-                        disabled={place.isPending}
-                        onChange={(next) =>
-                          place.mutate({
-                            userId: member.userId,
-                            divisionId: next === NO_DIVISION ? undefined : next,
-                          })
-                        }
-                      />
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={remove.isPending}
-                      confirm={{
-                        title: you
-                          ? t("managePeople.removeSelfTitle")
-                          : t("members.removeTitle", { name: member.name }),
-                        description: you
-                          ? t("managePeople.removeSelfBody")
-                          : t("managePeople.removeBody", { name: member.name }),
-                        label: t("twoFactor.remove"),
-                      }}
-                      onClick={() => remove.mutate(member.userId)}
-                    >
-                      {t("managePeople.removeButton")}
-                    </Button>
-                  </div>
-                </DisclosureRow>
-              );
-            })}
-          </DisclosureList>
+          <div className="flex flex-col gap-3">
+            {picked.length > 0 && (
+              <BulkMembers
+                eventId={event.id}
+                you={session.user.id}
+                userIds={picked}
+                divisions={divisions}
+                onDone={() => setPickedMembers(new Set())}
+              />
+            )}
+            <div className="overflow-x-auto">
+              <DataTable
+                columns={memberColumns({
+                  t,
+                  roleLabel,
+                  you: session.user.id,
+                  divisions,
+                  pluginRoleOptions,
+                  arrival,
+                  pending: setRole.isPending || place.isPending || remove.isPending,
+                  onRole: (userId, role) => setRole.mutate({ userId, role }),
+                  onDivision: (userId, divisionId) => place.mutate({ userId, divisionId }),
+                  onExtraRoles: (userId, roles) => setExtraRoles.mutate({ userId, roles }),
+                  onRemove: (userId) => remove.mutate(userId),
+                })}
+                data={shown}
+                getRowId={(member) => member.userId}
+                selection={{
+                  selected: pickedMembers,
+                  onChange: setPickedMembers,
+                  label: (member) => member.name,
+                }}
+                empty={t("managePeople.noneShown")}
+              />
+            </div>
+          </div>
         )}
       </Screen.Section>
 
@@ -449,6 +394,287 @@ function RouteComponent() {
       <Overlaps eventId={event.id} />
       <PluginSettingSections page="people" />
     </Screen>
+  );
+}
+
+type Member = EventPeople["members"][number];
+type Division = { id: string; name: string };
+
+const memberColumn = dataColumns<Member>();
+
+function memberColumns(options: {
+  t: T;
+  roleLabel: (role: string) => string;
+  you: string;
+  divisions: Tuple<Division>;
+  pluginRoleOptions: Tuple<SearchSelectOption>;
+  arrival: ReadonlyMap<string, RosterEntry>;
+  pending: boolean;
+  onRole: (userId: string, role: EventRole) => void;
+  onDivision: (userId: string, divisionId: string | undefined) => void;
+  onExtraRoles: (userId: string, roles: string[]) => void;
+  onRemove: (userId: string) => void;
+}) {
+  const { t } = options;
+  return memberColumn.columns([
+    memberColumn.accessor("name", {
+      header: t("checkin.name"),
+      cell: (info) => {
+        const member = info.row.original;
+        return (
+          <span className="flex min-w-48 items-center gap-3">
+            <NameAvatar name={member.name} />
+            <span className="flex min-w-0 flex-col">
+              <span className="font-medium">
+                {member.name}
+                {member.userId === options.you && (
+                  <span className="font-normal text-muted-fg"> {t("welcome.you")}</span>
+                )}
+              </span>
+              {member.email && (
+                <span className="break-all text-xs text-muted-fg">{member.email}</span>
+              )}
+            </span>
+          </span>
+        );
+      },
+    }),
+    memberColumn.accessor("role", {
+      header: t("managePeople.roleColumn"),
+      cell: (info) => {
+        const member = info.row.original;
+        return (
+          <div className="flex flex-col gap-1.5">
+            <OptSelect
+              size="sm"
+              ariaLabel={t("members.roleFor", { name: member.name })}
+              value={member.role}
+              options={ROLES.map((role) => ({ value: role, label: options.roleLabel(role) }))}
+              disabled={options.pending}
+              onChange={(role) => options.onRole(member.userId, role)}
+            />
+            {options.pluginRoleOptions.length > 0 && (
+              <div className="min-w-48">
+                <label htmlFor={`extra-roles-${member.userId}`} className="sr-only">
+                  {t("managePeople.extraRolesFor", { name: member.name })}
+                </label>
+                <MultiSelect
+                  id={`extra-roles-${member.userId}`}
+                  options={options.pluginRoleOptions}
+                  value={member.extraRoles}
+                  placeholder={t("managePeople.extraRoles")}
+                  onValueChange={(roles) => options.onExtraRoles(member.userId, roles)}
+                />
+              </div>
+            )}
+          </div>
+        );
+      },
+    }),
+    memberColumn.accessor((member) => member.team ?? "", {
+      id: "team",
+      header: t("managePeople.teamColumn"),
+      cell: (info) => <span className="text-muted-fg">{info.getValue() || "–"}</span>,
+    }),
+    ...(options.divisions.length > 0
+      ? [
+          memberColumn.accessor((member) => member.divisionId ?? "", {
+            id: "division",
+            header: t("managePeople.divisionColumn"),
+            cell: (info) => {
+              const member = info.row.original;
+              if (member.role !== "participant") return <span className="text-muted-fg">–</span>;
+              return (
+                <OptSelect
+                  size="sm"
+                  ariaLabel={t("managePeople.divisionFor", { name: member.name })}
+                  value={member.divisionId ?? NO_DIVISION}
+                  options={[
+                    { value: NO_DIVISION, label: t("checkin.noDivision") },
+                    ...options.divisions.map((division) => ({
+                      value: division.id,
+                      label: division.name,
+                    })),
+                  ]}
+                  disabled={options.pending}
+                  onChange={(next) =>
+                    options.onDivision(member.userId, next === NO_DIVISION ? undefined : next)
+                  }
+                />
+              );
+            },
+          }),
+        ]
+      : []),
+    memberColumn.accessor((member) => checkInText(options.arrival.get(member.userId), t) ?? "", {
+      id: "checkin",
+      header: t("managePeople.checkInColumn"),
+      cell: (info) => (
+        <span className="whitespace-nowrap text-muted-fg">{info.getValue() || "–"}</span>
+      ),
+    }),
+    memberColumn.display({
+      id: "actions",
+      header: () => <span className="sr-only">{t("adminPeople.actions")}</span>,
+      cell: (info) => {
+        const member = info.row.original;
+        const you = member.userId === options.you;
+        return (
+          <div className="-my-1.5 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
+              disabled={options.pending}
+              confirm={{
+                title: you
+                  ? t("managePeople.removeSelfTitle")
+                  : t("members.removeTitle", { name: member.name }),
+                description: you
+                  ? t("managePeople.removeSelfBody")
+                  : t("managePeople.removeBody", { name: member.name }),
+                label: t("twoFactor.remove"),
+              }}
+              onClick={() => options.onRemove(member.userId)}
+            >
+              {t("managePeople.removeButton")}
+            </Button>
+          </div>
+        );
+      },
+    }),
+  ]);
+}
+
+const KEEP = "keep";
+
+// actions on every checked person at once; you're left out of role changes and removal
+function BulkMembers({
+  eventId,
+  you,
+  userIds,
+  divisions,
+  onDone,
+}: {
+  eventId: string;
+  you: string;
+  userIds: Tuple<string>;
+  divisions: Tuple<Division>;
+  onDone: () => void;
+}) {
+  const t = useT();
+  const roleLabel = useRoleLabel();
+  const queryClient = useQueryClient();
+  const others = userIds.filter((id) => id !== you);
+  const run = useMutation({
+    mutationFn: async (action: (userId: string) => Promise<unknown>) => {
+      const results = await Promise.allSettled(others.map((userId) => action(userId)));
+      const failed = results.filter((result) => result.status === "rejected").length;
+      if (failed > 0) throw new Error(t("managePeople.bulkFailed", { count: failed }));
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: eventPeopleQueryOptions(eventId).queryKey }),
+        queryClient.invalidateQueries({ queryKey: checkinRosterQueryOptions(eventId).queryKey }),
+        queryClient.invalidateQueries({ queryKey: manageSummaryQueryOptions(eventId).queryKey }),
+      ]),
+    onSuccess: onDone,
+  });
+  const checkIn = useMutation({
+    mutationFn: async () => {
+      const results = await Promise.allSettled(
+        userIds.map(async (userId) =>
+          unwrap(await checkInFn({ data: { eventId, userId, method: "desk" } })),
+        ),
+      );
+      const failed = results.filter((result) => result.status === "rejected").length;
+      if (failed > 0) throw new Error(t("managePeople.bulkFailed", { count: failed }));
+    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: checkinRosterQueryOptions(eventId).queryKey }),
+    onSuccess: onDone,
+  });
+  const busy = run.isPending || checkIn.isPending;
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl bg-muted/50 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium">
+          {t("managePeople.selectedCount", { count: userIds.length })}
+        </span>
+        <OptSelect
+          size="sm"
+          ariaLabel={t("managePeople.bulkRole")}
+          value={KEEP}
+          disabled={busy || others.length === 0}
+          options={[
+            { value: KEEP, label: t("managePeople.bulkRole") },
+            ...ROLES.map((role) => ({ value: role, label: roleLabel(role) })),
+          ]}
+          onChange={(role) => {
+            const next = ROLES.find((each) => each === role);
+            if (next) {
+              run.mutate(async (userId) =>
+                unwrap(await setMemberRoleFn({ data: { eventId, userId, role: next } })),
+              );
+            }
+          }}
+        />
+        {divisions.length > 0 && (
+          <OptSelect
+            size="sm"
+            ariaLabel={t("managePeople.bulkDivision")}
+            value={KEEP}
+            disabled={busy}
+            options={[
+              { value: KEEP, label: t("managePeople.bulkDivision") },
+              { value: NO_DIVISION, label: t("checkin.noDivision") },
+              ...divisions.map((division) => ({ value: division.id, label: division.name })),
+            ]}
+            onChange={(next) => {
+              if (next === KEEP) return;
+              run.mutate(async (userId) =>
+                unwrap(
+                  await setDivisionFn({
+                    data: {
+                      eventId,
+                      userId,
+                      divisionId: next === NO_DIVISION ? undefined : next,
+                    },
+                  }),
+                ),
+              );
+            }}
+          />
+        )}
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => checkIn.mutate()}>
+          {t("checkin.checkIn")}
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          disabled={busy || others.length === 0}
+          confirm={{
+            title: t("managePeople.bulkRemoveTitle", { count: others.length }),
+            description: t("managePeople.bulkRemoveBody"),
+            label: t("twoFactor.remove"),
+          }}
+          onClick={() =>
+            run.mutate(async (userId) =>
+              unwrap(await removeMemberFn({ data: { eventId, userId } })),
+            )
+          }
+        >
+          {t("managePeople.removeButton")}
+        </Button>
+        <Button size="sm" variant="ghost" className="ml-auto" disabled={busy} onClick={onDone}>
+          {t("managePeople.clearSelection")}
+        </Button>
+      </div>
+      {others.length < userIds.length && (
+        <p className="text-xs text-muted-fg">{t("managePeople.bulkNotYou")}</p>
+      )}
+      <ErrorAlert error={run.error ?? checkIn.error} title={t("managePeople.failed")} />
+    </div>
   );
 }
 
