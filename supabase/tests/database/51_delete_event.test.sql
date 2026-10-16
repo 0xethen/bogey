@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(8);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'del-org', 'Del Org');
 select tests.create_user(tests.u(n), n || '@t.test') from unnest(array['owner','organizer','p1']) n;
@@ -29,6 +29,10 @@ select is((select action from public.audit_log where org_id = tests.u('org') and
   'event.deleted', 'the org audit keeps a record');
 select throws_ok($$select public.delete_event(tests.u('ev'), 'doomed')$$,
   '42501', null, 'a missing event looks the same as a forbidden one');
+
+insert into public.events (id, org_id, slug, name) values (tests.u('ev2'), tests.u('org'), 'cli', 'Cli');
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select lives_ok($$select public.delete_event(tests.u('ev2'), 'cli')$$, 'the CLI deletes with the service key');
 
 select * from finish();
 rollback;

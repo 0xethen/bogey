@@ -12,7 +12,8 @@ declare
   v_files jsonb;
 begin
   select * into v_event from public.events where id = p_event;
-  if v_event.id is null or not private.is_org_admin(v_event.org_id) then
+  if v_event.id is null
+    or not ((select auth.role()) = 'service_role' or private.is_org_admin(v_event.org_id)) then
     raise exception 'only an organization owner or admin can delete this event' using errcode = '42501';
   end if;
   if p_confirm is distinct from v_event.slug::text then

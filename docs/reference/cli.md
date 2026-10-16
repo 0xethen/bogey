@@ -21,7 +21,7 @@ commands that author Bogey (schema, themes, types, release) and the ones that co
 | [`docs`](#docs) | Regenerate the settings and CLI references, or build the wiki | checkout |
 | [`doctor`](#doctor) | Check the sign-up hook, .env safety and plugin configuration | checkout, container |
 | [`email`](#email) | Regenerate the fallback email templates GoTrue uses without the hook | checkout, container |
-| [`event`](#event) | Export an event to a folder, or restore one from a folder | checkout, container |
+| [`event`](#event) | List, publish, delete, export or restore events | checkout, container |
 | [`login`](#login) | Print a sign-in code for an account, without sending email | checkout, container |
 | [`mfa`](#mfa) | Turn the authenticator-app requirement for instance admins on or off | checkout, container |
 | [`org`](#org) | Set up the first organization, create others, and manage their hostnames | checkout, container |
@@ -196,9 +196,17 @@ Short flags: -o --out, -c --check
 ## event
 
 ```
+bogey event list [<org>]
+bogey event visibility <org>/<event> draft|unlisted|public
+bogey event delete <org>/<event> [--yes]
 bogey event export <org>/<event> --out <folder>
 bogey event import <folder> [--org <slug>] [--slug <new-slug>] [--name <name>]
                    [--starts-at <date> | --shift-days <n>] [--people]
+
+list shows each org's events, or one org's. visibility publishes an event (public or
+unlisted) or takes it back to a draft. delete removes an event with everything in it,
+files included; it asks you to type the event's address, and --yes skips that for scripts.
+It works even when bogey.config.ts sets events.uiDeletion to false.
 
 export writes an event to a folder: manifest.json, one JSON file per table and the uploaded files.
 import makes a new event from such a folder, in this or another instance, as a draft. Every id is new.
@@ -207,7 +215,7 @@ settings, agenda). --people also restores members (creating accounts for emails 
 registrations, submissions and files, votes, scores, feedback, awards, results, announcements and check-ins.
 Dates move with --starts-at (the event's new start) or --shift-days. Uses the service key.
 
-Short flags: -o --out
+Short flags: -y --yes, -o --out
 ```
 
 ## login

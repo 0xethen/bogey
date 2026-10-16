@@ -109,3 +109,14 @@ export async function ensureUser(credentials: Credentials, email: string): Promi
   });
   return created.ok ? { ok: true, data: created.data.id } : created;
 }
+
+export function removeFiles(
+  credentials: Credentials,
+  bucket: string,
+  paths: string[],
+): Promise<Result<unknown>> {
+  return call<unknown>(credentials, `/storage/v1/object/${encodeURIComponent(bucket)}`, {
+    method: "DELETE",
+    body: JSON.stringify({ prefixes: paths }),
+  });
+}

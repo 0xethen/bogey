@@ -13,14 +13,23 @@ import {
   type RestAccess,
 } from "@bogey/db/archive";
 import { step } from "../lib/activity.ts";
-import { ensureUser, select } from "../lib/rest.ts";
-import { serviceCredentials, type Credentials } from "../lib/credentials.ts";
+import { ensureUser, removeFiles, select, update } from "../lib/rest.ts";
+import { rpc, serviceCredentials, type Credentials } from "../lib/credentials.ts";
 import { parseFlags } from "../lib/flags.ts";
+import type { Prompter } from "../lib/prompt.ts";
 import type { CliResult } from "../cli.ts";
 
-export const USAGE = `bogey event export <org>/<event> --out <folder>
+export const USAGE = `bogey event list [<org>]
+bogey event visibility <org>/<event> draft|unlisted|public
+bogey event delete <org>/<event> [--yes]
+bogey event export <org>/<event> --out <folder>
 bogey event import <folder> [--org <slug>] [--slug <new-slug>] [--name <name>]
                    [--starts-at <date> | --shift-days <n>] [--people]
+
+list shows each org's events, or one org's. visibility publishes an event (public or
+unlisted) or takes it back to a draft. delete removes an event with everything in it,
+files included; it asks you to type the event's address, and --yes skips that for scripts.
+It works even when bogey.config.ts sets events.uiDeletion to false.
 
 export writes an event to a folder: manifest.json, one JSON file per table and the uploaded files.
 import makes a new event from such a folder, in this or another instance, as a draft. Every id is new.
@@ -59,6 +68,112 @@ async function orgId(
   );
   if (!rows.ok) return [rows.error];
   return rows.data[0]?.value.defaultOrg ?? ["No default organization. Pass --org <slug>."];
+}
+
+const VISIBILITY = ["draft", "unlisted", "public"] as const;
+
+interface EventRow {
+  id: string;
+  slug: string;
+  name: string;
+  visibility: string;
+  starts_at: string | null;
+  orgs: { slug: string };
+}
+
+async function findEvent(
+  credentials: Credentials,
+  name: string | undefined,
+): Promise<{ ok: true; event: EventRow } | { ok: false; error: string }> {
+  const [orgSlug, eventSlug] = (name ?? "").split("/");
+  if (!orgSlug || !eventSlug)
+    return { ok: false, error: `Name the event as <org>/<event>.\n\n${USAGE}` };
+  const rows = await select<EventRow>(
+    credentials,
+    "events",
+    `select=id,slug,name,visibility,starts_at,orgs!inner(slug)&orgs.slug=eq.${encodeURIComponent(orgSlug)}&slug=eq.${encodeURIComponent(eventSlug)}`,
+  );
+  if (!rows.ok) return rows;
+  const event = rows.data[0];
+  return event
+    ? { ok: true, event }
+    : {
+        ok: false,
+        error: `There is no event "${orgSlug}/${eventSlug}". \`bogey event list\` shows them.`,
+      };
+}
+
+async function runList(credentials: Credentials, org: string | undefined): Promise<CliResult> {
+  const filter = org ? `&orgs.slug=eq.${encodeURIComponent(org)}` : "";
+  const rows = await step("Load events", () =>
+    select<EventRow>(
+      credentials,
+      "events",
+      `select=id,slug,name,visibility,starts_at,orgs!inner(slug)${filter}&order=created_at`,
+    ),
+  );
+  if (!rows.ok) return { exitCode: 1, output: rows.error };
+  if (rows.data.length === 0) {
+    return { exitCode: 0, output: org ? `No events in ${org}.` : "No events yet." };
+  }
+  const names = rows.data.map((event) => `${event.orgs.slug}/${event.slug}`);
+  const width = Math.max(...names.map((name) => name.length));
+  const lines = rows.data.map((event, index) => {
+    const starts = event.starts_at ? `  starts ${event.starts_at.slice(0, 10)}` : "";
+    return `${names[index]!.padEnd(width)}  ${event.name} (${event.visibility})${starts}`;
+  });
+  return { exitCode: 0, output: lines.join("\n") };
+}
+
+async function runVisibility(credentials: Credentials, args: string[]): Promise<CliResult> {
+  const visibility = args[1];
+  if (!VISIBILITY.includes(visibility as (typeof VISIBILITY)[number])) {
+    return { exitCode: 1, output: `Give the visibility: draft, unlisted or public.\n\n${USAGE}` };
+  }
+  const found = await findEvent(credentials, args[0]);
+  if (!found.ok) return { exitCode: 1, output: found.error };
+  const changed = await update(credentials, "events", `id=eq.${found.event.id}`, { visibility });
+  if (!changed.ok) return { exitCode: 1, output: changed.error };
+  return { exitCode: 0, output: `✓ ${args[0]} is now ${visibility}.` };
+}
+
+async function runDelete(
+  credentials: Credentials,
+  args: string[],
+  prompter: Prompter | null,
+): Promise<CliResult> {
+  const found = await findEvent(credentials, args[0]);
+  if (!found.ok) return { exitCode: 1, output: found.error };
+  const { event } = found;
+  if (!args.includes("--yes")) {
+    if (!prompter) {
+      return { exitCode: 1, output: "Not a terminal: pass --yes to delete without being asked." };
+    }
+    const typed = await prompter.text({
+      message: `Type "${event.slug}" to delete ${event.name} and everything in it`,
+      hint: "This can't be undone. `bogey event export` keeps a copy first. Anything else cancels.",
+      optional: true,
+    });
+    if (typed !== event.slug) return { exitCode: 1, output: "Nothing was deleted." };
+  }
+  const deleted = await step(`Delete ${event.name}`, () =>
+    rpc(credentials, "delete_event", { p_event: event.id, p_confirm: event.slug }),
+  );
+  if (!deleted.ok) return { exitCode: 1, output: deleted.error };
+  const files = (deleted.data ?? []) as { bucket: string; path: string }[];
+  const byBucket = new Map<string, string[]>();
+  for (const file of files)
+    byBucket.set(file.bucket, [...(byBucket.get(file.bucket) ?? []), file.path]);
+  const left: string[] = [];
+  for (const [bucket, paths] of byBucket) {
+    for (let i = 0; i < paths.length; i += 500) {
+      const removed = await removeFiles(credentials, bucket, paths.slice(i, i + 500));
+      if (!removed.ok) left.push(removed.error);
+    }
+  }
+  const lines = [`✓ Deleted ${args[0]}${files.length ? ` and its ${files.length} files` : ""}.`];
+  if (left.length) lines.push(`Some files couldn't be removed:\n${left.join("\n")}`);
+  return { exitCode: left.length ? 1 : 0, output: lines.join("\n") };
 }
 
 async function runExport(cwd: string, args: string[]): Promise<CliResult> {
@@ -208,9 +323,52 @@ async function runImport(cwd: string, args: string[]): Promise<CliResult> {
   }
 }
 
-export async function runEvent(cwd: string, args: string[]): Promise<CliResult> {
+export async function runEvent(
+  cwd: string,
+  given: string[],
+  prompter: Prompter | null = null,
+): Promise<CliResult> {
+  const args = [...given];
+  if (args.length === 0 && prompter) {
+    const picked = await prompter.select({
+      message: "Events",
+      options: [
+        { value: "list", label: "List them" },
+        { value: "visibility", label: "Publish or unpublish one" },
+        { value: "delete", label: "Delete one" },
+      ],
+    });
+    args.push(picked);
+    if (picked === "list") {
+      const org = await prompter.text({
+        message: "Org address (slug)",
+        hint: "Blank for every org",
+        optional: true,
+      });
+      if (org) args.push(org);
+    } else {
+      args.push(
+        await prompter.text({ message: "Event", hint: "As <org>/<event>, like acme/spring-hack" }),
+      );
+      if (picked === "visibility") {
+        args.push(
+          await prompter.select({
+            message: "Visibility",
+            options: VISIBILITY.map((value) => ({ value, label: value })),
+          }),
+        );
+      }
+    }
+  }
   if (args[0] === "export") return runExport(cwd, args.slice(1));
   if (args[0] === "import") return runImport(cwd, args.slice(1));
+  if (args[0] === "list" || args[0] === "visibility" || args[0] === "delete") {
+    const resolved = serviceCredentials(cwd);
+    if (!resolved.ok) return { exitCode: 1, output: resolved.error };
+    if (args[0] === "list") return runList(resolved.credentials, args[1]);
+    if (args[0] === "visibility") return runVisibility(resolved.credentials, args.slice(1));
+    return runDelete(resolved.credentials, args.slice(1), prompter);
+  }
   return {
     exitCode: args[0] ? 1 : 0,
     output: args[0] ? `bogey event: unknown subcommand "${args[0]}"\n\n${USAGE}` : USAGE,

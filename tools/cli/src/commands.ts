@@ -111,10 +111,10 @@ export const COMMANDS: Tuple<Command> = [
   },
   {
     name: "event",
-    summary: "Export an event to a folder, or restore one from a folder",
+    summary: "List, publish, delete, export or restore events",
     usage: event,
-    subcommands: ["export", "import"],
-    run: runEvent,
+    subcommands: ["list", "visibility", "delete", "export", "import"],
+    run: (cwd, args, prompter) => runEvent(cwd, args, prompter),
   },
   {
     name: "login",
