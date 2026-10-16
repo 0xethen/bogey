@@ -28,7 +28,7 @@ export async function archiveResponse(slug: string): Promise<Response> {
   const supabase = createServerClient();
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
-  if (!token) return refuse(401, "Sign in to download this.");
+  if (!token) return refuse(401, "Your credentials are invalid or expired. Please log in again.");
   const org = await getOrgFn();
   if (!org.ok || !org.data) return refuse(404, "There's no event at this address.");
   const { data: event, error } = await supabase

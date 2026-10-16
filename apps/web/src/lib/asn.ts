@@ -16,7 +16,8 @@ export const resolveAsnFn = createServerFn({ method: "GET" })
   })
   .handler(async ({ data: number }): Promise<DbResult<string[]>> => {
     const { data: user } = await createServerClient().auth.getUser();
-    if (!user.user) return fail("forbidden", "Sign in to look up networks.");
+    if (!user.user)
+      return fail("forbidden", "Your credentials are invalid or expired. Please log in again.");
 
     let body: unknown;
     try {

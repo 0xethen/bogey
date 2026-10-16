@@ -334,7 +334,8 @@ export const archiveConversationFn = createServerFn({ method: "POST" })
     const supabase = createServerClient();
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
-    if (!userId) return fail("forbidden", "Sign in to archive conversations.");
+    if (!userId)
+      return fail("forbidden", "Your credentials are invalid or expired. Please log in again.");
     const { error } = data.archived
       ? await supabase.from("clarification_archives").upsert({
           clarification_id: data.id,

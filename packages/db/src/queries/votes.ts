@@ -52,7 +52,8 @@ export const setVoteFn = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<DbResult<null>> => {
     const supabase = createServerClient();
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return fail("forbidden", "Sign in to vote.");
+    if (!userData.user)
+      return fail("forbidden", "Your credentials are invalid or expired. Please log in again.");
     const { error } = data.vote
       ? await supabase.rpc("cast_vote", { p_submission: data.submissionId })
       : await supabase.rpc("retract_vote", { p_submission: data.submissionId });

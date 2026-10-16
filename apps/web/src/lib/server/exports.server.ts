@@ -56,7 +56,8 @@ function fileName(slug: string, kind: string, extension: string, suffix?: string
 
 async function findEvent(supabase: Client, slug: string): Promise<Event> {
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) throw new ExportError(401, "Sign in to download this.");
+  if (!userData.user)
+    throw new ExportError(401, "Your credentials are invalid or expired. Please log in again.");
   const org = await getOrgFn();
   if (!org.ok || !org.data) throw new ExportError(404, "There's no event at this address.");
   const { data, error } = await supabase
