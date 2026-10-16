@@ -17,7 +17,8 @@ const PADDING: Record<Width, string> = {
   default: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
   narrow: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
   wide: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
-  embedded: "",
+  // settings layouts pad the sides themselves
+  embedded: "py-5 sm:py-6 lg:py-8",
 };
 
 function ScreenRoot({
