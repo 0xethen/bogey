@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { browserClient } from "@bogey/db/browser";
 import {
@@ -24,6 +24,12 @@ import type { Event } from "@bogey/db/queries/events";
 import { answerProblem } from "@bogey/utils/answers";
 import { TeamFeedback } from "#/routes/_authed/events/$slug/-components/team-feedback.tsx";
 import { TableNotice } from "#/components/event/judging/table-notice.tsx";
+import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
+import {
+  criteriaQueryOptions,
+  rubricsQueryOptions,
+  submissionRubricQueryOptions,
+} from "@bogey/db/queries/judging";
 import { PrizePicker } from "#/routes/_authed/events/$slug/-components/prize-picker.tsx";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
@@ -482,6 +488,14 @@ function SubmissionEditor({
               formId={submission.form_id}
               disabled={!editable}
             />
+            {definition.judged && settings.judging.teamRubric === true && (
+              <TeamRubric
+                eventId={event.id}
+                submissionId={submission.id}
+                editable={editable}
+                showCriteria={settings.judging.teamRubricShows === "criteria"}
+              />
+            )}
             <Screen.Section title={t("sub.visibility")}>
               <form.Field name="isPublic">
                 {(field) => (
@@ -568,6 +582,34 @@ function SubmissionEditor({
         </form.Form>
       </form.AppForm>
     </div>
+  );
+}
+
+function TeamRubric({
+  eventId,
+  submissionId,
+  editable,
+  showCriteria,
+}: {
+  eventId: string;
+  submissionId: string;
+  editable: boolean;
+  showCriteria: boolean;
+}) {
+  const t = useT();
+  const { data: rubrics = [] } = useQuery(rubricsQueryOptions(eventId));
+  const { data: picked = null } = useQuery(submissionRubricQueryOptions(submissionId));
+  const { data: criteria } = useQuery({ ...criteriaQueryOptions(eventId), enabled: showCriteria });
+  if (rubrics.length === 0) return null;
+  return (
+    <RubricPicker
+      submissionId={submissionId}
+      rubrics={rubrics}
+      value={picked}
+      editable={editable}
+      criteria={showCriteria ? criteria : undefined}
+      description={t("rubric.teamHelp")}
+    />
   );
 }
 

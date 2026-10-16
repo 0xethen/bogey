@@ -427,6 +427,23 @@ ones.
   `max_score` (`0 <= min_score < max_score <= 100`), `weight`, `sort`. Scores
   must fall in the range. Ranking maps the range to 0..1, clamped, so scores
   given before a range change still count sensibly.
+  `rubric_id?` puts it in one rubric; without one it counts for every project.
+- **`rubrics`**: `event_id`, `name`, `description_md`, `sort`. Saved with the criteria by
+  `save_criteria(event, items, rubrics)`; removing one removes its criteria and their scores.
+- **`submission_rubrics`**: `submission_id` (one per project), `rubric_id`, `set_by`. Written only
+  by `set_submission_rubric`: organizers, judges who may score it while its round is open
+  (`judging.judgeRubric`), or its team while it can edit the submission (`judging.teamRubric`).
+  Ranking, `team_scores` and the gap check count only shared criteria and the picked rubric's.
+- **`judging_flags`**: `submission_id`, `round_id`, `raised_by?`, `reason`, `gap?`, `resolved_at?`,
+  `resolved_by?`, `resolution`. At most one open flag per project. Raised by `flag_submission`, or
+  by a trigger on `scores` (no `raised_by`, `gap` set) once when two judges' complete totals differ
+  by more than `judging.flagGap`; closed by `resolve_flag`. `private.may_deliberate` decides who
+  sees flags and notes (`judging.deliberation`: the project's judges, every judge, or nobody, and
+  never a conflicted judge); while a flag is open, `private.in_deliberation` opens the project's
+  `scores` and `feedback` to them. `publish_results` refuses while flags are open unless
+  `judging.holdFlagged` is off.
+- **`deliberation_notes`**: `flag_id`, `author_id`, `body_md`. Written by `add_deliberation_note`
+  on an open flag.
 - **`judge_assignments`**: `event_id`, `judge_id` (composite foreign key to
   `event_members`), `submission_id`, `status` (`assigned`, `started` or
   `done`), `unique (judge_id, submission_id)`.

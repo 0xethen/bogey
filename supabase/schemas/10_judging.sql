@@ -160,6 +160,17 @@ begin
 end;
 $$;
 
+-- a named set of criteria for one kind of project (a theme); criteria without one count for every project
+create table public.rubrics (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references public.events on delete cascade,
+  name text not null check (length(name) between 1 and 60),
+  description_md text not null default '' check (length(description_md) <= 2000),
+  sort smallint not null default 0,
+  unique (event_id, name),
+  unique (event_id, id)
+);
+
 create table public.criteria (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null references public.events on delete cascade,
@@ -170,12 +181,28 @@ create table public.criteria (
   weight numeric(5, 2) not null default 1 check (weight > 0),
   sort smallint not null default 0,
   round_id uuid,
+  rubric_id uuid,
   check (min_score >= 0 and min_score < max_score),
   unique (event_id, label),
   unique (event_id, id),
-  foreign key (event_id, round_id) references public.judging_rounds (event_id, id) on delete set null (round_id)
+  foreign key (event_id, round_id) references public.judging_rounds (event_id, id) on delete set null (round_id),
+  foreign key (event_id, rubric_id) references public.rubrics (event_id, id) on delete cascade
 );
 create index criteria_event_id_round_id_fk_idx on public.criteria (event_id, round_id);
+create index criteria_event_id_rubric_id_fk_idx on public.criteria (event_id, rubric_id);
+
+-- which rubric a project is judged on, picked by its team or its judges (judging.teamRubric, judging.judgeRubric)
+create table public.submission_rubrics (
+  event_id uuid not null,
+  submission_id uuid primary key,
+  rubric_id uuid not null,
+  set_by uuid references public.profiles on delete set null,
+  updated_at timestamptz not null default now(),
+  foreign key (event_id, submission_id) references public.submissions (event_id, id) on delete cascade,
+  foreign key (event_id, rubric_id) references public.rubrics (event_id, id) on delete cascade
+);
+create index submission_rubrics_event_id_rubric_id_fk_idx on public.submission_rubrics (event_id, rubric_id);
+create index submission_rubrics_set_by_fk_idx on public.submission_rubrics (set_by);
 
 create table public.judge_assignments (
   id uuid primary key default gen_random_uuid(),
@@ -351,10 +378,12 @@ as $$
     select coalesce(private.event_setting(p_event, 'judging') ->> 'normalize', 'none') as m
   ),
   entries as (
-    select s.id as submission_id, s.team_id, r.id as round_id, r.ordinal, r.name as round_name, r.method
+    select s.id as submission_id, s.team_id, r.id as round_id, r.ordinal, r.name as round_name, r.method,
+      sr.rubric_id
     from public.judging_rounds r
     join public.submission_forms f on f.id = r.form_id and f.judged
     join public.submissions s on s.form_id = f.id and s.status = 'submitted'
+    left join public.submission_rubrics sr on sr.submission_id = s.id
     where r.event_id = p_event
       and (r.ordinal = 1 or exists (
         select 1 from public.round_entries e where e.round_id = r.id and e.submission_id = s.id))
@@ -389,6 +418,7 @@ as $$
       avg(a.adj_n) as normalised, avg(a.raw_n) as raw_normalised
     from entries en
     join public.criteria c on c.event_id = p_event and (c.round_id is null or c.round_id = en.round_id)
+      and (c.rubric_id is null or c.rubric_id = en.rubric_id)
     left join adjusted a
       on a.submission_id = en.submission_id and a.round_id = en.round_id and a.criterion_id = c.id
     group by en.submission_id, en.round_id, c.id, c.weight
@@ -414,7 +444,7 @@ as $$
     where en.method <> 'rubric' and en.method = ri.provider
   ),
   ranked as (
-    select t.*, en.ordinal as round_ordinal, en.round_name, en.method,
+    select t.*, en.ordinal as round_ordinal, en.round_name, en.method, rb.name as rubric,
       s.team_id, s.title, s.form_id, f.title as form_title, tm.name as team_name, tm.division_id,
       rank() over (partition by t.round_id order by t.score desc nulls last) as rank,
       rank() over (partition by t.round_id, tm.division_id order by t.score desc nulls last) as division_rank
@@ -423,6 +453,7 @@ as $$
     join public.submissions s on s.id = t.submission_id
     join public.submission_forms f on f.id = s.form_id
     join public.teams tm on tm.id = s.team_id
+    left join public.rubrics rb on rb.id = en.rubric_id
   )
   select coalesce(jsonb_agg(to_jsonb(ranked) order by form_title, round_ordinal, rank), '[]') from ranked;
 $$;
@@ -496,6 +527,10 @@ declare
 begin
   if not private.can_manage(p_event) then
     raise exception 'not allowed' using errcode = '42501';
+  end if;
+  if coalesce((private.event_setting(p_event, 'judging') ->> 'holdFlagged')::boolean, true)
+    and exists (select 1 from public.judging_flags where event_id = p_event and resolved_at is null) then
+    raise exception 'resolve the flagged projects before publishing' using errcode = '55000';
   end if;
   v_first := not exists (select 1 from public.result_publications where event_id = p_event);
   insert into public.result_publications (event_id, rows, awards, published_by)
@@ -815,6 +850,8 @@ begin
   join public.criteria c on c.id = sc.criterion_id
   join public.judging_rounds r on r.id = sc.round_id
   where sc.submission_id = p_submission
+    and (c.rubric_id is null
+      or c.rubric_id = (select x.rubric_id from public.submission_rubrics x where x.submission_id = p_submission))
     and not exists (select 1 from public.judge_conflicts jc where jc.judge_id = sc.judge_id and jc.team_id = v_sub.team_id)
   group by r.name, r.ordinal, c.label, c.min_score, c.max_score, c.sort
   order by r.ordinal, c.sort;
@@ -995,7 +1032,261 @@ begin
 end;
 $$;
 
-create function public.save_criteria(p_event uuid, p_items jsonb)
+create function public.set_submission_rubric(p_submission uuid, p_rubric uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_sub public.submissions;
+  v_judging jsonb;
+begin
+  select * into v_sub from public.submissions where id = p_submission;
+  if v_sub.id is null then
+    raise exception 'that project isn''t available' using errcode = '42501';
+  end if;
+  v_judging := private.event_setting(v_sub.event_id, 'judging');
+  if not (
+    private.can_manage(v_sub.event_id)
+    or (
+      coalesce((v_judging ->> 'judgeRubric')::boolean, true)
+      and private.has_permission(v_sub.event_id, 'judging.score')
+      and not private.has_conflict((select auth.uid()), p_submission)
+      and private.round_window_open(private.active_round(p_submission))
+    )
+    or (
+      coalesce((v_judging ->> 'teamRubric')::boolean, false)
+      and private.is_team_member(v_sub.team_id)
+      and private.team_write_allowed(v_sub.form_id)
+    )
+  ) then
+    raise exception 'you can''t pick this project''s rubric' using errcode = '42501';
+  end if;
+  if p_rubric is null then
+    delete from public.submission_rubrics where submission_id = p_submission;
+  else
+    if not exists (select 1 from public.rubrics where id = p_rubric and event_id = v_sub.event_id) then
+      raise exception 'that rubric isn''t in this event' using errcode = '22023';
+    end if;
+    insert into public.submission_rubrics (event_id, submission_id, rubric_id, set_by)
+    values (v_sub.event_id, p_submission, p_rubric, (select auth.uid()))
+    on conflict (submission_id) do update
+      set rubric_id = excluded.rubric_id, set_by = excluded.set_by, updated_at = now();
+  end if;
+  perform private.audit(v_sub.event_id, 'judging.rubric_set', 'submission', p_submission,
+    jsonb_build_object('rubric', p_rubric));
+end;
+$$;
+
+-- a judge who may discuss a project's flags: organizers, or judges as judging.deliberation says
+create function private.may_deliberate(p_event uuid, p_submission uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.can_manage(p_event)
+    or (
+      private.has_permission(p_event, 'judging.score')
+      and not private.has_conflict((select auth.uid()), p_submission)
+      and case coalesce(private.event_setting(p_event, 'judging') ->> 'deliberation', 'assigned')
+        when 'all' then true
+        when 'assigned' then exists (
+            select 1 from public.judge_assignments a
+            where a.submission_id = p_submission and a.judge_id = (select auth.uid()))
+          or exists (
+            select 1 from public.scores sc
+            where sc.submission_id = p_submission and sc.judge_id = (select auth.uid()))
+        else false
+      end
+    );
+$$;
+
+grant execute on function private.may_deliberate(uuid, uuid) to authenticated;
+
+create table public.judging_flags (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null,
+  submission_id uuid not null,
+  round_id uuid not null,
+  raised_by uuid references public.profiles on delete set null,
+  reason text not null default '' check (length(reason) <= 500),
+  gap numeric(5, 2),
+  resolved_at timestamptz,
+  resolved_by uuid references public.profiles on delete set null,
+  resolution text not null default '' check (length(resolution) <= 2000),
+  created_at timestamptz not null default now(),
+  unique (event_id, id),
+  check (gap is not null or length(reason) > 0),
+  foreign key (event_id, submission_id) references public.submissions (event_id, id) on delete cascade,
+  foreign key (event_id, round_id) references public.judging_rounds (event_id, id) on delete cascade
+);
+create unique index judging_flags_open_idx on public.judging_flags (submission_id) where resolved_at is null;
+create index judging_flags_event_id_submission_id_fk_idx on public.judging_flags (event_id, submission_id);
+create index judging_flags_event_id_round_id_fk_idx on public.judging_flags (event_id, round_id);
+create index judging_flags_raised_by_fk_idx on public.judging_flags (raised_by);
+create index judging_flags_resolved_by_fk_idx on public.judging_flags (resolved_by);
+
+create table public.deliberation_notes (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null,
+  flag_id uuid not null,
+  author_id uuid references public.profiles on delete set null,
+  body_md text not null check (length(body_md) between 1 and 5000),
+  created_at timestamptz not null default now(),
+  foreign key (event_id, flag_id) references public.judging_flags (event_id, id) on delete cascade
+);
+create index deliberation_notes_event_id_flag_id_fk_idx on public.deliberation_notes (event_id, flag_id);
+create index deliberation_notes_author_id_fk_idx on public.deliberation_notes (author_id);
+
+-- while a project has an open flag, the judges deliberating see each other's scores and notes on it
+create function private.in_deliberation(p_event uuid, p_submission uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+      select 1 from public.judging_flags f where f.submission_id = p_submission and f.resolved_at is null)
+    and private.may_deliberate(p_event, p_submission);
+$$;
+grant execute on function private.in_deliberation(uuid, uuid) to authenticated;
+
+create function public.flag_submission(p_submission uuid, p_reason text)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_sub public.submissions;
+  v_round uuid;
+  v_id uuid;
+begin
+  select * into v_sub from public.submissions where id = p_submission and status = 'submitted';
+  if v_sub.id is null
+    or coalesce(private.event_setting(v_sub.event_id, 'judging') ->> 'deliberation', 'assigned') = 'off'
+    or not private.may_deliberate(v_sub.event_id, p_submission) then
+    raise exception 'you can''t flag this project' using errcode = '42501';
+  end if;
+  if length(trim(coalesce(p_reason, ''))) not between 1 and 500 then
+    raise exception 'say why in up to 500 characters' using errcode = '22023';
+  end if;
+  v_round := private.active_round(p_submission);
+  insert into public.judging_flags (event_id, submission_id, round_id, raised_by, reason)
+  values (v_sub.event_id, p_submission, v_round, (select auth.uid()), trim(p_reason))
+  on conflict (submission_id) where resolved_at is null do nothing
+  returning id into v_id;
+  if v_id is null then
+    raise exception 'this project is already flagged' using errcode = '23505';
+  end if;
+  perform private.audit(v_sub.event_id, 'judging.flagged', 'submission', p_submission,
+    jsonb_build_object('reason', left(trim(p_reason), 200)));
+  return v_id;
+end;
+$$;
+
+create function public.resolve_flag(p_flag uuid, p_resolution text default '')
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_flag public.judging_flags;
+begin
+  select * into v_flag from public.judging_flags where id = p_flag;
+  if v_flag.id is null or not private.may_deliberate(v_flag.event_id, v_flag.submission_id) then
+    raise exception 'you can''t resolve this flag' using errcode = '42501';
+  end if;
+  if v_flag.resolved_at is not null then
+    return;
+  end if;
+  update public.judging_flags
+  set resolved_at = now(), resolved_by = (select auth.uid()), resolution = left(trim(coalesce(p_resolution, '')), 2000)
+  where id = p_flag;
+  perform private.audit(v_flag.event_id, 'judging.flag_resolved', 'submission', v_flag.submission_id,
+    jsonb_build_object('flag', p_flag));
+end;
+$$;
+
+create function public.add_deliberation_note(p_flag uuid, p_body text)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_flag public.judging_flags;
+  v_id uuid;
+begin
+  select * into v_flag from public.judging_flags where id = p_flag;
+  if v_flag.id is null or v_flag.resolved_at is not null
+    or not private.may_deliberate(v_flag.event_id, v_flag.submission_id) then
+    raise exception 'this deliberation is closed to you' using errcode = '42501';
+  end if;
+  insert into public.deliberation_notes (event_id, flag_id, author_id, body_md)
+  values (v_flag.event_id, p_flag, (select auth.uid()), trim(p_body))
+  returning id into v_id;
+  return v_id;
+end;
+$$;
+
+-- flags a project once when its judges' totals are further apart than judging.flagGap points of 100
+create function private.check_score_gap()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_judging jsonb := private.event_setting(new.event_id, 'judging');
+  v_limit numeric := coalesce((v_judging ->> 'flagGap')::numeric, 0);
+  v_team uuid;
+  v_gap numeric;
+begin
+  if v_limit <= 0 or coalesce(v_judging ->> 'deliberation', 'assigned') = 'off'
+    or exists (
+      select 1 from public.judging_flags f
+      where f.submission_id = new.submission_id and (f.resolved_at is null or f.gap is not null)) then
+    return null;
+  end if;
+  select team_id into v_team from public.submissions where id = new.submission_id;
+  with applicable as (
+    select c.id, c.min_score, c.max_score, c.weight from public.criteria c
+    where c.event_id = new.event_id
+      and (c.round_id is null or c.round_id = new.round_id)
+      and (c.rubric_id is null or c.rubric_id = (
+        select r.rubric_id from public.submission_rubrics r where r.submission_id = new.submission_id))
+  ),
+  totals as (
+    select sc.judge_id, count(*) as scored,
+      100 * sum((sc.value - a.min_score) / (a.max_score - a.min_score) * a.weight) / sum(a.weight) as total
+    from public.scores sc
+    join applicable a on a.id = sc.criterion_id
+    where sc.submission_id = new.submission_id and sc.round_id = new.round_id
+      and not exists (select 1 from public.judge_conflicts jc where jc.judge_id = sc.judge_id and jc.team_id = v_team)
+    group by sc.judge_id
+  )
+  select max(total) - min(total) into v_gap
+  from totals where scored = (select count(*) from applicable)
+  having count(*) >= 2;
+  if v_gap > v_limit then
+    insert into public.judging_flags (event_id, submission_id, round_id, gap)
+    values (new.event_id, new.submission_id, new.round_id, round(v_gap, 2))
+    on conflict (submission_id) where resolved_at is null do nothing;
+  end if;
+  return null;
+end;
+$$;
+
+create trigger scores_gap after insert or update on public.scores
+  for each row execute function private.check_score_gap();
+
+create function public.save_criteria(p_event uuid, p_items jsonb, p_rubrics jsonb default null)
 returns integer
 language plpgsql
 security definer
@@ -1007,6 +1298,21 @@ begin
   if not private.can_manage(p_event) then
     raise exception 'not allowed' using errcode = '42501';
   end if;
+  if p_rubrics is not null then
+    delete from public.rubrics
+    where event_id = p_event
+      and id not in (
+        select (item ->> 'id')::uuid from jsonb_array_elements(p_rubrics) item where item ->> 'id' is not null
+      );
+    update public.rubrics set name = id::text where event_id = p_event;
+    insert into public.rubrics (id, event_id, name, description_md, sort)
+    select coalesce((item ->> 'id')::uuid, gen_random_uuid()), p_event, trim(item ->> 'name'),
+      coalesce(item ->> 'description_md', ''), (ordinality - 1)::smallint
+    from jsonb_array_elements(p_rubrics) with ordinality as t(item, ordinality)
+    on conflict (id) do update set
+      name = excluded.name, description_md = excluded.description_md, sort = excluded.sort;
+  end if;
+
   delete from public.criteria
   where event_id = p_event
     and id not in (
@@ -1015,19 +1321,21 @@ begin
   get diagnostics v_removed = row_count;
 
   update public.criteria set label = id::text where event_id = p_event;
-  insert into public.criteria (id, event_id, label, description_md, min_score, max_score, weight, sort, round_id)
+  insert into public.criteria (id, event_id, label, description_md, min_score, max_score, weight, sort, round_id, rubric_id)
   select coalesce((item ->> 'id')::uuid, gen_random_uuid()), p_event, item ->> 'label',
     coalesce(item ->> 'description_md', ''), coalesce((item ->> 'min_score')::smallint, 0),
     (item ->> 'max_score')::smallint,
-    (item ->> 'weight')::numeric, (ordinality - 1)::smallint, nullif(item ->> 'round_id', '')::uuid
+    (item ->> 'weight')::numeric, (ordinality - 1)::smallint, nullif(item ->> 'round_id', '')::uuid,
+    nullif(item ->> 'rubric_id', '')::uuid
   from jsonb_array_elements(p_items) with ordinality as t(item, ordinality)
   on conflict (id) do update set
     label = excluded.label, description_md = excluded.description_md,
     min_score = excluded.min_score, max_score = excluded.max_score, weight = excluded.weight, sort = excluded.sort,
-    round_id = excluded.round_id;
+    round_id = excluded.round_id, rubric_id = excluded.rubric_id;
 
   perform private.audit(p_event, 'judging.criteria_saved', 'event', p_event,
-    jsonb_build_object('count', jsonb_array_length(p_items), 'removed', v_removed));
+    jsonb_build_object('count', jsonb_array_length(p_items), 'removed', v_removed,
+      'rubrics', case when p_rubrics is null then null else jsonb_array_length(p_rubrics) end));
   return v_removed;
 end;
 $$;
@@ -1044,7 +1352,11 @@ grant execute on function
   public.remove_conflict(uuid, uuid, uuid),
   public.judge_calibration(uuid, uuid),
   public.skip_submission(uuid, boolean),
-  public.save_criteria(uuid, jsonb),
+  public.save_criteria(uuid, jsonb, jsonb),
+  public.set_submission_rubric(uuid, uuid),
+  public.flag_submission(uuid, text),
+  public.resolve_flag(uuid, text),
+  public.add_deliberation_note(uuid, text),
   public.save_awards(uuid, jsonb)
 to authenticated;
 
@@ -1064,6 +1376,10 @@ alter table public.judge_conflicts enable row level security;
 alter table public.judging_rounds enable row level security;
 alter table public.round_entries enable row level security;
 alter table public.criteria enable row level security;
+alter table public.rubrics enable row level security;
+alter table public.submission_rubrics enable row level security;
+alter table public.judging_flags enable row level security;
+alter table public.deliberation_notes enable row level security;
 alter table public.judge_assignments enable row level security;
 alter table public.scores enable row level security;
 alter table public.feedback enable row level security;
@@ -1096,6 +1412,22 @@ create policy criteria_write_update on public.criteria for update to authenticat
 create policy criteria_write_delete on public.criteria for delete to authenticated
   using ((select private.can_manage(event_id)));
 
+create policy rubrics_select on public.rubrics for select to anon, authenticated
+  using ((select private.can_view_event(event_id)));
+create policy submission_rubrics_select on public.submission_rubrics for select to authenticated
+  using (
+    (select private.can_manage(event_id))
+    or (select private.has_permission(event_id, 'judging.score'))
+    or exists (
+      select 1 from public.submissions s where s.id = submission_id and private.is_team_member(s.team_id))
+  );
+create policy judging_flags_select on public.judging_flags for select to authenticated
+  using (private.may_deliberate(event_id, submission_id));
+create policy deliberation_notes_select on public.deliberation_notes for select to authenticated
+  using (exists (
+    select 1 from public.judging_flags f
+    where f.id = flag_id and private.may_deliberate(f.event_id, f.submission_id)));
+
 create policy judge_assignments_select on public.judge_assignments for select to authenticated
   using (judge_id = (select auth.uid()) or (select private.can_manage(event_id)));
 create policy judge_assignments_update on public.judge_assignments for update to authenticated
@@ -1115,7 +1447,11 @@ create policy judge_assignments_manage_delete on public.judge_assignments for de
   using ((select private.can_manage(event_id)));
 
 create policy scores_select on public.scores for select to authenticated
-  using (judge_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (
+    judge_id = (select auth.uid())
+    or (select private.can_manage(event_id))
+    or private.in_deliberation(event_id, submission_id)
+  );
 create policy scores_insert on public.scores for insert to authenticated
   with check (
     (
@@ -1162,6 +1498,7 @@ create policy feedback_select on public.feedback for select to authenticated
   using (
     judge_id = (select auth.uid())
     or (select private.can_manage(event_id))
+    or private.in_deliberation(event_id, submission_id)
     or (
       visibility = 'team'
       and ((select private.event_setting(event_id, 'judging')) ->> 'shareWithTeams') in ('feedback', 'scores')

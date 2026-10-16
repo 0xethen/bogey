@@ -123,6 +123,11 @@ name in the code disagrees with this file, one of them is wrong; fix it.
 - **Submission**: a team's project entry, with fixed fields plus the
   event's custom **submission fields**.
 - **Criterion**: one thing judges score, with a maximum and a weight.
+- **Rubric**: a named set of criteria for one kind of project, such as a theme ("Health"). A project is
+  scored on the shared criteria plus its one rubric's, picked by its judges or its team.
+- **Flag**: a project marked for judges to discuss, by a judge or on its own when judges' totals are far
+  apart. While it's open the project is in **deliberation**: its judges see each other's scores and
+  notes on it until one of them resolves it.
 - **Assignment**: one judge paired with one submission to review.
 - **Results**: a published snapshot of the rankings. It stays fixed once
   published, even if scores change afterwards.

@@ -121,6 +121,12 @@ const SIGNED_IN = {
   save_agenda: "replaces the agenda in one transaction and audits it",
   save_submission_form: "replaces a form's items in one transaction and audits it",
   save_awards: "replaces the drafted awards in one transaction and audits it",
+  set_submission_rubric:
+    "checks who may pick a project's rubric (organizers, judges, its team) per the judging settings, and audits it",
+  flag_submission:
+    "a judge who may deliberate on a project flags it, once at a time, and it's audited",
+  resolve_flag: "closes a flag for the judges deliberating on it, and audits it",
+  add_deliberation_note: "adds a note to an open flag the caller deliberates on",
   save_prizes: "replaces the prize list in one transaction and audits it",
   set_submission_tracks: "applies the prize cap and opt-in rules, and audits the choice",
   save_criteria: "replaces the criteria list in one transaction",

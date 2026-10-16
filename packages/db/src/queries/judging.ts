@@ -8,6 +8,7 @@ import { activeRound, type RoundEntry, type RoundInfo } from "@bogey/utils/round
 import { parseAwards, type Award } from "./awards.ts";
 
 export type Criterion = Tables<"criteria">;
+export type Rubric = Tables<"rubrics">;
 export type AssignmentStatus = Enums<"assignment_status">;
 export type FeedbackVisibility = Enums<"feedback_visibility">;
 
@@ -29,6 +30,77 @@ export const criteriaFn = createServerFn({ method: "GET" })
       .order("sort");
     if (error) return toFailure(error, "loading criteria");
     return ok(data ?? []);
+  });
+
+export const rubricsFn = createServerFn({ method: "GET" })
+  .validator((eventId: unknown) => requireId(eventId, "eventId"))
+  .handler(async ({ data: eventId }): Promise<DbResult<Rubric[]>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("rubrics")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("sort");
+    if (error) return toFailure(error, "loading rubrics");
+    return ok(data ?? []);
+  });
+
+export const rubricsQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["rubrics", eventId] as const,
+    queryFn: async () => unwrap(await rubricsFn({ data: eventId })),
+    retry: retryPolicy,
+  });
+
+/** The criteria a project is scored on in a round: shared ones plus its rubric's. */
+export function criteriaFor(
+  criteria: Tuple<Criterion>,
+  roundId: string,
+  rubricId: string | null,
+): Criterion[] {
+  return criteria.filter(
+    (criterion) =>
+      (!criterion.round_id || criterion.round_id === roundId) &&
+      (!criterion.rubric_id || criterion.rubric_id === rubricId),
+  );
+}
+
+export const submissionRubricFn = createServerFn({ method: "GET" })
+  .validator((submissionId: unknown) => requireId(submissionId, "submissionId"))
+  .handler(async ({ data: submissionId }): Promise<DbResult<string | null>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("submission_rubrics")
+      .select("rubric_id")
+      .eq("submission_id", submissionId)
+      .maybeSingle();
+    if (error) return toFailure(error, "loading the rubric");
+    return ok(data?.rubric_id ?? null);
+  });
+
+export const submissionRubricQueryOptions = (submissionId: string) =>
+  queryOptions({
+    queryKey: ["submission-rubric", submissionId] as const,
+    queryFn: async () => unwrap(await submissionRubricFn({ data: submissionId })),
+    retry: retryPolicy,
+  });
+
+export const setSubmissionRubricFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as { submissionId?: unknown; rubricId?: unknown };
+    return {
+      submissionId: requireId(raw.submissionId, "submissionId"),
+      rubricId: optionalId(raw.rubricId, "rubricId") ?? null,
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const supabase = createServerClient();
+    const { error } = await supabase.rpc("set_submission_rubric", {
+      p_submission: data.submissionId,
+      ...(data.rubricId ? { p_rubric: data.rubricId } : {}),
+    });
+    if (error) return toFailure(error, "picking the rubric");
+    return ok(null);
   });
 
 export interface JudgingRound extends RoundInfo {
@@ -183,6 +255,7 @@ export interface JudgeQueueItem {
   assigned: boolean;
   status: AssignmentStatus | null;
   scored: number;
+  flagged: boolean;
 }
 
 export const judgeQueueFn = createServerFn({ method: "GET" })
@@ -193,7 +266,7 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
     const userId = userData.user?.id;
     if (!userId) return fail("forbidden", "Sign in first.");
 
-    const [submissions, assignments, scores, roundData, conflicts] = await Promise.all([
+    const [submissions, assignments, scores, roundData, conflicts, flags] = await Promise.all([
       supabase
         .from("submissions")
         .select(
@@ -218,11 +291,18 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
         .select("team_id")
         .eq("event_id", eventId)
         .eq("judge_id", userId),
+      supabase
+        .from("judging_flags")
+        .select("submission_id")
+        .eq("event_id", eventId)
+        .is("resolved_at", null),
     ]);
     if (!roundData.ok) return roundData;
-    const error = submissions.error ?? assignments.error ?? scores.error ?? conflicts.error;
+    const error =
+      submissions.error ?? assignments.error ?? scores.error ?? conflicts.error ?? flags.error;
     if (error) return toFailure(error, "loading your judging queue");
     const barred = new Set((conflicts.data ?? []).map((row) => row.team_id));
+    const flagged = new Set((flags.data ?? []).map((row) => row.submission_id));
 
     const rounds = roundData.data;
     const status = new Map(
@@ -257,6 +337,7 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
               assigned: status.has(key),
               status: status.get(key) ?? null,
               scored: scored.get(key) ?? 0,
+              flagged: flagged.has(row.id),
             },
           ];
         })
@@ -284,6 +365,7 @@ export interface JudgeSheet {
   scores: { [criterionId: string]: number };
   feedback: { id: string; body: string; visibility: FeedbackVisibility } | null;
   status: AssignmentStatus | null;
+  rubricId: string | null;
 }
 
 export const judgeSheetFn = createServerFn({ method: "GET" })
@@ -301,7 +383,7 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
     if (!userId) return fail("forbidden", "Sign in first.");
     const round = await currentRound(supabase, data.submissionId);
     if (!round.ok) return round;
-    const [scores, feedback, assignment] = await Promise.all([
+    const [scores, feedback, assignment, rubric] = await Promise.all([
       supabase
         .from("scores")
         .select("criterion_id, value")
@@ -324,8 +406,13 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
         .eq("round_id", round.data.id)
         .eq("judge_id", userId)
         .maybeSingle(),
+      supabase
+        .from("submission_rubrics")
+        .select("rubric_id")
+        .eq("submission_id", data.submissionId)
+        .maybeSingle(),
     ]);
-    const error = scores.error ?? feedback.error ?? assignment.error;
+    const error = scores.error ?? feedback.error ?? assignment.error ?? rubric.error;
     if (error) return toFailure(error, "loading your scores");
     return ok({
       roundId: round.data.id,
@@ -342,6 +429,7 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
           }
         : null,
       status: assignment.data?.status ?? null,
+      rubricId: rubric.data?.rubric_id ?? null,
     });
   });
 
@@ -455,13 +543,40 @@ export interface CriterionDraft {
   maxScore: number;
   weight: number;
   roundId: string | null;
+  rubricId: string | null;
+}
+
+export interface RubricDraft {
+  id: string;
+  name: string;
+  descriptionMd: string;
 }
 
 export const saveCriteriaFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
-    const raw = (input ?? {}) as { eventId?: unknown; items?: unknown };
-    if (!Array.isArray(raw.items) || raw.items.length > 30) {
-      throw new Error("Use at most 30 criteria");
+    const raw = (input ?? {}) as { eventId?: unknown; items?: unknown; rubrics?: unknown };
+    if (!Array.isArray(raw.items) || raw.items.length > 60) {
+      throw new Error("Use at most 60 criteria");
+    }
+    if (raw.rubrics !== undefined && (!Array.isArray(raw.rubrics) || raw.rubrics.length > 20)) {
+      throw new Error("Use at most 20 rubrics");
+    }
+    const rubrics = Array.isArray(raw.rubrics)
+      ? raw.rubrics.map((entry): RubricDraft => {
+          const item = (entry ?? {}) as Record<string, unknown>;
+          return {
+            id: requireId(item.id, "rubric id"),
+            name: requireText(item.name, "Rubric", 60),
+            descriptionMd:
+              typeof item.descriptionMd === "string" ? item.descriptionMd.slice(0, 2000) : "",
+          };
+        })
+      : null;
+    if (
+      rubrics &&
+      new Set(rubrics.map((item) => item.name.toLowerCase())).size !== rubrics.length
+    ) {
+      throw new Error("Two rubrics share a name");
     }
     const items = raw.items.map((entry): CriterionDraft => {
       const item = (entry ?? {}) as Record<string, unknown>;
@@ -486,11 +601,12 @@ export const saveCriteriaFn = createServerFn({ method: "POST" })
         maxScore,
         weight,
         roundId: optionalId(item.roundId, "roundId") ?? null,
+        rubricId: optionalId(item.rubricId, "rubricId") ?? null,
       };
     });
     const labels = new Set(items.map((item) => item.label.toLowerCase()));
     if (labels.size !== items.length) throw new Error("Two criteria share a name");
-    return { eventId: requireId(raw.eventId, "eventId"), items };
+    return { eventId: requireId(raw.eventId, "eventId"), items, rubrics };
   })
   .handler(async ({ data }): Promise<DbResult<number>> => {
     const supabase = createServerClient();
@@ -502,10 +618,20 @@ export const saveCriteriaFn = createServerFn({ method: "POST" })
       max_score: item.maxScore,
       weight: item.weight,
       round_id: item.roundId,
+      rubric_id: item.rubricId,
     }));
     const { data: removed, error } = await supabase.rpc("save_criteria", {
       p_event: data.eventId,
       p_items: items,
+      ...(data.rubrics
+        ? {
+            p_rubrics: data.rubrics.map((rubric) => ({
+              id: rubric.id,
+              name: rubric.name,
+              description_md: rubric.descriptionMd,
+            })),
+          }
+        : {}),
     });
     if (error) return toFailure(error, "saving criteria");
     return ok(removed ?? 0);
@@ -661,6 +787,7 @@ export interface ResultRow {
   judges: number;
   conflicted: number;
   method: string;
+  rubric: string | null;
   detail: Record<string, Json | undefined>;
 }
 
@@ -711,6 +838,7 @@ function parseResults(rows: Json): ResultRow[] {
         judges: number("judges") ?? 0,
         conflicted: number("conflicted") ?? 0,
         method: text("method") || "rubric",
+        rubric: text("rubric") || null,
         detail:
           row.detail && typeof row.detail === "object" && !Array.isArray(row.detail)
             ? row.detail

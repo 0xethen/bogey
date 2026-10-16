@@ -748,6 +748,7 @@ export type Database = {
           max_score: number;
           min_score: number;
           round_id: string | null;
+          rubric_id: string | null;
           sort: number;
           weight: number;
         };
@@ -760,6 +761,7 @@ export type Database = {
           max_score?: number;
           min_score?: number;
           round_id?: string | null;
+          rubric_id?: string | null;
           sort?: number;
           weight?: number;
         };
@@ -771,6 +773,7 @@ export type Database = {
           max_score?: number;
           min_score?: number;
           round_id?: string | null;
+          rubric_id?: string | null;
           sort?: number;
           weight?: number;
         };
@@ -787,6 +790,56 @@ export type Database = {
             columns: ["event_id", "round_id"];
             isOneToOne: false;
             referencedRelation: "judging_rounds";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "criteria_event_id_rubric_id_fkey";
+            columns: ["event_id", "rubric_id"];
+            isOneToOne: false;
+            referencedRelation: "rubrics";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
+      deliberation_notes: {
+        Row: {
+          author_id: string | null;
+          body_md: string;
+          created_at: string;
+          event_id: string;
+          flag_id: string;
+          id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id?: string | null;
+          body_md: string;
+          created_at?: string;
+          event_id: string;
+          flag_id: string;
+          id?: string;
+        };
+        Update: {
+          author_id?: string | null;
+          body_md?: string;
+          created_at?: string;
+          event_id?: string;
+          flag_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "deliberation_notes_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deliberation_notes_event_id_flag_id_fkey";
+            columns: ["event_id", "flag_id"];
+            isOneToOne: false;
+            referencedRelation: "judging_flags";
             referencedColumns: ["event_id", "id"];
           },
         ];
@@ -1575,6 +1628,78 @@ export type Database = {
           },
         ];
       };
+      judging_flags: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          gap: number | null;
+          id: string;
+          raised_by: string | null;
+          reason: string;
+          resolution: string;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          round_id: string;
+          submission_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          gap?: number | null;
+          id?: string;
+          raised_by?: string | null;
+          reason?: string;
+          resolution?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          round_id: string;
+          submission_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          gap?: number | null;
+          id?: string;
+          raised_by?: string | null;
+          reason?: string;
+          resolution?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          round_id?: string;
+          submission_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "judging_flags_event_id_round_id_fkey";
+            columns: ["event_id", "round_id"];
+            isOneToOne: false;
+            referencedRelation: "judging_rounds";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "judging_flags_event_id_submission_id_fkey";
+            columns: ["event_id", "submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "judging_flags_raised_by_fkey";
+            columns: ["raised_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "judging_flags_resolved_by_fkey";
+            columns: ["resolved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       judging_rounds: {
         Row: {
           created_at: string;
@@ -2308,6 +2433,39 @@ export type Database = {
           },
         ];
       };
+      rubrics: {
+        Row: {
+          description_md: string;
+          event_id: string;
+          id: string;
+          name: string;
+          sort: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          description_md?: string;
+          event_id: string;
+          id?: string;
+          name: string;
+          sort?: number;
+        };
+        Update: {
+          description_md?: string;
+          event_id?: string;
+          id?: string;
+          name?: string;
+          sort?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rubrics_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       scores: {
         Row: {
           criterion_id: string;
@@ -2860,6 +3018,53 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "submission_forms";
             referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
+      submission_rubrics: {
+        Row: {
+          event_id: string;
+          rubric_id: string;
+          set_by: string | null;
+          submission_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          event_id: string;
+          rubric_id: string;
+          set_by?: string | null;
+          submission_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          event_id?: string;
+          rubric_id?: string;
+          set_by?: string | null;
+          submission_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "submission_rubrics_event_id_rubric_id_fkey";
+            columns: ["event_id", "rubric_id"];
+            isOneToOne: false;
+            referencedRelation: "rubrics";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "submission_rubrics_event_id_submission_id_fkey";
+            columns: ["event_id", "submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "submission_rubrics_set_by_fkey";
+            columns: ["set_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -3500,6 +3705,7 @@ export type Database = {
     };
     Functions: {
       account_deletion_status: { Args: Record<PropertyKey, never>; Returns: Json };
+      add_deliberation_note: { Args: { p_body: string; p_flag: string }; Returns: string };
       admin_mfa_status: { Args: Record<PropertyKey, never>; Returns: Json };
       advance_submissions: {
         Args: { p_round: string; p_submissions?: string[]; p_top?: number };
@@ -3775,6 +3981,7 @@ export type Database = {
       };
       event_certificates: { Args: { p_event: string }; Returns: Json[] };
       event_network_status: { Args: { p_event: string }; Returns: Json };
+      flag_submission: { Args: { p_reason: string; p_submission: string }; Returns: string };
       import_roster: { Args: { p_event: string; p_notify?: boolean; p_rows: Json }; Returns: Json };
       inherited_settings: {
         Args: {
@@ -4090,6 +4297,7 @@ export type Database = {
         Returns: string;
       };
       resend_webhook_delivery: { Args: { p_id: string }; Returns: undefined };
+      resolve_flag: { Args: { p_flag: string; p_resolution?: string }; Returns: undefined };
       retract_vote: { Args: { p_submission: string }; Returns: undefined };
       review_registrations: {
         Args: {
@@ -4128,7 +4336,10 @@ export type Database = {
         };
         Returns: undefined;
       };
-      save_criteria: { Args: { p_event: string; p_items: Json }; Returns: number };
+      save_criteria: {
+        Args: { p_event: string; p_items: Json; p_rubrics?: Json };
+        Returns: number;
+      };
       save_prizes: { Args: { p_event: string; p_items: Json }; Returns: number };
       save_submission_form: {
         Args: { p_event: string; p_form: Json; p_items: Json };
@@ -4213,6 +4424,10 @@ export type Database = {
           p_scope: Database["public"]["Enums"]["setting_scope"];
           p_value: string;
         };
+        Returns: undefined;
+      };
+      set_submission_rubric: {
+        Args: { p_rubric?: string; p_submission: string };
         Returns: undefined;
       };
       set_submission_tracks: {

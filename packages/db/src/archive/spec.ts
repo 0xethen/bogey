@@ -30,7 +30,11 @@ type TableName =
   | "judging_rounds"
   | "round_entries"
   | "ranking_inputs"
+  | "rubrics"
   | "criteria"
+  | "submission_rubrics"
+  | "judging_flags"
+  | "deliberation_notes"
   | "judge_assignments"
   | "scores"
   | "feedback"
@@ -99,7 +103,8 @@ export const ARCHIVE_TABLES: readonly TableSpec[] = [
   table("tracks", { id: "id", refs: { form_id: "submission_forms" } }),
   table("submission_items", { id: "id", refs: { form_id: "submission_forms" } }),
   table("judging_rounds", { id: "id", refs: { form_id: "submission_forms" }, replace: true }),
-  table("criteria", { id: "id", refs: { round_id: "judging_rounds" } }),
+  table("rubrics", { id: "id" }),
+  table("criteria", { id: "id", refs: { round_id: "judging_rounds", rubric_id: "rubrics" } }),
   table("event_pages", { id: "id" }),
   table("settings", { id: "id", clear: ["updated_by", "org_id"] }),
   table("onboarding_forms"),
@@ -211,6 +216,26 @@ export const ARCHIVE_TABLES: readonly TableSpec[] = [
   }),
   table("judge_conflicts", {
     refs: { judge_id: "user", team_id: "teams", declared_by: "user" },
+    people: true,
+  }),
+  table("submission_rubrics", {
+    refs: { submission_id: "submissions", rubric_id: "rubrics", set_by: "user" },
+    people: true,
+  }),
+  table("judging_flags", {
+    id: "id",
+    refs: {
+      submission_id: "submissions",
+      round_id: "judging_rounds",
+      raised_by: "user",
+      resolved_by: "user",
+    },
+    dates: ["resolved_at"],
+    people: true,
+  }),
+  table("deliberation_notes", {
+    id: "id",
+    refs: { flag_id: "judging_flags", author_id: "user" },
     people: true,
   }),
   table("awards", {

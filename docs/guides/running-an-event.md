@@ -300,7 +300,10 @@ disqualify or reinstate, delete, and act on deletion requests.
 **Manage → Judging**:
 
 1. Add **criteria**, each with a score range (0 to 10 by default) and a
-   weight. **Duplicate** copies one as a starting point.
+   weight. **Duplicate** copies one as a starting point. For an event with
+   several themes, **Add a rubric** per theme ("Health", "Climate") and set
+   each theme's criteria to count in it; criteria left on **Every rubric**
+   count for every project. See [Rubrics](#rubrics).
 2. Turn on **blind judging** if judges shouldn't see team names. Teams are
    asked to keep names out of their answers. For questions that need names,
    like who built what, turn on **May name people** on that submission item:
@@ -337,6 +340,36 @@ Judges score from their own queue while the Judging window is open.
 - **How judges score** lists each judge's average and spread and flags the ones far from the
   rest or who give everything the same mark.
 - **Fewest judges per entry**: the results preview warns about entries with fewer before you publish.
+
+### Rubrics
+
+A project is scored on the shared criteria plus its rubric's own. There's one rubric per project,
+shared by all its judges and its team, so every project is ranked on what fits it and the totals
+stay out of 100.
+
+- **Judges pick the rubric** (on by default): a judge picks or changes it at the top of the score
+  sheet. Scores already given for another rubric's criteria are kept but don't count.
+- **Teams pick their rubric** (off by default): teams choose on their submission while they can
+  still edit it, and judges can still change it unless you turn that off. **What teams see**
+  shows them rubric names only, or each rubric's criteria too.
+- A project with no rubric picked is ranked on the shared criteria alone. The results preview
+  names each project's rubric.
+
+Themes aren't a separate setting: a rubric is the theme.
+
+### Deliberation
+
+A judge can **Flag** a project they want to discuss (a suspected rules issue, a score they
+disagree about). While it's flagged, the judges deliberating see each other's scores and notes on
+it, post to a discussion on the project's page, change their own scores, and then **Resolve** it
+with an optional outcome. Flagged projects are listed at the top of the judges' queue and under
+**Manage → Judging → Deliberation**, which keeps the resolved ones too.
+
+- **Who deliberates**: the project's judges (assigned to it or who scored it, the default), every
+  judge, or nobody (no flags). Organizers always can, and a judge with a conflict never does.
+- **Flag on disagreement**: flags a project on its own, once, when two judges' totals for it are
+  more than this many points apart out of 100. 0 (the default) turns it off.
+- **Hold results while flagged** (on by default): publishing waits until every flag is resolved.
 
 ### Expo tables
 

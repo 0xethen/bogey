@@ -3,7 +3,9 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { declareConflictFn } from "@bogey/db/queries/conflicts";
 import { z } from "zod";
 import {
+  criteriaFor,
   criteriaQueryOptions,
+  rubricsQueryOptions,
   judgeQueueQueryOptions,
   judgeSheetQueryOptions,
   judgingRoundsQueryOptions,
@@ -24,6 +26,10 @@ import { requestFailure, unwrap } from "@bogey/db/errors";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
 import { CriterionField } from "#/components/event/judging/criterion-field.tsx";
+import { DeliberationPanel, FlagButton } from "#/components/event/judging/deliberation.tsx";
+import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
+import { deliberationQueryOptions } from "@bogey/db/queries/deliberation";
+import { can } from "@bogey/db/permissions";
 import { Screen } from "@bogey/ui/components/screen";
 import { IconArrowRight } from "@tabler/icons-react";
 import {
@@ -45,6 +51,8 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionI
       context.query.ensureQueryData(submissionDetailQueryOptions(params.submissionId)),
       context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
       context.query.ensureQueryData(criteriaQueryOptions(context.event.id)),
+      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
+      context.query.ensureQueryData(deliberationQueryOptions(params.submissionId)),
       context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
       context.query.ensureQueryData(judgeSheetQueryOptions(context.event.id, params.submissionId)),
       context.query.ensureQueryData(judgeQueueQueryOptions(context.event.id)),
@@ -60,11 +68,13 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionI
 
 function RouteComponent() {
   const t = useT();
-  const { event, session } = Route.useRouteContext();
+  const { event, session, access } = Route.useRouteContext();
   const { submissionId } = Route.useParams();
   const { data: submission } = useSuspenseQuery(submissionDetailQueryOptions(submissionId));
   const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(event.id));
   const { data: criteria } = useSuspenseQuery(criteriaQueryOptions(event.id));
+  const { data: rubrics } = useSuspenseQuery(rubricsQueryOptions(event.id));
+  const { data: deliberation } = useSuspenseQuery(deliberationQueryOptions(submissionId));
   const { data: sheet } = useSuspenseQuery(judgeSheetQueryOptions(event.id, submissionId));
   const { data: queue } = useSuspenseQuery(judgeQueueQueryOptions(event.id));
   const { data: roundData } = useSuspenseQuery(judgingRoundsQueryOptions(event.id));
@@ -88,6 +98,11 @@ function RouteComponent() {
   const open = isWindowOpen(windowByKey(windows, round?.windowKey ?? "judging"));
   const index = queue.findIndex((item) => item.submissionId === submissionId);
   const next = queue.slice(index + 1).find((item) => item.status !== "done");
+  const manager = can(access, "event.manage");
+  const flagging =
+    (settings.judging.deliberation ?? "assigned") !== "off" &&
+    !(deliberation && !deliberation.flag.resolvedAt);
+  const rubricEditable = (manager || settings.judging.judgeRubric !== false) && (open || manager);
 
   return (
     <Screen
@@ -96,6 +111,7 @@ function RouteComponent() {
       width="wide"
       actions={
         <>
+          {flagging && <FlagButton submissionId={submissionId} />}
           <Button
             size="sm"
             variant="ghost"
@@ -130,6 +146,7 @@ function RouteComponent() {
     >
       <div className="grid gap-10 lg:grid-cols-[1fr_22rem]">
         <section className="min-w-0">
+          <DeliberationPanel submissionId={submissionId} criteria={criteria} />
           {form ? (
             <SubmissionAnswers
               form={form}
@@ -141,7 +158,21 @@ function RouteComponent() {
             <p className="text-sm text-muted-fg">{t("judging.formRemoved")}</p>
           )}
         </section>
-        <aside className="lg:sticky lg:top-(--layout-offset) lg:self-start">
+        <aside className="flex flex-col gap-5 lg:sticky lg:top-(--layout-offset) lg:self-start">
+          {(!round || round.method === "rubric") && (
+            <RubricPicker
+              submissionId={submissionId}
+              rubrics={rubrics}
+              value={sheet.rubricId}
+              editable={rubricEditable}
+              description={t("rubric.judgeHelp")}
+              onPicked={() =>
+                queryClient.invalidateQueries({
+                  queryKey: judgeSheetQueryOptions(event.id, submissionId).queryKey,
+                })
+              }
+            />
+          )}
           {round && round.method !== "rubric" ? (
             <MethodPanel
               eventId={event.id}
@@ -156,9 +187,7 @@ function RouteComponent() {
               key={JSON.stringify(sheet)}
               eventId={event.id}
               submission={submission}
-              criteria={criteria.filter(
-                (criterion) => !criterion.round_id || criterion.round_id === sheet.roundId,
-              )}
+              criteria={criteriaFor(criteria, sheet.roundId, sheet.rubricId)}
               sheet={sheet}
               open={open}
             />

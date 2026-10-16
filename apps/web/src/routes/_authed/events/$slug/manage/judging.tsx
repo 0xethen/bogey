@@ -1,6 +1,6 @@
 import { exportHref } from "#/lib/exports.ts";
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
@@ -10,7 +10,9 @@ import {
   previewResultsQueryOptions,
   publishResultsFn,
   saveCriteriaFn,
+  rubricsQueryOptions,
   type Criterion,
+  type Rubric,
   groupResults,
 } from "@bogey/db/queries/judging";
 import {
@@ -18,6 +20,10 @@ import {
   judgeCalibrationQueryOptions,
 } from "@bogey/db/queries/conflicts";
 import { eventTeamsQueryOptions } from "@bogey/db/queries/roster";
+import { eventFlagsQueryOptions } from "@bogey/db/queries/deliberation";
+import { flagReason } from "#/components/event/judging/deliberation.tsx";
+import { LinkRow } from "@bogey/ui/components/link-row";
+import { StatusDot } from "@bogey/ui/components/status-dot";
 import { voteCountsQueryOptions } from "@bogey/db/queries/votes";
 import { tableListQueryOptions } from "@bogey/db/queries/expo";
 import { judgingRoundsQueryOptions } from "@bogey/db/queries/judging";
@@ -82,9 +88,15 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging")({
       ...searchSettings("voting", ["enabled", "who", "votesPerPerson", "ownTeam", "showCounts"], t),
       searchSection(t("manageJudging.progress"), { keywords: ["assign judges"], id: "progress" }),
       searchSection(t("manageJudging.criteria"), {
-        keywords: ["rubric", "scores", "weights"],
+        keywords: ["rubric", "rubrics", "themes", "scores", "weights"],
         id: "criteria",
       }),
+      ...searchSettings("judging", ["judgeRubric", "teamRubric", "teamRubricShows"], t),
+      searchSection(t("deliberation.title"), {
+        keywords: ["flag", "flagged", "deliberation", "disagreement"],
+        id: "deliberation",
+      }),
+      ...searchSettings("judging", ["deliberation", "flagGap", "holdFlagged"], t),
       searchSection(t("manageJudging.conflicts"), {
         keywords: ["conflict of interest"],
         id: "conflicts",
@@ -100,6 +112,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging")({
   loader: ({ context }) =>
     Promise.all([
       context.query.ensureQueryData(criteriaQueryOptions(context.event.id)),
+      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
+      context.query.ensureQueryData(eventFlagsQueryOptions(context.event.id)),
       context.query.ensureQueryData(judgingProgressQueryOptions(context.event.id)),
       context.query.ensureQueryData(previewResultsQueryOptions(context.event.id)),
       context.query.ensureQueryData(draftAwardsQueryOptions(context.event.id)),
@@ -141,6 +155,7 @@ function RouteComponent() {
       <Calibration eventId={event.id} />
       <Tables eventId={event.id} slug={event.slug} />
       <CriteriaEditor />
+      <Deliberation />
       <Screen.Section id="publishing" title={t("manageJudging.publishing")}>
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}
@@ -313,13 +328,42 @@ const criterionSchema = (t: T) =>
       .refine((value) => Number(value) > 0, t("manageJudging.weightPositive"))
       .meta({ label: t("manageJudging.weight") }),
     roundId: z.string().meta({ label: t("manageJudging.countsIn") }),
+    rubricId: z.string().meta({ label: t("rubric.label") }),
+  });
+
+const rubricSchema = (t: T) =>
+  z.object({
+    id: z.string(),
+    name: z
+      .string()
+      .trim()
+      .min(1, t("rubric.nameIt"))
+      .max(60, t("form.maxLength", { max: 60 }))
+      .meta({ label: t("checkin.name"), placeholder: t("rubric.namePlaceholder") }),
+    description: z
+      .string()
+      .max(2000, t("form.maxLength", { max: 2000 }))
+      .meta({ label: t("manageJudging.guidance"), placeholder: t("rubric.guidancePlaceholder") }),
   });
 
 const criteriaSchema = (t: T) =>
   z.object({
+    rubrics: z
+      .array(rubricSchema(t))
+      .max(20, t("rubric.atMost"))
+      .superRefine((items, ctx) => {
+        const seen = new Set<string>();
+        items.forEach((item, index) => {
+          const key = item.name.trim().toLowerCase();
+          if (key && seen.has(key)) {
+            ctx.addIssue({ code: "custom", path: [index, "name"], message: t("rubric.sameName") });
+          }
+          seen.add(key);
+        });
+      }),
     items: z
       .array(criterionSchema(t))
-      .max(30, t("manageJudging.atMost30"))
+      .max(60, t("manageJudging.atMostCriteria"))
       .superRefine((items, ctx) => {
         const seen = new Map<string, number>();
         items.forEach((item, index) => {
@@ -337,6 +381,7 @@ const criteriaSchema = (t: T) =>
   });
 
 const ROUND_ALL = "all";
+const RUBRIC_ALL = "all";
 
 type CriterionValues = z.infer<ReturnType<typeof criterionSchema>>;
 
@@ -348,6 +393,13 @@ const toValues = (criterion: Criterion): CriterionValues => ({
   range: [criterion.min_score, criterion.max_score],
   weight: String(Number(criterion.weight)),
   roundId: criterion.round_id ?? ROUND_ALL,
+  rubricId: criterion.rubric_id ?? RUBRIC_ALL,
+});
+
+const toRubricValues = (rubric: Rubric) => ({
+  id: rubric.id,
+  name: rubric.name,
+  description: rubric.description_md,
 });
 
 function copyLabel(label: string, taken: Tuple<string>, t: T): string {
@@ -371,6 +423,7 @@ function CriteriaEditor() {
   const { event } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const { data: criteria } = useSuspenseQuery(criteriaQueryOptions(event.id));
+  const { data: rubrics } = useSuspenseQuery(rubricsQueryOptions(event.id));
   const { data: roundData } = useSuspenseQuery(judgingRoundsQueryOptions(event.id));
   const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(event.id));
   const roundOptions: Tuple<{ value: string; label: string }> = [
@@ -389,7 +442,7 @@ function CriteriaEditor() {
 
   const form = useAppForm({
     ...appFormOptions.strictSchema({
-      defaultValues: { items: criteria.map(toValues) },
+      defaultValues: { rubrics: rubrics.map(toRubricValues), items: criteria.map(toValues) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
     }),
@@ -405,6 +458,12 @@ function CriteriaEditor() {
             maxScore: item.range[1],
             weight: Number(item.weight),
             roundId: item.roundId === ROUND_ALL ? null : item.roundId,
+            rubricId: item.rubricId === RUBRIC_ALL ? null : item.rubricId,
+          })),
+          rubrics: value.rubrics.map((rubric) => ({
+            id: rubric.id,
+            name: rubric.name.trim(),
+            descriptionMd: rubric.description,
           })),
         },
       }).catch(requestFailure);
@@ -413,11 +472,11 @@ function CriteriaEditor() {
       await queryClient.invalidateQueries({
         queryKey: previewResultsQueryOptions(event.id).queryKey,
       });
-      const saved = await queryClient.fetchQuery({
-        ...criteriaQueryOptions(event.id),
-        staleTime: 0,
-      });
-      formApi.reset({ items: saved.map(toValues) });
+      const [saved, savedRubrics] = await Promise.all([
+        queryClient.fetchQuery({ ...criteriaQueryOptions(event.id), staleTime: 0 }),
+        queryClient.fetchQuery({ ...rubricsQueryOptions(event.id), staleTime: 0 }),
+      ]);
+      formApi.reset({ rubrics: savedRubrics.map(toRubricValues), items: saved.map(toValues) });
       return undefined;
     },
   });
@@ -430,6 +489,56 @@ function CriteriaEditor() {
     >
       <form.AppForm>
         <form.Form unsaved="save" className="flex flex-col gap-3">
+          <form.Field name="rubrics">
+            {(list) =>
+              list.value.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <h4 className="text-sm font-medium">{t("rubric.title")}</h4>
+                  <EditableList onMove={(from, to) => list.moveValue(from, to)}>
+                    {list.value.map((rubric, index) => (
+                      <EditableListItem
+                        key={rubric.id}
+                        id={rubric.id}
+                        index={index}
+                        noun={t("rubric.noun")}
+                        onRemove={() => {
+                          list.removeValue(index);
+                          form.setFieldValue(
+                            "items",
+                            form
+                              .getFieldValue("items")
+                              .filter((item) => item.rubricId !== rubric.id),
+                          );
+                        }}
+                        confirmRemove={t("rubric.removeWarning")}
+                        preview={
+                          <div className="flex flex-col gap-1">
+                            <p className="font-medium">
+                              {rubric.name.trim() || t("rubric.numbered", { n: index + 1 })}
+                            </p>
+                            {rubric.description && (
+                              <p className="text-sm text-muted-fg">{rubric.description}</p>
+                            )}
+                          </div>
+                        }
+                        editing={active === rubric.id || !rubric.name.trim()}
+                        onEdit={() => setActive(rubric.id)}
+                        onDone={() => setActive(null)}
+                      >
+                        <form.Field name={`rubrics[${index}].name`}>
+                          {(field) => <field.TextField required />}
+                        </form.Field>
+                        <form.Field name={`rubrics[${index}].description`}>
+                          {(field) => <field.TextField />}
+                        </form.Field>
+                      </EditableListItem>
+                    ))}
+                  </EditableList>
+                  <h4 className="pt-2 text-sm font-medium">{t("manageJudging.criteria")}</h4>
+                </div>
+              )
+            }
+          </form.Field>
           <form.Field name="items">
             {(list) => (
               <>
@@ -492,6 +601,30 @@ function CriteriaEditor() {
                           />
                         )}
                       </form.Field>
+                      <form.Subscribe selector={(state) => state.values.rubrics}>
+                        {(named) =>
+                          named.length > 0 && (
+                            <form.Field name={`items[${index}].rubricId`}>
+                              {(field) => (
+                                <field.Field>
+                                  <field.Label />
+                                  <FieldSelect
+                                    field={field}
+                                    options={[
+                                      { value: RUBRIC_ALL, label: t("rubric.every") },
+                                      ...named.map((rubric, at) => ({
+                                        value: rubric.id,
+                                        label:
+                                          rubric.name.trim() || t("rubric.numbered", { n: at + 1 }),
+                                      })),
+                                    ]}
+                                  />
+                                </field.Field>
+                              )}
+                            </form.Field>
+                          )
+                        }
+                      </form.Subscribe>
                       {multiRound && (
                         <form.Field name={`items[${index}].roundId`}>
                           {(field) => (
@@ -522,12 +655,25 @@ function CriteriaEditor() {
                         range: [0, 10],
                         weight: "1",
                         roundId: ROUND_ALL,
+                        rubricId: RUBRIC_ALL,
                       });
                       setActive(uid);
                     }}
                   >
                     <IconPlus />
                     {t("manageJudging.addCriterion")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      const id = crypto.randomUUID();
+                      form.pushFieldValue("rubrics", { id, name: "", description: "" });
+                      setActive(id);
+                    }}
+                  >
+                    <IconPlus />
+                    {t("rubric.add")}
                   </Button>
                 </div>
               </>
@@ -541,6 +687,66 @@ function CriteriaEditor() {
           )}
         </form.Form>
       </form.AppForm>
+      {rubrics.length > 0 && (
+        <SettingFields
+          scope={{ scope: "event", eventId: event.id }}
+          namespace="judging"
+          keys={["judgeRubric", "teamRubric", "teamRubricShows"]}
+        />
+      )}
+    </Screen.Section>
+  );
+}
+
+function Deliberation() {
+  const t = useT();
+  const { event } = Route.useRouteContext();
+  const { data: flags } = useSuspenseQuery(eventFlagsQueryOptions(event.id));
+  return (
+    <Screen.Section
+      id="deliberation"
+      title={t("deliberation.title")}
+      description={t("deliberation.manageHelp")}
+    >
+      <SettingFields
+        scope={{ scope: "event", eventId: event.id }}
+        namespace="judging"
+        keys={["deliberation", "flagGap", "holdFlagged"]}
+      />
+      {flags.length === 0 ? (
+        <p className="text-sm text-muted-fg">{t("deliberation.none")}</p>
+      ) : (
+        <DisclosureList>
+          {flags.map((flag) => (
+            <LinkRow
+              key={flag.id}
+              render={
+                <Link
+                  to="/events/$slug/judging/$submissionId"
+                  params={{ slug: event.slug, submissionId: flag.submissionId }}
+                />
+              }
+              leading={
+                <StatusDot
+                  tone={flag.resolvedAt ? "done" : "attention"}
+                  label={flag.resolvedAt ? t("deliberation.resolved") : t("deliberation.open")}
+                />
+              }
+              title={flag.title}
+              meta={[
+                flagReason(flag, t),
+                ...(flag.resolvedAt
+                  ? [
+                      flag.resolvedBy
+                        ? t("deliberation.resolvedBy", { name: flag.resolvedBy })
+                        : t("deliberation.resolvedPlain"),
+                    ]
+                  : []),
+              ].join(" · ")}
+            />
+          ))}
+        </DisclosureList>
+      )}
     </Screen.Section>
   );
 }
@@ -552,6 +758,7 @@ function Results() {
   const methodLabel = (id: string) => methods.find((each) => each.id === id)?.label ?? id;
   const queryClient = useQueryClient();
   const { data: rows } = useSuspenseQuery(previewResultsQueryOptions(event.id));
+  const { data: flags } = useSuspenseQuery(eventFlagsQueryOptions(event.id));
   const [published, setPublished] = useState<string | null>(null);
   const publish = useMutation({
     mutationFn: async () => unwrap(await publishResultsFn({ data: event.id })),
@@ -568,6 +775,7 @@ function Results() {
   const evened = settings.judging.normalize !== "none";
   const minJudges = settings.judging.minJudges ?? 1;
   const thin = rows.filter((row) => row.method === "rubric" && row.judges < minJudges);
+  const openFlags = flags.filter((flag) => !flag.resolvedAt).length;
 
   return (
     <Screen.Section
@@ -619,6 +827,17 @@ function Results() {
       }
     >
       <ErrorAlert error={publish.error} title={t("manageJudging.publishFailed")} />
+      {openFlags > 0 && (
+        <Alert>
+          <IconAlertTriangle />
+          <AlertTitle>{t("deliberation.openCount", { count: openFlags })}</AlertTitle>
+          <AlertDescription>
+            {settings.judging.holdFlagged === false
+              ? t("deliberation.publishAnyway")
+              : t("deliberation.publishHeld")}
+          </AlertDescription>
+        </Alert>
+      )}
       {thin.length > 0 && (
         <Alert>
           <IconAlertTriangle />
@@ -646,6 +865,7 @@ function Results() {
                 subtitle: row.teamName,
                 value: row.score ?? "–",
                 detail: [
+                  row.rubric,
                   row.method === "rubric"
                     ? t("manageJudging.judgeCount", { count: row.judges })
                     : methodLabel(row.method),

@@ -98,6 +98,7 @@ function RouteComponent() {
             ...(item.roundOrdinal > 1 ? [item.roundName] : []),
             ...item.trackIds.flatMap((id) => prizeNames.get(id) ?? []),
             ...(item.status === "skipped" ? [t("judging.skipped")] : []),
+            ...(item.flagged ? [t("deliberation.flagged")] : []),
           ].join(" · ")}
         />
       </div>
@@ -157,6 +158,17 @@ function RouteComponent() {
         />
       )}
       {queue.length === 0 && <p className="text-sm text-muted-fg">{t("judging.empty")}</p>}
+      {queue.some((item) => item.flagged) && (
+        <Screen.Section
+          id="deliberation"
+          title={t("deliberation.title")}
+          description={t("deliberation.queueHelp")}
+        >
+          <DisclosureList className="border-y-0">
+            {queue.filter((item) => item.flagged).map(row)}
+          </DisclosureList>
+        </Screen.Section>
+      )}
       {assigned.length > 0 && (
         <Screen.Section id="assigned-to-you" title={t("judging.assigned")}>
           <DisclosureList className="border-y-0">{assigned.map(row)}</DisclosureList>

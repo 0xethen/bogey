@@ -293,6 +293,7 @@ declare
   v_id uuid;
   v_forms jsonb := '{}';
   v_rounds jsonb := '{}';
+  v_rubrics jsonb := '{}';
   v_divisions jsonb := '{}';
   v_slots jsonb := '{}';
   v_categories jsonb := '{}';
@@ -375,9 +376,14 @@ begin
       returning id into v_id;
       v_rounds := v_rounds || jsonb_build_object(r.id::text, v_id);
     end loop;
-    insert into public.criteria (event_id, label, description_md, min_score, max_score, weight, sort, round_id)
+    for r in select * from public.rubrics where event_id = p_source loop
+      insert into public.rubrics (event_id, name, description_md, sort)
+      values (v_new.id, r.name, r.description_md, r.sort) returning id into v_id;
+      v_rubrics := v_rubrics || jsonb_build_object(r.id::text, v_id);
+    end loop;
+    insert into public.criteria (event_id, label, description_md, min_score, max_score, weight, sort, round_id, rubric_id)
     select v_new.id, label, description_md, min_score, max_score, weight, sort,
-      (v_rounds ->> round_id::text)::uuid
+      (v_rounds ->> round_id::text)::uuid, (v_rubrics ->> rubric_id::text)::uuid
     from public.criteria where event_id = p_source;
   end if;
 

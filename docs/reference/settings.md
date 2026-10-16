@@ -285,6 +285,12 @@ Set at: instance, org, event.
 | `minJudges` | whole number (1 to 20) | `2` | Fewest judges an entry should have before results are published |
 | `shareWithTeams` | `none` · `feedback` · `scores` | `feedback` | What teams see from judges once results are published |
 | `showRankings` | `organizers` · `everyone` | `organizers` | Who sees the full ranking when results are published; awards are always public |
+| `judgeRubric` | on / off | `true` | Judges can pick or change a project's rubric |
+| `teamRubric` | on / off | `false` | Teams pick their own rubric on their submission |
+| `teamRubricShows` | `name` · `criteria` | `name` | What teams see of the rubrics they pick from |
+| `deliberation` | `off` · `assigned` · `all` | `assigned` | Who discusses a flagged project |
+| `flagGap` | whole number (0 to 100) | `0` | Flag a project when its judges' totals are further apart than this (0 is off) |
+| `holdFlagged` | on / off | `true` | Results can't be published while a project is flagged |
 
 ## Plugins (`plugins`)
 

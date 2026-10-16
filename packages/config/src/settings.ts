@@ -1214,6 +1214,12 @@ export const settingsRegistry = {
       normalize: "none",
       minJudges: 2,
       shareWithTeams: "feedback",
+      judgeRubric: true,
+      teamRubric: false,
+      teamRubricShows: "name",
+      deliberation: "assigned",
+      flagGap: 0,
+      holdFlagged: true,
     },
     schema: z.object({
       blind: z.boolean().optional().describe("Hide team names from judges"),
@@ -1236,6 +1242,30 @@ export const settingsRegistry = {
         .enum(["organizers", "everyone"])
         .optional()
         .describe("Who sees the full ranking when results are published; awards are always public"),
+      judgeRubric: z.boolean().optional().describe("Judges can pick or change a project's rubric"),
+      teamRubric: z
+        .boolean()
+        .optional()
+        .describe("Teams pick their own rubric on their submission"),
+      teamRubricShows: z
+        .enum(["name", "criteria"])
+        .optional()
+        .describe("What teams see of the rubrics they pick from"),
+      deliberation: z
+        .enum(["off", "assigned", "all"])
+        .optional()
+        .describe("Who discusses a flagged project"),
+      flagGap: z
+        .number()
+        .int()
+        .min(0)
+        .max(100)
+        .optional()
+        .describe("Flag a project when its judges' totals are further apart than this (0 is off)"),
+      holdFlagged: z
+        .boolean()
+        .optional()
+        .describe("Results can't be published while a project is flagged"),
     }),
     fields: {
       blind: { label: "Blind judging" },
@@ -1281,6 +1311,45 @@ export const settingsRegistry = {
           { value: "organizers", label: "Organizers only" },
           { value: "everyone", label: "Everyone" },
         ],
+      },
+      judgeRubric: {
+        label: "Judges pick the rubric",
+        description:
+          "A judge can pick or change a project's rubric on its score sheet. One pick per project, shared by all its judges.",
+      },
+      teamRubric: {
+        label: "Teams pick their rubric",
+        description: "Teams choose a rubric on their submission while they can still edit it.",
+      },
+      teamRubricShows: {
+        label: "What teams see",
+        options: [
+          { value: "name", label: "Rubric names" },
+          { value: "criteria", label: "Names and their criteria" },
+        ],
+      },
+      deliberation: {
+        label: "Who deliberates",
+        description:
+          "Judges can flag a project to discuss it. While it's flagged, the judges deliberating see each other's scores and notes on it, then resolve it.",
+        options: [
+          { value: "off", label: "Nobody", description: "No flags" },
+          {
+            value: "assigned",
+            label: "Its judges",
+            description: "Judges assigned to it or who scored it",
+          },
+          { value: "all", label: "Every judge" },
+        ],
+      },
+      flagGap: {
+        label: "Flag on disagreement",
+        description:
+          "Points out of 100 judges' totals for one project may differ by before it's flagged on its own. 0 turns it off.",
+      },
+      holdFlagged: {
+        label: "Hold results while flagged",
+        description: "Publishing waits until every flagged project is resolved.",
       },
     },
   }),
