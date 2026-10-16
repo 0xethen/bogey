@@ -37,7 +37,7 @@ begin
   if v_row.scope = 'instance' and current_user in ('anon', 'authenticated') then
     foreach v_key in array private.operator_keys(v_row.namespace) loop
       if (v_old -> v_key) is distinct from (v_new -> v_key) then
-        raise exception '%.% is set in bogey.config.ts or with the CLI, not in the app',
+        raise exception '%.% can no longer be changed in the app. Set it in bogey.config.ts or with the CLI',
           v_row.namespace, v_key using errcode = '42501';
       end if;
     end loop;
