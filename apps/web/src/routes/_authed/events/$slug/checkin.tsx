@@ -257,9 +257,7 @@ function RouteComponent() {
                 </field.Field>
               )}
             </codeForm.Field>
-            <codeForm.Submit className="flex-1">
-              {t("checkin.checkInName", { name: last?.name || "" })}
-            </codeForm.Submit>
+            <codeForm.Submit className="flex-1">{t("checkin.checkIn")}</codeForm.Submit>
             <Button type="button" variant="outline" onClick={() => setScanning((on) => !on)}>
               {scanning ? <IconCameraOff /> : <IconCamera />}
               {scanning ? t("checkin.stopCamera") : t("checkin.scan")}

@@ -651,7 +651,6 @@ export const en = {
   "checkin.walkInPending": "Registered. They can check in once they sign in with that email.",
   "checkin.undo": "Undo",
   "checkin.checkIn": "Check in",
-  "checkin.checkInName": "Check in {name}",
   "checkin.present": "{here} of {total, plural, one {# person is} other {# people are}} present.",
   "checkin.alreadyIn": "{name} was already checked in",
   "checkin.isIn": "{name} is checked in",
