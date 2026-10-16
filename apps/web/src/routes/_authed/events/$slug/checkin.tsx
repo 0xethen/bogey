@@ -335,7 +335,10 @@ function RouteComponent() {
             <Stat
               key={role}
               icon={IconUsers}
-              label={t("checkin.hereOf", { role: roleLabel(role), total: counts.total })}
+              label={t("checkin.hereOf", {
+                role: roleLabel(role).toLowerCase(),
+                total: counts.total,
+              })}
               value={counts.here}
             />
           ))}
