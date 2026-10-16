@@ -124,6 +124,8 @@ const SIGNED_IN = {
   save_session_levels: "replaces session types' levels in one transaction and audits it",
   save_submission_form: "replaces a form's items in one transaction and audits it",
   save_awards: "replaces the drafted awards in one transaction and audits it",
+  prune_participants:
+    "organizers remove participants matching conditions, divisions and sessions, confirmed by the event's address and audited",
   clear_event_data:
     "organizers' bulk clean-ups across tables, confirmed by the event's address and audited",
   set_submission_rubric:

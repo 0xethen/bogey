@@ -3,7 +3,17 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { eventDeletion } from "@bogey/config";
-import { clearEventDataFn, deleteEventFn, type ClearKind } from "@bogey/db/queries/manage";
+import {
+  clearEventDataFn,
+  deleteEventFn,
+  pruneParticipantsFn,
+  PRUNE_RULES,
+  type ClearKind,
+  type PruneRule,
+} from "@bogey/db/queries/manage";
+import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
+import { agendaQueryOptions } from "@bogey/db/queries/sessions";
+import { MultiSelect, type SearchSelectOption } from "@bogey/ui/components/search-select";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import type { Tables } from "@bogey/db/types";
 import { Button } from "@bogey/ui/components/button";
@@ -14,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@bogey/ui/components/dialog";
-import { FieldGroup } from "@bogey/ui/components/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@bogey/ui/components/field";
 import {
   Item,
   ItemActions,
@@ -22,14 +32,12 @@ import {
   ItemDescription,
   ItemTitle,
 } from "@bogey/ui/components/item";
-import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 
 type Event = Pick<Tables<"events">, "id" | "slug" | "name">;
-type PruneKind = Extract<ClearKind, "not_checked_in" | "no_team" | "no_submission">;
 
 const confirmSchema = (t: T, slug: string) =>
   z.object({
@@ -219,7 +227,7 @@ function ClearAction({
   body,
 }: {
   event: Event;
-  what: Exclude<ClearKind, PruneKind>;
+  what: ClearKind;
   title: string;
   help: string;
   body: (count: number) => string;
@@ -256,9 +264,45 @@ function ClearAction({
 
 function PruneParticipants({ event }: { event: Event }) {
   const t = useT();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [rule, setRule] = useState<PruneKind>("not_checked_in");
-  const { count, run } = useClear(event, rule, open);
+  const [picked, setPicked] = useState<string[]>([]);
+  const divisions = useQuery({ ...eventDivisionsQueryOptions(event.id), enabled: open });
+  const agenda = useQuery({ ...agendaQueryOptions(event.id), enabled: open });
+  const options: SearchSelectOption[] = [
+    ...PRUNE_RULES.map((rule) => ({
+      value: `rule:${rule}`,
+      label: t(RULE_LABELS[rule]),
+      group: t("danger.pruneConditions"),
+    })),
+    ...(divisions.data ?? []).map((division) => ({
+      value: `division:${division.id}`,
+      label: division.name,
+      group: t("compose.divisions"),
+    })),
+    ...(agenda.data?.slots ?? [])
+      .filter((slot) => slot.kind === "choose")
+      .flatMap((slot) => slot.sessions)
+      .map((session) => ({
+        value: `session:${session.id}`,
+        label: session.name,
+        group: t("compose.sessions"),
+      })),
+  ];
+  const of = (kind: string) =>
+    picked.filter((key) => key.startsWith(`${kind}:`)).map((key) => key.slice(kind.length + 1));
+  const selection = {
+    eventId: event.id,
+    rules: of("rule").flatMap((rule) => PRUNE_RULES.filter((each) => each === rule)),
+    divisions: of("division"),
+    sessions: of("session"),
+  };
+  const count = useQuery({
+    queryKey: ["prune-count", selection] as const,
+    queryFn: async () => unwrap(await pruneParticipantsFn({ data: selection })),
+    enabled: open && picked.length > 0,
+    staleTime: 0,
+  });
   const title = t("danger.prune");
   return (
     <>
@@ -273,31 +317,50 @@ function PruneParticipants({ event }: { event: Event }) {
         open={open}
         onOpenChange={setOpen}
         title={t("danger.clearTitle", { title })}
-        description={count === undefined ? t("common.loading") : t("danger.pruneBody", { count })}
+        description={
+          picked.length === 0
+            ? t("danger.prunePick")
+            : count.data === undefined
+              ? t("common.loading")
+              : t("danger.pruneBody", { count: count.data })
+        }
         extra={
-          <OptSelect
-            ariaLabel={t("danger.pruneWho")}
-            value={rule}
-            onChange={setRule}
-            options={[
-              { value: "not_checked_in", label: t("danger.pruneNotCheckedIn") },
-              { value: "no_team", label: t("danger.pruneNoTeam") },
-              { value: "no_submission", label: t("danger.pruneNoSubmission") },
-            ]}
-          />
+          <Field>
+            <FieldLabel htmlFor="prune-who">{t("danger.pruneWho")}</FieldLabel>
+            <MultiSelect
+              id="prune-who"
+              options={options}
+              value={picked}
+              onValueChange={setPicked}
+              placeholder={t("danger.prunePlaceholder")}
+            />
+            <FieldDescription>{t("danger.pruneWhoHelp")}</FieldDescription>
+          </Field>
         }
         submit={title}
         pending={t("danger.clearing")}
         failed={t("danger.clearFailed")}
         onConfirm={async (confirm) => {
-          const problem = await run(confirm);
-          if (!problem) setOpen(false);
-          return problem;
+          if (picked.length === 0) return t("danger.prunePick");
+          const result = await pruneParticipantsFn({ data: { ...selection, confirm } }).catch(
+            requestFailure,
+          );
+          if (!result.ok) return result.error.message;
+          await queryClient.invalidateQueries();
+          setPicked([]);
+          setOpen(false);
+          return undefined;
         }}
       />
     </>
   );
 }
+
+const RULE_LABELS = {
+  not_checked_in: "danger.pruneNotCheckedIn",
+  no_team: "danger.pruneNoTeam",
+  no_submission: "danger.pruneNoSubmission",
+} as const satisfies Record<PruneRule, string>;
 
 function DeleteEvent({ event }: { event: Event }) {
   const t = useT();

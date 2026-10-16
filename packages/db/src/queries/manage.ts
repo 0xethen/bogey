@@ -146,15 +146,36 @@ async function removeFiles(files: Json | Tuple<z.infer<typeof storedFile>>) {
   }
 }
 
-export const CLEAR_KINDS = [
-  "not_checked_in",
-  "no_team",
-  "no_submission",
-  "waiting",
-  "judging",
-  "participants",
-] as const;
+export const CLEAR_KINDS = ["waiting", "judging", "participants"] as const;
 export type ClearKind = (typeof CLEAR_KINDS)[number];
+
+export const PRUNE_RULES = ["not_checked_in", "no_team", "no_submission"] as const;
+export type PruneRule = (typeof PRUNE_RULES)[number];
+
+/** Counts the participants matching every kind of rule picked, or removes them when `confirm` (the slug) is given. */
+export const pruneParticipantsFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as Record<string, unknown>;
+    const list = (value: unknown) => (Array.isArray(value) ? value.slice(0, 200) : []);
+    return {
+      eventId: requireId(raw.eventId, "eventId"),
+      rules: list(raw.rules).map((rule) => requireOneOf(rule, PRUNE_RULES, "Rule")),
+      divisions: list(raw.divisions).map((id) => requireId(id, "Division")),
+      sessions: list(raw.sessions).map((id) => requireId(id, "Session")),
+      confirm: typeof raw.confirm === "string" ? raw.confirm.trim() : null,
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<number>> => {
+    const { data: count, error } = await createServerClient().rpc("prune_participants", {
+      p_event: data.eventId,
+      p_rules: data.rules,
+      p_divisions: data.divisions,
+      p_sessions: data.sessions,
+      ...(data.confirm === null ? { p_dry_run: true } : { p_confirm: data.confirm }),
+    });
+    if (error) return toFailure(error, "pruning participants");
+    return ok(count ?? 0);
+  });
 
 /** Counts what a danger-zone clean-up would touch, or does it when `confirm` (the slug) is given. */
 export const clearEventDataFn = createServerFn({ method: "POST" })

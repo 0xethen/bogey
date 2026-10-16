@@ -4286,6 +4286,17 @@ export type Database = {
         Returns: string;
       };
       preview_results: { Args: { p_event: string }; Returns: Json };
+      prune_participants: {
+        Args: {
+          p_confirm?: string;
+          p_divisions?: string[];
+          p_dry_run?: boolean;
+          p_event: string;
+          p_rules?: string[];
+          p_sessions?: string[];
+        };
+        Returns: number;
+      };
       public_announcements: {
         Args: { p_event: string };
         Returns: {

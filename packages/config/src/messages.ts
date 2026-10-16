@@ -1988,8 +1988,13 @@ export const en = {
   "danger.clearFailed": "Couldn't do that",
   "danger.prune": "Prune participants",
   "danger.pruneHelp":
-    "Remove participants who never checked in, aren't on a team, or have no submitted project. Their registrations stay, so you can add them back from People.",
+    "Remove participants who never checked in, aren't on a team, have no submitted project, or are in certain divisions or sessions. Their registrations stay, so you can add them back from People.",
   "danger.pruneWho": "Who to remove",
+  "danger.pruneWhoHelp":
+    "Removes participants who match every kind you pick. Several divisions or sessions mean any of them.",
+  "danger.pruneConditions": "Conditions",
+  "danger.prunePlaceholder": "Pick conditions, divisions or sessions",
+  "danger.prunePick": "Pick who to remove.",
   "danger.pruneNotCheckedIn": "Never checked in",
   "danger.pruneNoTeam": "Not on a team",
   "danger.pruneNoSubmission": "No submitted project",

@@ -496,7 +496,8 @@ for emails without one), teams, submissions, scores, awards, results and check-i
 **Manage → Danger zone** has the clean-ups that can't be undone. Each opens a dialog that says how many people or projects
 it touches and asks for the event's web address before it runs, and each is kept in the audit log.
 
-- **Prune participants**: remove the ones who never checked in, aren't on a team, or have no submitted project. Their
+- **Prune participants**: pick any mix of conditions (never checked in, not on a team, no submitted project), divisions and
+  sessions; it removes participants who match every kind you pick (any of several divisions or sessions). Their
   registrations stay, so you can add someone back from People.
 - **Decline everyone waiting**: decline every pending and waitlisted registration; each person is told.
 - **Reset judging**: delete every score, judge's note, assignment and flag, and send advanced entries back to round 1, for

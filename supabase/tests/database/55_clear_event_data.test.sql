@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(19);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max)
@@ -14,7 +14,8 @@ insert into public.event_members (event_id, user_id, role) values
   (tests.u('ev'), tests.u('p3'), 'participant'), (tests.u('ev'), tests.u('j1'), 'judge');
 insert into public.registrations (event_id, email, user_id, source, status) values
   (tests.u('ev'), 'w1@t.test', tests.u('w1'), 'self', 'pending');
-insert into public.teams (id, event_id, name) values (tests.u('ta'), tests.u('ev'), 'A');
+insert into public.divisions (id, event_id, name) values (tests.u('div'), tests.u('ev'), 'High school');
+insert into public.teams (id, event_id, name, division_id) values (tests.u('ta'), tests.u('ev'), 'A', tests.u('div'));
 insert into public.team_members (event_id, team_id, user_id) values (tests.u('ev'), tests.u('ta'), tests.u('p1'));
 insert into public.submissions (id, event_id, form_id, team_id, title, status, submitted_at) values
   (tests.u('sa'), tests.u('ev'), tests.u('form'), tests.u('ta'), 'A', 'submitted', now());
@@ -27,12 +28,15 @@ select throws_ok($$select public.clear_event_data(tests.u('ev'), 'judging', null
 reset role;
 
 select tests.as_user(tests.u('own'));
-select is((public.clear_event_data(tests.u('ev'), 'not_checked_in', null, true) ->> 'count')::integer, 1, 'one participant never checked in');
-select is((public.clear_event_data(tests.u('ev'), 'no_team', null, true) ->> 'count')::integer, 2, 'two have no team');
-select is((public.clear_event_data(tests.u('ev'), 'no_submission', null, true) ->> 'count')::integer, 2, 'two have no submitted project');
+select is(public.prune_participants(tests.u('ev'), array['not_checked_in'], p_dry_run => true), 1, 'one participant never checked in');
+select is(public.prune_participants(tests.u('ev'), array['no_team'], p_dry_run => true), 2, 'two have no team');
+select is(public.prune_participants(tests.u('ev'), array['no_submission'], p_dry_run => true), 2, 'two have no submitted project');
+select is(public.prune_participants(tests.u('ev'), array['no_team', 'not_checked_in'], p_dry_run => true), 1, 'rules combine: no team and never checked in');
+select is(public.prune_participants(tests.u('ev'), p_divisions => array[tests.u('div')], p_dry_run => true), 1, 'a division counts its members and its teams');
+select throws_ok($$select public.prune_participants(tests.u('ev'), p_dry_run => true)$$, '22023', null, 'pruning needs a rule');
 select is((select count(*)::integer from public.event_members where event_id = tests.u('ev') and status = 'active'), 4, 'counting changes nothing');
-select throws_ok($$select public.clear_event_data(tests.u('ev'), 'not_checked_in', 'wrong')$$, '22023', null, 'doing it takes the address');
-select is((public.clear_event_data(tests.u('ev'), 'not_checked_in', 'ev') ->> 'count')::integer, 1, 'pruned');
+select throws_ok($$select public.prune_participants(tests.u('ev'), array['not_checked_in'], p_confirm => 'wrong')$$, '22023', null, 'doing it takes the address');
+select is(public.prune_participants(tests.u('ev'), array['not_checked_in'], p_confirm => 'ev'), 1, 'pruned');
 select is((select status::text from public.event_members where event_id = tests.u('ev') and user_id = tests.u('p3')), 'removed', 'the no-show is removed');
 select is((select count(*)::integer from public.audit_log where event_id = tests.u('ev') and action = 'event.cleared'), 1, 'and it''s audited');
 
