@@ -15,6 +15,7 @@ import {
   IconLayoutDashboard,
   IconMail,
   IconMessages,
+  IconPlug,
   IconPuzzle,
   IconShieldLock,
   IconSpeakerphone,
@@ -105,7 +106,7 @@ function RouteComponent() {
         {
           key: "plugins",
           label: t("accountNav.plugins"),
-          icon: IconPuzzle,
+          icon: IconPlug,
           to: `${base}/plugins`,
         },
       ],
