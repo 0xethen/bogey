@@ -1,7 +1,7 @@
 const HINTS: Tuple<{ pattern: RegExp; hint: string }> = [
   {
     pattern: /\bEPIPE\b/,
-    hint: "The program stopped reading its input early: it usually hit an error first, or lost its connection.",
+    hint: "The program stopped reading its input early. It usually hit an error or lost its connection before it could finish.",
   },
   {
     pattern: /column "[^"]+" of relation "[^"]+" contains null values/i,
@@ -9,7 +9,7 @@ const HINTS: Tuple<{ pattern: RegExp; hint: string }> = [
   },
   {
     pattern: /password authentication failed/i,
-    hint: "The database refused the password. Check DATABASE_URL in .env; special characters in the password must be percent-encoded (@ is %40).",
+    hint: "The database refused the password. Check DATABASE_URL in .env (special characters in the password must be percent-encoded, like `@` is `%40`).",
   },
   {
     pattern: /could not translate host name|ENOTFOUND|getaddrinfo/i,
@@ -21,7 +21,7 @@ const HINTS: Tuple<{ pattern: RegExp; hint: string }> = [
   },
   {
     pattern: /timeout expired|ETIMEDOUT|timed out|aborted due to timeout|TimeoutError/i,
-    hint: "The connection timed out: the host is down, a firewall is in the way, or the port is wrong.",
+    hint: "The connection timed out. The host is down, a firewall is in the way, or the port is wrong.",
   },
   {
     pattern: /Network is unreachable|ENETUNREACH|EHOSTUNREACH/i,
@@ -50,7 +50,7 @@ const HINTS: Tuple<{ pattern: RegExp; hint: string }> = [
   },
   {
     pattern: /fetch failed|Couldn't reach/i,
-    hint: "The server didn't answer. Check SUPABASE_URL in .env, and that the project is running.",
+    hint: "The server didn't answer. Check SUPABASE_URL in .env, relevant DNS config, and that the project is running.",
   },
   {
     pattern: /Invalid API key|invalid JWT|JWSError|HTTP 401/i,
