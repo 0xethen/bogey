@@ -137,11 +137,12 @@ export async function runOrg(
 ): Promise<CliResult> {
   const args = [...given];
   if (args.length === 0 && prompter) {
+    const set = (await hasOrg(cwd)) === true;
     const picked = await prompter.select({
       message: "Organizations",
       options: [
         { value: "list", label: "List them" },
-        { value: "init", label: "Set up the first one" },
+        ...(set ? [] : [{ value: "init", label: "Set up the first one" }]),
         { value: "create", label: "Create one" },
         { value: "domain add", label: "Point a hostname at one" },
         { value: "domain remove", label: "Remove a hostname" },
@@ -174,4 +175,12 @@ export async function runOrg(
     default:
       return domain(resolved.credentials, rest);
   }
+}
+
+// whether the instance has an organization yet, or null when it can't tell
+export async function hasOrg(cwd: string): Promise<boolean | null> {
+  const resolved = serviceCredentials(cwd);
+  if (!resolved.ok) return null;
+  const orgs = await select<{ id: string }>(resolved.credentials, "orgs", "select=id&limit=1");
+  return orgs.ok ? orgs.data.length > 0 : null;
 }

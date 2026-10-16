@@ -55,6 +55,7 @@ test("the answers come back as the command to skip the questions", () => {
 
 describe("the app address for queued email", () => {
   let stored: Array<{ value: Record<string, unknown> }> = [];
+  let orgs: Array<{ slug: string }> = [];
   const requests: Array<{ method: string; url: string; body: string | null }> = [];
 
   beforeEach(() => {
@@ -66,6 +67,7 @@ describe("the app address for queued email", () => {
     );
     vi.stubEnv("BOGEY_HOME", "");
     requests.length = 0;
+    orgs = [];
     vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
       const method = init?.method ?? "GET";
       requests.push({
@@ -78,6 +80,9 @@ describe("the app address for queued email", () => {
       }
       if (String(url).includes("/rpc/bogey_bootstrap"))
         return new Response(JSON.stringify("org-1"));
+      if (String(url).includes("/rest/v1/orgs") && method === "GET") {
+        return new Response(JSON.stringify(orgs));
+      }
       if (String(url).includes("/rest/v1/settings") && method === "GET") {
         return new Response(JSON.stringify(stored));
       }
@@ -132,5 +137,18 @@ describe("the app address for queued email", () => {
     expect(JSON.parse(writes()[0]?.body ?? "{}")).toEqual({
       value: { appUrl: "https://new.example.org", defaultOrg: "x" },
     });
+  });
+
+  test("once there's an org, it won't make another first one", async () => {
+    orgs = [{ slug: "other" }];
+    const result = await orgInit();
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain("bogey org create");
+    expect(requests.some((request) => request.url.includes("bogey_bootstrap"))).toBe(false);
+  });
+
+  test("but running it again for the same org is fine", async () => {
+    orgs = [{ slug: "acme" }];
+    expect((await orgInit()).exitCode).toBe(0);
   });
 });

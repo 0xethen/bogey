@@ -14,7 +14,8 @@ export const USAGE = `bogey org init [--org <slug> --name <name> --owner <email>
 
 Sets up a fresh instance: creates its first org, maps --host to it, makes it the
 default org, and makes --owner (created if needed) its owner and a platform
-admin. Safe to run again. --demo also seeds a demo hackathon and contest.
+admin. Safe to run again for that same org; once an instance has an org, add
+others with \`bogey org create\`. --demo also seeds a demo hackathon and contest.
 
 At a terminal, it asks for whatever the flags leave out.
 
@@ -132,31 +133,41 @@ export async function runOrgInit(
 ): Promise<CliResult> {
   const flags = parseFlags(args);
   const given = { org: flags.org, name: flags.name, owner: flags.owner };
-  let answers: Answers;
-  let asked = false;
-  if (
+  const complete =
     typeof given.org === "string" &&
     typeof given.name === "string" &&
-    typeof given.owner === "string"
-  ) {
-    answers = {
-      org: given.org,
-      name: given.name,
-      owner: given.owner,
-      host: typeof flags.host === "string" ? flags.host : undefined,
-      demo: flags.demo === true,
-    };
-  } else if (prompter) {
-    answers = await askOrgInit(prompter, flags);
-    asked = true;
-  } else {
-    return { exitCode: 1, output: USAGE };
-  }
-  const { org, name, owner, host } = answers;
+    typeof given.owner === "string";
+  if (!complete && !prompter) return { exitCode: 1, output: USAGE };
 
   const resolved = serviceCredentials(cwd);
   if (!resolved.ok) return { exitCode: 1, output: resolved.error };
   const credentials = resolved.credentials;
+
+  const existing = await select<{ slug: string }>(credentials, "orgs", "select=slug");
+  if (!existing.ok) return { exitCode: 1, output: existing.error };
+  const slugs = existing.data.map((row) => row.slug);
+  if (slugs.length > 0 && !(typeof given.org === "string" && slugs.includes(given.org))) {
+    return {
+      exitCode: 1,
+      output: `This instance already has its first organization (${slugs.join(", ")}). Add another with \`bogey org create\`.`,
+    };
+  }
+
+  let answers: Answers;
+  let asked = false;
+  if (complete) {
+    answers = {
+      org: given.org as string,
+      name: given.name as string,
+      owner: given.owner as string,
+      host: typeof flags.host === "string" ? flags.host : undefined,
+      demo: flags.demo === true,
+    };
+  } else {
+    answers = await askOrgInit(prompter!, flags);
+    asked = true;
+  }
+  const { org, name, owner, host } = answers;
 
   const user = await step(`Find or create ${owner}'s account`, () =>
     ensureUser(credentials, owner),
