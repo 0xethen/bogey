@@ -180,7 +180,7 @@ export const en = {
   "team.leaveLimitReached":
     "You've left a team as many times as this event allows. If you're on the wrong team, ask an organizer.",
   "team.leavesLeft":
-    "{count, plural, =0 {After this you can't leave another team.} one {After this you can leave a team # more time.} other {After this you can leave a team # more times.}}",
+    "{count, plural, =0 {After this you can't leave another team.} one {After this, you can leave a team # more time.} other {After this, you can leave a team # more times.}}",
   "team.newCode": "Make a new code",
   "team.newCodeTitle": "Make a new invite code?",
   "team.newCodeBody":
@@ -3026,7 +3026,7 @@ export const en = {
   "teamBoard.wantedPlaceholder": "design, backend",
   "teamBoard.open": "Looking for people",
   "teamBoard.openHelp":
-    "Lists your team for people without one, who can ask to join. The captain answers.",
+    "Lists your team for people without one, who can ask to join. Only the team captain can answer requests.",
   "teamBoard.postTitle": "Find teammates",
   "teamBoard.postHelp": "Say what your team needs, or invite someone below.",
   "teamBoard.peopleTitle": "People looking for a team",
