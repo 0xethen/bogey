@@ -525,7 +525,7 @@ begin
     'http_code', 403,
     'message', case v_mode
       when 'closed' then 'Sign-ups are closed.'
-      else 'This address hasn''t been invited yet. Ask an organizer for an invite.'
+      else 'You haven''t been invited to an event yet. Ask an organizer for an invite.'
     end));
 end;
 $$;
