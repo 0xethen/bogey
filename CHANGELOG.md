@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.1.3 (2026-10-16)
+
 - Passkeys work as a second factor next to an authenticator app (Account → Security), including for instance admins. The all-in-one turns them on for `BOGEY_HOST`; other setups set `BOGEY_PASSKEY_HOST` and GoTrue's WebAuthn settings (see docs/self-hosting/auth.md).
 - Org admins can delete an event from its new Manage → Danger zone page, which also has Unpublish. Deleting asks for the event's web address, removes its files and is kept in the org's audit log. Set `events: { uiDeletion: false }` in `bogey.config.ts` to turn it off.
 - The favicon comes from `brand.icons` in `bogey.config.ts`.
