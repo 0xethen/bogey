@@ -1,5 +1,5 @@
 begin;
-select plan(37);
+select plan(38);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, kind, visibility, team_size_max) values
@@ -52,6 +52,7 @@ select is((select input from public.challenges_attempt_tests(current_setting('t.
 select is((select output from public.challenges_attempt_tests(current_setting('t.sol')::uuid) where not is_sample), null, 'or its output');
 select is((select input from public.challenges_attempt_tests(current_setting('t.sol')::uuid) where is_sample), '1 2', 'samples come with their input');
 select throws_ok($$select checker_source from public.challenges_problems$$, '42501', null, 'checker source is not readable');
+select lives_ok($$select id, label, slug, title, statement_md, statement_pdf_path, time_limit_ms, memory_limit_mb, output_limit_kb, points, golf_brackets, difficulty, visible, sort from public.challenges_problems$$, 'every column the problem pages read is readable');
 select throws_ok($$select public.challenges_set_testcases(tests.u('pa'), '[]')$$, '42501', null, 'participants cannot replace tests');
 select throws_ok($$select public.challenges_submit(tests.u('pb'), 'python', 'print(1)')$$, 'P0001', 'wait a few seconds between solutions', 'a team waits between solutions');
 reset role;

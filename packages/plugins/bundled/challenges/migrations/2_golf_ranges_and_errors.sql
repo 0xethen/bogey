@@ -5,6 +5,8 @@ alter table public.challenges_problems drop constraint if exists challenges_prob
 alter table public.challenges_problems add constraint challenges_problems_golf_brackets_check check (
   jsonb_typeof(golf_brackets) = 'array' and jsonb_array_length(golf_brackets) <= 20
 );
+-- problems are readable column by column (the checker source isn't), so the new column needs its own grant
+grant select (golf_brackets) on public.challenges_problems to authenticated;
 
 create or replace function private.challenges_settings(p_event uuid)
 returns jsonb
