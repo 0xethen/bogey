@@ -7,9 +7,16 @@ import { Skeleton } from "./skeleton.tsx";
 type Width = "default" | "narrow" | "wide" | "embedded";
 
 const WIDTH: Record<Width, string> = {
-  default: "max-w-4xl px-4 sm:px-6",
-  narrow: "max-w-2xl px-4 sm:px-6",
-  wide: "max-w-6xl px-4 sm:px-6",
+  default: "max-w-4xl",
+  narrow: "max-w-2xl",
+  wide: "max-w-6xl",
+  embedded: "",
+};
+
+const PADDING: Record<Width, string> = {
+  default: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
+  narrow: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
+  wide: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
   embedded: "",
 };
 
@@ -27,7 +34,7 @@ function ScreenRoot({
   children: ReactNode;
 }) {
   return (
-    <main className={cn("mx-auto flex w-full flex-col gap-10 py-8", WIDTH[width])}>
+    <main className={cn("mx-auto flex w-full flex-col gap-10", WIDTH[width], PADDING[width])}>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
           <h1 className="font-heading text-3xl leading-tight font-semibold tracking-tight text-balance">
