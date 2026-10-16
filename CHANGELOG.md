@@ -16,10 +16,13 @@ advisory (see docs/contributing.md#security-releases). -->
 - About and For participants are now one About (Manage → Details), for members only by default: approved participants and the event's people see it, and applicants see that there's more once they're in. Share it with anyone who can see the event under Manage → Security → Before approval → About. For text everyone sees, add a Text block to the homepage. The public API's event `description` is About when it's shared, and empty otherwise.
 - Manage → Danger zone has clean-ups for organizers: prune participants who never checked in, aren't on a team or have no submitted project; decline everyone still waiting; reset judging; and remove all participants after a dry run. Each shows how many it touches and asks for the event's web address. Delete event now opens the same dialog, with a link to download an archive first. Unpublish moved out: set the event back to a draft in Security.
 - Manage → Agenda is easier to follow: Session types come first, and each type now holds its own levels (Beginner, Advanced) instead of a separate list above the sessions. Only sessions of a defined type show a badge, so one-off tags like Check-in or Ceremony no longer appear; a type used by a single session says it doesn't need one. The demo agenda only types its talks and workshops.
+- Organizers can stop a person or a team from messaging (Block... in a conversation's header): they can't start or reply to conversations until it's lifted under Manage → Messages → Blocked.
+- Asking about a problem now opens the new conversation in Messages right away instead of the announcements channel until a refresh, and "About" on a problem's conversation is a link.
+- The announcements channel's bottom bar explains itself, with New announcement... on the right.
 
 ### Upgrade notes
 
-- Adds the `session_announcements`, `rubrics_and_deliberation`, `about_for_members`, `clear_event_data` and `session_levels` migrations; `bogey upgrade` applies them.
+- Adds the `session_announcements`, `rubrics_and_deliberation`, `about_for_members`, `clear_event_data`, `session_levels` and `chat_blocks` migrations; `bogey upgrade` applies them.
 - `about_for_members` puts each event's old About in front of its For participants text. Events that only had About stay public (Before approval → About is set to share it); events that had both start members-only, so check those if part of About should stay public and move that part to a Text block. A homepage's For participants block becomes About, or is removed when the page already has one. `events.description_md` is dropped.
 
 ## 2.1.3 (2026-10-16)

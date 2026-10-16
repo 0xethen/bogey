@@ -1,11 +1,16 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { z } from "zod";
 import { IconMessageQuestion } from "@tabler/icons-react";
 import { requestFailure } from "@bogey/db/errors";
 import { useEventAccess } from "@bogey/db/permissions";
-import { AUDIENCES, startConversationFn } from "@bogey/db/queries/messages";
+import {
+  AUDIENCES,
+  chatBlocksQueryOptions,
+  eventConversationsQueryOptions,
+  startConversationFn,
+} from "@bogey/db/queries/messages";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { Button } from "@bogey/ui/components/button";
 import {
@@ -58,6 +63,7 @@ export function AskAbout({
   const { data } = useQuery(settingsQueryOptions({ eventId }, ["chat"]));
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { slug = "" } = useParams({ strict: false });
   const form = useAppForm({
     ...appFormOptions.strictSchema({
@@ -72,6 +78,9 @@ export function AskAbout({
       if (!result.ok) return createValidationError(result.error.message);
       formApi.reset();
       setOpen(false);
+      await queryClient.invalidateQueries({
+        queryKey: eventConversationsQueryOptions(eventId).queryKey,
+      });
       await navigate({
         to: "/events/$slug/messages",
         params: { slug },
@@ -81,8 +90,13 @@ export function AskAbout({
     },
   });
 
+  const blocks = useQuery({
+    ...chatBlocksQueryOptions(eventId),
+    enabled: access?.role === "participant",
+  });
   const chat = data?.chat;
   if (access?.role !== "participant" || !chat?.enabled || !chat.participants) return null;
+  if (blocks.data?.length) return null;
 
   return (
     <>

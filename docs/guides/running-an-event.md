@@ -449,6 +449,10 @@ while judging is blind.
   can read and reply. **Share with everyone** turns a participant's conversation with organizers
   into a public answer when it helps other teams too.
 
+  If someone abuses it, **Block...** in a conversation's header stops that person, or their whole team,
+  from starting or replying to conversations; they still read announcements and see why. Lift it under
+  **Manage → Messages → Blocked**.
+
 ## Certificates
 
 **Manage → Certificates** turns certificates on for the event and sets the wording for each kind: participation (for

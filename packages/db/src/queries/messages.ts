@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Enums, Tables } from "../types.ts";
-import { requireId, requireOneOf, requireText } from "./validate.ts";
+import { optionalId, requireId, requireOneOf, requireText } from "./validate.ts";
 
 export type ConversationStatus = Enums<"clarification_status">;
 export type ConversationVisibility = Enums<"clarification_visibility">;
@@ -53,6 +53,7 @@ export interface Conversation {
   status: ConversationStatus;
   visibility: ConversationVisibility;
   topic: string;
+  askerId: string | null;
   askerName: string;
   teamId: string | null;
   createdAt: string;
@@ -152,6 +153,7 @@ export const eventConversationsFn = createServerFn({ method: "GET" })
         status: thread.status,
         visibility: thread.visibility,
         topic: thread.topic,
+        askerId: thread.asked_by,
         askerName: (thread.asked_by && names.get(thread.asked_by)) || "Someone",
         teamId: thread.team_id,
         createdAt: thread.created_at,
@@ -183,6 +185,83 @@ export const eventConversationsQueryOptions = (eventId: string) =>
     queryKey: ["conversations", eventId] as const,
     queryFn: async () => unwrap(await eventConversationsFn({ data: eventId })),
     retry: retryPolicy,
+  });
+
+export interface ChatBlock {
+  id: string;
+  userId: string | null;
+  teamId: string | null;
+  /** The person's or team's name. */
+  name: string;
+  reason: string;
+  createdAt: string;
+}
+
+/** Organizers get every block in the event; anyone else gets only blocks on them or their team. */
+export const chatBlocksFn = createServerFn({ method: "GET" })
+  .validator((eventId: unknown) => requireId(eventId, "eventId"))
+  .handler(async ({ data: eventId }): Promise<DbResult<ChatBlock[]>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("chat_blocks")
+      .select("id, user_id, team_id, reason, created_at, teams(name)")
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: false });
+    if (error) return toFailure(error, "loading blocks");
+    const users = data.flatMap((row) => (row.user_id ? [row.user_id] : []));
+    const { data: profiles } = users.length
+      ? await supabase.from("profiles").select("id, display_name").in("id", users)
+      : { data: [] };
+    const names = new Map((profiles ?? []).map((row) => [row.id, row.display_name]));
+    return ok(
+      data.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        teamId: row.team_id,
+        name: row.user_id ? (names.get(row.user_id) ?? "Someone") : (row.teams?.name ?? "A team"),
+        reason: row.reason,
+        createdAt: row.created_at,
+      })),
+    );
+  });
+
+export const chatBlocksQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["chat-blocks", eventId] as const,
+    queryFn: async () => unwrap(await chatBlocksFn({ data: eventId })),
+    retry: retryPolicy,
+  });
+
+export const blockFromChatFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as Record<string, unknown>;
+    const userId = optionalId(raw.userId, "userId") ?? null;
+    const teamId = optionalId(raw.teamId, "teamId") ?? null;
+    if (!userId === !teamId) throw new Error("Block one person or one team");
+    return {
+      eventId: requireId(raw.eventId, "eventId"),
+      userId,
+      teamId,
+      reason: typeof raw.reason === "string" ? raw.reason.trim().slice(0, 500) : "",
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const { error } = await createServerClient().rpc("block_from_chat", {
+      p_event: data.eventId,
+      ...(data.userId ? { p_user: data.userId } : {}),
+      ...(data.teamId ? { p_team: data.teamId } : {}),
+      p_reason: data.reason,
+    });
+    if (error) return toFailure(error, "blocking");
+    return ok(null);
+  });
+
+export const unblockFromChatFn = createServerFn({ method: "POST" })
+  .validator((id: unknown) => requireId(id, "id"))
+  .handler(async ({ data: id }): Promise<DbResult<null>> => {
+    const { error } = await createServerClient().rpc("unblock_from_chat", { p_block: id });
+    if (error) return toFailure(error, "unblocking");
+    return ok(null);
   });
 
 const TOPIC = /^(general|[a-z][a-z0-9-]*\.[a-z0-9-]+(:[0-9a-f-]+)?)$/;

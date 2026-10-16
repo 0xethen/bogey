@@ -542,6 +542,66 @@ export type Database = {
           },
         ];
       };
+      chat_blocks: {
+        Row: {
+          blocked_by: string | null;
+          created_at: string;
+          event_id: string;
+          id: string;
+          reason: string;
+          team_id: string | null;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          blocked_by?: string | null;
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          reason?: string;
+          team_id?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          blocked_by?: string | null;
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          reason?: string;
+          team_id?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_blocks_blocked_by_fkey";
+            columns: ["blocked_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_blocks_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "chat_blocks_event_id_team_id_fkey";
+            columns: ["event_id", "team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "chat_blocks_event_id_user_id_fkey";
+            columns: ["event_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "event_members";
+            referencedColumns: ["event_id", "user_id"];
+          },
+        ];
+      };
       checkins: {
         Row: {
           checked_in_at: string;
@@ -3764,6 +3824,10 @@ export type Database = {
           user_id: string;
         }[];
       };
+      block_from_chat: {
+        Args: { p_event: string; p_reason?: string; p_team?: string; p_user?: string };
+        Returns: string;
+      };
       bogey_bootstrap: {
         Args: {
           p_default?: boolean;
@@ -4537,6 +4601,7 @@ export type Database = {
           round_ordinal: number;
         }[];
       };
+      unblock_from_chat: { Args: { p_block: string }; Returns: undefined };
       undo_check_in: { Args: { p_event: string; p_user: string }; Returns: undefined };
       update_webhook: {
         Args: { p_disabled: boolean; p_events: string[]; p_id: string; p_url: string };

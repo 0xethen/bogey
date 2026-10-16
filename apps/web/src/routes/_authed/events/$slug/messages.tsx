@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { can } from "@bogey/db/permissions";
@@ -5,10 +6,16 @@ import {
   announcementsTopic,
   eventAnnouncementsQueryOptions,
 } from "@bogey/db/queries/announcements";
-import { eventConversationsQueryOptions, type Conversation } from "@bogey/db/queries/messages";
+import {
+  chatBlocksQueryOptions,
+  eventConversationsQueryOptions,
+  type Conversation,
+} from "@bogey/db/queries/messages";
+import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
+import { IconBan } from "@tabler/icons-react";
 import { useLiveBroadcast, useLiveInvalidate } from "@bogey/db/realtime";
 import { Screen } from "@bogey/ui/components/screen";
-import { AnnouncementChannel } from "#/components/event/messaging/announcements.tsx";
+import { ANNOUNCEMENTS, AnnouncementChannel } from "#/components/event/messaging/announcements.tsx";
 import {
   Conversations,
   messagesSearch,
@@ -76,14 +83,26 @@ function RouteComponent() {
   useLiveInvalidate("clarification_messages", options.queryKey, {
     filter: `event_id=eq.${event.id}`,
   });
+  // a conversation started elsewhere (e.g. "Ask about this") may be newer than the cached list
+  const refetched = useRef<string | null>(null);
+  const { data: listed, isFetching, refetch } = conversations;
+  useEffect(() => {
+    if (!c || c === ANNOUNCEMENTS || !listed || isFetching || refetched.current === c) return;
+    if (listed.some((conversation) => conversation.id === c)) return;
+    refetched.current = c;
+    void refetch();
+  }, [c, listed, isFetching, refetch]);
 
   const judge = !manages && access.role === "judge";
+  const participant = access.role === "participant" && realAccess.role === "participant";
+  const blocks = useQuery({ ...chatBlocksQueryOptions(event.id), enabled: participant });
+  const block = participant ? blocks.data?.[0] : undefined;
   const visible = visibleConversations(access, conversations.data ?? []);
-  const start = offeredStarts(access, chat).filter((audience) =>
-    mayStart(realAccess, chat, audience),
-  );
+  const start = block
+    ? []
+    : offeredStarts(access, chat).filter((audience) => mayStart(realAccess, chat, audience));
   const canReply = (conversation: Conversation) =>
-    offeredReply(access, chat, conversation) && mayReply(realAccess, chat, conversation);
+    !block && offeredReply(access, chat, conversation) && mayReply(realAccess, chat, conversation);
   const moderate = manages && can(realAccess, "event.manage");
   const forward = moderate;
   const posts = mayAnnounce(access, announcing) && mayAnnounce(realAccess, announcing);
@@ -91,6 +110,17 @@ function RouteComponent() {
 
   return (
     <Screen title={t("messages.title")} width="wide">
+      {block && (
+        <Alert variant="destructive">
+          <IconBan />
+          <AlertTitle>{t("conv.blocked")}</AlertTitle>
+          <AlertDescription>
+            {block.reason
+              ? t("conv.blockedReason", { reason: block.reason })
+              : t("conv.blockedBody")}
+          </AlertDescription>
+        </Alert>
+      )}
       <Conversations
         eventId={event.id}
         viewerId={session.user.id}

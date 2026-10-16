@@ -142,7 +142,8 @@ export function AnnouncementChannel({
 function AnnouncementBox() {
   const t = useT();
   return (
-    <div className="flex border-t border-border p-3">
+    <div className="flex items-center justify-between gap-3 border-t border-border p-3">
+      <p className="text-sm text-muted-fg">{t("announcements.boxHelp")}</p>
       <DialogTrigger handle={newAnnouncement} render={<Button type="button" size="sm" />}>
         <IconSpeakerphone />
         {t("announcements.new")}

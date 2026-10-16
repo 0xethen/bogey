@@ -4,7 +4,7 @@ import { emitSignal } from "@bogey/plugins/signals";
 import { pluginSettingsQueryOptions } from "#/lib/plugins.ts";
 import { useEventViewer, useSession } from "#/lib/viewer.ts";
 import { z } from "zod";
-import { Fragment, useMemo, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { useT, type PlainKey, type T } from "#/lib/translate.tsx";
 import {
   IconArchive,
@@ -20,6 +20,8 @@ import { browserClient } from "@bogey/db/browser";
 import {
   archiveConversationFn,
   ATTACHMENTS_BUCKET,
+  blockFromChatFn,
+  chatBlocksQueryOptions,
   eventConversationsQueryOptions,
   messageTeamFn,
   sendMessageFn,
@@ -578,7 +580,102 @@ function Moderation({ conversation }: { conversation: Conversation }) {
       >
         {conversation.status === "closed" ? t("conv.reopen") : t("common.close")}
       </Button>
+      {(conversation.teamId || (conversation.askerId && !conversation.mine)) && (
+        <BlockButton conversation={conversation} />
+      )}
     </div>
+  );
+}
+
+type BlockTarget = "person" | "team";
+
+const blockSchema = (t: T) =>
+  z.object({
+    target: z.enum(["person", "team"]).meta({ label: t("conv.blockWho") }),
+    reason: z
+      .string()
+      .trim()
+      .max(500, t("form.maxLength", { max: 500 }))
+      .meta({ label: t("conv.blockReason") })
+      .describe(t("conv.blockReasonHelp")),
+  });
+
+// stops the asker or their team from starting or replying to conversations
+function BlockButton({ conversation }: { conversation: Conversation }) {
+  const t = useT();
+  const schema = useMemo(() => blockSchema(t), [t]);
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const person = conversation.askerId && !conversation.mine ? conversation.askerId : null;
+  const targets: { value: BlockTarget; label: string }[] = [
+    ...(person
+      ? [
+          {
+            value: "person" as const,
+            label: t("conv.blockPerson", { name: conversation.askerName }),
+          },
+        ]
+      : []),
+    ...(conversation.teamId ? [{ value: "team" as const, label: t("conv.blockTeam") }] : []),
+  ];
+  const form = useAppForm({
+    ...appFormOptions.strictSchema({
+      defaultValues: { target: targets[0]?.value ?? "person", reason: "" },
+      errorVisibility,
+      validators: [rewardEarlyPunishLate(schema)],
+    }),
+    onSubmit: async ({ value, formApi, createValidationError }) => {
+      const result = await blockFromChatFn({
+        data: {
+          eventId: conversation.eventId,
+          ...(value.target === "team" ? { teamId: conversation.teamId } : { userId: person }),
+          reason: value.reason,
+        },
+      }).catch(requestFailure);
+      if (!result.ok) return createValidationError(result.error.message);
+      formApi.reset();
+      setOpen(false);
+      await queryClient.invalidateQueries({
+        queryKey: chatBlocksQueryOptions(conversation.eventId).queryKey,
+      });
+      return undefined;
+    },
+  });
+  return (
+    <>
+      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setOpen(true)}>
+        {t("conv.block")}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("conv.blockTitle")}</DialogTitle>
+            <DialogDescription>{t("conv.blockBody")}</DialogDescription>
+          </DialogHeader>
+          <form.AppForm>
+            <form.Form>
+              <FieldGroup>
+                {targets.length > 1 && (
+                  <form.Field name="target">
+                    {(field) => (
+                      <field.Field>
+                        <field.Label />
+                        <FieldSelect field={field} options={targets} />
+                      </field.Field>
+                    )}
+                  </form.Field>
+                )}
+                <form.Field name="reason">{(field) => <field.TextField />}</form.Field>
+                <form.FormAlert title={t("conv.blockFailed")} />
+                <form.Submit variant="destructive" pending={t("common.saving")}>
+                  {t("conv.blockConfirm")}
+                </form.Submit>
+              </FieldGroup>
+            </form.Form>
+          </form.AppForm>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

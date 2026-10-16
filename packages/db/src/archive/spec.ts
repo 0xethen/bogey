@@ -15,6 +15,7 @@ type TableName =
   | "team_members"
   | "announcements"
   | "announcement_audiences"
+  | "chat_blocks"
   | "session_slots"
   | "session_categories"
   | "event_sessions"
@@ -154,6 +155,11 @@ export const ARCHIVE_TABLES: readonly TableSpec[] = [
       team_id: "teams",
       session_id: "event_sessions",
     },
+    people: true,
+  }),
+  table("chat_blocks", {
+    id: "id",
+    refs: { user_id: "user", team_id: "teams", blocked_by: "user" },
     people: true,
   }),
   table("session_hosts", { refs: { session_id: "event_sessions", user_id: "user" }, people: true }),

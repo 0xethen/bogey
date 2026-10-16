@@ -23,7 +23,7 @@ export function ConversationTopic({ eventId, topic }: PluginContext<Settings> & 
       <p className="flex flex-wrap items-center gap-2">
         <span className="text-muted-fg">About</span>
         {problem ? (
-          <Link to={jury ? "/jury" : "/problem"} splat={problem.slug} className="font-medium">
+          <Link to={jury ? "/jury" : "/problem"} splat={problem.slug} className="link font-medium">
             {problem.label}. {problem.title}
           </Link>
         ) : (
