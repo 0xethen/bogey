@@ -7,7 +7,7 @@ export function Blurred({ className, ...props }: ComponentProps<"span">) {
     <span
       tabIndex={0}
       className={cn(
-        "rounded-sm blur-sm transition-[filter] outline-none hover:blur-none focus-visible:blur-none focus-visible:ring-2 focus-visible:ring-ring",
+        "rounded-sm blur-xs transition-[filter] outline-none hover:blur-none focus-visible:active:blur-none focus-visible:ring-1 focus-visible:active:ring-2 focus-visible:ring-ring",
         className,
       )}
       {...props}
