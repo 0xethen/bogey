@@ -259,7 +259,7 @@ begin
       perform pg_advisory_xact_lock(hashtextextended('limit:events:' || new.org_id::text, 0));
       select count(*) into v_count from public.events where org_id = new.org_id;
       if v_count >= v_limit then
-        raise exception 'this organization can have at most % events', v_limit using errcode = '23514';
+        raise exception 'this organization can have at most % event(s)', v_limit using errcode = '23514';
       end if;
     end if;
   elsif tg_table_name = 'org_members' then
@@ -272,7 +272,7 @@ begin
       select count(*) into v_count from public.org_members
       where org_id = new.org_id and role <> 'member';
       if v_count >= v_limit then
-        raise exception 'this organization can have at most % owners and admins', v_limit using errcode = '23514';
+        raise exception 'this organization can have at most % owner(s) and admin(s)', v_limit using errcode = '23514';
       end if;
     end if;
   elsif tg_table_name = 'org_domains' then
@@ -284,7 +284,7 @@ begin
       perform pg_advisory_xact_lock(hashtextextended('limit:domains:' || new.org_id::text, 0));
       select count(*) into v_count from public.org_domains where org_id = new.org_id;
       if v_count >= v_limit then
-        raise exception 'this organization can have at most % hostnames', v_limit using errcode = '23514';
+        raise exception 'this organization can have at most % hostname(s)', v_limit using errcode = '23514';
       end if;
     end if;
   elsif tg_table_name = 'invite_links' then
@@ -301,7 +301,7 @@ begin
       where e.org_id = v_org and l.id <> new.id
         and l.disabled_at is null and (l.closes_at is null or l.closes_at > now());
       if v_count >= v_limit then
-        raise exception 'this organization can have at most % open invite links', v_limit using errcode = '23514';
+        raise exception 'this organization can have at most % open invite link(s)', v_limit using errcode = '23514';
       end if;
     end if;
   elsif new.role = 'participant' then
@@ -314,7 +314,7 @@ begin
       select count(*) into v_count from public.event_members
       where event_id = new.event_id and role = 'participant';
       if v_count >= v_limit then
-        raise exception 'this event can have at most % participants', v_limit using errcode = '23514';
+        raise exception 'this event can have at most % participant(s)', v_limit using errcode = '23514';
       end if;
     end if;
   end if;

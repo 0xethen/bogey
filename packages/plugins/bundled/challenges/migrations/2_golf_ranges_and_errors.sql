@@ -1,4 +1,5 @@
--- golf scored by total length (the new default) or by per-problem length ranges; judged errors can be hidden
+-- golf scored by total length (the new default) or by per-problem length ranges; judged errors can be hidden;
+-- limit errors say problem(s) and test(s)
 
 alter table public.challenges_problems add column if not exists golf_brackets jsonb not null default '[]';
 alter table public.challenges_problems drop constraint if exists challenges_problems_golf_brackets_check;
@@ -262,5 +263,55 @@ begin
       from team_rows
     ) r
   );
+end;
+$$;
+
+create or replace function private.challenges_enforce_limits()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_org uuid;
+  v_limit bigint;
+begin
+  if (select auth.role()) = 'service_role' or private.is_platform_admin() then
+    return new;
+  end if;
+  v_org := private.event_org(new.event_id);
+
+  if tg_table_name = 'challenges_problems' then
+    if tg_op = 'INSERT' then
+      v_limit := private.org_limit(v_org, 'challenges.maxProblemsPerEvent');
+      if v_limit is not null and (
+        select count(*) from public.challenges_problems where event_id = new.event_id
+      ) >= v_limit then
+        raise exception 'this organization can have at most % problem(s) in an event', v_limit
+          using errcode = '23514';
+      end if;
+    end if;
+    v_limit := private.org_limit(v_org, 'challenges.maxTimeLimitMs');
+    if v_limit is not null and new.time_limit_ms > v_limit then
+      raise exception 'time limits can be at most % ms for this organization', v_limit using errcode = '23514';
+    end if;
+    v_limit := private.org_limit(v_org, 'challenges.maxMemoryMb');
+    if v_limit is not null and new.memory_limit_mb > v_limit then
+      raise exception 'memory limits can be at most % MB for this organization', v_limit using errcode = '23514';
+    end if;
+    v_limit := private.org_limit(v_org, 'challenges.maxOutputKb');
+    if v_limit is not null and new.output_limit_kb > v_limit then
+      raise exception 'output limits can be at most % KB for this organization', v_limit using errcode = '23514';
+    end if;
+  else
+    v_limit := private.org_limit(v_org, 'challenges.maxTestsPerProblem');
+    if v_limit is not null and (
+      select count(*) from public.challenges_testcases where problem_id = new.problem_id
+    ) >= v_limit then
+      raise exception 'a problem can have at most % test(s) for this organization', v_limit
+        using errcode = '23514';
+    end if;
+  end if;
+  return new;
 end;
 $$;

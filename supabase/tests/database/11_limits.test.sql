@@ -15,7 +15,7 @@ on conflict (scope, org_id, event_id, namespace) do update set value = excluded.
 select tests.as_user(tests.u('owner'));
 select throws_ok(
   $$insert into public.events (org_id, slug, name) values (tests.u('org'), 'second', 'Second')$$,
-  '23514', 'this organization can have at most 1 events', 'a second event goes over the limit');
+  '23514', 'this organization can have at most 1 event(s)', 'a second event goes over the limit');
 select throws_ok(
   $$insert into public.org_members (org_id, user_id, role) values (tests.u('org'), tests.u('admin2'), 'admin')$$,
   '23514', null, 'a second admin goes over the limit');
