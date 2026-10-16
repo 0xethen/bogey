@@ -13,7 +13,9 @@ insert into public.event_members (event_id, user_id, role) values
   (tests.u('ev'), tests.u('c'), 'participant');
 insert into public.org_members (org_id, user_id, role) values (tests.u('org'), tests.u('own'), 'owner');
 
--- the leave limit (2 by default) stops team after team
+-- a leave limit (none by default) stops team after team
+insert into public.settings (scope, event_id, namespace, value) values ('event', tests.u('ev'), 'teams', '{"leaveLimit":2}')
+on conflict (scope, org_id, event_id, namespace) do update set value = public.settings.value || excluded.value;
 select tests.as_user(tests.u('a'));
 select lives_ok($$select public.create_team(tests.u('ev'), 'One')$$, 'a participant starts a team');
 select lives_ok($$select public.leave_team(tests.u('ev'))$$, 'leaves it');
@@ -64,7 +66,8 @@ reset role;
 
 -- switching off covers disbanding too
 insert into public.settings (scope, event_id, namespace, value)
-values ('event', tests.u('ev'), 'teams', '{"switching":false,"disband":"members","creation":"organizers"}');
+values ('event', tests.u('ev'), 'teams', '{"switching":false,"disband":"members","creation":"organizers"}')
+on conflict (scope, org_id, event_id, namespace) do update set value = public.settings.value || excluded.value;
 delete from public.submissions where event_id = tests.u('ev');
 select tests.as_user(tests.u('a'));
 select throws_ok($$select public.disband_team(tests.u('ev'))$$, 'P0001',

@@ -210,7 +210,7 @@ Set at: instance, org, event.
 | --- | --- | --- | --- |
 | `disband` | `none` · `captain` · `members` | `captain` | Who on a team can disband it while teams are open |
 | `switching` | on / off | `true` | Participants can leave their team to join or start another |
-| `leaveLimit` | whole number (0 to 20) | `2` | How many times one participant can leave a team; 0 means no limit |
+| `leaveLimit` | whole number (0 to 20) | `0` | How many times one participant can leave a team; 0 means no limit |
 | `creation` | `participants` · `organizers` | `participants` | Who can start a team |
 | `askOrganizer` | on / off | `true` | Participants who can't switch teams are pointed to message the organizers |
 | `board` | on / off | `true` | Participants find teams and teammates on the Team page |

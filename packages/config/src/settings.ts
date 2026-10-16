@@ -928,7 +928,7 @@ export const settingsRegistry = {
       switching: true,
       askOrganizer: true,
       creation: "participants",
-      leaveLimit: 2,
+      leaveLimit: 0,
     },
     schema: z.object({
       disband: z
@@ -966,7 +966,7 @@ export const settingsRegistry = {
         label: "Times someone can leave a team",
         description:
           "Stops people from leaving and starting team after team. Disbanding counts too. 0 means no limit; organizers can still move anyone.",
-        placeholder: "2",
+        placeholder: "0",
       },
       creation: {
         label: "Who can start a team",
