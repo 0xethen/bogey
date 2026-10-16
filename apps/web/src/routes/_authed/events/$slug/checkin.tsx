@@ -267,7 +267,16 @@ function RouteComponent() {
           </codeForm.Form>
         </codeForm.AppForm>
         {scanning && (
-          <QrScanner onCode={(scanned) => checkIn.mutate({ code: scanned, method: "qr" })} />
+          <QrScanner
+            onCode={(scanned) => {
+              // keep what was read in the box so a failed scan can be checked or fixed by hand
+              codeForm.setFieldValue("code", scanned);
+              checkIn.mutate(
+                { code: scanned, method: "qr" },
+                { onSuccess: () => codeForm.reset() },
+              );
+            }}
+          />
         )}
       </Screen.Section>
 
