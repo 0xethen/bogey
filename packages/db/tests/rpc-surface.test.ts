@@ -121,6 +121,8 @@ const SIGNED_IN = {
   save_agenda: "replaces the agenda in one transaction and audits it",
   save_submission_form: "replaces a form's items in one transaction and audits it",
   save_awards: "replaces the drafted awards in one transaction and audits it",
+  clear_event_data:
+    "organizers' bulk clean-ups across tables, confirmed by the event's address and audited",
   set_submission_rubric:
     "checks who may pick a project's rubric (organizers, judges, its team) per the judging settings, and audits it",
   flag_submission:

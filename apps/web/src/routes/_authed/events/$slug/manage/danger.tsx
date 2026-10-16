@@ -1,20 +1,37 @@
+import { useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { eventDeletion } from "@bogey/config";
-import { deleteEventFn, updateEventFn } from "@bogey/db/queries/manage";
+import { clearEventDataFn, deleteEventFn, type ClearKind } from "@bogey/db/queries/manage";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import type { Tables } from "@bogey/db/types";
 import { Button } from "@bogey/ui/components/button";
-import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@bogey/ui/components/dialog";
+import { FieldGroup } from "@bogey/ui/components/field";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@bogey/ui/components/item";
+import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
-import { useEventRefresh } from "#/lib/refresh.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 
-const deleteSchema = (t: T, slug: string) =>
+type Event = Pick<Tables<"events">, "id" | "slug" | "name">;
+type PruneKind = Extract<ClearKind, "not_checked_in" | "no_team" | "no_submission">;
+
+const confirmSchema = (t: T, slug: string) =>
   z.object({
     confirm: z
       .string()
@@ -27,9 +44,9 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/danger")({
   staticData: {
     title: msg("danger.title"),
     settings: (t) => [
-      searchSection(t("danger.unpublish"), {
-        keywords: ["draft", "hide", "unpublish", "visibility"],
-        id: "unpublish",
+      searchSection(t("danger.cleanUp"), {
+        keywords: ["prune", "remove", "no-shows", "waitlist", "reset judging", "dry run"],
+        id: "clean-up",
       }),
       searchSection(t("danger.delete"), { keywords: ["delete", "remove", "event"], id: "delete" }),
     ],
@@ -42,7 +59,36 @@ function RouteComponent() {
   const { event, access } = Route.useRouteContext();
   return (
     <Screen title={t("danger.title")} description={t("danger.intro")} width="embedded">
-      <Unpublish event={event} />
+      <Screen.Section
+        id="clean-up"
+        title={t("danger.cleanUp")}
+        description={t("danger.cleanUpHelp")}
+      >
+        <div className="flex flex-col gap-2">
+          <PruneParticipants event={event} />
+          <ClearAction
+            event={event}
+            what="waiting"
+            title={t("danger.waiting")}
+            help={t("danger.waitingHelp")}
+            body={(count) => t("danger.waitingBody", { count })}
+          />
+          <ClearAction
+            event={event}
+            what="judging"
+            title={t("danger.judging")}
+            help={t("danger.judgingHelp")}
+            body={(count) => t("danger.judgingBody", { count })}
+          />
+          <ClearAction
+            event={event}
+            what="participants"
+            title={t("danger.participants")}
+            help={t("danger.participantsHelp")}
+            body={(count) => t("danger.participantsBody", { count })}
+          />
+        </div>
+      </Screen.Section>
       {eventDeletion && (
         <Screen.Section id="delete" title={t("danger.delete")} description={t("danger.deleteHelp")}>
           {access.orgAdmin ? (
@@ -56,88 +102,243 @@ function RouteComponent() {
   );
 }
 
-function Unpublish({ event }: { event: Pick<Tables<"events">, "id" | "visibility"> }) {
-  const t = useT();
-  const refreshEvent = useEventRefresh(event.id);
-  const unpublish = useMutation({
-    mutationFn: async () =>
-      unwrap(await updateEventFn({ data: { eventId: event.id, visibility: "draft" } })),
-    onSuccess: refreshEvent,
-  });
-  const draft = event.visibility === "draft";
+/** One row of the danger zone: a title, what it does and the button that opens its dialog. */
+function DangerRow({
+  title,
+  help,
+  button,
+  onOpen,
+}: {
+  title: string;
+  help: string;
+  button: string;
+  onOpen: () => void;
+}) {
   return (
-    <Screen.Section
-      id="unpublish"
-      title={t("danger.unpublish")}
-      description={draft ? t("danger.unpublishDraft") : t("danger.unpublishHelp")}
-    >
-      {!draft && (
-        <div className="flex flex-col gap-3">
-          <div>
-            <Button
-              variant="destructive"
-              disabled={unpublish.isPending}
-              confirm={{
-                title: t("danger.unpublishTitle"),
-                description: t("danger.unpublishBody"),
-                label: t("danger.unpublishConfirm"),
-              }}
-              onClick={() => unpublish.mutate()}
-            >
-              {t("danger.unpublishButton")}
-            </Button>
-          </div>
-          <ErrorAlert error={unpublish.error} title={t("overview.visibilityFailed")} />
-        </div>
-      )}
-    </Screen.Section>
+    <Item variant="outline">
+      <ItemContent>
+        <ItemTitle>{title}</ItemTitle>
+        <ItemDescription className="line-clamp-none">{help}</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <Button size="sm" variant="destructive" onClick={onOpen}>
+          {button}
+        </Button>
+      </ItemActions>
+    </Item>
   );
 }
 
-function DeleteEvent({ event }: { event: Pick<Tables<"events">, "id" | "slug" | "name"> }) {
+/** A dialog that asks for the event's address before doing something that can't be undone. */
+function ConfirmDialog({
+  event,
+  open,
+  onOpenChange,
+  title,
+  description,
+  extra,
+  submit,
+  pending,
+  failed,
+  onConfirm,
+}: {
+  event: Event;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: ReactNode;
+  extra?: ReactNode;
+  submit: string;
+  pending: string;
+  failed: string;
+  onConfirm: (confirm: string) => Promise<string | undefined>;
+}) {
   const t = useT();
-  const schema = useMemo(() => deleteSchema(t, event.slug), [t, event.slug]);
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const schema = useMemo(() => confirmSchema(t, event.slug), [t, event.slug]);
   const form = useAppForm({
     defaultValues: { confirm: "" },
     errorVisibility,
     validators: [rewardEarlyPunishLate(schema)],
-    onSubmit: async ({ value, createValidationError }) => {
-      const result = await deleteEventFn({
-        data: { eventId: event.id, confirm: value.confirm },
-      }).catch(requestFailure);
-      if (!result.ok) return createValidationError(result.error.message);
-      await navigate({ to: "/events", replace: true });
-      queryClient.removeQueries({ queryKey: ["event"] });
-      await queryClient.invalidateQueries({ queryKey: ["events"] });
+    onSubmit: async ({ value, formApi, createValidationError }) => {
+      const problem = await onConfirm(value.confirm);
+      if (problem) return createValidationError(problem);
+      formApi.reset();
       return undefined;
     },
   });
   return (
-    <form.AppForm>
-      <form.Form className="flex flex-col gap-3">
-        <form.Field name="confirm">{(field) => <field.TextField autoComplete="off" />}</form.Field>
-        <form.FormAlert title={t("danger.deleteFailed")} />
-        <form.Subscribe selector={(state) => state.isSubmitting}>
-          {(submitting) => (
-            <div>
-              <Button
-                variant="destructive"
-                disabled={submitting}
-                confirm={{
-                  title: t("danger.deleteTitle", { name: event.name }),
-                  description: t("danger.deleteBody"),
-                  label: t("danger.deleteConfirm"),
-                }}
-                onClick={() => void form.handleSubmit()}
-              >
-                {submitting ? t("danger.deleting") : t("danger.deleteButton")}
-              </Button>
-            </div>
-          )}
-        </form.Subscribe>
-      </form.Form>
-    </form.AppForm>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <form.AppForm>
+          <form.Form>
+            <FieldGroup>
+              {extra}
+              <form.Field name="confirm">
+                {(field) => <field.TextField autoComplete="off" />}
+              </form.Field>
+              <form.FormAlert title={failed} />
+              <form.Submit variant="destructive" pending={pending}>
+                {submit}
+              </form.Submit>
+            </FieldGroup>
+          </form.Form>
+        </form.AppForm>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function useClear(event: Event, what: ClearKind, open: boolean) {
+  const queryClient = useQueryClient();
+  const count = useQuery({
+    queryKey: ["clear-count", event.id, what] as const,
+    queryFn: async () => unwrap(await clearEventDataFn({ data: { eventId: event.id, what } })),
+    enabled: open,
+    staleTime: 0,
+  });
+  const run = async (confirm: string) => {
+    const result = await clearEventDataFn({ data: { eventId: event.id, what, confirm } }).catch(
+      requestFailure,
+    );
+    if (!result.ok) return result.error.message;
+    await queryClient.invalidateQueries();
+    return undefined;
+  };
+  return { count: count.data, run };
+}
+
+function ClearAction({
+  event,
+  what,
+  title,
+  help,
+  body,
+}: {
+  event: Event;
+  what: Exclude<ClearKind, PruneKind>;
+  title: string;
+  help: string;
+  body: (count: number) => string;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const { count, run } = useClear(event, what, open);
+  return (
+    <>
+      <DangerRow
+        title={title}
+        help={help}
+        button={t("danger.clearButton", { title })}
+        onOpen={() => setOpen(true)}
+      />
+      <ConfirmDialog
+        event={event}
+        open={open}
+        onOpenChange={setOpen}
+        title={t("danger.clearTitle", { title })}
+        description={count === undefined ? t("common.loading") : body(count)}
+        submit={title}
+        pending={t("danger.clearing")}
+        failed={t("danger.clearFailed")}
+        onConfirm={async (confirm) => {
+          const problem = await run(confirm);
+          if (!problem) setOpen(false);
+          return problem;
+        }}
+      />
+    </>
+  );
+}
+
+function PruneParticipants({ event }: { event: Event }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [rule, setRule] = useState<PruneKind>("not_checked_in");
+  const { count, run } = useClear(event, rule, open);
+  const title = t("danger.prune");
+  return (
+    <>
+      <DangerRow
+        title={title}
+        help={t("danger.pruneHelp")}
+        button={t("danger.clearButton", { title })}
+        onOpen={() => setOpen(true)}
+      />
+      <ConfirmDialog
+        event={event}
+        open={open}
+        onOpenChange={setOpen}
+        title={t("danger.clearTitle", { title })}
+        description={count === undefined ? t("common.loading") : t("danger.pruneBody", { count })}
+        extra={
+          <OptSelect
+            ariaLabel={t("danger.pruneWho")}
+            value={rule}
+            onChange={setRule}
+            options={[
+              { value: "not_checked_in", label: t("danger.pruneNotCheckedIn") },
+              { value: "no_team", label: t("danger.pruneNoTeam") },
+              { value: "no_submission", label: t("danger.pruneNoSubmission") },
+            ]}
+          />
+        }
+        submit={title}
+        pending={t("danger.clearing")}
+        failed={t("danger.clearFailed")}
+        onConfirm={async (confirm) => {
+          const problem = await run(confirm);
+          if (!problem) setOpen(false);
+          return problem;
+        }}
+      />
+    </>
+  );
+}
+
+function DeleteEvent({ event }: { event: Event }) {
+  const t = useT();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <div>
+        <Button variant="destructive" onClick={() => setOpen(true)}>
+          {t("danger.deleteButton")}
+        </Button>
+      </div>
+      <ConfirmDialog
+        event={event}
+        open={open}
+        onOpenChange={setOpen}
+        title={t("danger.deleteTitle", { name: event.name })}
+        description={
+          <>
+            {t("danger.deleteBody1")}{" "}
+            <a href={`/api/events/${event.slug}/archive`} download className="link">
+              {t("danger.deleteBodyLink")}
+            </a>{" "}
+            {t("danger.deleteBody2")}
+          </>
+        }
+        submit={t("danger.deleteConfirm")}
+        pending={t("danger.deleting")}
+        failed={t("danger.deleteFailed")}
+        onConfirm={async (confirm) => {
+          const result = await deleteEventFn({ data: { eventId: event.id, confirm } }).catch(
+            requestFailure,
+          );
+          if (!result.ok) return result.error.message;
+          await navigate({ to: "/events", replace: true });
+          queryClient.removeQueries({ queryKey: ["event"] });
+          await queryClient.invalidateQueries({ queryKey: ["events"] });
+          return undefined;
+        }}
+      />
+    </>
   );
 }

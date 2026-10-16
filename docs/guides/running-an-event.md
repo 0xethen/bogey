@@ -483,6 +483,22 @@ folder, and `bogey event import <folder>` makes a new draft event from it, in th
 moved by `--starts-at` or `--shift-days`. Without `--people` only the setup comes back; with it, members (accounts are created
 for emails without one), teams, submissions, scores, awards, results and check-ins too.
 
+## Danger zone
+
+**Manage → Danger zone** has the clean-ups that can't be undone. Each opens a dialog that says how many people or projects
+it touches and asks for the event's web address before it runs, and each is kept in the audit log.
+
+- **Prune participants**: remove the ones who never checked in, aren't on a team, or have no submitted project. Their
+  registrations stay, so you can add someone back from People.
+- **Decline everyone waiting**: decline every pending and waitlisted registration; each person is told.
+- **Reset judging**: delete every score, judge's note, assignment and flag, and send advanced entries back to round 1, for
+  example after judges practised. Projects, criteria and published results stay.
+- **Remove all participants**: start over after a dry run. Every participant, their registrations, teams, submissions and
+  files go; the setup, staff, judges and organizers stay.
+- **Delete event** (organization owners and admins): the whole event, after offering to download an archive first.
+
+To hide an event instead, set it back to a draft under **Manage → Security**.
+
 ## Webhooks and feeds
 
 Other systems can follow the event. **Manage → Communication → Webhooks** (and **Organization → Settings → Webhooks** for all of

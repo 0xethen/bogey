@@ -1,10 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { eventDeletion } from "@bogey/config";
 import { createAdminClient } from "../admin.ts";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
-import type { Enums, Tables, TablesUpdate } from "../types.ts";
+import type { Enums, Json, Tables, TablesUpdate } from "../types.ts";
 import {
   optionalText,
   optionalUrl,
@@ -127,6 +128,57 @@ export const updateEventFn = createServerFn({ method: "POST" })
     return ok(event);
   });
 
+const storedFile = z.object({ bucket: z.string(), path: z.string() });
+
+// the rows are gone; files go through the storage API so they leave the disk too
+async function removeFiles(files: Json | Tuple<z.infer<typeof storedFile>>) {
+  const parsed = z.array(storedFile).catch([]).parse(files);
+  const byBucket = new Map<string, string[]>();
+  for (const file of parsed) {
+    byBucket.set(file.bucket, [...(byBucket.get(file.bucket) ?? []), file.path]);
+  }
+  const storage = createAdminClient().storage;
+  for (const [bucket, paths] of byBucket) {
+    for (let i = 0; i < paths.length; i += 500) {
+      const { error } = await storage.from(bucket).remove(paths.slice(i, i + 500));
+      if (error) console.warn(`[bogey/db] removing cleared files:`, error);
+    }
+  }
+}
+
+export const CLEAR_KINDS = [
+  "not_checked_in",
+  "no_team",
+  "no_submission",
+  "waiting",
+  "judging",
+  "participants",
+] as const;
+export type ClearKind = (typeof CLEAR_KINDS)[number];
+
+/** Counts what a danger-zone clean-up would touch, or does it when `confirm` (the slug) is given. */
+export const clearEventDataFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as Record<string, unknown>;
+    return {
+      eventId: requireId(raw.eventId, "eventId"),
+      what: requireOneOf(raw.what, CLEAR_KINDS, "What to clear"),
+      confirm: typeof raw.confirm === "string" ? raw.confirm.trim() : null,
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<number>> => {
+    const { data: result, error } = await createServerClient().rpc("clear_event_data", {
+      p_event: data.eventId,
+      p_what: data.what,
+      ...(data.confirm === null ? { p_dry_run: true } : { p_confirm: data.confirm }),
+    });
+    if (error) return toFailure(error, "clearing that");
+    const parsed = z.object({ count: z.number(), files: z.array(storedFile) }).safeParse(result);
+    if (!parsed.success) return fail("unknown", "The database answered in an unexpected way.");
+    await removeFiles(parsed.data.files);
+    return ok(parsed.data.count);
+  });
+
 export const deleteEventFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
     const raw = (input ?? {}) as Record<string, unknown>;
@@ -142,18 +194,7 @@ export const deleteEventFn = createServerFn({ method: "POST" })
       p_confirm: data.confirm,
     });
     if (error) return toFailure(error, "deleting the event");
-    // the rows are gone; files go through the storage API so they leave the disk too
-    const byBucket = new Map<string, string[]>();
-    for (const file of (files ?? []) as { bucket: string; path: string }[]) {
-      byBucket.set(file.bucket, [...(byBucket.get(file.bucket) ?? []), file.path]);
-    }
-    const storage = createAdminClient().storage;
-    for (const [bucket, paths] of byBucket) {
-      for (let i = 0; i < paths.length; i += 500) {
-        const { error: removeError } = await storage.from(bucket).remove(paths.slice(i, i + 500));
-        if (removeError) console.warn(`[bogey/db] removing a deleted event's files:`, removeError);
-      }
-    }
+    await removeFiles(files);
     return ok(null);
   });
 

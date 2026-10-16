@@ -1957,14 +1957,36 @@ export const en = {
   "manageNav.label": "Manage sections",
   "danger.title": "Danger zone",
   "danger.intro": "Changes here are hard or impossible to undo.",
-  "danger.unpublish": "Unpublish",
-  "danger.unpublishHelp": "Move the event back to a draft that only organizers can see.",
-  "danger.unpublishDraft": "The event is a draft, so only organizers can see it.",
-  "danger.unpublishButton": "Unpublish...",
-  "danger.unpublishTitle": "Unpublish this event?",
-  "danger.unpublishBody":
-    "Participants, judges and visitors lose access until you publish it again. Nothing is deleted.",
-  "danger.unpublishConfirm": "Unpublish",
+  "danger.cleanUp": "Clean up",
+  "danger.cleanUpHelp":
+    "Each shows how many it touches before you confirm. To hide the event instead, set it back to a draft in Security.",
+  "danger.clearButton": "{title}...",
+  "danger.clearTitle": "{title}?",
+  "danger.clearing": "Working...",
+  "danger.clearFailed": "Couldn't do that",
+  "danger.prune": "Prune participants",
+  "danger.pruneHelp":
+    "Remove participants who never checked in, aren't on a team, or have no submitted project. Their registrations stay, so you can add them back from People.",
+  "danger.pruneWho": "Who to remove",
+  "danger.pruneNotCheckedIn": "Never checked in",
+  "danger.pruneNoTeam": "Not on a team",
+  "danger.pruneNoSubmission": "No submitted project",
+  "danger.pruneBody":
+    "{count, plural, =0 {No participants match.} one {Removes # participant from the event and their team.} other {Removes # participants from the event and their teams.}}",
+  "danger.waiting": "Decline everyone waiting",
+  "danger.waitingHelp": "Decline every pending and waitlisted registration. Each person is told.",
+  "danger.waitingBody":
+    "{count, plural, =0 {No one is waiting.} one {Declines # registration and tells them.} other {Declines # registrations and tells each of them.}}",
+  "danger.judging": "Reset judging",
+  "danger.judgingHelp":
+    "Delete every score, judge's note, assignment and flag, and send advanced entries back to round 1. Projects, criteria and published results stay.",
+  "danger.judgingBody":
+    "{count, plural, =0 {Nothing has been judged yet.} one {Clears judging for # project.} other {Clears judging for # projects.}}",
+  "danger.participants": "Remove all participants",
+  "danger.participantsHelp":
+    "Start over after a dry run: delete every participant, their registrations, teams, submissions and files. The setup, staff, judges and organizers stay.",
+  "danger.participantsBody":
+    "{count, plural, =0 {There are no participants.} one {Deletes # participant and everything they made. This can't be undone.} other {Deletes # participants and everything they made. This can't be undone.}}",
   "danger.delete": "Delete event",
   "danger.deleteHelp":
     "Deletes the event with its people, teams, submissions, scores, messages and files.",
@@ -1973,8 +1995,9 @@ export const en = {
   "danger.deleteMismatch": "Type the event's web address exactly",
   "danger.deleteButton": "Delete event...",
   "danger.deleteTitle": "Delete {name}?",
-  "danger.deleteBody":
-    "This can't be undone. Download an archive from Details first if you want to keep a copy.",
+  "danger.deleteBody1": "This can't be undone.",
+  "danger.deleteBodyLink": "Download an archive",
+  "danger.deleteBody2": "first if you want to keep a copy.",
   "danger.deleteConfirm": "Delete forever",
   "danger.deleting": "Deleting...",
   "danger.deleteFailed": "Couldn't delete the event",
@@ -3124,12 +3147,12 @@ export const en = {
   "setting.venue.onlineUrl": "Online link",
   "setting.venue.onlineUrl.help": "Shown to members only, never on public pages.",
   "setting.venue.onlineLabel": "Online link name",
-  "setting.privacy.agenda": "Agenda",
   "setting.privacy.about": "About",
   "setting.privacy.about.help":
     "The event's About text. For text everyone sees, add a Text block to the homepage instead.",
   "setting.privacy.about.members": "Members only",
   "setting.privacy.about.public": "Everyone who can see the event",
+  "setting.privacy.agenda": "Agenda",
   "setting.privacy.agenda.help": "Sessions, times, rooms and hosts.",
   "setting.privacy.agenda.members": "Members only",
   "setting.privacy.agenda.public": "Everyone who can see the event",
@@ -3320,6 +3343,7 @@ export const en = {
   "auditAction.export.downloaded": "downloaded an export",
   "auditAction.event.cloned": "copied an event",
   "auditAction.event.deleted": "deleted an event",
+  "auditAction.event.cleared": "cleared event data from the danger zone",
   "auditAction.certificate.issued": "issued certificates",
   "auditAction.certificate.revoked": "revoked a certificate",
   "auditAction.certificate.template_saved": "edited a certificate's wording",

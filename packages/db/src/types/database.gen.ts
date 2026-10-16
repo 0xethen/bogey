@@ -3826,6 +3826,10 @@ export type Database = {
         Args: { p_award?: string; p_event: string; p_kind: string };
         Returns: string;
       };
+      clear_event_data: {
+        Args: { p_confirm?: string; p_dry_run?: boolean; p_event: string; p_what: string };
+        Returns: Json;
+      };
       clone_event: {
         Args: {
           p_ends_at?: string;
