@@ -6,8 +6,7 @@ export const en = {
   "title.wentWrong": "Something went wrong",
 
   "auth.signInTitle": "Sign in to {name}",
-  "auth.signInNewAccounts":
-    "We'll email you a link to sign in, or to make an account if you're new.",
+  "auth.signInNewAccounts": "We'll email you a link to sign in.",
   "auth.signInExisting": "Use the email address you registered with.",
   "auth.linkFailedTitle": "That link didn't work",
   "auth.linkFailedBefore": "It expired or was already used. Send yourself a new one, or ",
