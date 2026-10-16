@@ -12,6 +12,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 - Org admins can delete an event from its new Manage → Danger zone page, which also has Unpublish. Deleting asks for the event's web address, removes its files and is kept in the org's audit log. Set `events: { uiDeletion: false }` in `bogey.config.ts` to turn it off.
 - The favicon comes from `brand.icons` in `bogey.config.ts`.
+- `bogey event list`, `bogey event visibility` and `bogey event delete` manage events from the CLI, and the interactive menu has an Events section. `bogey event delete` works even with `events.uiDeletion: false`.
+- `bogey org init` no longer makes a second "first" organization (which also took over the default org) on an instance that already has one; it points you to `bogey org create`. The menu hides it once there's an org, and only asks to go back to the menu after help.
 - Organization limits now hold for everyone: platform admins, copying an event and the CLI can't go past them anymore. Promoting a member to admin, turning someone into a participant and reopening an invite link count too. To let one organization go further, raise its limit under Instance → Organizations.
 
 ### Upgrade notes

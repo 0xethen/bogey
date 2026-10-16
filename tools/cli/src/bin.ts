@@ -8,6 +8,7 @@ import { present } from "./lib/present.ts";
 import { Cancelled, terminalPrompter } from "./lib/prompt.ts";
 import { bad, bold, colorEnabled, dim, warn } from "./lib/style.ts";
 import { runMenu } from "./menu.ts";
+import { hasOrg } from "./commands/org.ts";
 
 const argv = process.argv.slice(2).filter((arg) => arg !== "--no-input");
 if (argv.length < process.argv.length - 2) process.env.BOGEY_NO_INPUT = "1";
@@ -55,6 +56,7 @@ try {
       prompter,
       prefix,
       run: (args) => run(args, process.cwd(), prompter),
+      hasOrg: () => hasOrg(process.cwd()),
       show: (result, command) => {
         show(result, command);
         console.log();

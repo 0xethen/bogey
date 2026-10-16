@@ -14,6 +14,8 @@ interface Entry {
     required?: boolean;
   }>;
   confirm?: string;
+  // shown only while the instance has no organization
+  firstRun?: boolean;
 }
 
 export const MENU: Tuple<Entry> = [
@@ -23,6 +25,7 @@ export const MENU: Tuple<Entry> = [
     label: "Create the first organization",
     command: "org",
     args: ["init"],
+    firstRun: true,
   },
   { group: "Get started", label: "Check this instance", command: "doctor" },
   {
@@ -41,6 +44,72 @@ export const MENU: Tuple<Entry> = [
     group: "Organizations and people",
     label: "Get a sign-in code, without email",
     command: "login",
+  },
+  {
+    group: "Events",
+    label: "List events",
+    command: "event",
+    args: ["list"],
+    ask: [{ question: "Org address (slug)", hint: "Blank for every org", positional: true }],
+  },
+  {
+    group: "Events",
+    label: "Publish or unpublish an event",
+    command: "event",
+    args: ["visibility"],
+    ask: [
+      {
+        question: "Event",
+        hint: "As <org>/<event>, like acme/spring-hack",
+        positional: true,
+        required: true,
+      },
+      {
+        question: "Visibility",
+        hint: "draft, unlisted or public",
+        positional: true,
+        required: true,
+      },
+    ],
+  },
+  {
+    group: "Events",
+    label: "Delete an event",
+    command: "event",
+    args: ["delete"],
+    ask: [
+      {
+        question: "Event",
+        hint: "As <org>/<event>, like acme/spring-hack",
+        positional: true,
+        required: true,
+      },
+    ],
+  },
+  {
+    group: "Events",
+    label: "Export an event",
+    command: "event",
+    args: ["export"],
+    ask: [
+      { question: "Event", hint: "As <org>/<event>", positional: true, required: true },
+      { question: "Folder", hint: "An empty or new folder", flag: "--out", required: true },
+    ],
+  },
+  {
+    group: "Events",
+    label: "Import an event",
+    command: "event",
+    args: ["import"],
+    ask: [
+      {
+        question: "Folder",
+        hint: "One bogey event export wrote",
+        positional: true,
+        required: true,
+      },
+      { question: "Org address (slug)", hint: "Blank for the default org", flag: "--org" },
+    ],
   },
   { group: "Plugins", label: "List plugins", command: "plugins", args: ["list"] },
   { group: "Plugins", label: "Check plugins for updates", command: "plugins", args: ["outdated"] },
@@ -115,6 +184,8 @@ export interface MenuIo {
   prefix: string;
   run: (argv: string[]) => Promise<CliResult>;
   show: (result: CliResult, command?: string) => void;
+  // whether the instance has an organization yet; unknown shows the first-run entries
+  hasOrg?: () => Promise<boolean | null>;
 }
 
 export async function argvFor(entry: Entry, prompter: Pick<Prompter, "text">): Promise<string[]> {
@@ -137,9 +208,10 @@ const HELP = "help";
 
 export async function runMenu(io: MenuIo): Promise<void> {
   const { prompter } = io;
+  const set = (await io.hasOrg?.().catch(() => null)) === true;
   const options: Choice<string>[] = [
-    ...MENU.map((entry, index) => ({
-      value: String(index),
+    ...MENU.filter((entry) => !(entry.firstRun && set)).map((entry) => ({
+      value: String(MENU.indexOf(entry)),
       label: entry.label,
       hint: [io.prefix, entry.command, ...(entry.args ?? []), ...(entry.ask ? ["..."] : [])]
         .filter(Boolean)
@@ -148,7 +220,7 @@ export async function runMenu(io: MenuIo): Promise<void> {
     })),
     {
       value: HELP,
-      label: "Every command",
+      label: "Get help",
       hint: [io.prefix, "help"].filter(Boolean).join(" "),
       group: "More",
     },
@@ -172,17 +244,17 @@ export async function runMenu(io: MenuIo): Promise<void> {
     last = choice;
     try {
       const entry = MENU[Number(choice)];
-      if (choice === HELP || !entry) {
-        io.show(await io.run([HELP]));
-      } else {
+      if (choice !== HELP && entry) {
         if (entry.confirm && !(await prompter.confirm({ message: entry.confirm }))) continue;
         io.show(await io.run(await argvFor(entry, prompter)), entry.command);
+        return;
       }
+      io.show(await io.run([HELP]));
     } catch (error) {
       if (!(error instanceof Cancelled)) throw error;
       continue;
     }
-    // Ask before redrawing the menu, which would push the output off screen.
+    // after help, ask before redrawing the menu, which would push the help off screen
     try {
       if (!(await prompter.confirm({ message: "Back to the main menu?", initial: false }))) return;
     } catch (error) {
