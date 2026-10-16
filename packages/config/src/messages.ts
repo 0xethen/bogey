@@ -516,13 +516,13 @@ export const en = {
   "twoFactor.digit": "Digit {n} of {total}",
   "twoFactor.factorName": "Authenticator app",
   "twoFactor.intro":
-    "An authenticator app on your phone makes a six-digit code that proves it's you.",
-  "twoFactor.adminNeedsTitle": "Instance admins need an authenticator app",
+    "A six-digit code from an authenticator app, or a passkey on your device, proves it's you.",
+  "twoFactor.adminNeedsTitle": "Instance admins need a second factor",
   "twoFactor.adminNeedsBody":
-    "Set one up below to open the Instance pages. For security, you'll enter a six-digit code from this app every time you sign in. Never share it with anyone.",
-  "twoFactor.adminCodeTitle": "Enter a code to open the Instance pages",
+    "Set up an authenticator app or a passkey below to open the Instance pages. You'll use it every time you sign in. Never share a code with anyone.",
+  "twoFactor.adminCodeTitle": "Verify it's you to open the Instance pages",
   "twoFactor.adminCodeBody":
-    "You signed in with your email. Your authenticator app's code finishes proving it's you.",
+    "You signed in with your email. A code from your authenticator app, or your passkey, finishes proving it's you.",
   "twoFactor.checking": "Checking your two-factor settings...",
   "twoFactor.checkFailed": "Couldn't check your two-factor settings.",
   "twoFactor.scan":
@@ -532,11 +532,25 @@ export const en = {
   "twoFactor.wrongCode": "That code isn't right. Wait for the next one and try again.",
   "twoFactor.verifyFailed": "Couldn't verify it",
   "twoFactor.enterCode": "Enter the code from your authenticator app for this sign-in.",
-  "twoFactor.isSetUp": "An authenticator app is set up!",
+  "twoFactor.isSetUp": "Set up",
+  "twoFactor.notSetUp": "Not set up",
+  "twoFactor.passkey": "Passkey",
+  "twoFactor.passkeyAdded": "Passkey on this or another device",
+  "twoFactor.addPasskey": "Add a passkey",
+  "twoFactor.addAnotherPasskey": "Add another passkey",
+  "twoFactor.passkeyAddFailed":
+    "Couldn't add the passkey. It may have been cancelled, or passkeys may be off for this instance.",
+  "twoFactor.usePasskey": "Use a passkey",
+  "twoFactor.useNamed": "Use {name}",
+  "twoFactor.passkeyFailed": "The passkey didn't work. It may have been cancelled; try again.",
+  "twoFactor.passkeyElsewhere":
+    "Your passkeys work only at this instance's main address. Open it there to verify.",
+  "twoFactor.removePasskeyTitle": "Remove this passkey?",
+  "twoFactor.removeOtherStays": "You can still verify with your other second factor.",
   "twoFactor.manageInstance": "Manage instance",
   "twoFactor.removeTitle": "Remove your authenticator app?",
   "twoFactor.removeBody":
-    "Instance admins lose access to the Instance pages until they set up another one.",
+    "It's your only second factor. Instance admins lose access to the Instance pages until they set up another one.",
   "twoFactor.remove": "Remove",
   "twoFactor.removeButton": "Remove...",
   "twoFactor.removeFailed": "Couldn't remove it.",

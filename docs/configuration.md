@@ -20,9 +20,10 @@ See `.env.example` for the full list.
 | `SMTP_*`, `SEND_EMAIL_HOOK_SECRET` | server               | Sign-in email; see [Email](self-hosting/email.md).                     |
 | `BOGEY_TRUST_PROXY`                | server               | `1` is the same as `network.trustProxy: true` in `bogey.config.ts`.    |
 | `BOGEY_UPDATE_CHECK`               | server               | `false` stops the release, security advisory and plugin update checks. |
+| `BOGEY_PASSKEY_HOST`               | server, browser      | The host passkeys work on; must match GoTrue's WebAuthn RP ID.         |
 
 Nothing is inlined into the browser bundle at build time: the server reads
-these when it starts and hands the browser only the URL and publishable key.
+these when it starts and hands the browser only the URL, publishable key and passkey host.
 One build works for every deployment.
 
 ## bogey.config.ts

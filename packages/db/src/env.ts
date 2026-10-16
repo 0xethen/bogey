@@ -3,6 +3,8 @@ import { createIsomorphicFn } from "@tanstack/react-start";
 export interface PublicEnv {
   supabaseUrl: string;
   supabaseKey: string;
+  // the host passkeys belong to (GoTrue's WebAuthn RP ID); unset hides passkeys
+  passkeyHost?: string;
 }
 
 declare global {
@@ -25,6 +27,7 @@ export const getPublicEnv = createIsomorphicFn()
   .server((): PublicEnv => ({
     supabaseUrl: required("SUPABASE_URL"),
     supabaseKey: required("SUPABASE_PUBLISHABLE_KEY"),
+    ...(process.env.BOGEY_PASSKEY_HOST ? { passkeyHost: process.env.BOGEY_PASSKEY_HOST } : {}),
   }))
   .client((): PublicEnv => {
     const env = window.__BOGEY_ENV__;

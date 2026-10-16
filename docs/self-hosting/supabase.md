@@ -64,16 +64,17 @@ Edit `.env`:
 
 Keep the upstream compose file untouched. Bogey's own settings are an overlay in this
 repo, [`deploy/supabase/docker-compose.bogey.yml`](../../deploy/supabase/docker-compose.bogey.yml).
-Copy it next to Supabase's compose file and add three values to Supabase's `.env`:
+Copy it next to Supabase's compose file and add these values to Supabase's `.env`:
 
 | Variable                 | Value                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------ |
 | `BOGEY_URL`              | where Bogey is served, reachable from the auth container, e.g. `https://hacks.example.com` |
 | `SEND_EMAIL_HOOK_SECRET` | the same `v1,whsec_...` value as in Bogey's `.env` (`bogey setup` makes one)               |
 | `BOGEY_HOSTS`            | every host Bogey is served on, comma-separated                                             |
+| `BOGEY_PASSKEY_HOST`     | the host passkeys work on (optional); give Bogey's `.env` the same value                   |
 
 It turns on the sign-up gate, the Send Email hook ([email.md](email.md)), six-digit codes,
-and the authenticator-app factor instance admins use ([auth.md](auth.md)). It's what
+and the authenticator-app and passkey factors ([auth.md](auth.md)). It's what
 this guide's `COMPOSE_FILE` setting points at.
 
 Start the stack with `sh run.sh start`, then apply the schema as `postgres`:

@@ -10,6 +10,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Passkeys work as a second factor next to an authenticator app (Account → Security), including for instance admins. The all-in-one turns them on for `BOGEY_HOST`; other setups set `BOGEY_PASSKEY_HOST` and GoTrue's WebAuthn settings (see docs/self-hosting/auth.md).
 - Org admins can delete an event from its new Manage → Danger zone page, which also has Unpublish. Deleting asks for the event's web address, removes its files and is kept in the org's audit log. Set `events: { uiDeletion: false }` in `bogey.config.ts` to turn it off.
 - The favicon comes from `brand.icons` in `bogey.config.ts`.
 - `bogey event list`, `bogey event visibility` and `bogey event delete` manage events from the CLI, and the interactive menu has an Events section. `bogey event delete` works even with `events.uiDeletion: false`.
@@ -19,6 +20,7 @@ advisory (see docs/contributing.md#security-releases). -->
 ### Upgrade notes
 
 - Adds the `limits_for_everyone` and `event_deletion` migrations; `bogey upgrade` applies them.
+- For passkeys, all-in-one: replace `compose.yml` with this release's. Self-hosted Supabase: copy the new `docker-compose.bogey.yml` overlay and set `BOGEY_PASSKEY_HOST` in both `.env` files.
 
 ## 2.1.2 (2026-10-15)
 

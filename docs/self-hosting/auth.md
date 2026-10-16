@@ -139,8 +139,8 @@ wherever the code lands, so nobody is locked out, but add every host anyway
 
 Signing in is email only, so whoever reads an admin's inbox could otherwise run the
 whole instance: every org, its settings, who may be an admin. So instance admins
-need an authenticator app (TOTP) too. By default, the database doesn't treat an
-admin as one until the session has passed a six-digit code (`aal2`), and it checks
+need a second factor too: an authenticator app (TOTP) or a passkey. By default, the
+database doesn't treat an admin as one until the session has passed it (`aal2`), and it checks
 that in `private.is_platform_admin()`, so every admin function and policy is
 covered, not just the Instance pages.
 
@@ -149,6 +149,23 @@ and the Instance pages send them to Account to set up an app (once) or enter a c
 (each sign-in). It needs TOTP enabled in GoTrue: on by default when self-hosting
 (`GOTRUE_MFA_TOTP_ENROLL_ENABLED` and `GOTRUE_MFA_TOTP_VERIFY_ENABLED`), and on in
 Bogey's `supabase/config.toml`. Supabase Cloud has it on.
+
+### Passkeys
+
+Anyone can add passkeys under Account → Security, next to an authenticator app, and use
+either to verify. Passkeys belong to one host: GoTrue's relying party ID. The all-in-one
+sets it to `BOGEY_HOST` (with `SITE_URL` as the allowed origin) and hands the same host
+to the app, so passkeys work at the main address and the option is hidden on other
+hostnames. Elsewhere, turn on GoTrue's WebAuthn factor and give the app the same host:
+
+| Where                          | Settings                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Self-hosted Supabase           | the overlay sets `GOTRUE_MFA_WEB_AUTHN_*` and `GOTRUE_WEBAUTHN_*` from `BOGEY_PASSKEY_HOST` in Supabase's `.env` |
+| `supabase start` (development) | `[auth.mfa.web_authn]` and `[auth.webauthn]` in `supabase/config.toml`, for `localhost`                          |
+| Bogey's `.env`                 | `BOGEY_PASSKEY_HOST`, the same host as GoTrue's RP ID; blank hides passkeys                                      |
+
+Supabase Cloud's WebAuthn factor depends on what your project's dashboard offers; leave
+`BOGEY_PASSKEY_HOST` blank if it isn't on.
 
 Turn the requirement off in Instance → Settings → Accounts, or, if no admin can
 get in to do that, from the CLI:
