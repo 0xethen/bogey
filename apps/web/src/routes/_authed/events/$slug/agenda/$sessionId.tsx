@@ -94,7 +94,9 @@ function CheckInCode({ sessionId }: { sessionId: string }) {
       id="check-in-code"
       title={t("session.codeTitle")}
       description={t("session.codeHelp")}
-      actions={
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border p-5">
+        <p className="font-mono text-5xl font-semibold tracking-[0.3em] tabular-nums">{code}</p>
         <Button
           size="sm"
           variant="outline"
@@ -108,9 +110,7 @@ function CheckInCode({ sessionId }: { sessionId: string }) {
         >
           {t("session.newCode")}
         </Button>
-      }
-    >
-      <p className="font-mono text-5xl font-semibold tracking-[0.3em] tabular-nums">{code}</p>
+      </div>
       <ErrorAlert error={rotate.error} title={t("session.replaceFailed")} />
     </Screen.Section>
   );
