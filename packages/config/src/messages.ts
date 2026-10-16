@@ -1637,7 +1637,7 @@ export const en = {
   "orgLimit.set": "Set a limit",
   "orgLimit.none": "No limit",
   "orgLimit.enterNumber": "Enter a number",
-  "orgLimit.using": "Using {used}",
+  "orgLimit.using": "using {used}",
   "orgLimit.limitOf": "{name} limit",
   "orgLimit.save": "Save limits",
   "orgLimit.loadFailed": "Couldn't load the limits",
@@ -1854,7 +1854,7 @@ export const en = {
   "newEvent.chooseKind": "Choose a kind",
   "newEvent.where": "Where it happens",
   "newEvent.whereHelp":
-    "Starts the event with settings that suit it. You can change any of them later.",
+    "Start an event with settings that suit it. You can change any of them later.",
   "newEvent.basics": "Basics",
   "newEvent.review": "Review",
   "newEvent.template": "Template: {name}",

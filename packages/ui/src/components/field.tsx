@@ -11,7 +11,7 @@ function FieldSet({ className, ...props }: FieldsetPrimitive.Root.Props) {
     <FieldsetPrimitive.Root
       data-slot="field-set"
       className={cn(
-        "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3",
+        "flex flex-col gap-(--field-set-gap) [--field-set-gap:--spacing(6)] has-[>[data-slot=checkbox-group]]:[--field-set-gap:--spacing(3)] has-[>[data-slot=radio-group]]:[--field-set-gap:--spacing(3)]",
         className,
       )}
       {...props}
@@ -141,8 +141,10 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
     <p
       data-slot="field-description"
       className={cn(
-        "text-left text-sm leading-normal font-normal whitespace-pre-line text-muted-fg group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5",
+        "text-left text-sm leading-normal font-normal whitespace-pre-line text-muted-fg group-has-data-horizontal/field:text-balance",
         "last:mt-0 nth-last-2:-mt-1",
+        // sit right under a legend, cancelling its margin and the fieldset gap
+        "[[data-variant=legend]+&]:mt-[calc(-0.5rem-var(--field-set-gap,0px))]!",
         "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
         className,
       )}
