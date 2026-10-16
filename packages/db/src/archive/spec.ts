@@ -143,7 +143,12 @@ export const ARCHIVE_TABLES: readonly TableSpec[] = [
   }),
   table("announcement_audiences", {
     id: "id",
-    refs: { announcement_id: "announcements", division_id: "divisions", team_id: "teams" },
+    refs: {
+      announcement_id: "announcements",
+      division_id: "divisions",
+      team_id: "teams",
+      session_id: "event_sessions",
+    },
     people: true,
   }),
   table("session_hosts", { refs: { session_id: "event_sessions", user_id: "user" }, people: true }),

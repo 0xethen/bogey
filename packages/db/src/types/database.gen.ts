@@ -59,6 +59,7 @@ export type Database = {
           event_id: string;
           id: string;
           role: Database["public"]["Enums"]["event_role"] | null;
+          session_id: string | null;
           team_id: string | null;
         };
         ComputedFields: never;
@@ -68,6 +69,7 @@ export type Database = {
           event_id: string;
           id?: string;
           role?: Database["public"]["Enums"]["event_role"] | null;
+          session_id?: string | null;
           team_id?: string | null;
         };
         Update: {
@@ -76,6 +78,7 @@ export type Database = {
           event_id?: string;
           id?: string;
           role?: Database["public"]["Enums"]["event_role"] | null;
+          session_id?: string | null;
           team_id?: string | null;
         };
         Relationships: [
@@ -91,6 +94,13 @@ export type Database = {
             columns: ["event_id", "division_id"];
             isOneToOne: false;
             referencedRelation: "divisions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "announcement_audiences_event_id_session_id_fkey";
+            columns: ["event_id", "session_id"];
+            isOneToOne: false;
+            referencedRelation: "event_sessions";
             referencedColumns: ["event_id", "id"];
           },
           {
@@ -3998,6 +4008,7 @@ export type Database = {
           p_notify?: boolean;
           p_publish_at?: string;
           p_roles?: Database["public"]["Enums"]["event_role"][];
+          p_sessions?: string[];
           p_severity: Database["public"]["Enums"]["announcement_severity"];
           p_teams?: string[];
           p_title: string;

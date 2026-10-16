@@ -12,7 +12,8 @@ type EventRole = Enums<"event_role">;
 export type AnnouncementTarget =
   | { kind: "role"; role: EventRole; label: string }
   | { kind: "division"; id: string; label: string }
-  | { kind: "team"; id: string; label: string };
+  | { kind: "team"; id: string; label: string }
+  | { kind: "session"; id: string; label: string };
 
 export interface Announcement extends Omit<Tables<"announcements">, "attachments"> {
   attachments: MessageAttachment[];
@@ -45,7 +46,9 @@ export const eventAnnouncementsFn = createServerFn({ method: "GET" })
 
     let query = supabase
       .from("announcements")
-      .select("*, announcement_audiences(role, division_id, team_id, divisions(name), teams(name))")
+      .select(
+        "*, announcement_audiences(role, division_id, team_id, session_id, divisions(name), teams(name), event_sessions(name))",
+      )
       .eq("event_id", data.eventId)
       .is("deleted_at", null)
       .order("publish_at", { ascending: false })
@@ -88,6 +91,10 @@ export const eventAnnouncementsFn = createServerFn({ method: "GET" })
           }
           if (target.team_id) {
             return [{ kind: "team", id: target.team_id, label: target.teams?.name ?? "Team" }];
+          }
+          if (target.session_id) {
+            const label = target.event_sessions?.name ?? "Session";
+            return [{ kind: "session", id: target.session_id, label }];
           }
           return [];
         }),
@@ -148,14 +155,16 @@ export function parseAudience(keys: Tuple<string>) {
   const roles: EventRole[] = [];
   const divisions: string[] = [];
   const teams: string[] = [];
+  const sessions: string[] = [];
   for (const key of keys) {
     const [kind, value] = key.split(":", 2);
     if (kind === "role") roles.push(requireOneOf(value, ROLES, "Audience"));
     else if (kind === "division") divisions.push(requireId(value, "Division"));
     else if (kind === "team") teams.push(requireId(value, "Team"));
-    else throw new Error("Audience must be a role, division or team.");
+    else if (kind === "session") sessions.push(requireId(value, "Session"));
+    else throw new Error("Audience must be a role, division, team or session.");
   }
-  return { roles, divisions, teams };
+  return { roles, divisions, teams, sessions };
 }
 
 export const postAnnouncementFn = createServerFn({ method: "POST" })
@@ -183,7 +192,7 @@ export const postAnnouncementFn = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<DbResult<string>> => {
-    const { roles, divisions, teams } = parseAudience(data.audience);
+    const { roles, divisions, teams, sessions } = parseAudience(data.audience);
     const supabase = createServerClient();
     const { data: id, error } = await supabase.rpc("post_announcement", {
       p_event: data.eventId,
@@ -194,6 +203,7 @@ export const postAnnouncementFn = createServerFn({ method: "POST" })
       p_roles: roles,
       p_divisions: divisions,
       p_teams: teams,
+      ...(sessions.length ? { p_sessions: sessions } : {}),
       ...(data.anonymous ? { p_anonymous: true } : {}),
       ...(data.notify ? { p_notify: true } : {}),
       ...(data.id ? { p_id: data.id } : {}),
@@ -215,19 +225,33 @@ export const postAnnouncementFn = createServerFn({ method: "POST" })
 export interface AudienceChoices {
   divisions: { id: string; name: string }[];
   teams: { id: string; name: string }[];
+  /** Sessions in choose-one slots, where people sign up or are placed. */
+  sessions: { id: string; name: string }[];
 }
 
 export const audienceChoicesFn = createServerFn({ method: "GET" })
   .validator((eventId: unknown) => requireId(eventId, "eventId"))
   .handler(async ({ data: eventId }): Promise<DbResult<AudienceChoices>> => {
     const supabase = createServerClient();
-    const [divisions, teams] = await Promise.all([
+    const [divisions, teams, sessions] = await Promise.all([
       supabase.from("divisions").select("id, name").eq("event_id", eventId).order("sort"),
       supabase.from("teams").select("id, name").eq("event_id", eventId).order("name"),
+      supabase
+        .from("event_sessions")
+        .select("id, name, session_slots!inner(kind, starts_at)")
+        .eq("event_id", eventId)
+        .eq("session_slots.kind", "choose")
+        .order("name"),
     ]);
-    const failure = divisions.error ?? teams.error;
-    if (failure) return toFailure(failure, "loading divisions and teams");
-    return ok({ divisions: divisions.data ?? [], teams: teams.data ?? [] });
+    const failure = divisions.error ?? teams.error ?? sessions.error;
+    if (failure) return toFailure(failure, "loading divisions, teams and sessions");
+    return ok({
+      divisions: divisions.data ?? [],
+      teams: teams.data ?? [],
+      sessions: (sessions.data ?? [])
+        .sort((a, b) => a.session_slots.starts_at.localeCompare(b.session_slots.starts_at))
+        .map(({ id, name }) => ({ id, name })),
+    });
   });
 
 export const audienceChoicesQueryOptions = (eventId: string) =>

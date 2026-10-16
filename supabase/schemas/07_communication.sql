@@ -56,8 +56,9 @@ create table public.announcement_audiences (
   role public.event_role,
   division_id uuid,
   team_id uuid,
-  check (num_nonnulls(role, division_id, team_id) = 1),
-  unique nulls not distinct (announcement_id, role, division_id, team_id),
+  session_id uuid,
+  check (num_nonnulls(role, division_id, team_id, session_id) = 1),
+  unique nulls not distinct (announcement_id, role, division_id, team_id, session_id),
   foreign key (event_id, announcement_id) references public.announcements (event_id, id) on delete cascade,
   foreign key (event_id, division_id) references public.divisions (event_id, id) on delete cascade,
   foreign key (event_id, team_id) references public.teams (event_id, id) on delete cascade
@@ -81,6 +82,13 @@ as $$
           where m.event_id = p_event and m.user_id = (select auth.uid()) and m.status = 'active'
           union
           select t.division_id from public.teams t where t.id = private.my_team(p_event)
+        )
+        or a.session_id in (
+          select g.session_id from public.session_signups g
+          where g.event_id = p_event and g.user_id = (select auth.uid())
+          union
+          select h.session_id from public.session_hosts h
+          where h.event_id = p_event and h.user_id = (select auth.uid())
         )
       )
   );
@@ -116,7 +124,13 @@ begin
         where x.announcement_id = v_a.id and x.division_id = m.division_id)
       or exists (select 1 from public.announcement_audiences x
         join public.team_members tm on tm.team_id = x.team_id
-        where x.announcement_id = v_a.id and tm.user_id = m.user_id));
+        where x.announcement_id = v_a.id and tm.user_id = m.user_id)
+      or exists (select 1 from public.announcement_audiences x
+        where x.announcement_id = v_a.id and x.session_id is not null
+          and (exists (select 1 from public.session_signups g
+                where g.session_id = x.session_id and g.user_id = m.user_id)
+            or exists (select 1 from public.session_hosts h
+                where h.session_id = x.session_id and h.user_id = m.user_id))));
   return private.notify(coalesce(v_users, '{}'), v_a.event_id, 'announcement', v_a.title,
     left(v_a.body_md, 2000), '/events/' || v_slug || '/messages', '{}', true);
 end;
@@ -172,7 +186,8 @@ create function public.post_announcement(
   p_anonymous boolean default false,
   p_notify boolean default false,
   p_id uuid default null,
-  p_attachments jsonb default '[]'
+  p_attachments jsonb default '[]',
+  p_sessions uuid[] default '{}'
 )
 returns uuid
 language plpgsql
@@ -182,7 +197,7 @@ as $$
 declare
   v_id uuid := coalesce(p_id, gen_random_uuid());
   v_everyone boolean := coalesce(cardinality(p_roles), 0) + coalesce(cardinality(p_divisions), 0)
-    + coalesce(cardinality(p_teams), 0) = 0;
+    + coalesce(cardinality(p_teams), 0) + coalesce(cardinality(p_sessions), 0) = 0;
 begin
   if not private.may_announce(p_event) then
     raise exception 'Only organizers can post announcements.' using errcode = '42501';
@@ -212,6 +227,8 @@ begin
   select distinct p_event, v_id, d from unnest(p_divisions) d;
   insert into public.announcement_audiences (event_id, announcement_id, team_id)
   select distinct p_event, v_id, t from unnest(p_teams) t;
+  insert into public.announcement_audiences (event_id, announcement_id, session_id)
+  select distinct p_event, v_id, x from unnest(p_sessions) x;
   perform private.audit(p_event, 'announcement.posted', 'announcement', v_id,
     jsonb_build_object('title', trim(p_title), 'everyone', v_everyone,
       'scheduled', p_publish_at is not null and p_publish_at > now(), 'anonymous', p_anonymous,
@@ -222,7 +239,7 @@ begin
   return v_id;
 end;
 $$;
-grant execute on function public.post_announcement(uuid, text, text, public.announcement_severity, timestamptz, public.event_role[], uuid[], uuid[], boolean, boolean, uuid, jsonb) to authenticated;
+grant execute on function public.post_announcement(uuid, text, text, public.announcement_severity, timestamptz, public.event_role[], uuid[], uuid[], boolean, boolean, uuid, jsonb, uuid[]) to authenticated;
 
 create table public.announcement_reads (
   announcement_id uuid not null references public.announcements on delete cascade,
@@ -483,6 +500,7 @@ create index announcements_author_id_fk_idx on public.announcements (author_id);
 create index announcement_audiences_event_id_announcement_id_fk_idx on public.announcement_audiences (event_id, announcement_id);
 create index announcement_audiences_event_id_division_id_fk_idx on public.announcement_audiences (event_id, division_id);
 create index announcement_audiences_event_id_team_id_fk_idx on public.announcement_audiences (event_id, team_id);
+create index announcement_audiences_event_id_session_id_fk_idx on public.announcement_audiences (event_id, session_id);
 create index clarification_messages_author_id_fk_idx on public.clarification_messages (author_id);
 create index clarifications_asked_by_fk_idx on public.clarifications (asked_by);
 

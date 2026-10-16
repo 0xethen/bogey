@@ -333,10 +333,11 @@ teams of more than one). Read through RPCs that check that and the caller; nobod
   `deleted_at?`. Posted through `post_announcement`, which writes the audience
   rows in the same transaction and audits it.
 - **`announcement_audiences`**: who a post with `everyone = false` goes to. Each
-  row is one `role`, `division_id` or `team_id`. A participant matches through
-  their role, their team, their own division or their team's division.
-  Organizers always see every post. Only they can read these rows. Deleting a
-  targeted team or division leaves the post with fewer readers, never more.
+  row is one `role`, `division_id`, `team_id` or `session_id`. A participant matches through
+  their role, their team, their own division or their team's division; a session matches the
+  people signed up for it and its hosts. Organizers always see every post. Only they can read
+  these rows. Deleting a targeted team, division or session leaves the post with fewer readers,
+  never more.
 - **`announcement_reads`**: `(announcement_id, user_id)`, `read_at`.
 - **`clarifications`** (conversations; "Messages" in the app):
   - Columns: `event_id`, `team_id?`, `asked_by`, `topic`

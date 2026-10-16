@@ -106,6 +106,9 @@ create table public.session_codes (
   foreign key (event_id, session_id) references public.event_sessions (event_id, id) on delete cascade
 );
 
+alter table public.announcement_audiences add foreign key (event_id, session_id)
+  references public.event_sessions (event_id, id) on delete cascade;
+
 create function private.hosts_session(p_session uuid)
 returns boolean
 language sql

@@ -385,8 +385,9 @@ while judging is blind.
 
 ## 8. Talking to participants
 
-- **Announcements** go to everyone, or to any mix of roles, divisions and
-  teams, now or at a scheduled time, and show up live, as a feed like a chat
+- **Announcements** go to everyone, or to any mix of roles, divisions,
+  teams and sessions (the people signed up for or placed in a choose-one session,
+  and its hosts; a workshop, not lunch), now or at a scheduled time, and show up live, as a feed like a chat
   channel. The announcements channel in Messages has its own box at the bottom
   (a title, the message, files and a tone) that posts to everyone right away;
   **New announcement...** (on the event home, the announcements page, Manage

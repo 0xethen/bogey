@@ -10,6 +10,12 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Announcements can go to the people in a session: everyone signed up for or placed in a session of a choose-one slot (a workshop, not lunch), plus its hosts. Pick it under Sessions in the composer's Audience.
+
+### Upgrade notes
+
+- Adds the `session_announcements` migration; `bogey upgrade` applies it.
+
 ## 2.1.3 (2026-10-16)
 
 - Passkeys work as a second factor next to an authenticator app (Account → Security), including for instance admins. The all-in-one turns them on for `BOGEY_HOST`; other setups set `BOGEY_PASSKEY_HOST` and GoTrue's WebAuthn settings (see docs/self-hosting/auth.md).

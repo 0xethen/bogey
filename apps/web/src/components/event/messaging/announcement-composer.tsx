@@ -313,6 +313,11 @@ function AudienceOptions({
       label: team.name,
       group: t("compose.teams"),
     })),
+    ...(choices.data?.sessions ?? []).map((session) => ({
+      value: `session:${session.id}`,
+      label: session.name,
+      group: t("compose.sessions"),
+    })),
   ];
   return children(options, choices.isPending ? t("common.loading") : t("compose.noMatch"));
 }
