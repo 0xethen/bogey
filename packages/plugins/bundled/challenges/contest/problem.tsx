@@ -54,8 +54,11 @@ import {
   isPreviewSupported,
   runClientPreview,
   sameOutput,
+  userTrace,
   type PreviewResult,
 } from "../preview-runner.ts";
+import type { EditorLanguage } from "@bogey/ui/components/code-editor";
+import { Checkbox } from "@bogey/ui/components/checkbox";
 import { TestResults } from "./results.tsx";
 import {
   allowedLanguages,
@@ -105,6 +108,7 @@ export function Workspace({
   problem: Problem;
 }) {
   const [info, setInfo] = useState(false);
+  const jury = useCan("challenges.jury");
   return (
     <Screen
       title={problem.title}
@@ -131,14 +135,25 @@ export function Workspace({
             <IconArrowLeft />
             Problems
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            nativeButton={false}
-            render={<Link to="/scoreboard" />}
-          >
-            Scoreboard
-          </Button>
+          {jury ? (
+            <Button
+              size="sm"
+              variant="outline"
+              nativeButton={false}
+              render={<Link to="/jury" splat={problem.slug} />}
+            >
+              Jury view
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              nativeButton={false}
+              render={<Link to="/scoreboard" />}
+            >
+              Scoreboard
+            </Button>
+          )}
         </div>
       }
     >
@@ -209,11 +224,7 @@ function ProblemInfo({
               {settings.scoring === "icpc"
                 ? `Solving counts once. Each rejected try before your first accepted one adds ${settings.penaltyMinutes} minutes to your time${settings.countCompileErrors ? ", compile errors included" : ""}.`
                 : settings.scoring === "golf"
-                  ? `Code golf: your shortest accepted solution counts, measured in ${MEASURE_NOUN[settings.golfMeasure]}. ${
-                      settings.golfPoints === "rank"
-                        ? `The shortest earns the problem's points; each place below loses ${settings.golfRankStep}.`
-                        : "The shortest earns the problem's points; yours earns that times shortest ÷ yours."
-                    } Equal lengths share a place.`
+                  ? `Code golf: your shortest accepted solution counts, measured in ${MEASURE_NOUN[settings.golfMeasure]}. ${golfRule(settings, problem)}`
                   : "Each test that passes adds to the problem's points; your best solution counts."}
             </p>
             <p>
@@ -235,6 +246,23 @@ function ProblemInfo({
       </DrawerContent>
     </Drawer>
   );
+}
+
+function golfRule(settings: Settings, problem: Problem): string {
+  switch (settings.golfPoints) {
+    case "length":
+      return "Teams are ranked by problems solved, then by their total length: the fewer, the better.";
+    case "brackets": {
+      const ranges = [...problem.golf_brackets].sort((a, b) => a.max - b.max);
+      return ranges.length
+        ? `Points by length: ${ranges.map((range) => `up to ${range.max} earns ${range.points}`).join(", ")}; longer earns 0.`
+        : "This problem's points by length aren't set yet.";
+    }
+    case "rank":
+      return `The shortest earns the problem's points; each place below loses ${settings.golfRankStep}. Equal lengths share a place.`;
+    default:
+      return "The shortest earns the problem's points; yours earns that times shortest ÷ yours.";
+  }
 }
 
 function Statement({ eventId, problem }: { eventId: string; problem: Problem }) {
@@ -331,6 +359,7 @@ type InputChoice = "custom" | `sample-${number}`;
 interface RunOutcome {
   result: PreviewResult;
   expected: string | null;
+  language: EditorLanguage;
 }
 
 function useVerdictSignals(
@@ -430,7 +459,7 @@ function Editor({
     setAll(null);
     const result = await runClientPreview(editor, source, stdin, limit, controller.signal);
     stopper.current = null;
-    setRun({ result, expected: current ? current.answer : null });
+    setRun({ result, expected: current ? current.answer : null, language: editor });
     setRunning(false);
   };
 
@@ -623,7 +652,8 @@ function Editor({
 }
 
 function RunOutput({ outcome, separate }: { outcome: RunOutcome; separate: boolean }) {
-  const { result, expected } = outcome;
+  const { result, expected, language } = outcome;
+  const [full, setFull] = useState(false);
   if (result.status === "error") {
     return <p className="text-sm text-destructive">{result.message}</p>;
   }
@@ -634,6 +664,15 @@ function RunOutput({ outcome, separate }: { outcome: RunOutcome; separate: boole
     return <p className="text-sm text-muted-fg">Stopped.</p>;
   }
   const matches = expected !== null && result.exitCode === 0 && sameOutput(result.stdout, expected);
+  const short = userTrace(result.stderr, language);
+  const trimmed = short !== result.stderr;
+  const stderr = full ? result.stderr : short;
+  const fullToggle = trimmed && (
+    <label className="flex items-center gap-2 text-xs text-muted-fg">
+      <Checkbox checked={full} onCheckedChange={(checked) => setFull(checked === true)} />
+      Show the runner's lines too, in case the problem is the runner
+    </label>
+  );
   return (
     <div className="flex flex-col gap-3">
       <p className="flex flex-wrap items-center gap-2 text-sm text-muted-fg">
@@ -656,9 +695,10 @@ function RunOutput({ outcome, separate }: { outcome: RunOutcome; separate: boole
               readOnly
               rows={6}
               className="font-mono text-xs"
-              value={result.stderr}
+              value={stderr}
               placeholder="Nothing on standard error."
             />
+            {fullToggle}
           </Field>
         </div>
       ) : (
@@ -670,11 +710,12 @@ function RunOutput({ outcome, separate }: { outcome: RunOutcome; separate: boole
             className="max-h-60 min-h-24 overflow-auto rounded-2xl bg-input/50 px-3 py-3 font-mono text-xs whitespace-pre-wrap"
           >
             {result.stdout}
-            {result.stderr && <span className="text-destructive">{result.stderr}</span>}
+            {stderr && <span className="text-destructive">{stderr}</span>}
             {!result.stdout && !result.stderr && (
               <span className="text-muted-fg">Nothing was printed.</span>
             )}
           </pre>
+          {fullToggle}
         </Field>
       )}
     </div>
@@ -743,11 +784,17 @@ function Tries({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="flex flex-col gap-3 pb-4">
-                  {attempt.verdict === "CE" && attempt.compileOutput && (
-                    <pre className="max-h-48 overflow-auto rounded-xl bg-muted/50 p-2 font-mono text-xs whitespace-pre-wrap">
-                      {attempt.compileOutput}
-                    </pre>
-                  )}
+                  {attempt.verdict === "CE" &&
+                    attempt.compileOutput &&
+                    (settings.showErrors ? (
+                      <pre className="max-h-48 overflow-auto rounded-xl bg-muted/50 p-2 font-mono text-xs whitespace-pre-wrap">
+                        {attempt.compileOutput}
+                      </pre>
+                    ) : (
+                      <p className="text-sm text-muted-fg">
+                        It didn't compile. This contest doesn't show error messages.
+                      </p>
+                    ))}
                   <TestResults solutionId={attempt.id} judged={attempt.verdict !== null} />
                   <div>
                     <AskAbout

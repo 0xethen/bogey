@@ -81,6 +81,7 @@ import {
   idProblem,
   ID_KINDS,
   Link,
+  MEASURE_NOUN,
   nextId,
   points,
   TONE_CLASS,
@@ -611,6 +612,31 @@ function problemSchema(settings: Settings, pdfPath: string | null) {
         .max(1000)
         .meta({ label: "Position" })
         .describe("Lower comes first. Easier to drag them into place on the Jury page."),
+      golfBrackets: z
+        .array(
+          z.object({
+            max: z
+              .int("A whole number")
+              .min(1, "At least 1")
+              .max(1_000_000)
+              .meta({ label: "Up to" }),
+            points: z.number("A number").min(0, "0 or more").max(100_000).meta({ label: "Points" }),
+          }),
+        )
+        .max(20, "At most 20 ranges")
+        .superRefine((ranges, ctx) => {
+          const seen = new Set<number>();
+          ranges.forEach((range, index) => {
+            if (seen.has(range.max)) {
+              ctx.addIssue({
+                code: "custom",
+                path: [index, "max"],
+                message: "Two ranges end here",
+              });
+            }
+            seen.add(range.max);
+          });
+        }),
       statementKind: z.enum(["text", "pdf"]).meta({ label: "Statement" }),
       statement: z.string().max(100_000).meta({
         label: "Statement",
@@ -638,6 +664,7 @@ function valuesOf(problem: Problem | undefined, next: string): ProblemValues {
     title: problem?.title ?? "",
     difficulty: problem?.difficulty ?? "none",
     points: problem?.points ?? 100,
+    golfBrackets: problem?.golf_brackets ?? [],
     timeLimitMs: problem?.time_limit_ms ?? 2000,
     memoryLimitMb: problem?.memory_limit_mb ?? 256,
     outputLimitKb: problem?.output_limit_kb ?? 8192,
@@ -685,10 +712,22 @@ export function ProblemEditor({
       title={problem ? `${problem.label}. ${problem.title}` : "New problem"}
       width="wide"
       actions={
-        <Button size="sm" variant="ghost" nativeButton={false} render={<Link to="/jury" />}>
-          <IconArrowLeft />
-          Jury
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="ghost" nativeButton={false} render={<Link to="/jury" />}>
+            <IconArrowLeft />
+            Jury
+          </Button>
+          {problem && (
+            <Button
+              size="sm"
+              variant="outline"
+              nativeButton={false}
+              render={<Link to="/problem" splat={problem.slug} />}
+            >
+              Participant view
+            </Button>
+          )}
+        </div>
       }
     >
       <ProblemForm
@@ -743,6 +782,7 @@ function ProblemForm({
           title: value.title.trim(),
           difficulty: value.difficulty === "none" ? null : value.difficulty,
           points: value.points,
+          golf_brackets: [...value.golfBrackets].sort((a, b) => a.max - b.max),
           time_limit_ms: value.timeLimitMs,
           memory_limit_mb: value.memoryLimitMb,
           output_limit_kb: value.outputLimitKb,
@@ -799,10 +839,67 @@ function ProblemForm({
                 </field.Field>
               )}
             </form.Field>
-            <form.Field name="points">
-              {(field) => <field.NumberField min={0} max={100_000} />}
-            </form.Field>
+            {!(
+              settings.scoring === "golf" &&
+              settings.golfPoints !== "ratio" &&
+              settings.golfPoints !== "rank"
+            ) && (
+              <form.Field name="points">
+                {(field) => <field.NumberField min={0} max={100_000} />}
+              </form.Field>
+            )}
           </div>
+          {settings.scoring === "golf" && settings.golfPoints === "brackets" && (
+            <form.Field name="golfBrackets">
+              {(list) => (
+                <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4">
+                  <legend className="px-1 text-sm font-medium">Points by length</legend>
+                  <p className="text-xs text-muted-fg">
+                    A solution earns the points of the smallest range it fits, counted in{" "}
+                    {MEASURE_NOUN[settings.golfMeasure]}. Longer than every range earns 0.
+                  </p>
+                  {list.value.map((_range, index) => (
+                    <div key={index} className="flex items-end gap-2">
+                      <form.Field name={`golfBrackets[${index}].max`}>
+                        {(field) => <field.NumberField min={1} max={1_000_000} />}
+                      </form.Field>
+                      <form.Field name={`golfBrackets[${index}].points`}>
+                        {(field) => <field.NumberField min={0} max={100_000} />}
+                      </form.Field>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        className="mb-1 text-destructive"
+                        aria-label="Remove this range"
+                        title="Remove this range"
+                        onClick={() => list.removeValue(index)}
+                      >
+                        <IconTrash />
+                      </Button>
+                    </div>
+                  ))}
+                  <div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const last = list.value.at(-1);
+                        list.pushValue({
+                          max: last ? last.max * 2 : 100,
+                          points: last ? Math.max(0, Math.round(last.points / 2)) : 100,
+                        });
+                      }}
+                    >
+                      <IconPlus />
+                      Add a range
+                    </Button>
+                  </div>
+                </fieldset>
+              )}
+            </form.Field>
+          )}
           <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4">
             <legend className="px-1 text-sm font-medium">Limits for this problem</legend>
             <div className="grid gap-4 sm:grid-cols-3">

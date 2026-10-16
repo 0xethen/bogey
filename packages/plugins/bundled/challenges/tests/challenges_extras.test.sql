@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(21);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, kind, visibility, team_size_max) values
@@ -53,7 +53,17 @@ select tests.u('cup'), id, 'done', 'AC', now() from s;
 
 select tests.as_anon();
 select is((public.challenges_scoreboard(tests.u('cup')) -> 'rows' -> 0 ->> 'team_name'), 'amy', 'golf: the shortest solution ranks first');
+select is((public.challenges_scoreboard(tests.u('cup')) -> 'rows' -> 1 ->> 'total_length')::integer, 40, 'by default it''s scored by total length');
+select is(public.challenges_scoreboard(tests.u('cup')) ->> 'golfPoints', 'length', 'and the board says so');
+reset role;
+update public.settings set value = '{"scoring":"golf","golfPoints":"ratio"}' where namespace = 'plugin.challenges' and event_id = tests.u('cup');
+select tests.as_anon();
 select is((public.challenges_scoreboard(tests.u('cup')) -> 'rows' -> 1 ->> 'score')::numeric, 25.00, 'by ratio the longer one gets points x shortest / yours');
+reset role;
+update public.challenges_problems set golf_brackets = '[{"max":20,"points":100},{"max":50,"points":40}]' where id = tests.u('pa');
+update public.settings set value = '{"scoring":"golf","golfPoints":"brackets"}' where namespace = 'plugin.challenges' and event_id = tests.u('cup');
+select tests.as_anon();
+select is((public.challenges_scoreboard(tests.u('cup')) -> 'rows' -> 1 ->> 'score')::numeric, 40::numeric, 'by ranges a solution earns the smallest range it fits');
 reset role;
 update public.settings set value = '{"scoring":"golf","golfPoints":"rank","golfRankStep":30}' where namespace = 'plugin.challenges' and event_id = tests.u('cup');
 select tests.as_anon();

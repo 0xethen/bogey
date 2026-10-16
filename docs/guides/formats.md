@@ -50,8 +50,9 @@ their groups and checkers.
 
 ## Code golf
 
-The contest plugin with **code golf** scoring: the shortest accepted solution earns the most. Choose how length is counted and whether
-points are in proportion or by place.
+The contest plugin with **code golf** scoring: the shortest accepted solution earns the most. Choose how length is counted and the
+**Score**: total length (the default: problems solved, then the fewest characters, and the leaderboard shows the length), length
+ranges (points for each range of lengths, set on each problem), or points in proportion or by place.
 
 ## CTF
 

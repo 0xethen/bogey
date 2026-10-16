@@ -31,6 +31,9 @@ type DifficultyRow = {
   sort: number;
 };
 
+/** Code golf by ranges: a solution up to `max` long scores `points` (the smallest range it fits). */
+export type GolfBracket = { max: number; points: number };
+
 type ProblemRow = {
   id: string;
   event_id: string;
@@ -46,6 +49,7 @@ type ProblemRow = {
   checker_tolerance: number | null;
   checker_language: string | null;
   points: number;
+  golf_brackets: GolfBracket[];
   visible: boolean;
   sort: number;
   difficulty: Difficulty | null;
@@ -163,6 +167,7 @@ type ProblemInsert = Pick<ProblemRow, "event_id" | "label" | "slug" | "title"> &
       | "memory_limit_mb"
       | "output_limit_kb"
       | "points"
+      | "golf_brackets"
       | "visible"
       | "sort"
       | "difficulty"
@@ -309,13 +314,14 @@ export type Problem = Pick<
   | "memory_limit_mb"
   | "output_limit_kb"
   | "points"
+  | "golf_brackets"
   | "difficulty"
   | "visible"
   | "sort"
 >;
 
 const PROBLEM_COLUMNS =
-  "id, label, slug, title, statement_md, statement_pdf_path, time_limit_ms, memory_limit_mb, output_limit_kb, points, difficulty, visible, sort";
+  "id, label, slug, title, statement_md, statement_pdf_path, time_limit_ms, memory_limit_mb, output_limit_kb, points, golf_brackets, difficulty, visible, sort";
 
 export const problemsQueryOptions = (eventId: string) =>
   queryOptions({
@@ -617,6 +623,7 @@ const cell = z.object({
 const scoreboardSchema = z.object({
   scoring: z.enum(["icpc", "ioi", "golf"]),
   measure: z.enum(["characters", "bytes", "characters-no-space"]).optional(),
+  golfPoints: z.enum(["length", "brackets", "ratio", "rank"]).optional(),
   frozen: z.boolean(),
   freezeAt: z.string().nullable(),
   startedAt: z.string().nullable(),

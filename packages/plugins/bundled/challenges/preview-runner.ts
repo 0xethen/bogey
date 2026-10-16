@@ -73,10 +73,18 @@ function workerMain(scope: WorkerScope): void {
       },
     });
     python.globals.set("__bogey_stdin", stdin);
-    await python.runPythonAsync("import sys, io\nsys.stdin = io.StringIO(__bogey_stdin)");
+    python.globals.set("__bogey_source", source);
     let exitCode = 0;
     try {
-      await python.runPythonAsync(source);
+      // a fresh namespace each run, so names from an earlier version of the code don't linger
+      await python.runPythonAsync(
+        [
+          "import sys, io, linecache",
+          "sys.stdin = io.StringIO(__bogey_stdin)",
+          'linecache.cache["<main>"] = (len(__bogey_source), None, __bogey_source.splitlines(True), "<main>")',
+          'exec(compile(__bogey_source, "<main>", "exec"), {"__name__": "__main__"})',
+        ].join("\n"),
+      );
     } catch (error) {
       exitCode = 1;
       stderr += error instanceof Error ? error.message : String(error);
@@ -350,6 +358,35 @@ export async function runClientPreview(
     const request: RunRequest = { id, language, source, stdin };
     element.contentWindow?.postMessage(request, "*");
   });
+}
+
+// the frames that belong to the participant's code, without the runner's own
+export function userTrace(stderr: string, language: EditorLanguage): string {
+  if (language === "python") {
+    const lines = stderr.split("\n");
+    const start = lines.findIndex((line) => line.startsWith("Traceback (most recent call last):"));
+    if (start === -1) return stderr;
+    const kept = lines.slice(0, start + 1);
+    let mine = false;
+    for (const line of lines.slice(start + 1)) {
+      if (line.startsWith("  File ")) mine = line.includes('"<main>"');
+      else if (!line.startsWith("    ") && !line.startsWith("  ")) mine = true;
+      if (mine) kept.push(line);
+    }
+    return kept.join("\n");
+  }
+  if (language === "javascript") {
+    const lines = stderr.split("\n");
+    const first = lines.findIndex((line) => /^\s+at /.test(line));
+    if (first === -1) return stderr;
+    const frames = lines.slice(first).flatMap((line) => {
+      const at = /<anonymous>:(\d+):(\d+)/.exec(line);
+      // new Function adds two lines and the async wrapper a third
+      return at ? [`    at line ${Number(at[1]) - 3}, column ${at[2]}`] : [];
+    });
+    return [...lines.slice(0, first), ...frames].join("\n");
+  }
+  return stderr;
 }
 
 export function sameOutput(actual: string, expected: string): boolean {

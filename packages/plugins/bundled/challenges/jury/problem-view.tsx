@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useCan } from "@bogey/db/permissions";
 import type { PluginRouteContext } from "@bogey/plugins/runtime";
@@ -7,25 +6,24 @@ import { Screen } from "@bogey/ui/components/screen";
 import { JuryHome, ProblemEditor } from "./jury.tsx";
 import { Workspace } from "../contest/problem.tsx";
 import { Link, problemSlug, useProblems, type Settings } from "../shared.tsx";
-import { ViewTabs, type View } from "../contest/view-tabs.tsx";
 
 type Context = PluginRouteContext<Settings>;
 
 export function ProblemPage(context: Context) {
-  return <ProblemRoute {...context} initial="public" />;
+  return <ProblemRoute {...context} view="public" />;
 }
 
 export function JuryPage(context: Context) {
   if (!problemSlug(context.splat)) {
     return <JuryHome eventId={context.eventId} settings={context.settings} />;
   }
-  return <ProblemRoute {...context} initial="jury" />;
+  return <ProblemRoute {...context} view="jury" />;
 }
 
-function ProblemRoute({ eventId, settings, splat, initial }: Context & { initial: View }) {
+// /problem/<slug> is what participants see; /jury/<slug> edits it. Each links to the other.
+function ProblemRoute({ eventId, settings, splat, view }: Context & { view: "public" | "jury" }) {
   const jury = useCan("challenges.jury");
   const problems = useProblems(eventId, settings.problemOrder);
-  const [view, setView] = useState<View>(jury ? initial : "public");
   const slug = problemSlug(splat);
   const creating = jury && slug === "new";
   const problem = problems.data?.find((each) => each.slug === slug);
@@ -47,20 +45,15 @@ function ProblemRoute({ eventId, settings, splat, initial }: Context & { initial
     );
   }
 
+  if (problem && (view === "public" || !jury)) {
+    return <Workspace key={problem.id} eventId={eventId} settings={settings} problem={problem} />;
+  }
   return (
-    <ViewTabs elevated={jury && !creating} view={creating ? "jury" : view} onViewChange={setView}>
-      {(current) =>
-        current === "public" && problem ? (
-          <Workspace key={problem.id} eventId={eventId} settings={settings} problem={problem} />
-        ) : (
-          <ProblemEditor
-            key={problem?.id ?? "new"}
-            eventId={eventId}
-            settings={settings}
-            problem={problem}
-          />
-        )
-      }
-    </ViewTabs>
+    <ProblemEditor
+      key={problem?.id ?? "new"}
+      eventId={eventId}
+      settings={settings}
+      problem={problem}
+    />
   );
 }

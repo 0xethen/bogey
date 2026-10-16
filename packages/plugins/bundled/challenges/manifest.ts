@@ -149,7 +149,7 @@ export const manifest = definePlugin({
       key: "solving",
       title: "Solving",
       page: "contest",
-      settings: ["allowEditor", "allowUpload", "resultDetail", "separateErrors"],
+      settings: ["allowEditor", "allowUpload", "resultDetail", "showErrors", "separateErrors"],
     },
     {
       key: "scoreboard",
@@ -256,15 +256,20 @@ export const manifest = definePlugin({
     },
     golfPoints: {
       type: "select",
-      label: "Points for a problem",
+      label: "Score",
       description:
-        "Each problem's points are its most. The shortest solution gets them all; the others get less as set here.",
-      default: "ratio",
+        "What the leaderboard ranks by. Teams that solve more problems always rank above those that solve fewer.",
+      default: "length",
       showWhen: [
         { setting: "format", in: ["contest"] },
         { setting: "scoring", in: ["golf"] },
       ],
       options: [
+        { value: "length", label: "Total length: the fewest characters wins" },
+        {
+          value: "brackets",
+          label: "Length ranges: points for each range of lengths, set on each problem",
+        },
         { value: "ratio", label: "In proportion: points × shortest ÷ yours" },
         { value: "rank", label: "By place: a fixed amount fewer for each place" },
       ],
@@ -368,6 +373,14 @@ export const manifest = definePlugin({
         { value: "tests", label: "Each test's result; inputs and outputs of samples" },
         { value: "verdict", label: "Only the overall verdict" },
       ],
+    },
+    showErrors: {
+      type: "boolean",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Show error messages",
+      description:
+        "Off, a judged solution only says that it errored or didn't compile, without the message. The jury still sees it.",
+      default: true,
     },
     separateErrors: {
       type: "boolean",

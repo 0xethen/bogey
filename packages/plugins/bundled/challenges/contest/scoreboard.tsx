@@ -64,7 +64,10 @@ function describe(settings: Settings, board: ScoreboardData | undefined): string
     return "Problems solved, then penalty minutes. Number on green show how many tries it took.";
   }
   if (settings.scoring === "golf") {
-    return `Shortest accepted solution wins, counted in ${MEASURE_NOUN[settings.golfMeasure]}. Each cell shows its length and the points it earned.`;
+    const noun = MEASURE_NOUN[settings.golfMeasure];
+    return settings.golfPoints === "length"
+      ? `Problems solved, then the fewest ${noun} in total across accepted solutions. Each cell shows its length; ★ is the shortest.`
+      : `Shortest accepted solution wins, counted in ${noun}. Each cell shows its length and the points it earned.`;
   }
   return "Points from each problem's best solution.";
 }
@@ -85,6 +88,8 @@ function Standings({ board }: { board: UseQueryResult<ScoreboardData, unknown> }
 function ScoreTable({ board }: { board: ScoreboardData }) {
   const icpc = board.scoring === "icpc";
   const golf = board.scoring === "golf";
+  const byLength = golf && board.golfPoints === "length";
+  const solvedFirst = icpc || byLength;
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -92,7 +97,7 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
           <TableRow>
             <TableHead className="w-12">#</TableHead>
             <TableHead>Team</TableHead>
-            <TableHead className="text-right">{icpc ? "Solved" : "Score"}</TableHead>
+            <TableHead className="text-right">{solvedFirst ? "Solved" : "Score"}</TableHead>
             {icpc && <TableHead className="text-right">Penalty</TableHead>}
             {golf && <TableHead className="text-right">Length</TableHead>}
             {board.problems.map((problem) => (
@@ -108,7 +113,7 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
               <TableCell className="font-mono text-muted-fg tabular-nums">{row.rank}</TableCell>
               <TableCell className="font-medium">{row.team_name}</TableCell>
               <TableCell className="text-right font-mono tabular-nums">
-                {icpc ? row.solved : row.score}
+                {solvedFirst ? row.solved : row.score}
               </TableCell>
               {icpc && (
                 <TableCell className="text-right font-mono text-muted-fg tabular-nums">
@@ -150,8 +155,11 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
                           </>
                         ) : golf ? (
                           <>
-                            <span>{cell.solved ? (cell.length ?? "–") : "–"}</span>
-                            {cell.solved && (
+                            <span>
+                              {cell.solved ? (cell.length ?? "–") : "–"}
+                              {byLength && cell.place === 1 ? " ★" : ""}
+                            </span>
+                            {cell.solved && !byLength && (
                               <span className="opacity-70">
                                 {cell.score ?? 0}
                                 {cell.place === 1 ? " ★" : ""}

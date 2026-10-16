@@ -1,5 +1,5 @@
 begin;
-select plan(35);
+select plan(37);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, kind, visibility, team_size_max) values
@@ -54,6 +54,15 @@ select is((select input from public.challenges_attempt_tests(current_setting('t.
 select throws_ok($$select checker_source from public.challenges_problems$$, '42501', null, 'checker source is not readable');
 select throws_ok($$select public.challenges_set_testcases(tests.u('pa'), '[]')$$, '42501', null, 'participants cannot replace tests');
 select throws_ok($$select public.challenges_submit(tests.u('pb'), 'python', 'print(1)')$$, 'P0001', 'wait a few seconds between solutions', 'a team waits between solutions');
+reset role;
+update public.challenges_judging_runs set stderr_excerpt = 'NameError: x' where testcase_id = tests.u('ta1');
+select tests.as_user(tests.u('amy'));
+select is((select stderr from public.challenges_attempt_tests(current_setting('t.sol')::uuid) where is_sample), 'NameError: x', 'a sample''s error message shows by default');
+reset role;
+update public.settings set value = value || '{"showErrors":false}' where event_id = tests.u('cup') and namespace = 'plugin.challenges';
+select tests.as_user(tests.u('amy'));
+select is((select stderr from public.challenges_attempt_tests(current_setting('t.sol')::uuid) where is_sample),
+  'There was an error. This contest doesn''t show error messages.', 'with showErrors off, it only says there was one');
 reset role;
 update public.settings set value = value || '{"resultDetail":"verdict"}' where event_id = tests.u('cup') and namespace = 'plugin.challenges';
 select tests.as_user(tests.u('amy'));
