@@ -1,12 +1,14 @@
 # All in one
 
-The quickest way to run Bogey yourself: one compose file with Bogey, the Supabase services it needs
+The quickest* way to run Bogey yourself. One compose file with Bogey, the Supabase services it needs
 and Caddy for HTTPS. You need a server with Docker, a domain name pointing at it (ports 80 and 443
 open) and an SMTP server for sign-in mail.
 
 It's the path for one machine and up to a few organizations. For a managed database, or when you
 already run Supabase, use [Supabase Cloud](supabase-cloud.md) or [your own Supabase](supabase.md) with
 the [plain deployment](deploy.md) instead.
+
+\*_Assumes you have existing server management experience (but we think it's easy to grasp anyway)_
 
 ## What runs
 

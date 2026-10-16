@@ -6,7 +6,7 @@ somewhere else:
 
 | You want                                           | Start from                                                                                                           |
 | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| To try Bogey, or to change its code                | This page                                                                                                            |
+| To try Bogey, or to change its code (fully own it) | Getting started (this page)                                                                                          |
 | To run Bogey on a server, with your name and theme | [All in one](self-hosting/all-in-one.md), or [Self-hosting](self-hosting.md) for Supabase Cloud or your own Supabase |
 | Your own logo files, extra themes or plugins       | [bogey-instance](https://github.com/0xethen/bogey-instance) ("Use this template"), no checkout needed                |
 
