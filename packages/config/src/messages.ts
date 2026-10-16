@@ -2702,8 +2702,11 @@ export const en = {
   "manageAgenda.noHosts": "No one matches. Hosts need a staff, judge or organizer role.",
   "manageAgenda.sessionsHelp":
     "As participants see them; click one to edit it, or drag it by its handle into another slot. Removing a session also removes its sign-ups and attendance.",
-  "manageAgenda.levels": "{kind} levels",
-  "manageAgenda.levelsHelp": "Labels for {kind} sessions, like Beginner and Advanced.",
+  "manageAgenda.levelsLabel": "Levels",
+  "manageAgenda.levelsHelp":
+    "Optional, like Beginner and Advanced. Each session of this type can pick one.",
+  "manageAgenda.singleUse":
+    "Only one session uses this. Types group similar sessions; a one-off like Lunch or Check-in doesn't need one.",
   "manageAgenda.empty": "Nothing on the agenda yet. Add a time slot to start.",
   "manageAgenda.editSlot": "Edit slot: {heading}",
   "manageAgenda.doneSlot": "Done editing this slot",
@@ -2743,7 +2746,7 @@ export const en = {
   "manageAgenda.icon": "Icon",
   "manageAgenda.typesFailed": "Couldn't save the types",
   "manageAgenda.typesHelp":
-    "Types like Talk and Workshop, each with its own color and icon on the agenda.",
+    "Group sessions that share a format, like Talk or Workshop, with a color, an icon and optional levels. One-offs like Lunch, Check-in or the Opening don't need a type.",
   "manageAgenda.noTypes": "No types yet. Sessions show as plain Sessions.",
   "manageAgenda.typeNoun": "type",
   "manageAgenda.typeInUse":
@@ -3334,6 +3337,7 @@ export const en = {
   "auditAction.results.awards_saved": "saved the awards",
   "auditAction.results.published": "published results",
   "auditAction.sessions.agenda_saved": "saved the agenda",
+  "auditAction.sessions.levels_saved": "saved session levels",
   "auditAction.session.signed_up": "signed up for a session",
   "auditAction.session.left": "left a session",
   "auditAction.session.attendance_marked": "marked attendance",

@@ -81,10 +81,10 @@ begin
       jsonb_build_object('kind', 'workshop', 'label', 'Advanced')),
     'slots', jsonb_build_array(
       private.demo_slot(p_day, v_zone, null, 'everyone', '09:00', null, jsonb_build_array(
-        jsonb_build_object('kind', 'check-in', 'name', 'Student Check-in', 'location', 'Lobby',
+        jsonb_build_object('name', 'Student Check-in', 'location', 'Lobby',
           'required', true, 'takes_attendance', true))),
       private.demo_slot(p_day, v_zone, null, 'everyone', '09:30', '09:55', jsonb_build_array(
-        jsonb_build_object('kind', 'ceremony', 'name', 'Opening', 'location', 'Main Hall', 'required', true),
+        jsonb_build_object('name', 'Opening', 'location', 'Main Hall', 'required', true),
         jsonb_build_object('kind', 'talk', 'name', 'Amazon Opening Speaker', 'location', 'Main Hall',
           'starts_at', private.demo_time(p_day, v_zone, '09:40'), 'host_note', 'Amazon'))),
       private.demo_slot(p_day, v_zone, 'Round 1', 'everyone', '10:00', '12:00', jsonb_build_array(
@@ -97,7 +97,7 @@ begin
         jsonb_build_object('kind', 'talk', 'name', 'Speaker #3', 'location', 'Main Hall',
           'starts_at', private.demo_time(p_day, v_zone, '12:20')))),
       private.demo_slot(p_day, v_zone, null, 'everyone', '12:30', '12:50', jsonb_build_array(
-        jsonb_build_object('kind', 'meal', 'name', 'Lunch', 'location', 'Cafeteria', 'required', true))),
+        jsonb_build_object('name', 'Lunch', 'location', 'Cafeteria', 'required', true))),
       private.demo_slot(p_day, v_zone, 'Round 2', 'choose', '12:50', '13:35', jsonb_build_array(
         private.demo_workshop('Essential Sorting and Searching Algorithms', 'Beginner', 'Room 101', 30,
           v_hosts, array['1'], 'Testing1 Person'),
@@ -109,18 +109,18 @@ begin
         private.demo_workshop('Full Stack Development', 'Advanced', 'Room 102', 30,
           v_hosts, array['5', '6'], 'Testing5 Person and Testing6 Person'))),
       private.demo_slot(p_day, v_zone, null, 'everyone', '14:45', '15:00', jsonb_build_array(
-        jsonb_build_object('kind', 'deadline', 'name', 'Submission Window',
+        jsonb_build_object('name', 'Submission Window',
           'description_md', 'Last call: submit your project.', 'required', true))),
       private.demo_slot(p_day, v_zone, 'Round 4', 'choose', '15:00', '15:55', jsonb_build_array(
         private.demo_workshop('Cybersecurity and Web Vulnerabilities', null, 'Room 101', 30,
           v_hosts, array['5', '7'], 'Testing5 Person and Testing7 Person'),
         private.demo_workshop('Serverless Computing', null, 'Room 102', 30,
           v_hosts, array['6'], 'Testing6 Person'),
-        jsonb_build_object('kind', 'judging', 'name', 'Judging', 'location', 'Main Hall',
+        jsonb_build_object('name', 'Judging', 'location', 'Main Hall',
           'description_md', 'Judges visit each team. Sponsor workshops run alongside.',
           'visibility', 'staff'))),
       private.demo_slot(p_day, v_zone, null, 'everyone', '16:00', '16:30', jsonb_build_array(
-        jsonb_build_object('kind', 'ceremony', 'name', 'Award Ceremony', 'location', 'Main Hall',
+        jsonb_build_object('name', 'Award Ceremony', 'location', 'Main Hall',
           'required', true)))
     )
   );
@@ -234,7 +234,8 @@ begin
     ('event', v_hack, 'submissions', '{"autoSubmit":true}'),
     ('event', v_hack, 'about', jsonb_build_object('body',
       'A 24-hour build sprint. Form a team of up to four, pick a track, and ship something.')),
-    ('event', v_hack, 'privacy', '{"about":"public"}');
+    ('event', v_hack, 'privacy', '{"about":"public"}'),
+    ('event', v_hack, 'agenda', '{"kinds":[{"key":"talk","label":"Talk","tone":"blue","icon":"microphone"},{"key":"workshop","label":"Workshop","tone":"green","icon":"tools"}]}');
 
   perform private.audit_org(p_org, 'org.demo_seeded', 'org', p_org, '{}');
 end;

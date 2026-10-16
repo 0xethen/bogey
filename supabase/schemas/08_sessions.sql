@@ -265,6 +265,46 @@ begin
 end;
 $$;
 
+-- replaces a session type's levels (session_categories); sessions on a removed level keep no level
+create function private.write_session_levels(p_event uuid, p_levels jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from public.session_categories c
+  where c.event_id = p_event
+    and not exists (
+      select 1 from jsonb_array_elements(coalesce(p_levels, '[]')) as l
+      where l ->> 'kind' = c.kind and l ->> 'label' = c.label
+    );
+  insert into public.session_categories (event_id, kind, label, sort)
+  select p_event, l.value ->> 'kind', l.value ->> 'label', (l.ordinality - 1)::smallint
+  from jsonb_array_elements(coalesce(p_levels, '[]')) with ordinality as l(value, ordinality)
+  on conflict (event_id, kind, label) do update set sort = excluded.sort;
+end;
+$$;
+
+create function public.save_session_levels(p_event uuid, p_levels jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not private.can_manage(p_event) then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  if jsonb_typeof(p_levels) <> 'array' or jsonb_array_length(p_levels) > 100 then
+    raise exception 'levels must be a list of at most 100' using errcode = '22023';
+  end if;
+  perform private.write_session_levels(p_event, p_levels);
+  perform private.audit(p_event, 'sessions.levels_saved', 'event', p_event,
+    jsonb_build_object('levels', jsonb_array_length(p_levels)));
+end;
+$$;
+
 create function private.write_agenda(p_event uuid, p_agenda jsonb)
 returns integer
 language plpgsql
@@ -294,16 +334,9 @@ begin
     end if;
   end loop;
 
-  delete from public.session_categories c
-  where c.event_id = p_event
-    and not exists (
-      select 1 from jsonb_array_elements(coalesce(p_agenda -> 'categories', '[]')) as l
-      where l ->> 'kind' = c.kind and l ->> 'label' = c.label
-    );
-  insert into public.session_categories (event_id, kind, label, sort)
-  select p_event, l.value ->> 'kind', l.value ->> 'label', (l.ordinality - 1)::smallint
-  from jsonb_array_elements(coalesce(p_agenda -> 'categories', '[]')) with ordinality as l(value, ordinality)
-  on conflict (event_id, kind, label) do update set sort = excluded.sort;
+  if p_agenda ? 'categories' then
+    perform private.write_session_levels(p_event, p_agenda -> 'categories');
+  end if;
 
   for v_slot in select * from jsonb_array_elements(coalesce(p_agenda -> 'slots', '[]')) loop
     v_slot_id := coalesce((v_slot ->> 'id')::uuid, gen_random_uuid());
@@ -606,6 +639,7 @@ $$;
 grant execute on function
   public.event_agenda(uuid),
   public.save_agenda(uuid, jsonb),
+  public.save_session_levels(uuid, jsonb),
   public.choose_session(uuid),
   public.leave_session_slot(uuid),
   public.session_roster(uuid),

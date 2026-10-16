@@ -114,9 +114,9 @@ export function resolveKind(kinds: Tuple<SessionKind>, key: string): SessionKind
   );
 }
 
+/** Only defined types show a badge; one-off kinds and untyped sessions show none. */
 export function shownKind(kinds: Tuple<SessionKind>, key: string): SessionKind | null {
-  if (key === UNTYPED && !kinds.some((kind) => kind.key === key)) return null;
-  return resolveKind(kinds, key);
+  return kinds.find((kind) => kind.key === key) ?? null;
 }
 
 export function KindBadge({ kind, className }: { kind: SessionKind; className?: string }) {

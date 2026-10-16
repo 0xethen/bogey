@@ -4340,6 +4340,7 @@ export type Database = {
         Returns: number;
       };
       save_prizes: { Args: { p_event: string; p_items: Json }; Returns: number };
+      save_session_levels: { Args: { p_event: string; p_levels: Json }; Returns: undefined };
       save_submission_form: {
         Args: { p_event: string; p_form: Json; p_items: Json };
         Returns: {

@@ -14,6 +14,7 @@ import {
   agendaQueryOptions,
   attendanceQueryOptions,
   saveAgendaFn,
+  saveSessionLevelsFn,
   type Agenda,
   type AgendaSession,
   type AgendaSlot,
@@ -84,6 +85,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
     settings: (t) => [
       searchSection(t("manageAgenda.reminders"), { id: "reminders" }),
       ...searchSettings("agenda", ["reminderMinutes"], t),
+      searchSection(t("manageAgenda.types"), {
+        keywords: ["levels", "beginner", "advanced", "talk", "workshop"],
+        id: "session-types",
+      }),
       searchSection(t("manageAgenda.sessions"), {
         keywords: ["workshops", "slots", "hosts"],
         id: "sessions",
@@ -92,7 +97,6 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
         keywords: ["registration", "submissions", "judging", "results", "gallery", "open", "close"],
         id: "windows",
       }),
-      searchSection(t("manageAgenda.types"), { id: "session-types" }),
       searchSection(t("manageAgenda.participantsSee"), { id: "what-participants-see" }),
       ...searchSettings("schedule", ["display", "showEventTimezone"], t),
       searchSection(t("manageAgenda.attendance"), {
@@ -133,11 +137,11 @@ function RouteComponent() {
       }
       width="embedded"
     >
+      <SessionTypes />
       <TimeFormatProvider value={{ ...time, timeZone: event.timezone, zone: true }}>
         <SessionsEditor />
         <Windows />
       </TimeFormatProvider>
-      <SessionTypes />
       <ParticipantView />
       <Screen.Section id="reminders" title={t("manageAgenda.reminders")}>
         <SettingFields
@@ -266,12 +270,6 @@ const slotSchema = (t: T) =>
 
 const agendaSchema = (t: T) =>
   z.object({
-    levels: z.array(
-      z.object({
-        kind: z.string(),
-        labels: z.array(z.string()).meta({ placeholder: t("manageAgenda.levelPlaceholder") }),
-      }),
-    ),
     slots: z.array(slotSchema(t)).max(100),
   });
 
@@ -299,21 +297,19 @@ function blankSession(): SessionValues {
   };
 }
 
-function levelKinds(kinds: Tuple<SessionKind>, agenda: Agenda): string[] {
-  const listed = kinds.map((kind) => kind.key);
-  const withLevels = agenda.categories.map((category) => category.kind);
-  const untyped = listed.length === 0 ? [UNTYPED] : [];
-  return [...new Set([...listed, ...untyped, ...withLevels])];
+// a kind that isn't a defined type (an old one-off tag) is treated as no type; plugin kinds are kept
+function typeOf(kinds: Tuple<SessionKind>, kind: string): string {
+  return kind.includes(".") || kinds.some((each) => each.key === kind) ? kind : UNTYPED;
+}
+
+function levelsOf(agenda: Agenda, kind: string): string[] {
+  return agenda.categories
+    .filter((category) => category.kind === kind)
+    .map((category) => category.label);
 }
 
 function toValues(agenda: Agenda, kinds: Tuple<SessionKind>, timeZone: string): AgendaValues {
   return {
-    levels: levelKinds(kinds, agenda).map((kind) => ({
-      kind,
-      labels: agenda.categories
-        .filter((category) => category.kind === kind)
-        .map((category) => category.label),
-    })),
     slots: agenda.slots.map((slot) => ({
       uid: slot.id,
       id: slot.id,
@@ -324,7 +320,7 @@ function toValues(agenda: Agenda, kinds: Tuple<SessionKind>, timeZone: string): 
       sessions: slot.sessions.map((session) => ({
         uid: session.id,
         id: session.id,
-        kind: session.kind,
+        kind: typeOf(kinds, session.kind),
         name: session.name,
         description: session.descriptionMd,
         location: session.location ?? "",
@@ -383,9 +379,8 @@ function previewOf(
   };
 }
 
-function chosenLevel(levels: AgendaValues["levels"], session: SessionValues): string | null {
-  const labels = levels.find((level) => level.kind === session.kind)?.labels ?? [];
-  return labels.some((label) => label.trim() === session.category) ? session.category : null;
+function chosenLevel(agenda: Agenda, session: SessionValues): string | null {
+  return levelsOf(agenda, session.kind).includes(session.category) ? session.category : null;
 }
 
 function slotHeading(slot: SlotValues, timeZone: string, t: T): string {
@@ -462,12 +457,6 @@ function SessionsEditor() {
       const result = await saveAgendaFn({
         data: {
           eventId: event.id,
-          categories: value.levels.flatMap((level) =>
-            level.labels
-              .map((label) => label.trim())
-              .filter(Boolean)
-              .map((label) => ({ kind: level.kind, label })),
-          ),
           slots: value.slots.map((slot) => ({
             id: slot.id || null,
             name: slot.name,
@@ -490,7 +479,7 @@ function SessionsEditor() {
                 required: slot.kind === "everyone" && session.required,
                 takesAttendance: session.takesAttendance,
                 visibility: session.visibility,
-                category: chosenLevel(value.levels, session),
+                category: chosenLevel(agenda, session),
               };
             }),
           })),
@@ -516,6 +505,7 @@ function SessionsEditor() {
       ? []
       : [{ value: current, label: resolveKind(kinds, current).label }]),
   ];
+  const levelOptions = (kind: string) => levelsOf(agenda, kind);
 
   const sessionFields = (slotIndex: number, index: number, choose: boolean) => {
     const at = `slots[${slotIndex}].sessions[${index}]` as const;
@@ -541,34 +531,30 @@ function SessionsEditor() {
         </form.Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <form.Field name={`${at}.location`}>{(field) => <field.TextField />}</form.Field>
-          <form.Subscribe selector={(state) => state.values.levels}>
-            {(levels) => (
-              <form.Subscribe
-                selector={(state) => state.values.slots[slotIndex]?.sessions[index]?.kind}
-              >
-                {(kind) => {
-                  const labels = (levels.find((level) => level.kind === kind)?.labels ?? [])
-                    .map((label) => label.trim())
-                    .filter(Boolean);
-                  return (
-                    <form.Field name={`${at}.category`}>
-                      {(field) => (
-                        <field.Field>
-                          <field.Label />
-                          <FieldSelect
-                            field={field}
-                            options={[
-                              { value: NO_CATEGORY, label: t("adminOrgs.none") },
-                              ...labels.map((label) => ({ value: label, label })),
-                            ]}
-                          />
-                        </field.Field>
-                      )}
-                    </form.Field>
-                  );
-                }}
-              </form.Subscribe>
-            )}
+          <form.Subscribe
+            selector={(state) => state.values.slots[slotIndex]?.sessions[index]?.kind}
+          >
+            {(kind) => {
+              const labels = levelOptions(kind ?? UNTYPED);
+              return (
+                labels.length > 0 && (
+                  <form.Field name={`${at}.category`}>
+                    {(field) => (
+                      <field.Field>
+                        <field.Label />
+                        <FieldSelect
+                          field={field}
+                          options={[
+                            { value: NO_CATEGORY, label: t("adminOrgs.none") },
+                            ...labels.map((label) => ({ value: label, label })),
+                          ]}
+                        />
+                      </field.Field>
+                    )}
+                  </form.Field>
+                )
+              );
+            }}
           </form.Subscribe>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -612,29 +598,6 @@ function SessionsEditor() {
     >
       <form.AppForm>
         <form.Form unsaved="save" className="flex flex-col gap-6">
-          <form.Field name="levels">
-            {(levels) =>
-              levels.value.length > 0 && (
-                <div className="flex flex-col gap-4">
-                  {levels.value.map((level, levelIndex) => (
-                    <form.Field key={level.kind} name={`levels[${levelIndex}].labels`}>
-                      {(field) => (
-                        <field.OptionsField
-                          label={t("manageAgenda.levels", {
-                            kind: resolveKind(kinds, level.kind).label,
-                          })}
-                          description={t("manageAgenda.levelsHelp", {
-                            kind: resolveKind(kinds, level.kind).label.toLowerCase(),
-                          })}
-                        />
-                      )}
-                    </form.Field>
-                  ))}
-                </div>
-              )
-            }
-          </form.Field>
-
           <form.Field name="slots">
             {(slots) => (
               <div className="flex flex-col gap-6">
@@ -1024,6 +987,19 @@ const kindValuesSchema = (t: T) =>
           }),
           tone: sessionKindSchema.shape.tone.meta({ label: t("manageAgenda.color") }),
           icon: sessionKindSchema.shape.icon.meta({ label: t("manageAgenda.icon") }),
+          levels: z
+            .array(
+              z
+                .string()
+                .trim()
+                .max(40, t("form.maxLength", { max: 40 })),
+            )
+            .max(20)
+            .meta({
+              label: t("manageAgenda.levelsLabel"),
+              placeholder: t("manageAgenda.levelPlaceholder"),
+            })
+            .describe(t("manageAgenda.levelsHelp")),
         }),
       )
       .max(40),
@@ -1031,7 +1007,7 @@ const kindValuesSchema = (t: T) =>
 
 type KindValues = z.infer<ReturnType<typeof kindValuesSchema>>["kinds"][number];
 
-function withKeys(kinds: Tuple<KindValues>): SessionKind[] {
+function withKeys(kinds: Tuple<KindValues>): (SessionKind & { levels: string[] })[] {
   const taken = new Set(kinds.map((kind) => kind.key).filter(Boolean));
   return kinds.map(({ uid: _uid, ...kind }) => {
     if (kind.key) return kind;
@@ -1043,6 +1019,9 @@ function withKeys(kinds: Tuple<KindValues>): SessionKind[] {
   });
 }
 
+const toKindValues = (kinds: Tuple<SessionKind>, agenda: Agenda): KindValues[] =>
+  kinds.map((kind) => ({ ...kind, uid: kind.key, levels: levelsOf(agenda, kind.key) }));
+
 function SessionTypes() {
   const t = useT();
   const schema = useMemo(() => kindValuesSchema(t), [t]);
@@ -1050,6 +1029,7 @@ function SessionTypes() {
   const { data: settings } = useSuspenseQuery(agendaSettings(event.id));
   const { data: agenda } = useSuspenseQuery(agendaQueryOptions(event.id));
   const save = useSettingsMutation({ scope: "event", eventId: event.id }, "agenda");
+  const queryClient = useQueryClient();
   const [active, setActive] = useState<string | null>(null);
   const used = new Map<string, number>();
   for (const session of agenda.slots.flatMap((slot) => slot.sessions)) {
@@ -1058,14 +1038,13 @@ function SessionTypes() {
 
   const form = useAppForm({
     ...appFormOptions.strictSchema({
-      defaultValues: {
-        kinds: settings.agenda.kinds.map((kind) => ({ ...kind, uid: kind.key })),
-      },
+      defaultValues: { kinds: toKindValues(settings.agenda.kinds, agenda) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
     }),
     onSubmit: async ({ value, formApi, createValidationError }) => {
-      const kinds = withKeys(value.kinds);
+      const typed = withKeys(value.kinds);
+      const kinds: SessionKind[] = typed.map(({ levels: _levels, ...kind }) => kind);
       try {
         await save.mutateAsync({ kinds });
       } catch (error) {
@@ -1073,7 +1052,25 @@ function SessionTypes() {
           error instanceof Error ? error.message : t("manageAgenda.typesFailed"),
         );
       }
-      formApi.reset({ kinds: kinds.map((kind) => ({ ...kind, uid: kind.key })) });
+      const levels = [
+        ...typed.flatMap((kind) =>
+          [...new Set(kind.levels.map((label) => label.trim()).filter(Boolean))].map((label) => ({
+            kind: kind.key,
+            label,
+          })),
+        ),
+        // plugin types' levels aren't edited here
+        ...agenda.categories.filter((category) => category.kind.includes(".")),
+      ];
+      const saved = await saveSessionLevelsFn({ data: { eventId: event.id, levels } }).catch(
+        requestFailure,
+      );
+      if (!saved.ok) return createValidationError(saved.error.message);
+      const fresh = await queryClient.fetchQuery({
+        ...agendaQueryOptions(event.id),
+        staleTime: 0,
+      });
+      formApi.reset({ kinds: toKindValues(kinds, fresh) });
       setActive(null);
       return undefined;
     },
@@ -1115,10 +1112,20 @@ function SessionTypes() {
                               }}
                             />
                             <span className="text-sm text-muted-fg">
-                              {count > 0
-                                ? t("manageAgenda.sessionCount", { count })
-                                : t("manageAgenda.unused")}
+                              {[
+                                count > 0
+                                  ? t("manageAgenda.sessionCount", { count })
+                                  : t("manageAgenda.unused"),
+                                kind.levels.filter((label) => label.trim()).join(", "),
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
                             </span>
+                            {count === 1 && (
+                              <span className="text-sm text-warning">
+                                {t("manageAgenda.singleUse")}
+                              </span>
+                            )}
                           </div>
                         }
                         editing={
@@ -1130,6 +1137,9 @@ function SessionTypes() {
                         <div className="flex flex-col gap-4">
                           <form.Field name={`kinds[${index}].label`}>
                             {(field) => <field.TextField required />}
+                          </form.Field>
+                          <form.Field name={`kinds[${index}].levels`}>
+                            {(field) => <field.OptionsField />}
                           </form.Field>
                           <form.Field name={`kinds[${index}].tone`}>
                             {(field) => (
@@ -1211,7 +1221,14 @@ function SessionTypes() {
                     variant="outline"
                     onClick={() => {
                       const uid = crypto.randomUUID();
-                      list.pushValue({ uid, key: "", label: "", tone: "gray", icon: "calendar" });
+                      list.pushValue({
+                        uid,
+                        key: "",
+                        label: "",
+                        tone: "gray",
+                        icon: "calendar",
+                        levels: [],
+                      });
                       setActive(uid);
                     }}
                   >

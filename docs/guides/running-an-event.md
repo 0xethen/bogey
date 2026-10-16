@@ -119,8 +119,12 @@ participants enter it on their Agenda page from 30 minutes before the session
 until 30 minutes after it. The **Attendance** section shows who missed what and
 exports a CSV.
 
-**Session types** (Talk, Workshop, Meal and so on) each have a color and an
-icon. Rename them, add your own, or change how they look.
+**Session types**, first on the page, group sessions that share a format, like
+Talk or Workshop. Each has a color and an icon on the agenda, and optional
+**levels** (Beginner, Advanced) that its sessions can pick from. One-offs like
+check-in, lunch or the opening don't need a type: leave them on **No type**.
+Only sessions of a defined type show a badge, and a type used by just one
+session says so.
 
 ### Windows
 

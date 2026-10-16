@@ -119,6 +119,7 @@ const SIGNED_IN = {
   register_for_event: "creates the registration with the server-side status",
   roster_overlaps: "organizers see which other events a roster email is in",
   save_agenda: "replaces the agenda in one transaction and audits it",
+  save_session_levels: "replaces session types' levels in one transaction and audits it",
   save_submission_form: "replaces a form's items in one transaction and audits it",
   save_awards: "replaces the drafted awards in one transaction and audits it",
   clear_event_data:

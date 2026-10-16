@@ -142,7 +142,6 @@ const categoryInput = z.object({
 
 export const agendaInput = z.object({
   eventId: z.uuid(),
-  categories: z.array(categoryInput).max(100),
   slots: z.array(slotInput).max(100),
 });
 
@@ -152,7 +151,6 @@ export const saveAgendaFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => agendaInput.parse(input))
   .handler(async ({ data }): Promise<DbResult<number>> => {
     const agenda: Json = {
-      categories: data.categories,
       slots: data.slots.map((slot) => ({
         id: slot.id,
         name: slot.name,
@@ -183,6 +181,23 @@ export const saveAgendaFn = createServerFn({ method: "POST" })
     });
     if (error) return toFailure(error, "saving the agenda");
     return ok(removed ?? 0);
+  });
+
+export const sessionLevelsInput = z.object({
+  eventId: z.uuid(),
+  levels: z.array(categoryInput).max(100),
+});
+
+/** Replaces every session type's levels; sessions on a removed level are left without one. */
+export const saveSessionLevelsFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => sessionLevelsInput.parse(input))
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const { error } = await createServerClient().rpc("save_session_levels", {
+      p_event: data.eventId,
+      p_levels: data.levels,
+    });
+    if (error) return toFailure(error, "saving levels");
+    return ok(null);
   });
 
 export const chooseSessionFn = createServerFn({ method: "POST" })
