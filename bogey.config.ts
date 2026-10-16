@@ -9,6 +9,7 @@ export default defineConfig({
   },
   appUrl: "https://bogey.example.org",
   // plugins: { disabled: [] },
+  // events: { uiDeletion: true },
   // network: {
   //   trustProxy: true,
   //   clientIpHeader: "x-forwarded-for",

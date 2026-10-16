@@ -10,11 +10,12 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Org admins can delete an event from its new Manage → Danger zone page, which also has Unpublish. Deleting asks for the event's web address, removes its files and is kept in the org's audit log. Set `events: { uiDeletion: false }` in `bogey.config.ts` to turn it off.
 - Organization limits now hold for everyone: platform admins, copying an event and the CLI can't go past them anymore. Promoting a member to admin, turning someone into a participant and reopening an invite link count too. To let one organization go further, raise its limit under Instance → Organizations.
 
 ### Upgrade notes
 
-- Adds the `limits_for_everyone` migration; `bogey upgrade` applies it.
+- Adds the `limits_for_everyone` and `event_deletion` migrations; `bogey upgrade` applies them.
 
 ## 2.1.2 (2026-10-15)
 

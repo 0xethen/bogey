@@ -1,5 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
+import { eventDeletion } from "@bogey/config";
+import { createAdminClient } from "../admin.ts";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Enums, Tables, TablesUpdate } from "../types.ts";
@@ -127,6 +129,36 @@ export const updateEventFn = createServerFn({ method: "POST" })
     }
     if (!event) return fail("forbidden", "Only organizers can change this event.");
     return ok(event);
+  });
+
+export const deleteEventFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as Record<string, unknown>;
+    return {
+      eventId: requireId(raw.eventId, "eventId"),
+      confirm: typeof raw.confirm === "string" ? raw.confirm.trim() : "",
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    if (!eventDeletion) return fail("forbidden", "This instance doesn't allow deleting events.");
+    const { data: files, error } = await createServerClient().rpc("delete_event", {
+      p_event: data.eventId,
+      p_confirm: data.confirm,
+    });
+    if (error) return toFailure(error, "deleting the event");
+    // the rows are gone; files go through the storage API so they leave the disk too
+    const byBucket = new Map<string, string[]>();
+    for (const file of (files ?? []) as { bucket: string; path: string }[]) {
+      byBucket.set(file.bucket, [...(byBucket.get(file.bucket) ?? []), file.path]);
+    }
+    const storage = createAdminClient().storage;
+    for (const [bucket, paths] of byBucket) {
+      for (let i = 0; i < paths.length; i += 500) {
+        const { error: removeError } = await storage.from(bucket).remove(paths.slice(i, i + 500));
+        if (removeError) console.warn(`[bogey/db] removing a deleted event's files:`, removeError);
+      }
+    }
+    return ok(null);
   });
 
 export type WindowChange = {

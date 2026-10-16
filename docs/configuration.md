@@ -39,6 +39,7 @@ export default defineConfig({
   },
   appUrl: "https://hacks.acme.org",
   plugins: { disabled: [] },
+  events: { uiDeletion: true },
   network: {
     trustProxy: true,
     clientIpHeader: "x-forwarded-for",
@@ -60,6 +61,9 @@ export default defineConfig({
   `apps/web/public`.
 - **`plugins.disabled`:** installed plugins that shouldn't run. Orgs and
   events turn the rest on and off in Settings.
+- **`events.uiDeletion`:** whether org admins can delete an event from Manage →
+  Danger zone (default `true`). Set `false` to keep events from being deleted
+  in the app.
 - **`repository`:** this instance's repository as `github:owner/repo`. ⌘K's
   "Report an issue" opens its issues. It defaults to `upstream` (Bogey's own);
   `false` removes the entry.
@@ -107,13 +111,13 @@ or the next restart turns it back on.
 
 The server reads the file once, when it starts. Edit it and restart the server (`docker compose restart web`);
 there is no rebuild. The browser is handed only what it needs: the brand, the repository, the disabled
-plugin list and whether errors are verbose. `updates` and `upstream` stay on the server.
+plugin list, whether events can be deleted and whether errors are verbose. `updates` and `upstream` stay on the server.
 
-| Key                                                                                                                                      | Needs                                                                                       |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `brand.name`, `brand.shortName`, `brand.theme`, `appUrl`, `network`, `repository`, `upstream`, `updates`, `security`, `plugins.disabled` | a restart (or `bogey config apply` for the keys only the file sets)                         |
-| `brand.icons` (the path)                                                                                                                 | a restart; the files themselves are in `apps/web/public`, so changing those needs a rebuild |
-| which themes exist, which plugins are installed                                                                                          | a rebuild                                                                                   |
+| Key                                                                                                                                                | Needs                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `brand.name`, `brand.shortName`, `brand.theme`, `appUrl`, `network`, `repository`, `upstream`, `updates`, `security`, `plugins.disabled`, `events` | a restart (or `bogey config apply` for the keys only the file sets)                         |
+| `brand.icons` (the path)                                                                                                                           | a restart; the files themselves are in `apps/web/public`, so changing those needs a rebuild |
+| which themes exist, which plugins are installed                                                                                                    | a rebuild                                                                                   |
 
 In a container the file is at `/app/bogey.config.ts`, with a copy baked in as the default. Mount yours over
 it read-only (`./bogey.config.ts:/app/bogey.config.ts:ro`, as the compose files do), or point

@@ -50,6 +50,7 @@ test("the browser gets the brand and plugin list, not update or upstream setting
   expect(Object.keys(sent).sort()).toEqual([
     "brand",
     "disabledPlugins",
+    "eventDeletion",
     "repository",
     "verboseErrors",
   ]);
@@ -61,6 +62,7 @@ test("the inline script can't close its own tag", () => {
     brand: { name: "</script><b>" },
     repository: null,
     disabledPlugins: [],
+    eventDeletion: true,
     verboseErrors: false,
   });
   expect(script).not.toContain("</script>");
@@ -178,4 +180,11 @@ test("a policy and framing origins combine into one header", () => {
   );
   expect(headers["x-frame-options"]).toBeUndefined();
   expect(headers["strict-transport-security"]).toBe("max-age=15552000");
+});
+
+test("events can be deleted from the UI unless the config says not", () => {
+  expect(resolveConfig({ brand: { name: "A" } }).eventDeletion).toBe(true);
+  expect(resolveConfig({ brand: { name: "A" }, events: { uiDeletion: false } }).eventDeletion).toBe(
+    false,
+  );
 });

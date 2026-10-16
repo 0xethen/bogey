@@ -108,6 +108,7 @@ import { Route as AuthedEventsSlugManageAgendaRouteImport } from './routes/_auth
 import { Route as AuthedEventsSlugManageAnnouncementsRouteImport } from './routes/_authed/events/$slug/manage/announcements'
 import { Route as AuthedEventsSlugManageAuditRouteImport } from './routes/_authed/events/$slug/manage/audit'
 import { Route as AuthedEventsSlugManageCertificatesRouteImport } from './routes/_authed/events/$slug/manage/certificates'
+import { Route as AuthedEventsSlugManageDangerRouteImport } from './routes/_authed/events/$slug/manage/danger'
 import { Route as AuthedEventsSlugManageDetailsRouteImport } from './routes/_authed/events/$slug/manage/details'
 import { Route as AuthedEventsSlugManageDivisionsRouteImport } from './routes/_authed/events/$slug/manage/divisions'
 import { Route as AuthedEventsSlugManageEmailRouteImport } from './routes/_authed/events/$slug/manage/email'
@@ -667,6 +668,12 @@ const AuthedEventsSlugManageCertificatesRoute =
     path: '/certificates',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
+const AuthedEventsSlugManageDangerRoute =
+  AuthedEventsSlugManageDangerRouteImport.update({
+    id: '/danger',
+    path: '/danger',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
 const AuthedEventsSlugManageDetailsRoute =
   AuthedEventsSlugManageDetailsRouteImport.update({
     id: '/details',
@@ -949,6 +956,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
+  '/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
@@ -1068,6 +1076,7 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
+  '/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
@@ -1202,6 +1211,7 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/_authed/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/_authed/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
+  '/_authed/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
   '/_authed/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/_authed/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/_authed/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
@@ -1335,6 +1345,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/announcements'
     | '/events/$slug/manage/audit'
     | '/events/$slug/manage/certificates'
+    | '/events/$slug/manage/danger'
     | '/events/$slug/manage/details'
     | '/events/$slug/manage/divisions'
     | '/events/$slug/manage/email'
@@ -1454,6 +1465,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/announcements'
     | '/events/$slug/manage/audit'
     | '/events/$slug/manage/certificates'
+    | '/events/$slug/manage/danger'
     | '/events/$slug/manage/details'
     | '/events/$slug/manage/divisions'
     | '/events/$slug/manage/email'
@@ -1587,6 +1599,7 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/announcements'
     | '/_authed/events/$slug/manage/audit'
     | '/_authed/events/$slug/manage/certificates'
+    | '/_authed/events/$slug/manage/danger'
     | '/_authed/events/$slug/manage/details'
     | '/_authed/events/$slug/manage/divisions'
     | '/_authed/events/$slug/manage/email'
@@ -2351,6 +2364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManageCertificatesRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
+    '/_authed/events/$slug/manage/danger': {
+      id: '/_authed/events/$slug/manage/danger'
+      path: '/danger'
+      fullPath: '/events/$slug/manage/danger'
+      preLoaderRoute: typeof AuthedEventsSlugManageDangerRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
     '/_authed/events/$slug/manage/details': {
       id: '/_authed/events/$slug/manage/details'
       path: '/details'
@@ -2709,6 +2729,7 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageAnnouncementsRoute: typeof AuthedEventsSlugManageAnnouncementsRoute
   AuthedEventsSlugManageAuditRoute: typeof AuthedEventsSlugManageAuditRoute
   AuthedEventsSlugManageCertificatesRoute: typeof AuthedEventsSlugManageCertificatesRoute
+  AuthedEventsSlugManageDangerRoute: typeof AuthedEventsSlugManageDangerRoute
   AuthedEventsSlugManageDetailsRoute: typeof AuthedEventsSlugManageDetailsRoute
   AuthedEventsSlugManageDivisionsRoute: typeof AuthedEventsSlugManageDivisionsRoute
   AuthedEventsSlugManageEmailRoute: typeof AuthedEventsSlugManageEmailRoute
@@ -2736,6 +2757,7 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageAuditRoute: AuthedEventsSlugManageAuditRoute,
     AuthedEventsSlugManageCertificatesRoute:
       AuthedEventsSlugManageCertificatesRoute,
+    AuthedEventsSlugManageDangerRoute: AuthedEventsSlugManageDangerRoute,
     AuthedEventsSlugManageDetailsRoute: AuthedEventsSlugManageDetailsRoute,
     AuthedEventsSlugManageDivisionsRoute: AuthedEventsSlugManageDivisionsRoute,
     AuthedEventsSlugManageEmailRoute: AuthedEventsSlugManageEmailRoute,

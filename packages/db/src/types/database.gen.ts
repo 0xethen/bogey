@@ -3701,6 +3701,7 @@ export type Database = {
       };
       declare_conflict: { Args: { p_reason?: string; p_submission: string }; Returns: undefined };
       delete_account: { Args: { p_user: string }; Returns: undefined };
+      delete_event: { Args: { p_confirm: string; p_event: string }; Returns: Json };
       delete_submission: { Args: { p_submission: string }; Returns: string };
       delete_webhook: { Args: { p_id: string }; Returns: undefined };
       disband_team: { Args: { p_event: string }; Returns: undefined };

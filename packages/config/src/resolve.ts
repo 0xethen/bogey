@@ -20,6 +20,7 @@ const configSchema = z.object({
   }),
   appUrl: settingsRegistry.tenancy.schema.shape.appUrl,
   plugins: z.object({ disabled: z.array(z.string()).optional() }).optional(),
+  events: z.object({ uiDeletion: z.boolean().optional() }).strict().optional(),
   network: z
     .object({
       trustProxy: z.boolean().optional(),
@@ -58,6 +59,7 @@ export const RUNTIME_KEYS = [
   "network",
   "security",
   "plugins.disabled",
+  "events",
 ] as const;
 
 export interface SecurityHeaders {
@@ -74,6 +76,7 @@ export interface ResolvedConfig {
   trustProxy: boolean;
   operator: OperatorSettings;
   disabledPlugins: Tuple<string>;
+  eventDeletion: boolean;
   upstream: string;
   repository: string | null;
   updateCheck: boolean;
@@ -83,6 +86,7 @@ export interface PublicConfig {
   brand: InstanceConfig["brand"];
   repository: string | null;
   disabledPlugins: Tuple<string>;
+  eventDeletion: boolean;
   verboseErrors: boolean;
 }
 
@@ -138,6 +142,7 @@ export function resolveConfig(raw: unknown): ResolvedConfig {
     trustProxy: config.network?.trustProxy ?? false,
     operator: operatorSettingsOf(config),
     disabledPlugins: config.plugins?.disabled ?? [],
+    eventDeletion: config.events?.uiDeletion ?? true,
     upstream,
     repository: config.repository === false ? null : (config.repository ?? upstream),
     updateCheck: config.updates?.check ?? true,
@@ -149,6 +154,7 @@ export function publicConfigOf(config: ResolvedConfig): PublicConfig {
     brand: config.brand,
     repository: config.repository,
     disabledPlugins: config.disabledPlugins,
+    eventDeletion: config.eventDeletion,
     verboseErrors: config.security.verboseErrors,
   };
 }

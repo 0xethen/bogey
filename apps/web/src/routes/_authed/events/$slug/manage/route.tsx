@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  IconAlertTriangle,
   IconCalendarEvent,
   IconCategory,
   IconCertificate,
@@ -232,6 +233,11 @@ function RouteComponent() {
   const allGroups: Tuple<SettingsGroup> = [
     ...groups.map(withFinds),
     ...(pluginGroup.length > 0 ? [{ label: t("accountNav.plugins"), pages: pluginGroup }] : []),
+    {
+      pages: [
+        { key: "danger", label: t("danger.title"), icon: IconAlertTriangle, to: `${base}/danger` },
+      ],
+    },
   ];
 
   return (

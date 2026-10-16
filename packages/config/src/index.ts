@@ -7,6 +7,7 @@ const config = loaded.config;
 export const brand = config.brand;
 export const security = config.security;
 export const disabledPlugins: Tuple<string> = config.disabledPlugins;
+export const eventDeletion: boolean = config.eventDeletion;
 export const upstream = config.upstream;
 export const repository: string | null = config.repository;
 export const trustProxy: boolean = config.trustProxy;

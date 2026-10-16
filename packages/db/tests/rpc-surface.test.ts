@@ -77,6 +77,7 @@ const SIGNED_IN = {
   create_org: "platform admins only; checked inside",
   create_team: "creates the team and its captain membership together",
   delete_account: "platform admins only; deletes the auth user",
+  delete_event: "org admins only; returns the files to remove from storage",
   delete_submission: "applies the event's deletion policy for teams",
   email_hook_status: "platform admins only; reads the send-email hook's recent mail",
   event_agenda: "reads the agenda with seat counts and the caller's own picks and check-ins",

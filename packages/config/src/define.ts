@@ -12,6 +12,9 @@ export interface InstanceConfig {
   plugins?: {
     disabled?: Tuple<string>;
   };
+  events?: {
+    uiDeletion?: boolean;
+  };
   network?: {
     trustProxy?: boolean;
     clientIpHeader?: NonNullable<SettingsValue<"network">["clientIpHeader"]>;
