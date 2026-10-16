@@ -132,6 +132,14 @@ const plugin = (optional = false): PluginParam => ({
   label: "Plugin",
   optional,
 });
+const eventName: TextParam = {
+  kind: "text",
+  name: "event",
+  label: "Event",
+  description: "<org slug>/<event slug>",
+  pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*$/,
+  placeholder: "acme/spring-hack",
+};
 const outFolder = (placeholder: string, optional = true): TextParam => ({
   kind: "text",
   name: "out",
@@ -530,23 +538,54 @@ export const COMMANDS: Tuple<ConsoleCommand> = [
   },
 
   {
+    id: "event-list",
+    group: "events",
+    label: "List events",
+    description: "bogey event list: every org's events, or one org's, with their visibility.",
+    kind: "read",
+    cli: ["event", "list"],
+    params: [orgSlug(true, undefined)],
+  },
+  {
+    id: "event-visibility",
+    group: "events",
+    label: "Publish or unpublish an event",
+    description: "bogey event visibility: makes an event public or unlisted, or a draft again.",
+    kind: "change",
+    cli: ["event", "visibility"],
+    params: [
+      eventName,
+      {
+        kind: "choice",
+        name: "visibility",
+        label: "Visibility",
+        options: [
+          { value: "draft", label: "Draft" },
+          { value: "unlisted", label: "Unlisted" },
+          { value: "public", label: "Public" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "event-delete",
+    group: "events",
+    label: "Delete an event",
+    description:
+      "bogey event delete: deletes an event with everything in it, files included. Export it first to keep a copy.",
+    kind: "change",
+    cli: ["event", "delete"],
+    params: [eventName],
+    twoStep: { preview: ["--dry-run"], apply: ["--yes"], applyLabel: "Delete" },
+  },
+  {
     id: "event-export",
     group: "events",
     label: "Export an event",
     description: "bogey event export: writes an event's tables and files to a folder.",
     kind: "read",
     cli: ["event", "export"],
-    params: [
-      {
-        kind: "text",
-        name: "event",
-        label: "Event",
-        description: "<org slug>/<event slug>",
-        pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*\/[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        placeholder: "acme/spring-hack",
-      },
-      outFolder("exports/spring-hack", false),
-    ],
+    params: [eventName, outFolder("exports/spring-hack", false)],
   },
   {
     id: "event-import",

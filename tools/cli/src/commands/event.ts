@@ -21,14 +21,15 @@ import type { CliResult } from "../cli.ts";
 
 export const USAGE = `bogey event list [<org>]
 bogey event visibility <org>/<event> draft|unlisted|public
-bogey event delete <org>/<event> [--yes]
+bogey event delete <org>/<event> [--yes | --dry-run]
 bogey event export <org>/<event> --out <folder>
 bogey event import <folder> [--org <slug>] [--slug <new-slug>] [--name <name>]
                    [--starts-at <date> | --shift-days <n>] [--people]
 
 list shows each org's events, or one org's. visibility publishes an event (public or
 unlisted) or takes it back to a draft. delete removes an event with everything in it,
-files included; it asks you to type the event's address, and --yes skips that for scripts.
+files included; it asks you to type the event's address, --yes skips that for scripts and
+--dry-run only says what it would delete.
 It works even when bogey.config.ts sets events.uiDeletion to false.
 
 export writes an event to a folder: manifest.json, one JSON file per table and the uploaded files.
@@ -145,6 +146,12 @@ async function runDelete(
   const found = await findEvent(credentials, args[0]);
   if (!found.ok) return { exitCode: 1, output: found.error };
   const { event } = found;
+  if (args.includes("--dry-run")) {
+    return {
+      exitCode: 0,
+      output: `Would delete ${args[0]} ("${event.name}", ${event.visibility}) with everything in it, files included.`,
+    };
+  }
   if (!args.includes("--yes")) {
     if (!prompter) {
       return { exitCode: 1, output: "Not a terminal: pass --yes to delete without being asked." };

@@ -198,14 +198,15 @@ Short flags: -o --out, -c --check
 ```
 bogey event list [<org>]
 bogey event visibility <org>/<event> draft|unlisted|public
-bogey event delete <org>/<event> [--yes]
+bogey event delete <org>/<event> [--yes | --dry-run]
 bogey event export <org>/<event> --out <folder>
 bogey event import <folder> [--org <slug>] [--slug <new-slug>] [--name <name>]
                    [--starts-at <date> | --shift-days <n>] [--people]
 
 list shows each org's events, or one org's. visibility publishes an event (public or
 unlisted) or takes it back to a draft. delete removes an event with everything in it,
-files included; it asks you to type the event's address, and --yes skips that for scripts.
+files included; it asks you to type the event's address, --yes skips that for scripts and
+--dry-run only says what it would delete.
 It works even when bogey.config.ts sets events.uiDeletion to false.
 
 export writes an event to a folder: manifest.json, one JSON file per table and the uploaded files.
@@ -215,7 +216,7 @@ settings, agenda). --people also restores members (creating accounts for emails 
 registrations, submissions and files, votes, scores, feedback, awards, results, announcements and check-ins.
 Dates move with --starts-at (the event's new start) or --shift-days. Uses the service key.
 
-Short flags: -y --yes, -o --out
+Short flags: -y --yes, -n --dry-run, -o --out
 ```
 
 ## login
