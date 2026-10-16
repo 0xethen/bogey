@@ -634,6 +634,8 @@ export const en = {
   "notice.urgent": "Urgent",
   "notice.new": "New",
   "messages.title": "Messages",
+  "messages.intro":
+    "Ask organizers or judges questions, review event announcements, or chat with your team.",
   "messages.emptyStaff": "No conversations yet.",
   "messages.emptyParticipant": "Nothing yet. Start a conversation to ask anything.",
   "checkin.title": "Check-in",
@@ -844,7 +846,7 @@ export const en = {
   "announcements.deleteBody": "It will immediately disappear for everyone. This cannot be undone.",
   "announcements.audienceNote": "The audience gets notified and sees it here.",
   "announcements.new": "New announcement...",
-  "announcements.boxHelp": "Broadcast an announcement to users.",
+  "announcements.boxHelp": "Broadcast an update to users with Announcements.",
   "announcements.newShort": "New...",
   "chat.new": "New",
   "compose.heading": "New announcement",

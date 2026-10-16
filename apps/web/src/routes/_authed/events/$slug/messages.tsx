@@ -109,7 +109,7 @@ function RouteComponent() {
   const messageTeams = mayMessageTeams(access, chat) && mayMessageTeams(realAccess, chat);
 
   return (
-    <Screen title={t("messages.title")} width="wide">
+    <Screen title={t("messages.title")} description={t("messages.intro")} width="wide">
       {block && (
         <Alert variant="destructive">
           <IconBan />

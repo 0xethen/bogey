@@ -139,9 +139,12 @@ export function Conversations({
         )}
       >
         {(start.length > 0 || messageTeams) && (
-          <div className="flex flex-col gap-2 border-b border-border p-3">
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 border-b border-border p-3">
             {start.length > 0 && (
-              <DialogTrigger handle={newConversation} render={<Button className="w-full" />}>
+              <DialogTrigger
+                handle={newConversation}
+                render={<Button className="flex-none sm:flex-1 lg:flex-none" />}
+              >
                 <IconPlus />
                 {t("conv.new")}
               </DialogTrigger>
@@ -149,9 +152,7 @@ export function Conversations({
             {messageTeams && (
               <DialogTrigger
                 handle={teamConversation}
-                render={
-                  <Button className="w-full" variant={start.length > 0 ? "outline" : "default"} />
-                }
+                render={<Button variant={start.length > 0 ? "outline" : "default"} />}
               >
                 <IconUsersGroup />
                 {t("conv.messageTeam")}
@@ -573,7 +574,7 @@ function Moderation({ conversation }: { conversation: Conversation }) {
       )}
       <Button
         size="sm"
-        variant="ghost"
+        variant="secondary"
         onClick={() =>
           void update({ status: conversation.status === "closed" ? "open" : "closed" })
         }
