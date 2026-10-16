@@ -36,7 +36,7 @@ function ProblemRoute({ eventId, settings, splat, view }: Context & { view: "pub
           It may have been renamed or hidden, or the contest hasn't started.
         </p>
         <div>
-          <Button variant="outline" nativeButton={false} render={<Link to="" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/problems" />}>
             <IconArrowLeft />
             All problems
           </Button>

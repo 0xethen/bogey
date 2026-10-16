@@ -152,6 +152,13 @@ export const manifest = definePlugin({
       settings: ["allowEditor", "allowUpload", "resultDetail", "showErrors", "separateErrors"],
     },
     {
+      key: "editor",
+      title: "Code editor",
+      description: "How the in-browser editor behaves for everyone in the contest.",
+      page: "contest",
+      settings: ["editorAutocomplete", "editorLineWrapping"],
+    },
+    {
       key: "scoreboard",
       title: "Scoreboard",
       page: "contest",
@@ -159,7 +166,13 @@ export const manifest = definePlugin({
     },
   ],
   routes: [
-    { path: "", label: "Problems", showWhen: { setting: "format", in: ["contest"] } },
+    { path: "" },
+    {
+      path: "/problems",
+      label: "Problems",
+      splat: true,
+      showWhen: { setting: "format", in: ["contest"] },
+    },
     { path: "/ctf", label: "Challenges", showWhen: { setting: "format", in: ["ctf"] } },
     { path: "/problem", splat: true },
     { path: "/scoreboard", label: "Scoreboard" },
@@ -319,7 +332,7 @@ export const manifest = definePlugin({
       type: "string",
       showWhen: { setting: "format", in: ["contest"] },
       label: "Languages",
-      description: "Keys like python, cpp, separated by commas. Empty allows every enabled one.",
+      description: "The languages teams can submit in. None picked allows every enabled one.",
       placeholder: "python, javascript, cpp",
       default: "",
     },
@@ -388,6 +401,20 @@ export const manifest = definePlugin({
       label: "Show errors apart from the output",
       description:
         "Off, a run shows one Output box with errors in red. On, errors get a box of their own.",
+      default: false,
+    },
+    editorAutocomplete: {
+      type: "boolean",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Autocomplete",
+      description: "Suggests names while typing and closes brackets and quotes.",
+      default: true,
+    },
+    editorLineWrapping: {
+      type: "boolean",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Wrap long lines",
+      description: "Off, long lines scroll sideways.",
       default: false,
     },
     editorTabSize: {

@@ -88,7 +88,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
           {problems.data.map((problem) => (
             <li key={problem.id}>
               <Link
-                to="/problem"
+                to="/problems"
                 splat={problem.slug}
                 className="group flex h-full flex-col gap-3 rounded-2xl p-5 no-underline transition-colors border border-border hocus:border-accent/30 hocus:bg-accent/60"
               >

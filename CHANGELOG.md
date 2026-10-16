@@ -28,6 +28,9 @@ advisory (see docs/contributing.md#security-releases). -->
   - Code golf is scored by total length by default (problems solved, then the fewest characters), and the leaderboard shows it. A new **Length ranges** score gives points for each range of lengths, set per problem in the jury editor. Events that kept the old default ("in proportion") switch to total length; pick **In proportion** again to keep it.
   - **Run** uses the code as it is now: Python starts from a fresh namespace each run, so names from earlier versions no longer linger. Errors show only the lines from the participant's code, with a checkbox for the runner's lines.
   - **Show error messages** (Solving settings, on by default): off, judged solutions only say that they errored or didn't compile.
+  - Problems live at `/problems` and `/problems/<problem>`, so the Problems link stays highlighted on a problem; old addresses redirect.
+  - **Languages** is picked from a list of the instance's languages, and a new **Code editor** section turns autocomplete and line wrapping on or off for the contest.
+  - A problem's details show when the contest starts and ends, with the exact time and how far off it is.
   - A problem's page no longer has Public and Jury tabs: the jury gets a **Jury view** button where the scoreboard link was, and the editor links back.
 
 ### Upgrade notes

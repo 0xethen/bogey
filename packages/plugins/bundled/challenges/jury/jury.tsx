@@ -175,7 +175,7 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
                       <Button
                         size="sm"
                         variant="ghost"
-                        render={<Link to="/problem" splat={problem.slug} />}
+                        render={<Link to="/problems" splat={problem.slug} />}
                       >
                         <IconEdit />
                         Edit
@@ -722,7 +722,7 @@ export function ProblemEditor({
               size="sm"
               variant="outline"
               nativeButton={false}
-              render={<Link to="/problem" splat={problem.slug} />}
+              render={<Link to="/problems" splat={problem.slug} />}
             >
               Participant view
             </Button>

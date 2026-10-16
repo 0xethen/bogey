@@ -1,4 +1,4 @@
-import { createElement, type ComponentType } from "react";
+import { createElement, useEffect, type ComponentType } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   definePluginRuntime,
@@ -10,9 +10,10 @@ import { manifest } from "./manifest.ts";
 import { JuryPage, ProblemPage } from "./jury/problem-view.tsx";
 import { Problems } from "./contest/problems.tsx";
 import { ContestPanel, Scoreboard } from "./contest/scoreboard.tsx";
-import { problemSlug } from "./shared.tsx";
+import { problemSlug, useGoTo } from "./shared.tsx";
 import { ConversationTopic } from "./contest/topic.tsx";
 import { ManageOverview } from "./contest/overview.tsx";
+import { LanguagesControl } from "./contest/languages-control.tsx";
 import { ChallengesPage, ManagePage, ScoreboardPage } from "./ctf/pages.tsx";
 import type { Settings } from "./shared.tsx";
 
@@ -39,15 +40,33 @@ function byFormat(
   };
 }
 
+// the list at /problems, a problem at /problems/<slug>
+function ProblemsRoute(context: PluginRouteContext<Settings>) {
+  return problemSlug(context.splat)
+    ? createElement(ProblemPage, context)
+    : createElement(Problems, context);
+}
+
+// the plugin's root and the old /problem/<slug> addresses go to /problems
+function ToProblems({ splat }: PluginRouteContext<Settings>) {
+  const goTo = useGoTo();
+  useEffect(() => {
+    void goTo("/problems", { splat: problemSlug(splat), replace: true });
+  }, [goTo, splat]);
+  return null;
+}
+
 export default definePluginRuntime(manifest, {
   routes: {
-    "": byFormat(Problems, ChallengesPage),
+    "": byFormat(ToProblems, ChallengesPage),
+    "/problems": {
+      component: ProblemsRoute,
+      title: ({ queryClient, eventId, splat }) =>
+        titleFrom(queryClient, eventId, splat, "Problems"),
+    },
     "/ctf": ChallengesPage,
     "/ctf/manage": ManagePage,
-    "/problem": {
-      component: ProblemPage,
-      title: ({ queryClient, eventId, splat }) => titleFrom(queryClient, eventId, splat, "Problem"),
-    },
+    "/problem": ToProblems,
     "/scoreboard": byFormat(Scoreboard, ScoreboardPage),
     "/jury": {
       component: JuryPage,
@@ -65,5 +84,9 @@ export default definePluginRuntime(manifest, {
       (await import("./format/ccs-routes.ts")).publicScoreboard(request, ctx),
   },
   homePanels: { contests: ContestPanel },
-  slots: { conversationTopic: ConversationTopic, manageOverview: ManageOverview },
+  slots: {
+    conversationTopic: ConversationTopic,
+    manageOverview: ManageOverview,
+    settingControls: { languages: LanguagesControl },
+  },
 });

@@ -27,7 +27,7 @@ import { Facts } from "@bogey/ui/components/facts";
 import { Field, FieldLabel } from "@bogey/ui/components/field";
 import { Markdown } from "@bogey/ui/components/markdown";
 import { OptSelect } from "@bogey/ui/components/opt-select";
-import { RelativeTime } from "@bogey/ui/components/relative-time";
+import { ExactTime, RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { Skeleton } from "@bogey/ui/components/skeleton";
 import { Textarea } from "@bogey/ui/components/textarea";
@@ -131,7 +131,7 @@ export function Workspace({
       }
       actions={
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" nativeButton={false} render={<Link to="" />}>
+          <Button size="sm" variant="ghost" nativeButton={false} render={<Link to="/problems" />}>
             <IconArrowLeft />
             Problems
           </Button>
@@ -215,10 +215,10 @@ function ProblemInfo({
                   allowed.map((each) => `${each.name} ${each.version}`.trim()).join(", ") || "—",
               },
               ...(contest.window?.opens_at
-                ? [{ label: "Starts", value: <RelativeTime value={contest.window.opens_at} /> }]
+                ? [{ label: "Starts", value: <ExactTime value={contest.window.opens_at} /> }]
                 : []),
               ...(contest.window?.closes_at
-                ? [{ label: "Ends", value: <RelativeTime value={contest.window.closes_at} /> }]
+                ? [{ label: "Ends", value: <ExactTime value={contest.window.closes_at} /> }]
                 : []),
             ]}
           />
@@ -574,7 +574,12 @@ function Editor({
             : "Upload a file to see it here."
         }
         minHeight="28rem"
-        settings={{ ...DEFAULT_EDITOR_SETTINGS, tabSize: settings.editorTabSize }}
+        settings={{
+          ...DEFAULT_EDITOR_SETTINGS,
+          tabSize: settings.editorTabSize,
+          autocomplete: settings.editorAutocomplete,
+          lineWrapping: settings.editorLineWrapping,
+        }}
       />
       {settings.scoring === "golf" && (
         <GolfLength settings={settings} source={source} attempts={tries.data ?? []} />
