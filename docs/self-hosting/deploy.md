@@ -138,7 +138,8 @@ Instance → Settings → Limits caps, per organization, events, owners and admi
 participants per event, emails per day, storage (MB), hostnames and open invite
 links. They default to no limit, so a single-org instance never hits one. They're
 enforced in the database (the email limit in the send-email hook), so every path
-respects them. Platform admins and the CLI aren't held to them.
+respects them, platform admins and the CLI included. To go past one for an org, raise it
+under Instance → Organizations → Limits.
 
 On Instance → Organizations, **Limits...** overrides any of them for one org: a
 number, "No limit", or the instance default. Only platform admins can change

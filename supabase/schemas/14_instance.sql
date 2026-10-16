@@ -249,21 +249,26 @@ declare
   v_limit bigint;
   v_count bigint;
 begin
-  if (select auth.role()) = 'service_role' or private.is_platform_admin() then
-    return new;
-  end if;
-
+  -- limits apply to everyone, platform admins and the service role included
   if tg_table_name = 'events' then
+    if tg_op = 'UPDATE' and new.org_id = old.org_id then
+      return new;
+    end if;
     v_limit := private.org_limit(new.org_id, 'eventsPerOrg');
     if v_limit is not null then
+      perform pg_advisory_xact_lock(hashtextextended('limit:events:' || new.org_id::text, 0));
       select count(*) into v_count from public.events where org_id = new.org_id;
       if v_count >= v_limit then
         raise exception 'this organization can have at most % events', v_limit using errcode = '23514';
       end if;
     end if;
   elsif tg_table_name = 'org_members' then
+    if new.role = 'member' or (tg_op = 'UPDATE' and old.role <> 'member' and new.org_id = old.org_id) then
+      return new;
+    end if;
     v_limit := private.org_limit(new.org_id, 'adminsPerOrg');
-    if v_limit is not null and new.role <> 'member' then
+    if v_limit is not null then
+      perform pg_advisory_xact_lock(hashtextextended('limit:admins:' || new.org_id::text, 0));
       select count(*) into v_count from public.org_members
       where org_id = new.org_id and role <> 'member';
       if v_count >= v_limit then
@@ -271,27 +276,41 @@ begin
       end if;
     end if;
   elsif tg_table_name = 'org_domains' then
+    if tg_op = 'UPDATE' and new.org_id = old.org_id then
+      return new;
+    end if;
     v_limit := private.org_limit(new.org_id, 'customDomainsPerOrg');
     if v_limit is not null then
+      perform pg_advisory_xact_lock(hashtextextended('limit:domains:' || new.org_id::text, 0));
       select count(*) into v_count from public.org_domains where org_id = new.org_id;
       if v_count >= v_limit then
         raise exception 'this organization can have at most % hostnames', v_limit using errcode = '23514';
       end if;
     end if;
   elsif tg_table_name = 'invite_links' then
+    if new.disabled_at is not null or new.closes_at <= now()
+      or (tg_op = 'UPDATE' and old.disabled_at is null and (old.closes_at is null or old.closes_at > now())) then
+      return new;
+    end if;
     v_org := private.event_org(new.event_id);
     v_limit := private.org_limit(v_org, 'pendingInvitesPerOrg');
     if v_limit is not null then
+      perform pg_advisory_xact_lock(hashtextextended('limit:invites:' || v_org::text, 0));
       select count(*) into v_count
       from public.invite_links l join public.events e on e.id = l.event_id
-      where e.org_id = v_org and l.disabled_at is null and (l.closes_at is null or l.closes_at > now());
+      where e.org_id = v_org and l.id <> new.id
+        and l.disabled_at is null and (l.closes_at is null or l.closes_at > now());
       if v_count >= v_limit then
         raise exception 'this organization can have at most % open invite links', v_limit using errcode = '23514';
       end if;
     end if;
   elsif new.role = 'participant' then
+    if tg_op = 'UPDATE' and old.role = 'participant' and new.event_id = old.event_id then
+      return new;
+    end if;
     v_limit := private.org_limit(private.event_org(new.event_id), 'participantsPerEvent');
     if v_limit is not null then
+      perform pg_advisory_xact_lock(hashtextextended('limit:participants:' || new.event_id::text, 0));
       select count(*) into v_count from public.event_members
       where event_id = new.event_id and role = 'participant';
       if v_count >= v_limit then
@@ -303,15 +322,15 @@ begin
 end;
 $$;
 
-create trigger events_enforce_limits before insert on public.events
+create trigger events_enforce_limits before insert or update of org_id on public.events
   for each row execute function private.enforce_limits();
-create trigger org_members_enforce_limits before insert on public.org_members
+create trigger org_members_enforce_limits before insert or update of role, org_id on public.org_members
   for each row execute function private.enforce_limits();
-create trigger event_members_enforce_limits before insert on public.event_members
+create trigger event_members_enforce_limits before insert or update of role, event_id on public.event_members
   for each row execute function private.enforce_limits();
-create trigger org_domains_enforce_limits before insert on public.org_domains
+create trigger org_domains_enforce_limits before insert or update of org_id on public.org_domains
   for each row execute function private.enforce_limits();
-create trigger invite_links_enforce_limits before insert on public.invite_links
+create trigger invite_links_enforce_limits before insert or update of disabled_at, closes_at on public.invite_links
   for each row execute function private.enforce_limits();
 
 create function public.org_limits(p_org uuid, p_plugin_limits text[] default '{}')
@@ -419,9 +438,6 @@ declare
   v_used bigint;
   v_size bigint := coalesce((new.metadata ->> 'size')::bigint, 0);
 begin
-  if (select auth.role()) = 'service_role' or private.is_platform_admin() then
-    return new;
-  end if;
   v_org := case new.bucket_id
     when 'branding' then private.path_uuid(new.name, 1)
     else private.event_org(private.path_uuid(new.name, 1))

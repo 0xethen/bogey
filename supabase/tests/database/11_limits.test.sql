@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(10);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 select tests.create_user(tests.u(n), n || '@t.test') from unnest(array['owner','admin2','p1','p2','root']) n;
@@ -30,16 +30,29 @@ select lives_ok(
   'staff roles are not participants');
 reset role;
 
+select tests.as_user(tests.u('owner'));
+insert into public.org_members (org_id, user_id, role) values (tests.u('org'), tests.u('p1'), 'member');
+select throws_ok(
+  $$update public.org_members set role = 'admin' where org_id = tests.u('org') and user_id = tests.u('p1')$$,
+  '23514', null, 'promoting a member counts too');
+select throws_ok(
+  $$update public.event_members set role = 'participant' where event_id = tests.u('ev') and user_id = tests.u('admin2')$$,
+  '23514', null, 'and so does turning staff into a participant');
+reset role;
+
 select tests.as_user(tests.u('root'));
-select lives_ok(
+select throws_ok(
   $$insert into public.events (org_id, slug, name) values (tests.u('org'), 'admin-made', 'Admin made')$$,
-  'platform admins are exempt');
+  '23514', null, 'platform admins are held to it too');
+select throws_ok(
+  $$select public.clone_event(tests.u('ev'), 'copy', 'Copy')$$,
+  '23514', null, 'and copying an event counts');
 reset role;
 
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
-select lives_ok(
+select throws_ok(
   $$insert into public.org_members (org_id, user_id, role) values (tests.u('org'), tests.u('p2'), 'admin')$$,
-  'so is the service role (seeding, the CLI)');
+  '23514', null, 'so is the service role');
 
 select * from finish();
 rollback;

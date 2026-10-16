@@ -10,6 +10,12 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Organization limits now hold for everyone: platform admins, copying an event and the CLI can't go past them anymore. Promoting a member to admin, turning someone into a participant and reopening an invite link count too. To let one organization go further, raise its limit under Instance → Organizations.
+
+### Upgrade notes
+
+- Adds the `limits_for_everyone` migration; `bogey upgrade` applies it.
+
 ## 2.1.2 (2026-10-15)
 
 - Fixed the all-in-one `auth` service exiting at startup (`only localhost, 127.0.0.1, and ::1 are supported with http`): GoTrue refuses plain-http hook URLs to other hosts, so the Send Email hook now calls `web` through the `host.docker.internal` alias. Replace `compose.yml` with the one from this release's `bogey-all-in-one` tarball.
