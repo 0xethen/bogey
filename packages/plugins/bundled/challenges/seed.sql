@@ -17,12 +17,14 @@ declare
 begin
   delete from public.events where org_id = p_org and slug = 'demo-ctf';
 
-  insert into public.events (org_id, slug, name, short_name, kind, description_md, timezone,
+  insert into public.events (org_id, slug, name, short_name, kind, timezone,
     starts_at, ends_at, visibility, team_size_min, team_size_max)
   values (p_org, 'demo-ctf', 'Demo CTF', 'CTF', 'custom',
-    'Four challenges, dynamic scoring and a hint. Flags for the demo: flag{hello}, flag{xor}, flag{sqli}, and any flag{<8 hex>}.',
     'America/New_York', v_now - interval '1 hour', v_now + interval '5 hours', 'public', 1, 4)
   returning id into v_event;
+  insert into public.settings (scope, event_id, namespace, value) values
+    ('event', v_event, 'about', jsonb_build_object('body', 'Four challenges, dynamic scoring and a hint. Flags for the demo: flag{hello}, flag{xor}, flag{sqli}, and any flag{<8 hex>}.')),
+    ('event', v_event, 'privacy', '{"about":"public"}');
 
   insert into public.event_windows (event_id, key, opens_at, closes_at) values
     (v_event, 'registration', v_now - interval '7 days', v_now + interval '5 hours'),
@@ -91,12 +93,15 @@ declare
 begin
   delete from public.events where org_id = p_org and slug in ('demo-cup', 'demo-ioi', 'demo-golf');
 
-  insert into public.events (org_id, slug, name, short_name, kind, description_md, timezone,
+  insert into public.events (org_id, slug, name, short_name, kind, timezone,
     starts_at, ends_at, visibility, team_size_min, team_size_max)
   values (p_org, 'demo-cup', 'Demo Cup', 'Cup', 'contest',
-    'Three problems, three hours, ICPC rules. Solo.', 'America/New_York',
+    'America/New_York',
     v_now - interval '1 hour', v_now + interval '2 hours', 'public', 1, 1)
   returning id into v_cup;
+  insert into public.settings (scope, event_id, namespace, value) values
+    ('event', v_cup, 'about', jsonb_build_object('body', 'Three problems, three hours, ICPC rules. Solo.')),
+    ('event', v_cup, 'privacy', '{"about":"public"}');
 
   insert into public.event_windows (event_id, key, opens_at, closes_at) values
     (v_cup, 'registration', v_now - interval '7 days', v_now + interval '2 hours'),
@@ -134,12 +139,15 @@ begin
   select v_cup, id, 'python', E'a, b = map(int, input().split())\nprint(a + b)\n', 'AC', 'reference'
   from public.challenges_problems where event_id = v_cup and slug = 'sum';
 
-  insert into public.events (org_id, slug, name, short_name, kind, description_md, timezone,
+  insert into public.events (org_id, slug, name, short_name, kind, timezone,
     starts_at, ends_at, visibility, team_size_min, team_size_max)
   values (p_org, 'demo-ioi', 'Demo IOI', 'IOI', 'contest',
-    'One problem scored by subtasks. Solo.', 'America/New_York',
+    'America/New_York',
     v_now - interval '1 hour', v_now + interval '2 hours', 'public', 1, 1)
   returning id into v_ioi;
+  insert into public.settings (scope, event_id, namespace, value) values
+    ('event', v_ioi, 'about', jsonb_build_object('body', 'One problem scored by subtasks. Solo.')),
+    ('event', v_ioi, 'privacy', '{"about":"public"}');
 
   insert into public.event_windows (event_id, key, opens_at, closes_at) values
     (v_ioi, 'registration', v_now - interval '7 days', v_now + interval '2 hours'),
@@ -162,12 +170,15 @@ begin
     (v_ioi, v_p, 4, false, 'big', 70, E'1000\n', (select string_agg(n::text, ' ' order by n) || E'\n' from generate_series(1, 1000) n)),
     (v_ioi, v_p, 5, false, 'big', 70, E'999\n', (select string_agg(n::text, ' ' order by n) || E'\n' from generate_series(1, 999) n));
 
-  insert into public.events (org_id, slug, name, short_name, kind, description_md, timezone,
+  insert into public.events (org_id, slug, name, short_name, kind, timezone,
     starts_at, ends_at, visibility, team_size_min, team_size_max)
   values (p_org, 'demo-golf', 'Demo Golf', 'Golf', 'contest',
-    'Shortest source wins. Solo.', 'America/New_York',
+    'America/New_York',
     v_now - interval '1 hour', v_now + interval '2 hours', 'public', 1, 1)
   returning id into v_golf;
+  insert into public.settings (scope, event_id, namespace, value) values
+    ('event', v_golf, 'about', jsonb_build_object('body', 'Shortest source wins. Solo.')),
+    ('event', v_golf, 'privacy', '{"about":"public"}');
 
   insert into public.event_windows (event_id, key, opens_at, closes_at) values
     (v_golf, 'registration', v_now - interval '7 days', v_now + interval '2 hours'),
