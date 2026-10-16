@@ -1001,11 +1001,7 @@ export const en = {
   "block.prizes.help": "What teams can win, from Manage > Prizes",
   "block.about": "About",
   "block.about.title": "About",
-  "block.about.help": "The description from Details, with pictures if you add them",
-  "block.briefing": "For participants",
-  "block.briefing.title": "For participants",
-  "block.briefing.help":
-    "What you wrote for approved people in Details; others see that it's coming",
+  "block.about.help": "About from Details, with pictures if you add them",
   "block.pages": "Pages",
   "block.pages.title": "Information",
   "block.pages.help": "Links to the event's pages",
@@ -1128,10 +1124,8 @@ export const en = {
   "home.fullAgenda": "Full agenda",
   "home.agendaEmpty": "Nothing is scheduled yet. Check back closer to the event.",
   "home.newAnnouncement": "New...",
-  "home.aboutEmpty": "The event's description goes here. Write one in Manage > Details.",
-  "home.briefingEmpty":
-    "What only approved people see goes here. Write it in Manage > Details, under For participants.",
-  "home.briefingPending": "There's more here for participants. You'll see it once you're approved.",
+  "home.aboutEmpty": "About the event goes here. Write it in Manage > Details.",
+  "home.aboutPending": "There's more here for participants. You'll see it once you're approved.",
   "home.pagesEmpty": "Links to the event's pages go here, once it has some.",
   "home.pluginOff": "This plugin isn't on for the event, so nothing shows here.",
   "home.textEmpty": "Empty text. Click to write something.",
@@ -1188,9 +1182,7 @@ export const en = {
   "homeEditor.website": "Website",
   "homeEditor.websitePlaceholder": "Website (optional)",
   "homeEditor.aboutHelp":
-    "The description comes from Manage > Details. Pictures you add show under it.",
-  "homeEditor.briefingHelp":
-    "Comes from \"For participants\" in Manage > Details. Only approved people see it; applicants see that there's more once they're in.",
+    "About comes from Manage > Details, and only members see it unless Security > Before approval shares it. Pictures you add show under it.",
   "homeEditor.imageNoun": "image",
   "homeEditor.addImage": "Add an image",
   "homeEditor.altPlaceholderShort": "Description, for people who can't see it",
@@ -1943,10 +1935,7 @@ export const en = {
   "details.shortName": "Short name",
   "details.about": "About",
   "details.aboutHelp":
-    "Shown on the event home to anyone who can see the event, before they've registered. Acknowledge your sponsors and give people a sense of what to expect.",
-  "details.briefing": "For participants",
-  "details.briefingHelp":
-    "Only people who've been approved see this, under About on the event home. Put the theme, rooms, Wi-Fi and anything else you'd keep off a public page here.",
+    "On the event home. Only approved participants and the event's people see it unless you share it in Security > Before approval. If you want text to show to everyone, add a Text block to the homepage.",
   "details.location": "Location",
   "details.website": "Website",
   "details.needHttp": "Use a full http(s) address",
@@ -3136,6 +3125,11 @@ export const en = {
   "setting.venue.onlineUrl.help": "Shown to members only, never on public pages.",
   "setting.venue.onlineLabel": "Online link name",
   "setting.privacy.agenda": "Agenda",
+  "setting.privacy.about": "About",
+  "setting.privacy.about.help":
+    "The event's About text. For text everyone sees, add a Text block to the homepage instead.",
+  "setting.privacy.about.members": "Members only",
+  "setting.privacy.about.public": "Everyone who can see the event",
   "setting.privacy.agenda.help": "Sessions, times, rooms and hosts.",
   "setting.privacy.agenda.members": "Members only",
   "setting.privacy.agenda.public": "Everyone who can see the event",

@@ -160,7 +160,7 @@ Set at: org, event.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `layout` | group | `{"main":[{"id":"next-steps","type":"next-steps"},{"id":"agenda","type":"agenda"}],"aside":[{"id":"announcements","type":"announcements"},{"id":"facts","type":"facts"},{"id":"prizes","type":"prizes"},{"id":"about","type":"about"},{"id":"briefing","type":"briefing"}]}` | The blocks on the event home, in two columns |
+| `layout` | group | `{"main":[{"id":"next-steps","type":"next-steps"},{"id":"agenda","type":"agenda"}],"aside":[{"id":"announcements","type":"announcements"},{"id":"facts","type":"facts"},{"id":"prizes","type":"prizes"},{"id":"about","type":"about"}]}` | The blocks on the event home, in two columns |
 
 ## Identity setup (`identity`)
 
@@ -239,16 +239,17 @@ Set at: instance, org, event.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
+| `about` | `public` · `members` | `members` | Whether people who aren't approved yet can read About |
 | `agenda` | `public` · `members` | `members` | Whether people who aren't approved yet can see the agenda |
 | `tracks` | `public` · `members` | `public` | Whether people who aren't approved yet can see tracks and prizes |
 
-## For participants (`briefing`)
+## About (`about`)
 
 Set at: event.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `body` | text | — | Shown under About on the event home, only to people who've been approved |
+| `body` | text | — | About the event, on its home; members only unless privacy.about shares it |
 
 ## Check-in (`checkin`)
 

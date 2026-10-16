@@ -1,6 +1,6 @@
 # 0028: Seeing an event is not being in it
 
-**Status:** accepted (2026-10-12).
+**Status:** accepted (2026-10-12). About and For participants were merged into one members-only About by [0030](0030-about-for-members.md).
 
 ## Context
 

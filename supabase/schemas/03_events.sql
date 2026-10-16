@@ -5,7 +5,6 @@ create table public.events (
   name text not null check (length(name) between 1 and 120),
   short_name text check (length(short_name) <= 32),
   kind public.event_kind not null default 'hackathon',
-  description_md text not null default '',
   timezone text not null default 'UTC',
   starts_at timestamptz,
   ends_at timestamptz,
@@ -320,12 +319,11 @@ begin
   end if;
 
   insert into public.events (org_id, slug, name, kind, timezone, starts_at, ends_at, short_name,
-    description_md, location, website_url, team_size_min, team_size_max, is_template, created_by)
+    location, website_url, team_size_min, team_size_max, is_template, created_by)
   select v_src.org_id, lower(p_slug), trim(p_name), v_src.kind, v_src.timezone,
     v_src.starts_at + v_shift,
     case when p_ends_at is not null and not p_template then p_ends_at else v_src.ends_at + v_shift end,
     case when 'details' = any (p_include) then v_src.short_name end,
-    case when 'details' = any (p_include) then v_src.description_md else '' end,
     case when 'details' = any (p_include) then v_src.location end,
     case when 'details' = any (p_include) then v_src.website_url end,
     case when 'details' = any (p_include) then v_src.team_size_min else 1 end,
@@ -438,7 +436,7 @@ begin
   where scope = 'event' and event_id = p_source
     and case namespace
       when 'home' then 'homepage' = any (p_include)
-      when 'briefing' then 'details' = any (p_include)
+      when 'about' then 'details' = any (p_include)
       else 'settings' = any (p_include)
     end;
 

@@ -113,7 +113,6 @@ function blank(type: BlockType): HomeBlock {
     case "facts":
     case "prizes":
     case "pages":
-    case "briefing":
       return { id, type };
   }
 }
@@ -643,10 +642,6 @@ function BlockSettings({
             </div>
           )}
         </Rows>
-      )}
-
-      {block.type === "briefing" && (
-        <p className="text-sm text-muted-fg">{t("homeEditor.briefingHelp")}</p>
       )}
 
       {block.type === "about" && (

@@ -1,11 +1,11 @@
 begin;
-select plan(32);
+select plan(34);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'priv', 'Priv');
-insert into public.events (id, org_id, slug, name, visibility, description_md) values
-  (tests.u('ev'), tests.u('org'), 'ev', 'Ev', 'public', 'Come build things'),
-  (tests.u('unl'), tests.u('org'), 'unl', 'Unl', 'unlisted', 'Quiet one'),
-  (tests.u('old'), tests.u('org'), 'old', 'Old', 'public', 'Last year');
+insert into public.events (id, org_id, slug, name, visibility) values
+  (tests.u('ev'), tests.u('org'), 'ev', 'Ev', 'public'),
+  (tests.u('unl'), tests.u('org'), 'unl', 'Unl', 'unlisted'),
+  (tests.u('old'), tests.u('org'), 'old', 'Old', 'public');
 insert into public.event_windows (event_id, key, override) values (tests.u('ev'), 'registration', 'open');
 select tests.create_user(tests.u(n), n || '@priv.test')
 from unnest(array['own', 'ok', 'pend', 'wait', 'gone', 'past', 'stranger', 'helper']) n;
@@ -27,7 +27,7 @@ insert into public.session_hosts (event_id, session_id, user_id)
 select tests.u('ev'), id, tests.u('helper') from public.event_sessions where event_id = tests.u('ev');
 insert into public.tracks (event_id, name, prize_md) values (tests.u('ev'), 'Best hack', 'A trophy');
 insert into public.settings (scope, event_id, namespace, value)
-values ('event', tests.u('ev'), 'briefing', '{"body":"The theme is tides"}');
+values ('event', tests.u('ev'), 'about', '{"body":"The theme is tides"}');
 
 select ok(not exists (select 1 from public.org_members where org_id = tests.u('org') and user_id = tests.u('ok')),
   'an approved participant doesn''t join the org');
@@ -35,7 +35,8 @@ select ok(exists (select 1 from public.org_members where org_id = tests.u('org')
   'staff do');
 
 select tests.as_anon();
-select is((select description_md from public.events where id = tests.u('ev')), 'Come build things', 'anyone sees About');
+select ok(not (public.settings_for(array['about'], null, tests.u('ev')) ? 'about'), 'About is for members by default');
+select is((select count(*)::integer from public.events where id = tests.u('ev')), 1, 'anyone sees the event');
 select is((select count(*)::integer from public.tracks where event_id = tests.u('ev')), 1, 'and the prizes, by default');
 select is((select count(*)::integer from public.session_slots where event_id = tests.u('ev')), 0, 'not the agenda');
 select is((select count(*)::integer from public.event_sessions where event_id = tests.u('ev')), 0, 'or its sessions');
@@ -45,8 +46,8 @@ reset role;
 
 select tests.as_user(tests.u('pend'));
 select is((select count(*)::integer from public.event_sessions where event_id = tests.u('ev')), 0, 'an applicant doesn''t see the agenda');
-select ok(not (public.settings_for(array['briefing'], null, tests.u('ev')) ? 'briefing'), 'or what''s for participants');
-select is((select count(*)::integer from public.settings where event_id = tests.u('ev') and namespace = 'briefing'), 0,
+select ok(not (public.settings_for(array['about'], null, tests.u('ev')) ? 'about'), 'or About');
+select is((select count(*)::integer from public.settings where event_id = tests.u('ev') and namespace = 'about'), 0,
   'not even reading settings directly');
 reset role;
 select tests.as_user(tests.u('wait'));
@@ -58,8 +59,8 @@ reset role;
 
 select tests.as_user(tests.u('ok'));
 select is((select count(*)::integer from public.event_sessions where event_id = tests.u('ev')), 1, 'an approved participant sees the agenda');
-select is(public.settings_for(array['briefing'], null, tests.u('ev')) #>> '{briefing,body}', 'The theme is tides',
-  'and what''s for participants');
+select is(public.settings_for(array['about'], null, tests.u('ev')) #>> '{about,body}', 'The theme is tides',
+  'and About');
 select is(jsonb_array_length(public.event_agenda(tests.u('ev')) #> '{slots,0,sessions,0,hosts}'), 1, 'with the hosts');
 select ok(exists (select 1 from public.profiles where id = tests.u('helper')), 'and can see people in the event');
 select ok(exists (select 1 from public.profiles where id = tests.u('own')), 'and the org''s admins');
@@ -67,7 +68,11 @@ select ok(not exists (select 1 from public.profiles where id = tests.u('pend')),
 reset role;
 
 insert into public.settings (scope, event_id, namespace, value)
-values ('event', tests.u('ev'), 'privacy', '{"agenda":"public","tracks":"members"}');
+values ('event', tests.u('ev'), 'privacy', '{"agenda":"public","tracks":"members","about":"public"}');
+select tests.as_anon();
+select is(public.settings_for(array['about'], null, tests.u('ev')) #>> '{about,body}', 'The theme is tides',
+  'a shared About shows to anyone who can see the event');
+reset role;
 select tests.as_user(tests.u('pend'));
 select is((select count(*)::integer from public.event_sessions where event_id = tests.u('ev')), 1, 'a public agenda shows to applicants');
 select is(jsonb_array_length(public.event_agenda(tests.u('ev')) #> '{slots,0,sessions,0,hosts}'), 0, 'without who hosts');

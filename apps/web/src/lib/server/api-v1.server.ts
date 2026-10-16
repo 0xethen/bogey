@@ -84,14 +84,14 @@ interface EventRow {
   name: string;
   short_name: string | null;
   kind: string;
-  description_md: string;
+  /** About, when the event shares it before approval (privacy.about); empty otherwise. */
+  about: string;
   starts_at: string | null;
   ends_at: string | null;
   timezone: string;
 }
 
-const EVENT_COLUMNS =
-  "id, slug, name, short_name, kind, description_md, starts_at, ends_at, timezone";
+const EVENT_COLUMNS = "id, slug, name, short_name, kind, starts_at, ends_at, timezone";
 
 function eventJson(origin: string, row: EventRow) {
   return {
@@ -99,13 +99,37 @@ function eventJson(origin: string, row: EventRow) {
     name: row.name,
     shortName: row.short_name,
     kind: row.kind,
-    description: row.description_md,
+    description: row.about,
     startsAt: row.starts_at,
     endsAt: row.ends_at,
     timezone: row.timezone,
     url: `${origin}/events/${row.slug}`,
   };
 }
+
+// settings RLS only returns an event's About when privacy.about shares it
+async function withAbout<T extends { id: string }>(
+  ctx: Context,
+  rows: Tuple<T>,
+): Promise<(T & { about: string })[] | null> {
+  if (rows.length === 0) return [];
+  const { data, error } = await ctx.supabase
+    .from("settings")
+    .select("event_id, value")
+    .eq("scope", "event")
+    .eq("namespace", "about")
+    .in(
+      "event_id",
+      rows.map((row) => row.id),
+    );
+  if (error) return null;
+  const about = new Map(
+    data.map((row) => [row.event_id, aboutBody.catch({}).parse(row.value).body ?? ""]),
+  );
+  return rows.map((row) => ({ ...row, about: about.get(row.id) ?? "" }));
+}
+
+const aboutBody = z.object({ body: z.string().optional() });
 
 async function findEvent(ctx: Context, slug: string): Promise<EventRow | Response> {
   if (!SLUG.test(slug)) return failure(404, "There is no event with that address.");
@@ -117,7 +141,8 @@ async function findEvent(ctx: Context, slug: string): Promise<EventRow | Respons
     .maybeSingle();
   if (error) return failure(500, "Couldn't load the event.");
   if (!data) return failure(404, "There is no event with that address.");
-  return data;
+  const [event] = (await withAbout(ctx, [data])) ?? [];
+  return event ?? failure(500, "Couldn't load the event.");
 }
 
 async function withEvent(
@@ -142,9 +167,11 @@ export async function listEvents(request: Request): Promise<Response> {
     .order("starts_at", { ascending: false, nullsFirst: false })
     .limit(100);
   if (error) return failure(500, "Couldn't load events.");
+  const events = await withAbout(ctx, data);
+  if (!events) return failure(500, "Couldn't load events.");
   return json({
     organization: { slug: ctx.org.slug, name: ctx.org.name },
-    events: data.map((row) => eventJson(ctx.origin, row)),
+    events: events.map((row) => eventJson(ctx.origin, row)),
   });
 }
 
@@ -406,7 +433,7 @@ export function getHackathonJson(request: Request, slug: string): Promise<Respon
     json(
       hackathonJson({
         name: event.name,
-        description: event.description_md,
+        description: event.about,
         url: `${ctx.origin}/events/${event.slug}`,
         startsAt: event.starts_at,
         endsAt: event.ends_at,

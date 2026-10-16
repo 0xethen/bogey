@@ -18,7 +18,7 @@ create function pg_temp.last(p_action text) returns jsonb language sql as $$
 $$;
 
 select tests.as_user(tests.u('own'));
-update public.events set name = 'Hack Night', description_md = 'Long text' where id = tests.u('ev');
+update public.events set name = 'Hack Night', location = 'Long text' where id = tests.u('ev');
 insert into public.settings (scope, event_id, namespace, value) values ('event', tests.u('ev'), 'judging', '{"blind": true}');
 insert into public.settings (scope, org_id, namespace, value) values ('org', tests.u('org'), 'branding', '{"name": "Alpha"}');
 update public.event_members set role = 'judge' where user_id = tests.u('p2') and event_id = tests.u('ev');
@@ -28,9 +28,9 @@ delete from public.teams where id = tests.u('t1');
 insert into public.org_members (org_id, user_id, role) values (tests.u('org'), tests.u('new'), 'member');
 reset role;
 
-select is(pg_temp.last('event.updated') -> 'fields', '["description_md", "name"]', 'event edits list the fields');
+select is(pg_temp.last('event.updated') -> 'fields', '["location", "name"]', 'event edits list the fields');
 select is(pg_temp.last('event.updated') -> 'changes' -> 'name', '{"from": "Seeded", "to": "Hack Night"}', 'and old and new values of short ones');
-select ok(not (pg_temp.last('event.updated') -> 'changes') ? 'description_md', 'but not of long ones');
+select ok(not (pg_temp.last('event.updated') -> 'changes') ? 'location', 'but not of others');
 select is((select actor_id from public.audit_log where action = 'event.updated' and event_id = tests.u('ev')), tests.u('own'), 'the actor is the session user');
 select is((select meta from public.audit_log where action = 'settings.changed' and event_id = tests.u('ev')), '{"namespace": "judging", "keys": ["blind"]}', 'settings record the keys, not values');
 select is((select meta ->> 'namespace' from public.audit_log where action = 'settings.changed' and org_id = tests.u('org') and event_id is null), 'branding', 'org settings are logged on the org');

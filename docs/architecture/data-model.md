@@ -137,7 +137,6 @@ there is".
 | `slug`                           | `citext`, unique per org                          |
 | `name`, `short_name`             |                                                   |
 | `kind`                           | `event_kind`: `hackathon`, `contest`, `custom`    |
-| `description_md`                 |                                                   |
 | `timezone`                       | an IANA name, checked against `pg_timezone_names` |
 | `starts_at`, `ends_at`           |                                                   |
 | `location`, `website_url`        |                                                   |

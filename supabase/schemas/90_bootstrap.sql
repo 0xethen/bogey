@@ -180,10 +180,9 @@ declare
 begin
   delete from public.events where org_id = p_org and slug = 'demo-hackathon';
 
-  insert into public.events (org_id, slug, name, short_name, kind, description_md, timezone,
+  insert into public.events (org_id, slug, name, short_name, kind, timezone,
     starts_at, ends_at, location, visibility, team_size_min, team_size_max)
   values (p_org, 'demo-hackathon', 'Demo Hackathon', 'Demo', 'hackathon',
-    'A 24-hour build sprint. Form a team of up to four, pick a track, and ship something.',
     'America/New_York', v_now - interval '2 hours', v_now + interval '22 hours', 'Main Hall',
     'public', 1, 4)
   returning id into v_hack;
@@ -232,7 +231,10 @@ begin
 
   insert into public.settings (scope, event_id, namespace, value) values
     ('event', v_hack, 'registration', '{"mode":"open"}'),
-    ('event', v_hack, 'submissions', '{"autoSubmit":true}');
+    ('event', v_hack, 'submissions', '{"autoSubmit":true}'),
+    ('event', v_hack, 'about', jsonb_build_object('body',
+      'A 24-hour build sprint. Form a team of up to four, pick a track, and ship something.')),
+    ('event', v_hack, 'privacy', '{"about":"public"}');
 
   perform private.audit_org(p_org, 'org.demo_seeded', 'org', p_org, '{}');
 end;

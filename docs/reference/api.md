@@ -41,7 +41,8 @@ An event looks like:
 }
 ```
 
-`/events/<slug>` adds `windows` (`key`, `opensAt`, `closesAt`, `override`) and `prizes` (`name`, `description`, `prize`,
+`description` is the event's About in Markdown when the event shares it before approval (Manage → Security → Before
+approval → About), and empty otherwise. `/events/<slug>` adds `windows` (`key`, `opensAt`, `closesAt`, `override`) and `prizes` (`name`, `description`, `prize`,
 `sponsor`, `sponsorLogo`, `maxWinners`). A gallery project has `id`, `title`, `team`, `submittedAt`, `prizes` and `answers`
 (`label`, `kind`, `value`) for its written and link answers; files are not included. Results carry `awards` and `rankings` as
 published.

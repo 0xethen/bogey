@@ -77,7 +77,7 @@ export interface HomeData {
   kinds: Tuple<SessionKind>;
   schedule: ResolvedValue<"schedule">;
   venue: ResolvedValue<"venue">;
-  briefing: string;
+  about: string;
   competes: boolean;
   manages: boolean;
 }
@@ -145,13 +145,6 @@ export const BLOCK_INFO: Record<
     title: "block.pages.title",
     description: "block.pages.help",
     icon: IconLayoutList,
-    group: "event",
-  },
-  briefing: {
-    label: "block.briefing",
-    title: "block.briefing.title",
-    description: "block.briefing.help",
-    icon: IconLock,
     group: "event",
   },
   text: {
@@ -357,7 +350,7 @@ function Placeholder({ title, children }: { title?: string; children: ReactNode 
   );
 }
 
-function BriefingPending({ eventId, title }: { eventId: string; title: string }) {
+function AboutPending({ eventId, title }: { eventId: string; title: string }) {
   const t = useT();
   const { data } = useQuery(myRegistrationQueryOptions(eventId));
   const status = data?.registration?.status;
@@ -366,7 +359,7 @@ function BriefingPending({ eventId, title }: { eventId: string; title: string })
     <Screen.Section title={title}>
       <p className="flex items-center gap-2 text-sm text-muted-fg">
         <IconLock className="size-4 shrink-0" />
-        {t("home.briefingPending")}
+        {t("home.aboutPending")}
       </p>
     </Screen.Section>
   );
@@ -537,12 +530,13 @@ export function HomeBlockView({
 
     case "about": {
       const images = block.images ?? [];
-      if (!event.description_md && images.length === 0) {
-        return customizing ? <Placeholder title={title}>{t("home.aboutEmpty")}</Placeholder> : null;
+      if (!data.about && images.length === 0) {
+        if (customizing) return <Placeholder title={title}>{t("home.aboutEmpty")}</Placeholder>;
+        return data.access?.role ? null : <AboutPending eventId={event.id} title={title} />;
       }
       return (
         <Screen.Section title={title}>
-          <Markdown>{event.description_md}</Markdown>
+          {data.about && <Markdown>{data.about}</Markdown>}
           {images.length > 0 && (
             <div className={cn("grid gap-3", images.length > 1 && "sm:grid-cols-2")}>
               {images.map((image, index) => (
@@ -557,17 +551,6 @@ export function HomeBlockView({
         </Screen.Section>
       );
     }
-
-    case "briefing":
-      if (data.briefing) {
-        return (
-          <Screen.Section title={title}>
-            <Markdown>{data.briefing}</Markdown>
-          </Screen.Section>
-        );
-      }
-      if (customizing) return <Placeholder title={title}>{t("home.briefingEmpty")}</Placeholder>;
-      return data.access?.role ? null : <BriefingPending eventId={event.id} title={title} />;
 
     case "prizes":
       return (

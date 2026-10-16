@@ -64,15 +64,16 @@ drafts that only organizers can see.
 
 **Manage → Details**: name, address, dates, timezone, location and the
 **About** text on the event home (Markdown, with a preview; `||text||` hides
-text until someone clicks it, ⌘| in the editor). About is public: anyone who
-can see the event reads it, before they register. Put the theme, rooms, Wi-Fi
-and anything else you'd keep off a public page in **For participants**, right
-under it; only approved people see that, and applicants see that there's more
-once they're in. **Visibility** controls who can find it: draft (organizers
+text until someone clicks it, ⌘| in the editor). About is for members by
+default: approved participants and the event's people read it, and applicants
+see that there's more once they're in, so the theme, rooms and Wi-Fi can go
+there. To share it with anyone who can see the event, change it under
+**Before approval** below. For text everyone should see, add a **Text** block
+to the homepage. **Visibility** controls who can find it: draft (organizers
 only), unlisted (anyone signed in who has the link) or public.
 
 **Manage → Security → Before approval** decides what applicants, the waitlist
-and anyone else with the link see besides About: the agenda (members only by
+and anyone else with the link see: About and the agenda (members only by
 default) and tracks and prizes (shown by default). The database enforces it,
 not just the page.
 

@@ -106,7 +106,6 @@ export const HOME_BUILT_IN_BLOCKS = [
   "facts",
   "prizes",
   "pages",
-  "briefing",
 ] as const;
 export type HomeBuiltInBlock = (typeof HOME_BUILT_IN_BLOCKS)[number];
 
@@ -229,7 +228,7 @@ const withoutRetiredBlocks = (value: unknown): unknown =>
             typeof block === "object" &&
             block !== null &&
             "type" in block &&
-            block.type === "plugins"
+            (block.type === "plugins" || block.type === "briefing")
           ),
       )
     : value;
@@ -250,7 +249,6 @@ export const DEFAULT_HOME_LAYOUT: HomeLayout = {
     { id: "facts", type: "facts" },
     { id: "prizes", type: "prizes" },
     { id: "about", type: "about" },
-    { id: "briefing", type: "briefing" },
   ],
 };
 
@@ -1047,8 +1045,12 @@ export const settingsRegistry = {
   privacy: namespace({
     label: "Before approval",
     scopes: ["instance", "org", "event"],
-    defaults: { agenda: "members", tracks: "public" },
+    defaults: { about: "members", agenda: "members", tracks: "public" },
     schema: z.object({
+      about: z
+        .enum(["public", "members"])
+        .optional()
+        .describe("Whether people who aren't approved yet can read About"),
       agenda: z
         .enum(["public", "members"])
         .optional()
@@ -1059,6 +1061,15 @@ export const settingsRegistry = {
         .describe("Whether people who aren't approved yet can see tracks and prizes"),
     }),
     fields: {
+      about: {
+        label: "About",
+        description:
+          "The event's About text. For text everyone sees, add a Text block to the homepage instead.",
+        options: [
+          { value: "members", label: "Members only", description: "Once they're approved" },
+          { value: "public", label: "Everyone who can see the event" },
+        ],
+      },
       agenda: {
         label: "Agenda",
         description: "Sessions, times, rooms and hosts.",
@@ -1076,8 +1087,8 @@ export const settingsRegistry = {
       },
     },
   }),
-  briefing: namespace({
-    label: "For participants",
+  about: namespace({
+    label: "About",
     scopes: ["event"],
     defaults: {},
     schema: z.object({
@@ -1085,7 +1096,7 @@ export const settingsRegistry = {
         .string()
         .max(20_000, "Keep it under 20,000 characters")
         .optional()
-        .describe("Shown under About on the event home, only to people who've been approved"),
+        .describe("About the event, on its home; members only unless privacy.about shares it"),
     }),
   }),
   checkin: namespace({

@@ -185,7 +185,8 @@ begin
   end;
 
   foreach v_ns in array p_namespaces loop
-    if private.is_public_namespace(v_ns) or v_member then
+    if private.is_public_namespace(v_ns) or v_member
+      or (v_ns = 'about' and p_event is not null and private.section_open(p_event, 'about')) then
       v_out := v_out || jsonb_build_object(v_ns, case
         when p_event is not null then private.event_setting(p_event, v_ns)
         when v_org is not null then private.org_setting(v_org, v_ns)
@@ -476,7 +477,8 @@ create policy settings_select on public.settings for select to anon, authenticat
       when 'org' then private.is_public_namespace(namespace) or (select private.is_org_member(org_id))
       when 'event' then (select private.can_view_event(event_id))
         and (private.is_public_namespace(namespace)
-          or (select private.has_permission(event_id, 'event.view')))
+          or (select private.has_permission(event_id, 'event.view'))
+          or (namespace = 'about' and (select private.section_open(event_id, 'about'))))
     end
   );
 create policy settings_insert on public.settings for insert to authenticated

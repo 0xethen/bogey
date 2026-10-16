@@ -13,10 +13,12 @@ advisory (see docs/contributing.md#security-releases). -->
 - Announcements can go to the people in a session: everyone signed up for or placed in a session of a choose-one slot (a workshop, not lunch), plus its hosts. Pick it under Sessions in the composer's Audience.
 - Rubrics for events with several themes: under Manage → Judging → Criteria, add a rubric per theme and put criteria in it; criteria left on Every rubric count for every project. Each project is scored on the shared criteria plus its rubric's. Judges pick a project's rubric on the score sheet (Judges pick the rubric, on by default), and teams can pick their own on their submission (Teams pick their rubric, off by default, showing rubric names or their criteria too). The results preview names each project's rubric.
 - Judges can flag a project for deliberation. While it's flagged, the judges deliberating see each other's scores and notes on it, discuss it on the project's page and resolve it. Judging settings choose who deliberates (the project's judges by default, every judge, or nobody), can flag projects on their own when judges' totals are far apart, and hold publishing until flags are resolved (on by default). Organizers see every flag under Manage → Judging → Deliberation.
+- About and For participants are now one About (Manage → Details), for members only by default: approved participants and the event's people see it, and applicants see that there's more once they're in. Share it with anyone who can see the event under Manage → Security → Before approval → About. For text everyone sees, add a Text block to the homepage. The public API's event `description` is About when it's shared, and empty otherwise.
 
 ### Upgrade notes
 
-- Adds the `session_announcements` and `rubrics_and_deliberation` migrations; `bogey upgrade` applies them.
+- Adds the `session_announcements`, `rubrics_and_deliberation` and `about_for_members` migrations; `bogey upgrade` applies them.
+- `about_for_members` puts each event's old About in front of its For participants text. Events that only had About stay public (Before approval → About is set to share it); events that had both start members-only, so check those if part of About should stay public and move that part to a Text block. A homepage's For participants block becomes About, or is removed when the page already has one. `events.description_md` is dropped.
 
 ## 2.1.3 (2026-10-16)
 

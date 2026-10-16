@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/security")({
         keywords: ["private", "members only", "applicants", "pending", "hide", "agenda", "prizes"],
         id: "privacy",
       }),
-      ...searchSettings("privacy", ["agenda", "tracks"], t),
+      ...searchSettings("privacy", ["about", "agenda", "tracks"], t),
       searchSection(t("manageReg.network"), {
         keywords: ["wifi", "ip", "allowed networks", "venue", "security"],
         id: "network",
@@ -77,7 +77,7 @@ function RouteComponent() {
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}
           namespace="privacy"
-          keys={["agenda", "tracks"]}
+          keys={["about", "agenda", "tracks"]}
         />
       </Screen.Section>
       <NetworkSection eventId={event.id} />

@@ -22,7 +22,6 @@ const session: Session = {
 const event: Event = {
   created_at: "",
   created_by: null,
-  description_md: "",
   ends_at: null,
   id: "e1",
   is_template: false,

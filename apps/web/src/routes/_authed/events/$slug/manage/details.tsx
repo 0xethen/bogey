@@ -41,16 +41,11 @@ const detailsSchema = (t: T) =>
         .trim()
         .max(32, t("form.maxLength", { max: 32 }))
         .meta({ label: t("details.shortName") }),
-      description: z
+      about: z
         .string()
         .max(20_000, t("form.maxLength", { max: 20_000 }))
         .meta({ label: t("details.about") })
         .describe(t("details.aboutHelp")),
-      briefing: z
-        .string()
-        .max(20_000, t("form.maxLength", { max: 20_000 }))
-        .meta({ label: t("details.briefing") })
-        .describe(t("details.briefingHelp")),
       location: z
         .string()
         .trim()
@@ -77,7 +72,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/details")({
         "venue",
       ]),
       context.query.ensureQueryData(
-        ownSettingsQueryOptions({ scope: "event", eventId: context.event.id }, "briefing"),
+        ownSettingsQueryOptions({ scope: "event", eventId: context.event.id }, "about"),
       ),
     ]),
   component: RouteComponent,
@@ -93,8 +88,8 @@ function RouteComponent() {
   const queryClient = useQueryClient();
   const zone = event.timezone;
   const admin = isOrgAdmin(useViewerSession());
-  const { data: briefing } = useSuspenseQuery(
-    ownSettingsQueryOptions({ scope: "event", eventId: event.id }, "briefing"),
+  const { data: about } = useSuspenseQuery(
+    ownSettingsQueryOptions({ scope: "event", eventId: event.id }, "about"),
   );
 
   const form = useAppForm({
@@ -102,8 +97,7 @@ function RouteComponent() {
       name: event.name,
       slug: event.slug,
       shortName: event.short_name ?? "",
-      description: event.description_md,
-      briefing: briefing.body ?? "",
+      about: about.body ?? "",
       location: event.location ?? "",
       website: event.website_url ?? "",
       timezone: zone,
@@ -121,7 +115,6 @@ function RouteComponent() {
           name: value.name,
           slug: value.slug,
           shortName: value.shortName,
-          descriptionMd: value.description,
           location: value.location,
           websiteUrl: value.website,
           timezone: value.timezone,
@@ -137,11 +130,11 @@ function RouteComponent() {
         }
         return createValidationError(result.error.message);
       }
-      if (value.briefing !== (briefing.body ?? "")) {
-        const saved = await updateSettings({ scope: "event", eventId: event.id }, "briefing", {
-          body: value.briefing || null,
+      if (value.about !== (about.body ?? "")) {
+        const saved = await updateSettings({ scope: "event", eventId: event.id }, "about", {
+          body: value.about || null,
         });
-        if (!saved.ok) return createValidationError({ fields: { briefing: saved.error.message } });
+        if (!saved.ok) return createValidationError({ fields: { about: saved.error.message } });
         await queryClient.invalidateQueries({ queryKey: ["settings"] });
       }
       formApi.reset(value);
@@ -224,10 +217,7 @@ function RouteComponent() {
                 />
               )}
             </form.Field>
-            <form.Field name="description">
-              {(field) => <field.MarkdownField rows={6} />}
-            </form.Field>
-            <form.Field name="briefing">{(field) => <field.MarkdownField rows={4} />}</form.Field>
+            <form.Field name="about">{(field) => <field.MarkdownField rows={6} />}</form.Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <form.Field name="location">{(field) => <field.TextField />}</form.Field>
               <form.Field name="website">{(field) => <field.TextField type="url" />}</form.Field>

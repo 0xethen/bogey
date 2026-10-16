@@ -97,10 +97,6 @@ export const updateEventFn = createServerFn({ method: "POST" })
     if (raw.slug !== undefined) changes.slug = requireSlug(raw.slug, "Web address");
     if (raw.shortName !== undefined)
       changes.short_name = optionalText(raw.shortName, "Short name", 32);
-    if (raw.descriptionMd !== undefined) {
-      changes.description_md =
-        typeof raw.descriptionMd === "string" ? raw.descriptionMd.slice(0, 20_000) : "";
-    }
     if (raw.location !== undefined) changes.location = optionalText(raw.location, "Location", 200);
     if (raw.websiteUrl !== undefined) changes.website_url = optionalUrl(raw.websiteUrl, "Website");
     if (raw.timezone !== undefined) changes.timezone = requireText(raw.timezone, "Timezone", 64);

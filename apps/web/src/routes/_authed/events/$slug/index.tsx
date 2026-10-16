@@ -30,7 +30,7 @@ import { pluginSettingsQueryOptions, sessionKindsWithPlugins } from "#/lib/plugi
 import { useSettingsMutation } from "#/lib/settings.ts";
 
 const homeSettings = (eventId: string) =>
-  settingsQueryOptions({ eventId }, ["agenda", "briefing", "home", "schedule", "venue"]);
+  settingsQueryOptions({ eventId }, ["about", "agenda", "home", "schedule", "venue"]);
 
 export const Route = createFileRoute("/_authed/events/$slug/")({
   staticData: { command: { label: "Home" } },
@@ -112,7 +112,7 @@ function RouteComponent() {
     kinds: sessionKindsWithPlugins(settings.agenda.kinds, plugins),
     schedule: settings.schedule,
     venue: settings.venue,
-    briefing: settings.briefing.body ?? "",
+    about: settings.about.body ?? "",
     competes: !role || role === "participant",
     manages,
   };
