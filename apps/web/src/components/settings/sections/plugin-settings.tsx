@@ -4,6 +4,7 @@ import { unwrap } from "@bogey/db/errors";
 import type { OwnScope } from "@bogey/db/queries/settings";
 import {
   isSettingVisible,
+  loadedPluginSlots,
   readPluginSettings,
   settingsEditableAt,
   settingsLockedAbove,
@@ -188,7 +189,15 @@ export function PluginSettings({
       <FieldGroup>
         {shown.map(([name, setting]) => {
           const id = `${manifest.key}-${name}`;
-          const control = (
+          const Custom = loadedPluginSlots().find((loaded) => loaded.key === manifest.key)?.slots
+            .settingControls?.[name];
+          const control = Custom ? (
+            <Custom
+              id={id}
+              value={draft[name] ?? ""}
+              onChange={(value) => setDraft({ ...draft, [name]: value })}
+            />
+          ) : (
             <Control
               id={id}
               setting={setting}

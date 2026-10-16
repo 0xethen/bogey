@@ -161,6 +161,13 @@ export interface PluginAuthCaptchaContext<TSettings = Record<string, unknown>> {
   onToken: (token: string | null) => void;
 }
 
+// a plugin's own control for one of its settings, in place of the default input
+export interface PluginSettingControlProps {
+  id: string;
+  value: string | number | boolean;
+  onChange: (value: string | number | boolean) => void;
+}
+
 export interface PluginSlots<TSettings = Record<string, unknown>> {
   pending?: ComponentType;
   authCaptcha?: ComponentType<PluginAuthCaptchaContext<TSettings>>;
@@ -174,6 +181,8 @@ export interface PluginSlots<TSettings = Record<string, unknown>> {
   conversationTopic?: ComponentType<PluginContext<TSettings> & { topic: string }>;
   judgingPanel?: ComponentType<PluginJudgingPanelContext<TSettings>>;
   sessionPanel?: ComponentType<PluginSessionPanelContext<TSettings>>;
+  /** Keyed by setting name. */
+  settingControls?: Record<string, ComponentType<PluginSettingControlProps>>;
 }
 
 export interface PluginServerContext {

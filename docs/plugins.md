@@ -354,6 +354,7 @@ until one does. A panel gets `{ eventId, settings, session }` and renders only w
 | `accountMenu`       | items in the account menu (`DropdownMenu*`)            | `{ settings, session }` (settings are defaults)                         |
 | `menubar`           | an icon button left of the notifications bell          | `{ settings, session }` (settings are defaults)                         |
 | `pending`           | replaces the loading skeleton; first plugin wins       | nothing                                                                 |
+| `settingControls`   | in place of a setting's own input, keyed by its name   | `{ id, value, onChange }`; the value is stored as the setting's type    |
 | `authCaptcha`       | the sign-in forms, above the button; first plugin wins | `{ settings, onToken }` (settings are the instance's)                   |
 
 An `eventWrapper` can guard a page (lockdown covers it until its rules are met). If one throws, the
