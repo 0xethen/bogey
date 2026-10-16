@@ -58,7 +58,8 @@ export default defineConfig({
 
 - **`brand`:** the instance's name (the default for the Branding setting),
   the theme (see [Themes](self-hosting/themes.md)) and icons served from
-  `apps/web/public`.
+  `apps/web/public`. The icons are also the favicon (`dark` in dark mode);
+  without them, Bogey's own shows.
 - **`plugins.disabled`:** installed plugins that shouldn't run. Orgs and
   events turn the rest on and off in Settings.
 - **`events.uiDeletion`:** whether org admins can delete an event from Manage →

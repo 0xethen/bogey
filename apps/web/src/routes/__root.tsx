@@ -118,12 +118,33 @@ export const Route = createRootRouteWithContext<Context>()({
           rel: "stylesheet",
           href: css,
         },
+        ...faviconLinks(),
       ],
     };
   },
   shellComponent: RootDocument,
   component: RouteComponent,
 });
+
+// favicon from bogey.config's brand.icons, with Bogey's own as the fallback
+function faviconLinks() {
+  if (!brand.icons) return [{ rel: "icon", href: "/favicon.ico" }];
+  const { default: light, dark } = brand.icons;
+  const type = (href: string) =>
+    href.endsWith(".svg")
+      ? "image/svg+xml"
+      : href.endsWith(".ico")
+        ? "image/x-icon"
+        : href.endsWith(".png")
+          ? "image/png"
+          : undefined;
+  return dark
+    ? [
+        { rel: "icon", href: light, type: type(light), media: "(prefers-color-scheme: light)" },
+        { rel: "icon", href: dark, type: type(dark), media: "(prefers-color-scheme: dark)" },
+      ]
+    : [{ rel: "icon", href: light, type: type(light) }];
+}
 
 function RootDocument({ children }: { children: ReactNode }) {
   const router = useRouter({ warn: false });
