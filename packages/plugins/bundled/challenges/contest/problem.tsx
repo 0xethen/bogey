@@ -205,7 +205,7 @@ function ProblemInfo({
               { label: "Memory", value: `${problem.memory_limit_mb} MB` },
               { label: "Worth", value: points(problem.points) },
               {
-                label: "Tries",
+                label: "Max tries",
                 value:
                   settings.attemptLimit > 0 ? `${settings.attemptLimit} per problem` : "No limit",
               },
@@ -214,6 +214,9 @@ function ProblemInfo({
                 value:
                   allowed.map((each) => `${each.name} ${each.version}`.trim()).join(", ") || "—",
               },
+              ...(contest.window?.opens_at
+                ? [{ label: "Starts", value: <RelativeTime value={contest.window.opens_at} /> }]
+                : []),
               ...(contest.window?.closes_at
                 ? [{ label: "Ends", value: <RelativeTime value={contest.window.closes_at} /> }]
                 : []),

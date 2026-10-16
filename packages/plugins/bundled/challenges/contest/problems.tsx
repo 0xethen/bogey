@@ -90,7 +90,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
               <Link
                 to="/problem"
                 splat={problem.slug}
-                className="group flex h-full flex-col gap-3 rounded-2xl border border-border bg-background p-5 no-underline transition-colors hocus:border-primary/30 hocus:bg-primary/5"
+                className="group flex h-full flex-col gap-3 rounded-2xl p-5 no-underline transition-colors border border-border hocus:border-accent/30 hocus:bg-accent/60"
               >
                 <span className="flex items-start justify-between gap-3">
                   <span className="flex size-10 items-center justify-center rounded-xl bg-muted font-mono text-lg font-semibold">
