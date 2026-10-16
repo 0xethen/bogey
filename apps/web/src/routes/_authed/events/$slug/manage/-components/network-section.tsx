@@ -1,3 +1,4 @@
+import { Blurred } from "@bogey/ui/components/blurred";
 import { useMemo } from "react";
 import { useQueryClient, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -100,7 +101,14 @@ export function NetworkSection({ eventId }: { eventId: string }) {
         onSave={(allowedNetworks) => updateSettings(scope, "access", { allowedNetworks })}
         label={t("netSection.allowed")}
         placeholder={"168.9.212.0/23\nAS46830"}
-        description={`${t("netSection.allowedHelp")}${status.ip ? ` ${t("netSection.youreOn", { ip: status.ip })}` : ""}`}
+        description={t("netSection.allowedHelp")}
+        hint={
+          status.ip && (
+            <>
+              {t("netSection.youreOn")} <Blurred>{status.ip}</Blurred>
+            </>
+          )
+        }
         asn
       />
       <form.AppForm>

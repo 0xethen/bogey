@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { requestFailure, type DbResult } from "@bogey/db/errors";
@@ -49,6 +50,7 @@ export function NetworkListForm({
   label,
   description,
   placeholder,
+  hint,
   asn = false,
 }: {
   saved: Tuple<string> | undefined;
@@ -56,6 +58,7 @@ export function NetworkListForm({
   label: string;
   description: string;
   placeholder?: string;
+  hint?: ReactNode;
   asn?: boolean;
 }) {
   const t = useT();
@@ -89,6 +92,7 @@ export function NetworkListForm({
     <form.AppForm>
       <form.Form unsaved="save" className="flex flex-col gap-3">
         <form.Field name="networks">{(field) => <field.NetworkListField />}</form.Field>
+        {hint && <p className="text-sm text-muted-fg">{hint}</p>}
         <form.FormAlert title={t("network.saveFailed")} />
       </form.Form>
     </form.AppForm>

@@ -2391,7 +2391,7 @@ export const en = {
   "netSection.allowed": "Allowed networks",
   "netSection.allowedHelp":
     "Addresses, ranges or AS numbers, one per line; an AS number is saved as the ranges it announces. Leave empty to allow any network.",
-  "netSection.youreOn": "You're on {ip}.",
+  "netSection.youreOn": "You're on IP:",
   "netSection.scope": "Scope",
   "netSection.scopeHelp":
     "Limit everyone by default. Pick people, teams or divisions to limit only them; anyone else can take part from any network.",
