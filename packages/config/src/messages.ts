@@ -1995,8 +1995,9 @@ export const en = {
   "danger.pruneNoSubmission": "No submitted project",
   "danger.pruneBody":
     "{count, plural, =0 {No participants match.} one {Removes # participant from the event and their team.} other {Removes # participants from the event and their teams.}}",
-  "danger.waiting": "Decline everyone waiting",
-  "danger.waitingHelp": "Decline every pending and waitlisted registration. Each person is told.",
+  "danger.waiting": "Decline waiting registrations",
+  "danger.waitingHelp":
+    "Decline every pending and waitlisted registration. Each person is notified.",
   "danger.waitingBody":
     "{count, plural, =0 {No one is waiting.} one {Declines # registration and tells them.} other {Declines # registrations and tells each of them.}}",
   "danger.judging": "Reset judging",
@@ -2006,7 +2007,7 @@ export const en = {
     "{count, plural, =0 {Nothing has been judged yet.} one {Clears judging for # project.} other {Clears judging for # projects.}}",
   "danger.participants": "Remove all participants",
   "danger.participantsHelp":
-    "Start over after a dry run: delete every participant, their registrations, teams, submissions and files. The setup, staff, judges and organizers stay.",
+    "Delete every participant, their registrations, teams, submissions and files. The setup, staff, judges and organizers stay.",
   "danger.participantsBody":
     "{count, plural, =0 {There are no participants.} one {Deletes # participant and everything they made. This can't be undone.} other {Deletes # participants and everything they made. This can't be undone.}}",
   "danger.delete": "Delete event",
@@ -2785,7 +2786,7 @@ export const en = {
   "manageAgenda.attendanceIntro":
     "Sessions that take attendance. Required ones and people's picks count as missed when someone wasn't there.",
   "manageAgenda.hereOnly": "{here} here",
-  "manageAgenda.missedOnly": "Only people who missed something",
+  "manageAgenda.missedOnly": "Show those who missed something",
   "manageAgenda.nobodyMissed": "Nobody has missed anything.",
   "manageAgenda.expectedOf": "{done} of {total} expected",
   "manageAgenda.nothingRequired": "Nothing required",

@@ -424,7 +424,7 @@ function Editor({
   const outOfTries = settings.attemptLimit > 0 && used >= settings.attemptLimit;
   const blocked = !competing
     ? jury
-      ? "You're on the jury: run code here, and test solutions on the Jury page."
+      ? "You're on the jury. Run code here, and test solutions on the Jury page."
       : "Only participants' solutions are judged."
     : !contest.running
       ? "The contest isn't running, so solutions can't be submitted."

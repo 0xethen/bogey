@@ -61,7 +61,7 @@ const SQLSTATE: Record<string, BogeyErrorCode> = {
 };
 
 const MESSAGES: Record<BogeyErrorCode, string> = {
-  forbidden: "You don't have access to do that.",
+  forbidden: "You don't have permission to perform that action.",
   not_found: "That isn't available. It may have been removed.",
   conflict: "That's already been done.",
   invalid: "That change wasn't accepted. Check the details and try again.",
