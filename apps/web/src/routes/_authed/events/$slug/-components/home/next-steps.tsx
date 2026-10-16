@@ -1,4 +1,3 @@
-import { BadgeCard } from "./badge-card.tsx";
 import { TableNotice } from "#/components/event/judging/table-notice.tsx";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -254,7 +253,6 @@ export function NextSteps({
       <TableNotice
         tables={(submissions.data?.forms ?? []).map((item) => item.submission?.table_label)}
       />
-      {access?.role && <BadgeCard eventId={event.id} endsAt={event.ends_at} />}
       <Steps title={title ?? t("steps.title")} steps={steps} />
       {member && division.divisions.length > 0 && (
         <DivisionDialog

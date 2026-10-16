@@ -22,6 +22,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - A scanned check-in code stays in the code box when it doesn't check anyone in, so it can be checked or fixed by hand.
 - Participants can leave and join teams as often as they like by default; set Teams → Times someone can leave a team to cap it.
 - The check-in desk's button says Check in, instead of keeping the last person's name after a scan.
+- Your badge is its own home block (Badge), shown while the event has a Check-in window. New in-person events put it at the top of the side column; for an existing event, add it in Customize home. The format presets now only add session types several sessions share (workshops, talks, livestreams, office hours).
 - Manage → People lists the event's people in a table: check people (or all of them) to set their role or division, check them in, or remove them at once. Role changes and removal skip you.
 - Events can set the words before the submission countdown in the header (Manage → Agenda → What participants see → Countdown label). Tablets and computers show them; phones show only the time.
 - Programming contests:

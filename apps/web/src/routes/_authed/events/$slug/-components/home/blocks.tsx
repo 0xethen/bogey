@@ -22,6 +22,7 @@ import {
   IconPhoto,
   IconRoute,
   IconHeartHandshake,
+  IconId,
   IconMessageQuestion,
   IconSpeakerphone,
   IconTextCaption,
@@ -42,7 +43,7 @@ import type { Announcement } from "@bogey/db/queries/announcements";
 import type { Event } from "@bogey/db/queries/events";
 import type { EventPage } from "@bogey/db/queries/pages";
 import type { Agenda } from "@bogey/db/queries/sessions";
-import type { EventWindow } from "@bogey/db/queries/windows";
+import { windowByKey, type EventWindow } from "@bogey/db/queries/windows";
 import type { PluginManifest } from "@bogey/plugins";
 import { formatDateRange, type FormatOptions } from "@bogey/utils/time";
 import { Button } from "@bogey/ui/components/button";
@@ -60,6 +61,7 @@ import { AgendaSummary } from "#/components/event/agenda/agenda.tsx";
 import { AnnouncementMessage, ANNOUNCEMENTS } from "#/components/event/messaging/announcements.tsx";
 import { newAnnouncement } from "#/components/event/messaging/announcement-composer.tsx";
 import { NextSteps } from "./next-steps.tsx";
+import { BadgeCard } from "./badge-card.tsx";
 import { PluginHomePanel, panelFor } from "./plugin-panels.tsx";
 import { ScheduleList } from "./schedule-list.tsx";
 import { agendaMilestones, timelineItems } from "#/lib/windows.ts";
@@ -138,6 +140,13 @@ export const BLOCK_INFO: Record<
     title: "block.about.title",
     description: "block.about.help",
     icon: IconFileDescription,
+    group: "event",
+  },
+  badge: {
+    label: "block.badge",
+    title: "badge.title",
+    description: "block.badge.help",
+    icon: IconId,
     group: "event",
   },
   pages: {
@@ -551,6 +560,12 @@ export function HomeBlockView({
         </Screen.Section>
       );
     }
+
+    case "badge":
+      if (!windowByKey(data.windows, "checkin") || !data.access?.role) {
+        return customizing ? <Placeholder title={title}>{t("home.badgeOff")}</Placeholder> : null;
+      }
+      return <BadgeCard eventId={event.id} endsAt={event.ends_at} />;
 
     case "prizes":
       return (

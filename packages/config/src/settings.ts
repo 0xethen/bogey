@@ -106,6 +106,7 @@ export const HOME_BUILT_IN_BLOCKS = [
   "facts",
   "prizes",
   "pages",
+  "badge",
 ] as const;
 export type HomeBuiltInBlock = (typeof HOME_BUILT_IN_BLOCKS)[number];
 

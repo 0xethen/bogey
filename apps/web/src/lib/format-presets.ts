@@ -1,4 +1,8 @@
-import type { SessionKind, SettingsChanges } from "@bogey/config/settings";
+import {
+  DEFAULT_HOME_LAYOUT,
+  type SessionKind,
+  type SettingsChanges,
+} from "@bogey/config/settings";
 import { updateSettings, type OwnScope } from "@bogey/db/queries/settings";
 import type { PlainKey } from "#/lib/translate.tsx";
 
@@ -15,6 +19,7 @@ export interface FormatPreset {
     agenda: SettingsChanges<"agenda">;
     submissions: SettingsChanges<"submissions">;
     checkin: SettingsChanges<"checkin">;
+    home?: SettingsChanges<"home">;
   };
 }
 
@@ -25,13 +30,9 @@ const kind = (
   icon: SessionKind["icon"],
 ): SessionKind => ({ key, label, tone, icon });
 
-const CHECK_IN = kind("check-in", "Check-in", "teal", "door");
-const MEAL = kind("meal", "Meal", "amber", "meal");
+// only formats several sessions share; one-offs like check-in or lunch stay untyped
 const WORKSHOP = kind("workshop", "Workshop", "violet", "tools");
 const TALK = kind("talk", "Talk", "blue", "presentation");
-const CEREMONY = kind("ceremony", "Ceremony", "pink", "confetti");
-const JUDGING = kind("judging", "Judging", "orange", "gavel");
-const DEADLINE = kind("deadline", "Deadline", "red", "clock");
 const LIVESTREAM = kind("livestream", "Livestream", "red", "microphone");
 const OFFICE_HOURS = kind("office-hours", "Office hours", "green", "users");
 
@@ -52,9 +53,16 @@ export const FORMAT_PRESETS: Tuple<FormatPreset> = [
       schedule: { showEventTimezone: true },
       chat: { enabled: true, participants: true, judges: false },
       identity: { enabled: true },
-      agenda: { kinds: [CHECK_IN, MEAL, WORKSHOP, TALK, CEREMONY, JUDGING, DEADLINE] },
+      agenda: { kinds: [WORKSHOP, TALK] },
       submissions: { autoSubmit: false },
       checkin: { requiredToCompete: true },
+      // the badge leads the side column, for the check-in desk
+      home: {
+        layout: {
+          ...DEFAULT_HOME_LAYOUT,
+          aside: [{ id: "badge", type: "badge" }, ...DEFAULT_HOME_LAYOUT.aside],
+        },
+      },
     },
   },
   {
@@ -73,7 +81,7 @@ export const FORMAT_PRESETS: Tuple<FormatPreset> = [
       schedule: { showEventTimezone: false },
       chat: { enabled: true, participants: true, judges: true },
       identity: { enabled: true },
-      agenda: { kinds: [LIVESTREAM, WORKSHOP, OFFICE_HOURS, TALK, CEREMONY, DEADLINE] },
+      agenda: { kinds: [LIVESTREAM, WORKSHOP, OFFICE_HOURS, TALK] },
       submissions: { autoSubmit: true },
       checkin: { requiredToCompete: false },
     },
@@ -94,19 +102,7 @@ export const FORMAT_PRESETS: Tuple<FormatPreset> = [
       schedule: { showEventTimezone: true },
       chat: { enabled: true, participants: true, judges: true },
       identity: { enabled: true },
-      agenda: {
-        kinds: [
-          CHECK_IN,
-          MEAL,
-          LIVESTREAM,
-          WORKSHOP,
-          OFFICE_HOURS,
-          TALK,
-          CEREMONY,
-          JUDGING,
-          DEADLINE,
-        ],
-      },
+      agenda: { kinds: [LIVESTREAM, WORKSHOP, OFFICE_HOURS, TALK] },
       submissions: { autoSubmit: true },
       checkin: { requiredToCompete: false },
     },
@@ -123,6 +119,7 @@ export async function applyFormatPreset(scope: OwnScope, preset: FormatPreset): 
     updateSettings(scope, "agenda", settings.agenda),
     updateSettings(scope, "submissions", settings.submissions),
     updateSettings(scope, "checkin", settings.checkin),
+    ...(settings.home ? [updateSettings(scope, "home", settings.home)] : []),
   ]);
   return results.every((result) => result.ok);
 }

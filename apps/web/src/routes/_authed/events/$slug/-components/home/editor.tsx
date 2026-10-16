@@ -113,6 +113,7 @@ function blank(type: BlockType): HomeBlock {
     case "facts":
     case "prizes":
     case "pages":
+    case "badge":
       return { id, type };
   }
 }
