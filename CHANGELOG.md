@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Challenges: a try's tests are listed one per line with their time and memory, and the first failing test opens to its input, expected answer, output and errors. Samples, run output and compiler errors each have a copy button. Try a solution on the Jury page shows which test is running and which are still to come.
+
 ## 2.2.0 (2026-10-17)
 
 - Announcements can go to the people in a session: everyone signed up for or placed in a session of a choose-one slot (a workshop, not lunch), plus its hosts. Pick it under Sessions in the composer's Audience.

@@ -6,6 +6,14 @@ import { createPluginSignals } from "@bogey/plugins/signals";
 import { pluginWindow } from "@bogey/plugins/api";
 import type { SettingsOf } from "@bogey/plugins/types";
 import { Badge } from "@bogey/ui/components/badge";
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+  CodeBlockHeader,
+  CodeBlockTitle,
+} from "@bogey/ui/components/code-block";
 import { EDITOR_LANGUAGES, type EditorLanguage } from "@bogey/ui/components/code-editor";
 import { cn } from "@bogey/ui/lib/utils";
 import {
@@ -56,6 +64,36 @@ export function VerdictBadge({ attempt }: { attempt: Pick<Attempt, "status" | "v
     );
   }
   return <TestVerdict verdict={attempt.verdict} />;
+}
+
+/** Program text: a sample, a test's input or output, compiler errors. */
+export function OutputBlock({
+  title,
+  text,
+  variant,
+  className,
+}: {
+  title?: string;
+  text: string;
+  variant?: "default" | "destructive";
+  className?: string;
+}) {
+  const copy = text && <CodeBlockCopyButton value={text} />;
+  return (
+    <CodeBlock size="sm" variant={variant}>
+      {title ? (
+        <CodeBlockHeader>
+          <CodeBlockTitle>{title}</CodeBlockTitle>
+          <CodeBlockActions>{copy}</CodeBlockActions>
+        </CodeBlockHeader>
+      ) : (
+        copy && <CodeBlockActions>{copy}</CodeBlockActions>
+      )}
+      <CodeBlockContent wrap className={cn("max-h-48", className)}>
+        {text || <span className="text-muted-fg">(empty)</span>}
+      </CodeBlockContent>
+    </CodeBlock>
+  );
 }
 
 export function TestVerdict({ verdict }: { verdict: Verdict }) {

@@ -14,6 +14,14 @@ import {
 import { useCan, useEventAccess } from "@bogey/db/permissions";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+  CodeBlockHeader,
+  CodeBlockTitle,
+} from "@bogey/ui/components/code-block";
 import { CodeEditor, DEFAULT_EDITOR_SETTINGS } from "@bogey/ui/components/code-editor";
 import {
   Drawer,
@@ -68,6 +76,7 @@ import {
   golfLength,
   Link,
   MEASURE_NOUN,
+  OutputBlock,
   points,
   PROBLEM_KIND,
   ProblemKindBadge,
@@ -325,12 +334,9 @@ function Statement({ eventId, problem }: { eventId: string; problem: Problem }) 
         <Screen.Section title="Samples">
           <div className="flex flex-col gap-3">
             {samples.data?.map((sample) => (
-              <div
-                key={sample.ordinal}
-                className="grid gap-3 rounded-2xl bg-muted/40 p-4 sm:grid-cols-2"
-              >
-                <SampleText label={`Input ${sample.ordinal}`} text={sample.input} />
-                <SampleText label="Expected output" text={sample.answer} />
+              <div key={sample.ordinal} className="grid gap-3 sm:grid-cols-2">
+                <OutputBlock title={`Input ${sample.ordinal}`} text={sample.input} />
+                <OutputBlock title="Expected output" text={sample.answer} />
               </div>
             ))}
           </div>
@@ -345,15 +351,6 @@ function Statement({ eventId, problem }: { eventId: string; problem: Problem }) 
           label="Ask about this problem..."
         />
       </div>
-    </div>
-  );
-}
-
-function SampleText({ label, text }: { label: string; text: string }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <span className="text-xs text-muted-fg">{label}</span>
-      <pre className="overflow-x-auto font-mono text-xs">{text || "(empty)"}</pre>
     </div>
   );
 }
@@ -718,38 +715,38 @@ function RunOutput({ outcome, separate }: { outcome: RunOutcome; separate: boole
       </p>
       {separate ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field>
-            <FieldLabel>Output</FieldLabel>
-            <Textarea readOnly rows={6} className="font-mono text-xs" value={result.stdout} />
-          </Field>
-          <Field>
-            <FieldLabel>Errors</FieldLabel>
-            <Textarea
-              readOnly
-              rows={6}
-              className="font-mono text-xs"
-              value={stderr}
-              placeholder="Nothing on standard error."
+          <OutputBlock title="Output" text={result.stdout} className="max-h-60" />
+          <div className="flex min-w-0 flex-col gap-2">
+            <OutputBlock
+              title="Errors"
+              text={stderr}
+              variant={stderr ? "destructive" : "default"}
+              className="max-h-60"
             />
             {fullToggle}
-          </Field>
+          </div>
         </div>
       ) : (
-        <Field>
-          <FieldLabel>Output</FieldLabel>
-          <pre
-            tabIndex={0}
-            aria-label="Output"
-            className="max-h-60 min-h-24 overflow-auto rounded-2xl bg-input/50 px-3 py-3 font-mono text-xs whitespace-pre-wrap"
-          >
-            {result.stdout}
-            {stderr && <span className="text-destructive">{stderr}</span>}
-            {!result.stdout && !result.stderr && (
-              <span className="text-muted-fg">Nothing was printed.</span>
-            )}
-          </pre>
+        <div className="flex min-w-0 flex-col gap-2">
+          <CodeBlock size="sm">
+            <CodeBlockHeader>
+              <CodeBlockTitle>Output</CodeBlockTitle>
+              <CodeBlockActions>
+                {(result.stdout || stderr) && (
+                  <CodeBlockCopyButton value={result.stdout + stderr} />
+                )}
+              </CodeBlockActions>
+            </CodeBlockHeader>
+            <CodeBlockContent wrap aria-label="Output" className="max-h-60 min-h-24">
+              {result.stdout}
+              {stderr && <span className="text-destructive">{stderr}</span>}
+              {!result.stdout && !result.stderr && (
+                <span className="text-muted-fg">Nothing was printed.</span>
+              )}
+            </CodeBlockContent>
+          </CodeBlock>
           {fullToggle}
-        </Field>
+        </div>
       )}
     </div>
   );
@@ -820,9 +817,11 @@ function Tries({
                   {attempt.verdict === "CE" &&
                     attempt.compileOutput &&
                     (settings.showErrors ? (
-                      <pre className="max-h-48 overflow-auto rounded-xl bg-muted/50 p-2 font-mono text-xs whitespace-pre-wrap">
-                        {attempt.compileOutput}
-                      </pre>
+                      <OutputBlock
+                        title="Compiler output"
+                        text={attempt.compileOutput}
+                        variant="destructive"
+                      />
                     ) : (
                       <p className="text-sm text-muted-fg">
                         It didn't compile. This contest doesn't show error messages.

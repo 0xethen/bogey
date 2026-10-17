@@ -1,11 +1,15 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { Fragment, useRef, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   IconArrowLeft,
+  IconCircleCheck,
+  IconCircleDashed,
+  IconCircleX,
   IconEdit,
   IconEyeOff,
   IconFileText,
+  IconLoader2,
   IconPlayerPlay,
   IconPlayerStopFilled,
   IconPlus,
@@ -29,6 +33,16 @@ import { OptSelect } from "@bogey/ui/components/opt-select";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { Skeleton } from "@bogey/ui/components/skeleton";
+import {
+  Trace,
+  TraceCollapsible,
+  TraceCollapsibleContent,
+  TraceCollapsibleTrigger,
+  TraceDescription,
+  TraceIcon,
+  TraceLine,
+  TraceTitle,
+} from "@bogey/ui/components/trace";
 import {
   Table,
   TableBody,
@@ -85,6 +99,7 @@ import {
   KIND_FOR_SCORING,
   MEASURE_NOUN,
   nextId,
+  OutputBlock,
   PROBLEM_KIND,
   points,
   TONE_CLASS,
@@ -1219,6 +1234,13 @@ function TestsForm({
   );
 }
 
+const RUN_VERDICTS = {
+  passed: "Passed",
+  wrong: "Wrong answer",
+  timeout: "Too slow",
+  error: "Error",
+} as const;
+
 function TrySolution({ problem, settings }: { problem: Problem; settings: Settings }) {
   const cases = useQuery(testcasesQueryOptions(problem.id));
   const languages = useQuery(languagesQueryOptions());
@@ -1231,7 +1253,7 @@ function TrySolution({ problem, settings }: { problem: Problem; settings: Settin
   const stopper = useRef<AbortController | null>(null);
   const [results, setResults] = useState<Array<{
     test: Testcase;
-    verdict: "passed" | "wrong" | "error" | "timeout";
+    verdict: keyof typeof RUN_VERDICTS;
     ms: number | null;
     detail: string;
   }> | null>(null);
@@ -1273,6 +1295,7 @@ function TrySolution({ problem, settings }: { problem: Problem; settings: Settin
 
   const previewable = isPreviewSupported(editor);
   const passed = results?.filter((each) => each.verdict === "passed").length ?? 0;
+  const firstFailure = results?.find((each) => each.verdict !== "passed");
 
   return (
     <Screen.Section
@@ -1325,34 +1348,47 @@ function TrySolution({ problem, settings }: { problem: Problem; settings: Settin
           <p className="text-sm text-muted-fg">
             {passed} of {cases.data?.length ?? 0} passed{running ? " so far" : ""}.
           </p>
-          <ul className="flex flex-col divide-y divide-border border-y border-border text-sm">
-            {results.map(({ test, verdict, ms, detail }) => (
-              <li key={test.id} className="flex flex-col gap-1 py-2">
-                <span className="flex items-center gap-3">
-                  <span className="w-24 font-medium">
-                    {test.is_sample ? "Sample" : "Test"} {test.ordinal}
-                  </span>
-                  <Badge variant={verdict === "passed" ? "default" : "destructive"}>
-                    {verdict === "passed"
-                      ? "Passed"
-                      : verdict === "wrong"
-                        ? "Wrong answer"
-                        : verdict === "timeout"
-                          ? "Too slow"
-                          : "Error"}
-                  </Badge>
-                  {ms !== null && (
-                    <span className="ml-auto text-muted-fg tabular-nums">{ms} ms</span>
-                  )}
-                </span>
-                {detail && (
-                  <pre className="max-h-32 overflow-auto rounded-xl bg-muted/50 p-2 font-mono text-xs whitespace-pre-wrap">
-                    {detail}
-                  </pre>
-                )}
-              </li>
-            ))}
-          </ul>
+          <Trace>
+            {(cases.data ?? []).map((test, index) => {
+              const name = `${test.is_sample ? "Sample" : "Test"} ${test.ordinal}`;
+              const result = results[index];
+              if (!result) {
+                if (!running) return null;
+                const current = index === results.length;
+                return (
+                  <TraceLine key={test.id} status={current ? "running" : "pending"}>
+                    <TraceIcon>
+                      {current ? <IconLoader2 className="animate-spin" /> : <IconCircleDashed />}
+                    </TraceIcon>
+                    <TraceTitle>{current ? `Running ${name}` : `Run ${name}`}</TraceTitle>
+                  </TraceLine>
+                );
+              }
+              const passed = result.verdict === "passed";
+              const line = (
+                <TraceLine status={passed ? undefined : "error"}>
+                  <TraceIcon>{passed ? <IconCircleCheck /> : <IconCircleX />}</TraceIcon>
+                  <TraceTitle>
+                    {name}: {RUN_VERDICTS[result.verdict]}
+                  </TraceTitle>
+                  {result.ms !== null && <TraceDescription>{result.ms} ms</TraceDescription>}
+                </TraceLine>
+              );
+              if (!result.detail) return <Fragment key={test.id}>{line}</Fragment>;
+              return (
+                <TraceCollapsible key={test.id} defaultOpen={result === firstFailure}>
+                  <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
+                  <TraceCollapsibleContent>
+                    <OutputBlock
+                      title={result.verdict === "wrong" ? "Output" : "Errors"}
+                      text={result.detail}
+                      variant={result.verdict === "wrong" ? "default" : "destructive"}
+                    />
+                  </TraceCollapsibleContent>
+                </TraceCollapsible>
+              );
+            })}
+          </Trace>
         </div>
       )}
     </Screen.Section>
