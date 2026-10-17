@@ -1,5 +1,5 @@
 import { useOffline } from "#/lib/connection.ts";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useCanGoBack, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import {
   BogeyRequestError,
@@ -10,6 +10,12 @@ import {
   type BogeyErrorCode,
 } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+} from "@bogey/ui/components/code-block";
 import { Screen } from "@bogey/ui/components/screen";
 import { useT, type PlainKey } from "#/lib/translate.tsx";
 
@@ -144,46 +150,20 @@ export function ErrorComponent({ error, reset }: ErrorComponentProps) {
 function ErrorDetails({ error }: { error: unknown }) {
   const t = useT();
   const text = detailsText(error);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 2000);
-    return () => clearTimeout(timer);
-  }, [copied]);
 
   return (
     <details className="w-full text-left" open={import.meta.env.DEV}>
       <summary className="py-1 rounded-pill transition-colors text-center text-sm text-muted-fg hover:bg-muted">
         {t("error.details")}
       </summary>
-      <div className="relative mt-2">
-        <pre className="max-h-64 overflow-auto rounded-lg bg-muted p-3 pr-10 text-xs whitespace-pre-wrap">
+      <CodeBlock size="sm" className="mt-2">
+        <CodeBlockActions>
+          <CodeBlockCopyButton value={text} aria-label={t("error.copyDetails")} />
+        </CodeBlockActions>
+        <CodeBlockContent wrap className="max-h-64">
           {text}
-        </pre>
-        <button
-          type="button"
-          aria-label={copied ? t("common.copied") : t("error.copyDetails")}
-          className="absolute top-2 right-2 inline-flex size-6 items-center justify-center rounded-md text-muted-fg hover:bg-fg/10"
-          onClick={() =>
-            void navigator.clipboard.writeText(text).then(
-              () => setCopied(true),
-              () => setCopied(false),
-            )
-          }
-        >
-          <Glyph className="size-4">
-            {copied ? (
-              <path d="M5 12l5 5l10 -10" />
-            ) : (
-              <>
-                <path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
-                <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
-              </>
-            )}
-          </Glyph>
-        </button>
-      </div>
+        </CodeBlockContent>
+      </CodeBlock>
     </details>
   );
 }

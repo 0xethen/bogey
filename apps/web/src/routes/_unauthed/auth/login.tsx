@@ -13,6 +13,12 @@ import { useT } from "#/lib/translate.tsx";
 import { brand } from "@bogey/config";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+} from "@bogey/ui/components/code-block";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Field, FieldGroup, FieldSeparator } from "@bogey/ui/components/field";
 import { Screen } from "@bogey/ui/components/screen";
@@ -261,7 +267,12 @@ function NotSetUp() {
       description={t("auth.notSetUpBody")}
     >
       {import.meta.env.DEV && (
-        <pre className="rounded-xl bg-muted px-4 py-3 text-left text-sm">vpr bogey setup</pre>
+        <CodeBlock className="text-left">
+          <CodeBlockActions>
+            <CodeBlockCopyButton value="vpr bogey setup" />
+          </CodeBlockActions>
+          <CodeBlockContent>vpr bogey setup</CodeBlockContent>
+        </CodeBlock>
       )}
     </Screen.Fallback>
   );
