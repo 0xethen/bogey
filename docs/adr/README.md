@@ -36,3 +36,4 @@ changes, write a new ADR that supersedes the old one and link the two.
 | [0028](0028-event-privacy.md)                  | Seeing an event is not being in it                                                             |
 | [0029](0029-operator-keys.md)                  | The keys that set the instance's trust boundary belong to the operator                         |
 | [0030](0030-about-for-members.md)              | One About, for members by default                                                              |
+| [0031](0031-plugin-gates.md)                   | Plugins can close an event to a participant                                                    |

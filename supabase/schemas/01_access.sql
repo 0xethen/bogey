@@ -65,7 +65,9 @@ as $$
   where event_id = p_event and user_id = (select auth.uid()) and status = 'active';
 $$;
 
-create function private.has_permission(p_event uuid, p_permission text)
+-- What the caller's roles grant, whatever plugins say. Only a plugin's own gate-time RPCs (reporting
+-- that the page is back in full screen, say) use this; everything else asks has_permission.
+create function private.holds_permission(p_event uuid, p_permission text)
 returns boolean
 language plpgsql
 stable
@@ -104,6 +106,65 @@ begin
       )
   );
 end;
+$$;
+
+-- Why a plugin has closed the event to this participant ('<plugin>.<reason>'), or null. A plugin
+-- closes it by defining private.<key>_gate(uuid) returning a reason or null; only participants are
+-- ever gated, so organizers, staff, judges and org admins always get through.
+create function private.event_gate(p_event uuid)
+returns text
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_key text;
+  v_reason text;
+begin
+  if private.event_role(p_event) is distinct from 'participant'
+     or private.is_org_admin(private.event_org(p_event)) then
+    return null;
+  end if;
+  for v_key in
+    select jsonb_array_elements_text(s.value -> 'enabled')
+    from public.settings s
+    where s.scope = 'event' and s.event_id = p_event and s.namespace = 'plugins'
+      and jsonb_typeof(s.value -> 'enabled') = 'array'
+  loop
+    if to_regprocedure(format('private.%I(uuid)', v_key || '_gate')) is not null
+       and private.plugin_enabled(p_event, v_key) then
+      execute format('select private.%I($1)', v_key || '_gate') into v_reason using p_event;
+      if v_reason is not null then
+        return v_key || '.' || v_reason;
+      end if;
+    end if;
+  end loop;
+  return null;
+end;
+$$;
+
+-- a gated participant holds no permission in the event, so its pages and data stay shut on the
+-- server too, not only behind the plugin's cover
+create function private.has_permission(p_event uuid, p_permission text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.holds_permission(p_event, p_permission) and private.event_gate(p_event) is null;
+$$;
+
+-- for the event route: where a gated participant is sent, and why
+create function public.event_gate(p_event uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.event_gate(p_event);
 $$;
 
 create function private.can_manage(p_event uuid)
@@ -260,6 +321,8 @@ grant execute on function
   private.is_org_admin(uuid),
   private.event_org(uuid),
   private.event_role(uuid),
+  private.holds_permission(uuid, text),
+  private.event_gate(uuid),
   private.has_permission(uuid, text),
   private.can_manage(uuid),
   private.window_open(uuid, text),
@@ -271,3 +334,4 @@ grant execute on function
   private.shares_org(uuid),
   private.can_see_profile(uuid)
 to anon, authenticated, service_role;
+grant execute on function public.event_gate(uuid) to authenticated;

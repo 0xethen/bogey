@@ -11,6 +11,7 @@ advisory (see docs/contributing.md#security-releases). -->
 ## Unreleased
 
 - Account → Security shows passkeys like the authenticator app: one Passkeys row saying "Not set up" or how many are added, with "Add a passkey" or "Add another", and each passkey listed under it. Each person can add up to 5; set `security: { maxPasskeys }` in `bogey.config.ts` to change it (at most 9, or `0` to turn adding passkeys off). The database enforces it.
+- Lockdown 1.1 holds its cover on the server: while a participant's cover is up (out of full screen, the required browser missing, or stopped), they hold no permission in the event, so its pages and data are refused even through the API, every page sends them to the event's home, and the tabs are hidden. Organizers are never covered. Plugins can do the same by defining a gate (`private.<key>_gate`; see docs/plugins.md).
 - Manage → Tabs arranges the event's tabs: drag them into order, rename them, hide them, or show one only while a window is open (organizers always see it). Plugin tabs are included, and plugins can tie a tab to a window themselves (the CTF's Challenges tab shows while the contest is open). The active tab's underline now slides in.
 - Walk-ins: New event asks who can check in (pre-registered only, or walk-ins too). Staff adding a walk-in at the desk now checks them in on the spot, making an account for their email when they don't have one. The desk links to a walk-in kiosk to open on a second device: walk-ins type their name and email, answer the registration questions, and are checked in.
 - Settings are addressed as `#group.setting` everywhere (form fields, plugin settings, Account preferences and accessibility), and a link to one scrolls to it and washes it in a faint accent that fades. Hints that named a place ("Write it in Manage > Details", "Add it in Agenda") are now links to the exact setting.
@@ -21,7 +22,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ### Upgrade notes
 
-- Run `vpr bogey db migrate` and `vpr bogey plugins migrate`. The team board and participants' conversations with organizers are now off by default, so an existing event that never set them turns them off; turn them back on in Manage → Teams and Manage → Messages (or at the organization level) if it uses them.
+- Run `vpr bogey db migrate` and `vpr bogey plugins migrate`. Lockdown 1.1's gate needs this release's `plugin_gates` migration. The team board and participants' conversations with organizers are now off by default, so an existing event that never set them turns them off; turn them back on in Manage → Teams and Manage → Messages (or at the organization level) if it uses them.
 - The CTF's `ctf_scoreboard` returns `first_solves` and `ctf_challenges_for_team` returns `first_solve`, instead of `first_bloods` and `first_blood`.
 
 ## 2.2.0 (2026-10-17)

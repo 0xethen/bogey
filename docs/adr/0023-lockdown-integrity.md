@@ -1,6 +1,6 @@
 # 0023: Lockdown is a deterrent and a record
 
-**Status:** accepted (2026-10-10).
+**Status:** accepted (2026-10-10). Covers hold on the server since [0031](0031-plugin-gates.md).
 
 ## Context
 

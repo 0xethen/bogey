@@ -91,6 +91,24 @@ export const eventAccessQueryOptions = (eventId: string) =>
     staleTime: 60_000,
   });
 
+/** Why a plugin has closed the event to this participant (`<plugin>.<reason>`), or null. */
+export const getEventGateFn = createServerFn({ method: "GET" })
+  .validator((eventId: unknown) => requireId(eventId, "eventId"))
+  .handler(async ({ data: eventId }): Promise<DbResult<string | null>> => {
+    const { data, error } = await createServerClient().rpc("event_gate", { p_event: eventId });
+    if (error) return toFailure(error, "checking whether the event is open to you");
+    return ok(data ?? null);
+  });
+
+// never stale: the event route asks on every navigation, and the server is what decides
+export const eventGateQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["event-gate", eventId] as const,
+    queryFn: async () => unwrap(await getEventGateFn({ data: eventId })),
+    retry: retryPolicy,
+    staleTime: 0,
+  });
+
 export const VIEW_AS_ROLES = ["participant", "staff", "judge"] as const satisfies Tuple<EventRole>;
 export type ViewAsRole = (typeof VIEW_AS_ROLES)[number];
 

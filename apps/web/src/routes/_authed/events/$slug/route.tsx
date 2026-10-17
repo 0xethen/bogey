@@ -1,13 +1,22 @@
 import { TimeFormatProvider, useTimeFormat } from "@bogey/ui/lib/time-format";
 import { useEventTimeFormat } from "#/lib/time.ts";
-import { createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import {
+  createFileRoute,
+  Link,
+  notFound,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { eventQueryOptions } from "@bogey/db/queries/events";
 import { eventPagesQueryOptions } from "@bogey/db/queries/pages";
 import { identitySetupPendingQueryOptions, isPending } from "@bogey/db/queries/identity-setup";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { agendaQueryOptions } from "@bogey/db/queries/sessions";
-import { eventAccessQueryOptions } from "@bogey/db/permissions";
+import { eventAccessQueryOptions, eventGateQueryOptions } from "@bogey/db/permissions";
 import { RouteTabs } from "#/components/navigation/header/TabRow.tsx";
 import { arrangeTabs, eventTabs, visibleTabs } from "#/lib/event-tabs.ts";
 import { orNotFound } from "#/lib/routing.ts";
@@ -22,6 +31,7 @@ import { NewAnnouncementDialog } from "#/components/event/messaging/announcement
 import { AnnouncementToasts } from "./-components/announcement-toasts.tsx";
 import { PluginHotkeys } from "./-components/plugin-hotkeys.tsx";
 import { networkStatusQueryOptions, settingsQueryOptions } from "@bogey/db/queries/settings";
+import { useEventChromeHidden } from "@bogey/plugins/chrome";
 import { msg, useT } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug")({
@@ -52,7 +62,17 @@ export const Route = createFileRoute("/_authed/events/$slug")({
       context.query.ensureQueryData(eventPagesQueryOptions(event.id)),
     ]);
     const plugins = enabledPlugins(settings.plugins);
-    const checkSetup = access.role === "participant" && !location.pathname.endsWith("/welcome");
+    // A plugin (lockdown) that has closed the event to this participant leaves them only its home,
+    // where the plugin says why. The database already refuses them everything else.
+    const gate =
+      access.role === "participant"
+        ? await context.query.fetchQuery(eventGateQueryOptions(event.id))
+        : null;
+    if (gate && !isEventHome(location.pathname, params.slug)) {
+      throw Route.redirect({ to: "/events/$slug", params, replace: true });
+    }
+    const checkSetup =
+      !gate && access.role === "participant" && !location.pathname.endsWith("/welcome");
     const [pending, shownWhen] = await Promise.all([
       checkSetup ? context.query.fetchQuery(identitySetupPendingQueryOptions(event.id)) : null,
       Promise.all(
@@ -91,6 +111,48 @@ export const Route = createFileRoute("/_authed/events/$slug")({
   component: RouteComponent,
 });
 
+function isEventHome(pathname: string, slug: string): boolean {
+  return pathname === `/events/${slug}` || pathname === `/events/${slug}/`;
+}
+
+/** Whether a plugin has closed the event to this participant, as the server last said. */
+function useEventGate(): string | null {
+  const viewer = useEventViewer();
+  const { data } = useQuery({
+    ...eventGateQueryOptions(viewer?.event.id ?? ""),
+    enabled: viewer?.access.role === "participant",
+    // a gate can close with no one on the page doing anything (a heartbeat going stale)
+    refetchInterval: 60_000,
+  });
+  return data ?? null;
+}
+
+/** Sends a participant home when the gate closes, and reloads the event's data when it opens or closes. */
+function GateWatch({ slug }: { slug: string }) {
+  const gate = useEventGate();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const last = useRef(gate);
+  useEffect(() => {
+    if (last.current === gate) return;
+    last.current = gate;
+    // what was read through a closed gate came back empty, and what was read before it closed is
+    // no longer theirs to see
+    void queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] !== "event-gate",
+    });
+    void router.invalidate();
+  }, [gate, queryClient, router]);
+  useEffect(() => {
+    if (gate && !isEventHome(pathname, slug)) {
+      void navigate({ to: "/events/$slug", params: { slug }, replace: true });
+    }
+  }, [gate, pathname, slug, navigate]);
+  return null;
+}
+
 function RouteComponent() {
   const t = useT();
   const { event, plugins, session, missing, announcements } = Route.useRouteContext();
@@ -110,6 +172,7 @@ function RouteComponent() {
         </Alert>
       )}
       {missing.length > 0 && <MissingPlugins missing={missing} slug={event.slug} />}
+      <GateWatch slug={event.slug} />
       <PluginEventWrappers plugins={plugins} eventId={event.id} session={session}>
         <Outlet />
       </PluginEventWrappers>
@@ -135,6 +198,8 @@ function RouteComponent() {
 
 function EventTabs() {
   const t = useT();
+  const hidden = useEventChromeHidden();
+  const gated = useEventGate() !== null;
   const viewer = useEventViewer();
   const loaded = Route.useMatch({
     shouldThrow: false,
@@ -155,7 +220,8 @@ function EventTabs() {
     ...eventWindowsQueryOptions(viewer?.event.id ?? ""),
     enabled: !!viewer,
   });
-  if (!viewer) return null;
+  // a plugin (lockdown) covering the whole event leaves no tabs to click
+  if (!viewer || hidden || gated) return null;
   const all = eventTabs(
     viewer.event.slug,
     viewer.plugins,

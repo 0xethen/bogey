@@ -11,6 +11,8 @@ import {
   type PluginAnswerValidator,
 } from "@bogey/utils/answers";
 import { routeArea } from "./api.ts";
+
+export { useHideEventChrome } from "./chrome.ts";
 import type {
   AreaOfPath,
   CommandActionsOf,

@@ -56,6 +56,17 @@ as $$
   select p_namespace in ('branding', 'registration', 'seo', 'privacy', 'plugin.i18n');
 $$;
 
+-- which plugins are on and their settings: a participant a plugin has gated still reads these, so
+-- the plugin can show why and let them back in
+create function private.is_gate_namespace(p_namespace text)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select p_namespace = 'plugins' or p_namespace like 'plugin.%';
+$$;
+
 create function private.is_admin_only_namespace(p_namespace text)
 returns boolean
 language sql
@@ -155,6 +166,7 @@ $$;
 
 grant execute on function
   private.is_public_namespace(text),
+  private.is_gate_namespace(text),
   private.is_admin_only_namespace(text),
   private.merge_setting(jsonb, text[], jsonb),
   private.instance_setting(text),
@@ -186,7 +198,9 @@ begin
 
   foreach v_ns in array p_namespaces loop
     if private.is_public_namespace(v_ns) or v_member
-      or (v_ns = 'about' and p_event is not null and private.section_open(p_event, 'about')) then
+      or (v_ns = 'about' and p_event is not null and private.section_open(p_event, 'about'))
+      or (p_event is not null and private.is_gate_namespace(v_ns)
+        and private.holds_permission(p_event, 'event.view')) then
       v_out := v_out || jsonb_build_object(v_ns, case
         when p_event is not null then private.event_setting(p_event, v_ns)
         when v_org is not null then private.org_setting(v_org, v_ns)
@@ -478,7 +492,9 @@ create policy settings_select on public.settings for select to anon, authenticat
       when 'event' then (select private.can_view_event(event_id))
         and (private.is_public_namespace(namespace)
           or (select private.has_permission(event_id, 'event.view'))
-          or (namespace = 'about' and (select private.section_open(event_id, 'about'))))
+          or (namespace = 'about' and (select private.section_open(event_id, 'about')))
+          or (private.is_gate_namespace(namespace)
+            and (select private.holds_permission(event_id, 'event.view'))))
     end
   );
 create policy settings_insert on public.settings for insert to authenticated

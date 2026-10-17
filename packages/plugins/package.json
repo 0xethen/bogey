@@ -19,6 +19,7 @@
     "./errors": "./src/errors.ts",
     "./verbose": "./src/verbose.ts",
     "./runtime": "./src/runtime.tsx",
+    "./chrome": "./src/chrome.ts",
     "./signals": "./src/signals.ts"
   },
   "scripts": {

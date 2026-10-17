@@ -363,6 +363,18 @@ Manage → Plugins and switch the plugin off. Panels that throw are replaced by 
 the page keeps working. Render nothing you wouldn't want seen before your own checks pass: the server
 renders the wrapper too, so a guard's first render (before the browser answers) should be the covered one.
 
+### Closing the event to a participant
+
+A wrapper's cover is only drawn in the browser. To hold it on the server too, define a gate in a
+migration: `private.<key>_gate(p_event uuid) returns text`, returning why the event is closed to the
+calling participant, or null. While it returns a reason (and the plugin is on), that participant holds
+no permission in the event, so every policy and RPC refuses them; the event route sends every page
+but the event's home there, and the tabs are hidden. Organizers, staff, judges and org admins are never
+gated. They still read `plugins` and your `plugin.<key>` settings, and your RPCs that let them back in
+should check `private.holds_permission` rather than `has_permission`. The browser reads the gate as
+`<key>.<reason>` from `eventGateQueryOptions(eventId)` (`@bogey/db/permissions`); invalidate it after
+anything that may open or close it. See [ADR 0031](adr/0031-plugin-gates.md); lockdown is the example.
+
 `authCaptcha` draws a captcha widget and calls `onToken` with its token (or `null` when it expires).
 Bogey sends the token with the sign-in request, and Supabase Auth checks it with the provider when captcha
 protection is on there, so Bogey never sees the secret and nobody can skip the check by calling Supabase directly.

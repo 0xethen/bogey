@@ -4115,6 +4115,7 @@ export type Database = {
         }[];
       };
       event_certificates: { Args: { p_event: string }; Returns: Json[] };
+      event_gate: { Args: { p_event: string }; Returns: string };
       event_network_status: { Args: { p_event: string }; Returns: Json };
       flag_submission: { Args: { p_reason: string; p_submission: string }; Returns: string };
       import_roster: { Args: { p_event: string; p_notify?: boolean; p_rows: Json }; Returns: Json };

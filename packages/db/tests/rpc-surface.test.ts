@@ -84,6 +84,8 @@ const SIGNED_IN = {
   event_blocked_access: "organizers see refused writes in an audit log only org admins read",
   event_attendance: "staff read every participant's attendance",
   event_network_status: "tells a member whether their network may change submissions",
+  event_gate:
+    "the event route sends a participant a plugin has closed the event to back to its home",
   import_roster: "organizers import registrations and accounts together",
   inherited_settings: "reads the levels above a scope for its editors",
   instance_admins: "platform admins only; reads across orgs",
