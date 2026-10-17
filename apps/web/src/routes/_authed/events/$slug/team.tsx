@@ -361,7 +361,7 @@ function InviteCode({ code, eventId, renew }: { code: string; eventId: string; r
             variant="ghost"
             size="icon-sm"
             disabled={renewCode.isPending}
-            title={renewCode.error ? renewCode.error.message : t("team.newCode")}
+            title={renewCode.error ? renewCode.error.message : `${t("team.newCode")}...`}
             confirm={{
               title: t("team.newCodeTitle"),
               description: t("team.newCodeBody"),

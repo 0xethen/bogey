@@ -23,6 +23,7 @@ import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { Skeleton } from "@bogey/ui/components/skeleton";
 import { useT, type T } from "#/lib/translate.tsx";
+import { Blurred } from "@bogey/ui/components/blurred";
 
 function deviceName(device: SignedInDevice, t: T): string {
   const { browser, os } = describeUserAgent(device.userAgent);
@@ -120,7 +121,11 @@ export function DevicesSection() {
                       {device.current && <Badge variant="secondary">{t("devices.this")}</Badge>}
                     </ItemTitle>
                     <ItemDescription className="line-clamp-none">
-                      {device.ip && `${device.ip} · `}
+                      {device.ip && (
+                        <>
+                          <Blurred>{device.ip}</Blurred> ·{" "}
+                        </>
+                      )}
                       {t("devices.active")} <RelativeTime value={device.lastActive} />
                       {" · "}
                       {t("devices.signedIn")} <RelativeTime value={device.createdAt} />
