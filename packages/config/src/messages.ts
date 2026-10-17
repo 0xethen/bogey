@@ -1401,7 +1401,7 @@ export const en = {
   "orgTab.members": "Members",
   "orgTab.audit": "Audit log",
   "orgTab.settings": "Settings",
-  "clock.closeIn": "Submissions close in",
+  "clock.closeIn": "Ends in",
   "plugin.ranInto": "{name} ran into a problem",
   "plugin.restWorks": "The rest of the page still works.",
   "unsaved.label": "Unsaved changes",
@@ -3257,7 +3257,7 @@ export const en = {
     "Drafts with every required item filled in are submitted when the form closes.",
   "setting.schedule.countdownLabel": "Countdown label",
   "setting.schedule.countdownLabel.help":
-    'Shown before the time left in the header while submissions are open, on tablets and computers. Phones show only the time. Empty uses "Submissions close in".',
+    "Shown before the time left in the header while submissions are open, on tablets and computers. Phones show only the time.",
   "setting.schedule.showEventTimezone": "Times in the event's timezone",
   "setting.schedule.showEventTimezone.help":
     'For in-person events: everyone sees times where the event is, like "8:00 PM EDT". Off, each person sees their own time.',

@@ -780,7 +780,7 @@ export const settingsRegistry = {
     fields: {
       countdownLabel: {
         label: say("setting.schedule.countdownLabel"),
-        placeholder: "Submissions close in",
+        placeholder: "Ends in",
         description: say("setting.schedule.countdownLabel.help"),
       },
       showEventTimezone: {
