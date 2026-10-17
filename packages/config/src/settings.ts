@@ -243,6 +243,22 @@ export const homeLayoutSchema = z.object({
 });
 export type HomeLayout = z.infer<typeof homeLayoutSchema>;
 
+export const eventTabSchema = z.object({
+  key: z
+    .string()
+    .regex(/^[a-z][a-z0-9./-]*$/)
+    .max(120),
+  hidden: z.boolean().optional(),
+  label: z.string().trim().max(40, "Keep it under 40 characters").optional(),
+  // a window to show the tab only while it's open; "" keeps a tab a plugin ties to one always shown
+  window: z
+    .string()
+    .regex(/^([a-z][a-z0-9.-]*)?$/)
+    .max(80)
+    .optional(),
+});
+export type EventTabSetting = z.infer<typeof eventTabSchema>;
+
 export const DEFAULT_HOME_LAYOUT: HomeLayout = {
   main: [
     { id: "next-steps", type: "next-steps" },
@@ -406,8 +422,9 @@ export const settingsRegistry = {
       requireAdminMfa: true,
       portfolios: false,
       deviceSignOut: false,
+      maxPasskeys: 5,
     },
-    operator: ["requireAdminMfa", "deviceSignOut"],
+    operator: ["requireAdminMfa", "deviceSignOut", "maxPasskeys"],
     schema: z.object({
       portfolios: z
         .boolean()
@@ -425,6 +442,12 @@ export const settingsRegistry = {
         .boolean()
         .optional()
         .describe("People can sign out one of their other devices, or all of them, from Account"),
+      maxPasskeys: z
+        .int()
+        .min(0)
+        .max(9)
+        .optional()
+        .describe("How many passkeys one person can add; 0 turns passkeys off"),
     }),
     fields: {
       portfolios: {
@@ -438,6 +461,11 @@ export const settingsRegistry = {
       deviceSignOut: {
         label: say("setting.accounts.deviceSignOut"),
         description: say("setting.accounts.deviceSignOut.help"),
+      },
+      maxPasskeys: {
+        label: say("setting.accounts.maxPasskeys"),
+        description: say("setting.accounts.maxPasskeys.help"),
+        placeholder: "5",
       },
       requireAdminMfa: {
         label: say("setting.accounts.requireAdminMfa"),
@@ -808,6 +836,20 @@ export const settingsRegistry = {
       layout: homeLayoutSchema.optional().describe("The blocks on the event home, in two columns"),
     }),
   }),
+  tabs: namespace({
+    label: "Event tabs",
+    scopes: ["org", "event"],
+    defaults: { items: [] },
+    schema: z.object({
+      items: z
+        .array(eventTabSchema)
+        .max(60)
+        .optional()
+        .describe(
+          "The event's tabs in order, each shown or hidden, renamed or kept to while a window is open; tabs not listed keep their place",
+        ),
+    }),
+  }),
   identity: namespace({
     label: "Identity setup",
     scopes: ["instance", "org", "event"],
@@ -830,7 +872,7 @@ export const settingsRegistry = {
   chat: namespace({
     label: "Messages",
     scopes: ["instance", "org", "event"],
-    defaults: { enabled: true, staff: true, participants: true, judges: false, copyTeam: true },
+    defaults: { enabled: true, staff: true, participants: false, judges: false, copyTeam: true },
     schema: z.object({
       enabled: z.boolean().optional().describe("Messages on for the event"),
       staff: z.boolean().optional().describe("Organizers and judges can message each other"),
@@ -930,7 +972,7 @@ export const settingsRegistry = {
     scopes: ["instance", "org", "event"],
     defaults: {
       disband: "captain",
-      board: true,
+      board: false,
       switching: true,
       askOrganizer: true,
       creation: "participants",

@@ -52,6 +52,11 @@ export interface PluginRouteDeclaration {
   public?: boolean;
   splat?: boolean;
   showWhen?: PluginSettingCondition | Tuple<PluginSettingCondition>;
+  /**
+   * The tab shows only while this window is open; organizers always see it and can change it.
+   * One of the plugin's own `windows` by key (`contest`), or a core one (`submissions`).
+   */
+  window?: string;
 }
 
 interface PluginCommandBase {
@@ -132,6 +137,8 @@ export interface PluginEventTypeDeclaration {
   kind?: PluginEventKind;
   teamSize?: readonly [min: number, max: number];
   settings?: Record<string, PluginSettingValue>;
+  /** Participants and judges can message each other in events of this type (off otherwise). */
+  judgeConversations?: boolean;
 }
 
 export interface PluginLimitDeclaration {

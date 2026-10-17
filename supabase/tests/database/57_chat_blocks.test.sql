@@ -6,6 +6,8 @@ insert into public.events (id, org_id, slug, name, visibility, team_size_min, te
 values (tests.u('ev'), tests.u('org'), 'ev', 'Ev', 'public', 1, 4);
 select tests.create_user(tests.u(n), n || '@t.test') from unnest(array['own','p1','p2','p3']) n;
 insert into public.org_members (org_id, user_id, role) values (tests.u('org'), tests.u('own'), 'owner');
+-- new events start with participants' conversations with organizers off
+insert into public.settings (scope, event_id, namespace, value) values ('event', tests.u('ev'), 'chat', '{"participants":true}');
 insert into public.event_members (event_id, user_id, role) values
   (tests.u('ev'), tests.u('p1'), 'participant'), (tests.u('ev'), tests.u('p2'), 'participant'), (tests.u('ev'), tests.u('p3'), 'participant');
 insert into public.teams (id, event_id, name) values (tests.u('ta'), tests.u('ev'), 'A');

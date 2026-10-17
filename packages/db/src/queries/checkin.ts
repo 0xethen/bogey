@@ -1,9 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
+import { createAdminClient } from "../admin.ts";
 import { createServerClient } from "../server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Enums } from "../types.ts";
-import { requireId, requireOneOf } from "./validate.ts";
+import { answersToJson, readAnswers, requireId, requireOneOf } from "./validate.ts";
 
 export const CHECK_IN_METHODS = ["desk", "qr", "self"] as const;
 export type CheckInMethod = (typeof CHECK_IN_METHODS)[number];
@@ -137,26 +138,58 @@ export const undoCheckInFn = createServerFn({ method: "POST" })
     return ok(null);
   });
 
+export interface WalkInResult {
+  checkedIn: boolean;
+  name: string;
+}
+
 export const walkInFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
-    const raw = (input ?? {}) as { eventId?: unknown; email?: unknown; name?: unknown };
+    const raw = (input ?? {}) as {
+      eventId?: unknown;
+      email?: unknown;
+      name?: unknown;
+      answers?: unknown;
+    };
     if (typeof raw.email !== "string" || !raw.email.trim())
       throw new Error("Enter an email address");
     return {
       eventId: requireId(raw.eventId, "eventId"),
       email: raw.email.trim().slice(0, 320),
       name: typeof raw.name === "string" ? raw.name.trim().slice(0, 120) : "",
+      answers: readAnswers(raw.answers),
     };
   })
-  .handler(async ({ data }): Promise<DbResult<{ checkedIn: boolean }>> => {
+  .handler(async ({ data }): Promise<DbResult<WalkInResult>> => {
     const supabase = createServerClient();
-    const { data: rows, error } = await supabase.rpc("check_in_walk_in", {
-      p_event: data.eventId,
-      p_email: data.email,
-      p_name: data.name,
+    const walkIn = () =>
+      supabase.rpc("check_in_walk_in", {
+        p_event: data.eventId,
+        p_email: data.email,
+        p_name: data.name,
+        p_answers: answersToJson(data.answers),
+      });
+    const first = await walkIn();
+    if (first.error) return toFailure(first.error, "adding the walk-in");
+    if (first.data[0]?.checked_in) return ok({ checkedIn: true, name: data.name });
+
+    // No account yet. The database has let this person at the desk register them, so make the
+    // account (signed in later by email, like any other) and check them in with it.
+    const { data: event } = await supabase
+      .from("events")
+      .select("orgs(slug)")
+      .eq("id", data.eventId)
+      .single();
+    const { error: created } = await createAdminClient().auth.admin.createUser({
+      email: data.email,
+      email_confirm: false,
+      user_metadata: { full_name: data.name, ...(event?.orgs ? { org: event.orgs.slug } : {}) },
     });
-    if (error) return toFailure(error, "adding the walk-in");
-    return ok({ checkedIn: rows[0]?.checked_in ?? false });
+    // a sign-up the organization doesn't allow leaves them registered, to check in once they sign in
+    if (created) return ok({ checkedIn: false, name: data.name });
+    const second = await walkIn();
+    if (second.error) return toFailure(second.error, "checking in the walk-in");
+    return ok({ checkedIn: second.data[0]?.checked_in ?? false, name: data.name });
   });
 
 export const venueCodeFn = createServerFn({ method: "GET" })

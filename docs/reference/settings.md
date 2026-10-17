@@ -52,7 +52,7 @@ Only the operator sets `appUrl` for the instance, in [bogey.config.ts](../config
 
 Set at: instance.
 
-Only the operator sets `requireAdminMfa`, `deviceSignOut` for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.
+Only the operator sets `requireAdminMfa`, `deviceSignOut`, `maxPasskeys` for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
@@ -60,6 +60,7 @@ Only the operator sets `requireAdminMfa`, `deviceSignOut` for the instance, in [
 | `deletionRequests` | on / off | `true` | Let people ask for their account to be deleted from Account settings |
 | `requireAdminMfa` | on / off | `true` | Instance admins need an authenticator app before they can use Instance pages |
 | `deviceSignOut` | on / off | `false` | People can sign out one of their other devices, or all of them, from Account |
+| `maxPasskeys` | whole number (0 to 9) | `5` | How many passkeys one person can add; 0 turns passkeys off |
 
 ## Sign-in methods (`signin`)
 
@@ -164,6 +165,14 @@ Set at: org, event.
 | --- | --- | --- | --- |
 | `layout` | group | `{"main":[{"id":"next-steps","type":"next-steps"},{"id":"agenda","type":"agenda"}],"aside":[{"id":"announcements","type":"announcements"},{"id":"facts","type":"facts"},{"id":"prizes","type":"prizes"},{"id":"about","type":"about"}]}` | The blocks on the event home, in two columns |
 
+## Event tabs (`tabs`)
+
+Set at: org, event.
+
+| Key | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `items` | list | `[]` | The event's tabs in order, each shown or hidden, renamed or kept to while a window is open; tabs not listed keep their place |
+
 ## Identity setup (`identity`)
 
 Set at: instance, org, event.
@@ -180,7 +189,7 @@ Set at: instance, org, event.
 | --- | --- | --- | --- |
 | `enabled` | on / off | `true` | Messages on for the event |
 | `staff` | on / off | `true` | Organizers and judges can message each other |
-| `participants` | on / off | `true` | Participants can message organizers |
+| `participants` | on / off | `false` | Participants can message organizers |
 | `judges` | on / off | `false` | Participants and judges can message each other |
 | `copyTeam` | on / off | `true` | A participant's conversations include their whole team |
 
@@ -214,7 +223,7 @@ Set at: instance, org, event.
 | `leaveLimit` | whole number (0 to 20) | `0` | How many times one participant can leave a team; 0 means no limit |
 | `creation` | `participants` · `organizers` | `participants` | Who can start a team |
 | `askOrganizer` | on / off | `true` | Participants who can't switch teams are pointed to message the organizers |
-| `board` | on / off | `true` | Participants find teams and teammates on the Team page |
+| `board` | on / off | `false` | Participants find teams and teammates on the Team page |
 
 ## Divisions (`divisions`)
 

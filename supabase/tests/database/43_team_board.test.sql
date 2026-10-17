@@ -6,6 +6,8 @@ insert into public.events (id, org_id, slug, name, visibility, team_size_min, te
   (tests.u('ev'), tests.u('org'), 'ev', 'Ev', 'public', 1, 2),
   (tests.u('ev2'), tests.u('other'), 'ev2', 'Ev2', 'public', 1, 4);
 insert into public.event_windows (event_id, key, override) values (tests.u('ev'), 'teams', 'open');
+-- new events start with the board off
+insert into public.settings (scope, event_id, namespace, value) values ('event', tests.u('ev'), 'teams', '{"board":true}');
 select tests.create_user(tests.u(n), n || '@t.test') from unnest(array['own','cap','amy','bob','cat','eve']) n;
 insert into public.org_members (org_id, user_id, role) values (tests.u('org'), tests.u('own'), 'owner');
 insert into public.event_members (event_id, user_id, role)
@@ -47,11 +49,11 @@ select is((select team_id from public.team_members where user_id = tests.u('amy'
 select is((select status from public.team_requests limit 1), 'accepted', 'the request is settled');
 select is((select count(*)::integer from public.audit_log where event_id = tests.u('ev') and action = 'team.request_accepted'), 1, 'and audited');
 
-insert into public.settings (scope, event_id, namespace, value) values ('event', tests.u('ev'), 'teams', '{"board":false}');
+update public.settings set value = '{"board":false}' where scope = 'event' and event_id = tests.u('ev') and namespace = 'teams';
 select tests.as_user(tests.u('bob'));
 select throws_ok($$select * from public.team_board_people(tests.u('ev'))$$, '42501', null, 'an event can turn the board off');
 reset role;
-delete from public.settings where scope = 'event' and event_id = tests.u('ev') and namespace = 'teams';
+update public.settings set value = '{"board":true}' where scope = 'event' and event_id = tests.u('ev') and namespace = 'teams';
 
 select tests.as_user(tests.u('own'));
 select is(jsonb_array_length(public.team_matching_overview(tests.u('ev')) -> 'people'), 2, 'the overview lists people without a team');

@@ -10,8 +10,19 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Account → Security shows passkeys like the authenticator app: one Passkeys row saying "Not set up" or how many are added, with "Add a passkey" or "Add another", and each passkey listed under it. Each person can add up to 5; set `security: { maxPasskeys }` in `bogey.config.ts` to change it (at most 9, or `0` to turn adding passkeys off). The database enforces it.
+- Manage → Tabs arranges the event's tabs: drag them into order, rename them, hide them, or show one only while a window is open (organizers always see it). Plugin tabs are included, and plugins can tie a tab to a window themselves (the CTF's Challenges tab shows while the contest is open). The active tab's underline now slides in.
+- Walk-ins: New event asks who can check in (pre-registered only, or walk-ins too). Staff adding a walk-in at the desk now checks them in on the spot, making an account for their email when they don't have one. The desk links to a walk-in kiosk to open on a second device: walk-ins type their name and email, answer the registration questions, and are checked in.
+- Settings are addressed as `#group.setting` everywhere (form fields, plugin settings, Account preferences and accessibility), and a link to one scrolls to it and washes it in a faint accent that fades. Hints that named a place ("Write it in Manage > Details", "Add it in Agenda") are now links to the exact setting.
+- Capture the flag: challenges are edited on the Jury page, one page per challenge like a contest's problems, by organizers and the jury. Editing a challenge keeps its scoring, points, visibility and flag settings (it used to reset them). "First blood" is now "first solve". On phones, table actions (Edit, Delete, Rejudge) shrink to icons.
+- New events start with the team board (find teammates) off and with participants' conversations with organizers off; turn them on in Manage → Teams and Manage → Messages. Programming contests and CTFs start with conversations between participants and judges on.
 - Challenges: a try's tests are listed one per line with their time and memory, and the first failing test opens to its input, expected answer, output and errors. Samples, run output and compiler errors each have a copy button. Try a solution on the Jury page shows which test is running and which are still to come.
 - Live screens (the check-in desk, Messages, notifications, Manage → People, Teams and Submissions) refetch at most about once a second during a burst of changes instead of once per change, and still end on the latest state.
+
+### Upgrade notes
+
+- Run `vpr bogey db migrate` and `vpr bogey plugins migrate`. The team board and participants' conversations with organizers are now off by default, so an existing event that never set them turns them off; turn them back on in Manage → Teams and Manage → Messages (or at the organization level) if it uses them.
+- The CTF's `ctf_scoreboard` returns `first_solves` and `ctf_challenges_for_team` returns `first_solve`, instead of `first_bloods` and `first_blood`.
 
 ## 2.2.0 (2026-10-17)
 

@@ -29,6 +29,8 @@ export interface RouteTab {
 
 export interface EventTab extends RouteTab {
   show?: (viewer: EventViewer) => boolean;
+  /** Shown only while this window is open, to everyone but organizers. */
+  window?: string;
 }
 
 export function RouteTabs({ tabs }: { tabs: Tuple<RouteTab> }) {
@@ -68,10 +70,12 @@ export function RouteTabs({ tabs }: { tabs: Tuple<RouteTab> }) {
 }
 
 const TAB = cn(
-  "flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm text-muted-fg no-underline transition-colors",
+  "relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm text-muted-fg no-underline transition-colors",
   "hocus:text-fg",
+  "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:scale-x-0 after:transition-transform after:duration-100 after:ease-out motion-reduce:after:transition-none",
 );
-const ACTIVE_TAB = "font-medium text-fg shadow-[inset_0_-2px_0_var(--primary)]";
+
+const ACTIVE_TAB = "font-medium text-fg after:scale-x-100 starting:after:scale-x-0";
 
 function TabLink({ tab }: { tab: RouteTab }) {
   return (

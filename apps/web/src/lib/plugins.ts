@@ -93,6 +93,13 @@ export interface PluginAreaLink {
   permission?: string;
   pluginKey: string;
   path: string;
+  window?: string;
+}
+
+// a route's `window` names one of the plugin's own windows by its short key, or a core one
+function routeWindow(manifest: PluginManifest, window: string | undefined): string | undefined {
+  if (!window) return undefined;
+  return manifest.windows?.some((own) => own.key === window) ? `${manifest.key}.${window}` : window;
 }
 
 function manifestOf(plugins: Tuple<PluginManifest>, key: string): PluginManifest {
@@ -107,21 +114,23 @@ export function pluginAreaLinks(
   slug?: string,
   settings: Record<string, Record<string, unknown>> = {},
 ): PluginAreaLink[] {
-  return pluginRoutes(plugins, area).flatMap((route) =>
-    route.label && isRouteListed(manifestOf(plugins, route.key), route, settings[route.key] ?? {})
-      ? [
-          {
-            key: `plugin-${route.key}${route.path}`,
-            label: route.label,
-            to: pluginPageUrl(route, area, route.path, slug),
-            exact: route.path === "",
-            pluginKey: route.key,
-            path: route.path,
-            ...(route.permission ? { permission: route.permission } : {}),
-          },
-        ]
-      : [],
-  );
+  return pluginRoutes(plugins, area).flatMap((route) => {
+    const manifest = manifestOf(plugins, route.key);
+    if (!route.label || !isRouteListed(manifest, route, settings[route.key] ?? {})) return [];
+    const window = routeWindow(manifest, route.window);
+    return [
+      {
+        key: `plugin-${route.key}${route.path}`,
+        label: route.label,
+        to: pluginPageUrl(route, area, route.path, slug),
+        exact: route.path === "",
+        pluginKey: route.key,
+        path: route.path,
+        ...(route.permission ? { permission: route.permission } : {}),
+        ...(window ? { window } : {}),
+      },
+    ];
+  });
 }
 
 export function pluginTabs(

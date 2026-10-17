@@ -76,6 +76,8 @@ select tests.as_user(tests.u('own'));
 select throws_ok($$select * from public.email_outbox_claim(1)$$, '42501', null, 'people can''t drain the outbox');
 select throws_ok($$select public.email_drain_secret()$$, '42501', null, 'or read the drain secret');
 reset role;
+-- a dev database may have one set
+update public.settings set value = value - 'appUrl' where scope = 'instance' and namespace = 'tenancy';
 select is(private.drain_email_outbox(), 0, 'with no app address, the database waits');
 
 select * from finish();

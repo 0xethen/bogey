@@ -13,6 +13,7 @@ import {
   IconInbox,
   IconInfoCircle,
   IconLayoutDashboard,
+  IconLayoutNavbar,
   IconMail,
   IconMessages,
   IconPlug,
@@ -91,6 +92,7 @@ function RouteComponent() {
           icon: IconHome,
           to: `${base}/homepage`,
         },
+        { key: "tabs", label: t("manageTabs.title"), icon: IconLayoutNavbar, to: `${base}/tabs` },
         {
           key: "agenda",
           label: t("eventTab.agenda"),
@@ -191,7 +193,7 @@ function RouteComponent() {
               {
                 label: setting.label,
                 description: setting.description,
-                hash: `${manifest.key}-${section.key}`,
+                hash: `${manifest.key}.${name}`,
               },
             ]
           : [];

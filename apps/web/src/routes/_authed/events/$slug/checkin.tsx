@@ -1,8 +1,14 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { IconCamera, IconCameraOff, IconUserPlus, IconUsers } from "@tabler/icons-react";
+import {
+  IconCamera,
+  IconCameraOff,
+  IconDeviceDesktop,
+  IconUserPlus,
+  IconUsers,
+} from "@tabler/icons-react";
 import {
   checkInFn,
   checkinRosterQueryOptions,
@@ -324,6 +330,19 @@ function RouteComponent() {
               {walkNotice}
             </p>
           )}
+          <div className="flex flex-col gap-1.5 border-t border-border pt-4">
+            <div>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link to="/events/$slug/checkin/kiosk" params={{ slug: event.slug }} />}
+              >
+                <IconDeviceDesktop />
+                {t("checkin.openKiosk")}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-fg">{t("checkin.kioskHelp")}</p>
+          </div>
         </Screen.Section>
       )}
 

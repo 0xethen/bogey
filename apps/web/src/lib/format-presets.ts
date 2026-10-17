@@ -51,7 +51,7 @@ export const FORMAT_PRESETS: Tuple<FormatPreset> = [
     settings: {
       venue: { format: "in-person" },
       schedule: { showEventTimezone: true },
-      chat: { enabled: true, participants: true, judges: false },
+      chat: { enabled: true, participants: false, judges: false },
       identity: { enabled: true },
       agenda: { kinds: [WORKSHOP, TALK] },
       submissions: { autoSubmit: false },
@@ -79,7 +79,7 @@ export const FORMAT_PRESETS: Tuple<FormatPreset> = [
     settings: {
       venue: { format: "online" },
       schedule: { showEventTimezone: false },
-      chat: { enabled: true, participants: true, judges: true },
+      chat: { enabled: true, participants: false, judges: false },
       identity: { enabled: true },
       agenda: { kinds: [LIVESTREAM, WORKSHOP, OFFICE_HOURS, TALK] },
       submissions: { autoSubmit: true },
@@ -100,7 +100,7 @@ export const FORMAT_PRESETS: Tuple<FormatPreset> = [
     settings: {
       venue: { format: "hybrid" },
       schedule: { showEventTimezone: true },
-      chat: { enabled: true, participants: true, judges: true },
+      chat: { enabled: true, participants: false, judges: false },
       identity: { enabled: true },
       agenda: { kinds: [LIVESTREAM, WORKSHOP, OFFICE_HOURS, TALK] },
       submissions: { autoSubmit: true },

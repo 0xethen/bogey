@@ -3,8 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Json, Tables } from "../types.ts";
-import { requireId, requireText } from "./validate.ts";
-import { readFields, type Answers, type FormField } from "@bogey/utils/registration-form";
+import { answersToJson, readAnswers, requireId, requireText } from "./validate.ts";
+import { readFields, type FormField } from "@bogey/utils/registration-form";
 
 export type Registration = Tables<"registrations">;
 
@@ -18,21 +18,6 @@ export {
 
 export function parseForm(fields: Json | undefined): FormField[] {
   return readFields(fields);
-}
-
-function answersToJson(answers: Answers): Json {
-  const json: { [key: string]: Json } = {};
-  for (const [key, value] of Object.entries(answers)) {
-    if (typeof value === "object" && !Array.isArray(value)) {
-      json[key] =
-        "accepted" in value
-          ? { accepted: true }
-          : { path: value.path, name: value.name, size: value.size, type: value.type };
-    } else {
-      json[key] = value;
-    }
-  }
-  return json;
 }
 
 export interface MyRegistration {
@@ -71,35 +56,7 @@ export const myRegistrationQueryOptions = (eventId: string) =>
 export const registerFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
     const raw = (input ?? {}) as { eventId?: unknown; answers?: unknown; token?: unknown };
-    const answers: Answers = {};
-    if (raw.answers && typeof raw.answers === "object" && !Array.isArray(raw.answers)) {
-      for (const [key, value] of Object.entries(raw.answers)) {
-        if (typeof value === "string") answers[key] = value.slice(0, 5000);
-        else if (typeof value === "boolean" || typeof value === "number") answers[key] = value;
-        else if (Array.isArray(value)) {
-          answers[key] = value
-            .filter((entry): entry is string => typeof entry === "string")
-            .slice(0, 50)
-            .map((entry) => entry.slice(0, 200));
-        } else if (value && typeof value === "object") {
-          const entry: Record<string, unknown> = { ...value };
-          if (entry.accepted === true) answers[key] = { accepted: true };
-          else if (
-            typeof entry.path === "string" &&
-            typeof entry.name === "string" &&
-            typeof entry.size === "number" &&
-            typeof entry.type === "string"
-          ) {
-            answers[key] = {
-              path: entry.path.slice(0, 300),
-              name: entry.name.slice(0, 200),
-              size: entry.size,
-              type: entry.type.slice(0, 100),
-            };
-          }
-        }
-      }
-    }
+    const answers = readAnswers(raw.answers);
     return {
       eventId: requireId(raw.eventId, "eventId"),
       answers,

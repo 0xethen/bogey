@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createEventFn } from "@bogey/db/queries/org";
 import { eventsQueryOptions } from "@bogey/db/queries/events";
 import { setWindowsFn } from "@bogey/db/queries/manage";
-import { settingsQueryOptions } from "@bogey/db/queries/settings";
+import { settingsQueryOptions, updateSettings } from "@bogey/db/queries/settings";
 import {
   findPlugin,
   installedPlugins,
@@ -71,6 +71,7 @@ interface EventOption {
   teams: readonly [number, number];
   plugin: string | null;
   pluginSettings: Record<string, PluginSettingValue>;
+  judgeConversations: boolean;
 }
 
 const CORE_OPTIONS: Tuple<EventOption> = [
@@ -82,6 +83,7 @@ const CORE_OPTIONS: Tuple<EventOption> = [
     teams: [1, 4],
     plugin: null,
     pluginSettings: {},
+    judgeConversations: false,
   },
   {
     value: "custom",
@@ -91,6 +93,7 @@ const CORE_OPTIONS: Tuple<EventOption> = [
     teams: [1, 4],
     plugin: null,
     pluginSettings: {},
+    judgeConversations: false,
   },
 ];
 
@@ -123,12 +126,26 @@ function eventOptions(available: Tuple<string> | undefined): EventOption[] {
       teams: type.teamSize,
       plugin: type.plugin,
       pluginSettings: eventLevelSettings(type.plugin, type.settings),
+      judgeConversations: type.judgeConversations,
     })),
     CORE_OPTIONS[1]!,
   ];
 }
 
 const FORMATS = ["in-person", "online", "hybrid", "custom"] as const;
+
+const ARRIVALS: Tuple<{
+  value: "registered" | "walk-ins";
+  label: PlainKey;
+  description: PlainKey;
+}> = [
+  {
+    value: "registered",
+    label: "newEvent.registeredOnly",
+    description: "newEvent.registeredOnlyHelp",
+  },
+  { value: "walk-ins", label: "newEvent.walkIns", description: "newEvent.walkInsHelp" },
+];
 
 const CUSTOM_FORMAT = {
   value: "custom",
@@ -148,13 +165,21 @@ const newEventSchema = (t: T) =>
         .enum(FORMATS)
         .meta({ label: t("newEvent.where") })
         .describe(t("newEvent.whereHelp")),
+      arrivals: z
+        .enum(["registered", "walk-ins"])
+        .meta({ label: t("newEvent.arrivals") })
+        .describe(t("newEvent.arrivalsHelp")),
     })
     .superRefine(checkEventRanges(t));
 
 type Values = z.input<ReturnType<typeof newEventSchema>>;
 
 const STEPS: Tuple<{ key: string; title: PlainKey; fields: Tuple<keyof Values> }> = [
-  { key: "basics", title: "newEvent.basics", fields: ["name", "slug", "type", "format"] },
+  {
+    key: "basics",
+    title: "newEvent.basics",
+    fields: ["name", "slug", "type", "format", "arrivals"],
+  },
   { key: "when", title: "facts.when", fields: ["timezone", "startsAt", "endsAt"] },
   { key: "teams", title: "facts.teams", fields: ["teamMin", "teamMax"] },
   { key: "review", title: "newEvent.review", fields: [] },
@@ -198,6 +223,7 @@ function RouteComponent() {
         slug: "",
         type: "hackathon",
         format: "in-person",
+        arrivals: "registered",
         timezone: detectedTimezone(),
         startsAt: "",
         endsAt: "",
@@ -249,6 +275,14 @@ function RouteComponent() {
           ? FORMAT_PRESETS.find((each) => each.value === value.format)
           : undefined;
       if (preset) await applyFormatPreset({ scope: "event", eventId: result.data.id }, preset);
+      await Promise.all([
+        value.arrivals === "walk-ins" &&
+          updateSettings({ scope: "event", eventId: result.data.id }, "checkin", {
+            allowWalkIns: true,
+          }),
+        option.judgeConversations &&
+          updateSettings({ scope: "event", eventId: result.data.id }, "chat", { judges: true }),
+      ]);
       const schedule = defaultSchedule(option.kind, startsAt, endsAt, new Date().toISOString());
       const scheduled = schedule.length
         ? await setWindowsFn({
@@ -400,6 +434,45 @@ function RouteComponent() {
                     )
                   }
                 </form.Subscribe>
+                <form.Subscribe selector={(state) => state.values.format !== "online"}>
+                  {(inPerson) =>
+                    inPerson && (
+                      <form.Field name="arrivals">
+                        {(field) => (
+                          <FieldSet>
+                            <field.Legend />
+                            <field.Description />
+                            <RadioGroup
+                              value={field.value}
+                              onValueChange={(value) => {
+                                const next = ARRIVALS.find((each) => each.value === value);
+                                if (next) field.handleChange(next.value);
+                              }}
+                            >
+                              {ARRIVALS.map((each) => (
+                                <Field key={each.value} orientation="horizontal">
+                                  <RadioGroupItem
+                                    value={each.value}
+                                    id={`arrivals-${each.value}`}
+                                  />
+                                  <FieldLabel
+                                    htmlFor={`arrivals-${each.value}`}
+                                    className="flex-col items-start gap-0"
+                                  >
+                                    <span>{t(each.label)}</span>
+                                    <span className="font-normal text-muted-fg">
+                                      {t(each.description)}
+                                    </span>
+                                  </FieldLabel>
+                                </Field>
+                              ))}
+                            </RadioGroup>
+                          </FieldSet>
+                        )}
+                      </form.Field>
+                    )
+                  }
+                </form.Subscribe>
               </>
             )}
 
@@ -526,6 +599,17 @@ function Review({ values, options }: { values: Values; options: Tuple<EventOptio
                 : t("newEvent.notSet"),
           },
           { label: t("facts.teams"), value: teams },
+          ...(values.format !== "online"
+            ? [
+                {
+                  label: t("newEvent.arrivals"),
+                  value: t(
+                    ARRIVALS.find((each) => each.value === values.arrivals)?.label ??
+                      "newEvent.registeredOnly",
+                  ),
+                },
+              ]
+            : []),
           ...(option?.kind === "hackathon"
             ? [
                 {

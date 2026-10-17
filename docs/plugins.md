@@ -548,6 +548,7 @@ eventTypes: [
     kind: "contest", // the core kind it starts as: its windows and default schedule
     teamSize: [1, 1], // how the form starts
     settings: { scoring: "golf" }, // optional: the plugin's settings the event starts with
+    judgeConversations: true, // optional: participants and judges can message each other (off otherwise)
   },
 ],
 ```
@@ -623,6 +624,11 @@ the same question for your own forms.
 same shape, to list its tab only for some of the plugin's events: a plugin with several
 event types keeps a `format` setting (which `eventTypes[].settings` presets) and lists each
 format's pages by it. A route that isn't listed still opens by its address.
+
+A labelled route can also name a `window`: its tab shows only while that window is open
+(organizers always see it). Use one of the plugin's own `windows` by key (`"contest"`), or a
+core one (`"submissions"`). Organizers can rename, reorder, hide or re-tie any tab, the
+plugin's included, in Manage → Tabs.
 
 `scope` is the lowest level a setting can be changed at: `"event"` (the
 default), `"org"` or `"instance"`. Values resolve instance → organization →

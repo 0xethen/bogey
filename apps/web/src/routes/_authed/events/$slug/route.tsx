@@ -3,31 +3,18 @@ import { useEventTimeFormat } from "#/lib/time.ts";
 import { createFileRoute, Link, notFound, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { eventQueryOptions } from "@bogey/db/queries/events";
-import { eventPagesQueryOptions, type EventPage } from "@bogey/db/queries/pages";
+import { eventPagesQueryOptions } from "@bogey/db/queries/pages";
 import { identitySetupPendingQueryOptions, isPending } from "@bogey/db/queries/identity-setup";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { agendaQueryOptions } from "@bogey/db/queries/sessions";
 import { eventAccessQueryOptions } from "@bogey/db/permissions";
-import { RouteTabs, type EventTab } from "#/components/navigation/header/TabRow.tsx";
+import { RouteTabs } from "#/components/navigation/header/TabRow.tsx";
+import { arrangeTabs, eventTabs, visibleTabs } from "#/lib/event-tabs.ts";
 import { orNotFound } from "#/lib/routing.ts";
 import { agendaMilestones } from "#/lib/windows.ts";
-import {
-  atTheDesk,
-  hasAgenda,
-  hasResults,
-  hasSubmissionPage,
-  hasTeamPage,
-  judgesOnly,
-  manages,
-  useEventViewer,
-} from "#/lib/viewer.ts";
+import { manages, useEventViewer } from "#/lib/viewer.ts";
 import { mayAnnounce } from "#/lib/messaging.ts";
-import {
-  enabledPlugins,
-  missingPlugins,
-  pluginSettingsQueryOptions,
-  pluginTabs,
-} from "#/lib/plugins.ts";
+import { enabledPlugins, missingPlugins, pluginSettingsQueryOptions } from "#/lib/plugins.ts";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { IconPlugConnectedX, IconWifiOff } from "@tabler/icons-react";
 import { eventWrapperPlugins, PluginEventWrappers } from "./-components/plugin-event-wrappers.tsx";
@@ -35,8 +22,7 @@ import { NewAnnouncementDialog } from "#/components/event/messaging/announcement
 import { AnnouncementToasts } from "./-components/announcement-toasts.tsx";
 import { PluginHotkeys } from "./-components/plugin-hotkeys.tsx";
 import { networkStatusQueryOptions, settingsQueryOptions } from "@bogey/db/queries/settings";
-import type { PluginManifest } from "@bogey/plugins";
-import { msg, useT, type T } from "#/lib/translate.tsx";
+import { msg, useT } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug")({
   staticData: {
@@ -59,6 +45,7 @@ export const Route = createFileRoute("/_authed/events/$slug")({
           "chat",
           "schedule",
           "announcements",
+          "tabs",
         ]),
       ),
       context.query.ensureQueryData(agendaQueryOptions(event.id)),
@@ -93,6 +80,7 @@ export const Route = createFileRoute("/_authed/events/$slug")({
       missing: missingPlugins(settings.plugins),
       chat: settings.chat,
       announcements: settings.announcements,
+      tabs: settings.tabs.items,
       countdownLabel: settings.schedule.countdownLabel?.trim() || null,
       hasAgenda: agenda.slots.length > 0 || agendaMilestones(windows, settings.schedule).length > 0,
     };
@@ -148,56 +136,41 @@ function RouteComponent() {
 function EventTabs() {
   const t = useT();
   const viewer = useEventViewer();
+  const loaded = Route.useMatch({
+    shouldThrow: false,
+    select: (match) => (match.status === "success" ? match.context.tabs : undefined),
+  });
+  // the query follows Manage → Tabs as it saves; the loaded value covers the first paint
+  const saved = useQuery({
+    ...settingsQueryOptions({ eventId: viewer?.event.id ?? "" }, ["tabs"]),
+    enabled: !!viewer,
+  });
+  const tabs = saved.data?.tabs.items ?? loaded;
   const pages = useQuery({
     ...eventPagesQueryOptions(viewer?.event.id ?? ""),
     enabled: !!viewer,
   });
+  // live, so a tab kept to a window comes and goes as it opens and closes
+  const windows = useQuery({
+    ...eventWindowsQueryOptions(viewer?.event.id ?? ""),
+    enabled: !!viewer,
+  });
   if (!viewer) return null;
-  const tabs = eventTabs(
+  const all = eventTabs(
     viewer.event.slug,
     viewer.plugins,
     viewer.pluginSettings,
     pages.data ?? [],
     t,
   );
-  return <RouteTabs tabs={tabs.filter((tab) => !tab.show || tab.show(viewer))} />;
-}
-
-function eventTabs(
-  slug: string,
-  plugins: Tuple<PluginManifest>,
-  pluginSettings: Record<string, Record<string, unknown>>,
-  pages: Tuple<EventPage>,
-  t: T,
-): EventTab[] {
-  const base = `/events/${slug}`;
-  return [
-    {
-      key: "home",
-      label: t("eventTab.home"),
-      to: base,
-      exact: true,
-      menu: pages.map((page) => ({
-        key: page.id,
-        label: page.title,
-        to: `${base}/pages/${page.slug}`,
-      })),
-    },
-    { key: "agenda", label: t("eventTab.agenda"), to: `${base}/agenda`, show: hasAgenda },
-    { key: "team", label: t("eventTab.team"), to: `${base}/team`, show: hasTeamPage },
-    {
-      key: "submission",
-      label: t("eventTab.submission"),
-      to: `${base}/submission`,
-      show: hasSubmissionPage,
-    },
-    { key: "messages", label: t("eventTab.messages"), to: `${base}/messages` },
-    { key: "checkin", label: t("eventTab.checkin"), to: `${base}/checkin`, show: atTheDesk },
-    { key: "judging", label: t("eventTab.judging"), to: `${base}/judging`, show: judgesOnly },
-    { key: "results", label: t("eventTab.results"), to: `${base}/results`, show: hasResults },
-    ...pluginTabs(slug, plugins, pluginSettings),
-    { key: "manage", label: t("eventTab.manage"), to: `${base}/manage`, show: manages, end: true },
-  ];
+  return (
+    <RouteTabs
+      tabs={visibleTabs(arrangeTabs(all, tabs ?? []), {
+        ...viewer,
+        windows: windows.data ?? viewer.windows,
+      })}
+    />
+  );
 }
 
 function MissingPlugins({

@@ -104,6 +104,7 @@ import { Route as AuthedAdminOrgsSlugLimitsRouteImport } from './routes/_authed/
 import { Route as AuthedAdminXKeySplatRouteImport } from './routes/_authed/admin/x/$key/$'
 import { Route as AuthedEventsSlugAgendaIndexRouteImport } from './routes/_authed/events/$slug/agenda/index'
 import { Route as AuthedEventsSlugAgendaSessionIdRouteImport } from './routes/_authed/events/$slug/agenda/$sessionId'
+import { Route as AuthedEventsSlugCheckinKioskRouteImport } from './routes/_authed/events/$slug/checkin_.kiosk'
 import { Route as AuthedEventsSlugJudgingIndexRouteImport } from './routes/_authed/events/$slug/judging/index'
 import { Route as AuthedEventsSlugJudgingSubmissionIdRouteImport } from './routes/_authed/events/$slug/judging/$submissionId'
 import { Route as AuthedEventsSlugManageIndexRouteImport } from './routes/_authed/events/$slug/manage/index'
@@ -125,6 +126,7 @@ import { Route as AuthedEventsSlugManagePrizesRouteImport } from './routes/_auth
 import { Route as AuthedEventsSlugManageRegistrationRouteImport } from './routes/_authed/events/$slug/manage/registration'
 import { Route as AuthedEventsSlugManageSecurityRouteImport } from './routes/_authed/events/$slug/manage/security'
 import { Route as AuthedEventsSlugManageSubmissionsRouteImport } from './routes/_authed/events/$slug/manage/submissions'
+import { Route as AuthedEventsSlugManageTabsRouteImport } from './routes/_authed/events/$slug/manage/tabs'
 import { Route as AuthedEventsSlugManageTeamsRouteImport } from './routes/_authed/events/$slug/manage/teams'
 import { Route as AuthedEventsSlugManageWebhooksRouteImport } from './routes/_authed/events/$slug/manage/webhooks'
 import { Route as AuthedEventsSlugPagesIndexRouteImport } from './routes/_authed/events/$slug/pages/index'
@@ -647,6 +649,12 @@ const AuthedEventsSlugAgendaSessionIdRoute =
     path: '/$sessionId',
     getParentRoute: () => AuthedEventsSlugAgendaRouteRoute,
   } as any)
+const AuthedEventsSlugCheckinKioskRoute =
+  AuthedEventsSlugCheckinKioskRouteImport.update({
+    id: '/checkin_/kiosk',
+    path: '/checkin/kiosk',
+    getParentRoute: () => AuthedEventsSlugRouteRoute,
+  } as any)
 const AuthedEventsSlugJudgingIndexRoute =
   AuthedEventsSlugJudgingIndexRouteImport.update({
     id: '/',
@@ -771,6 +779,12 @@ const AuthedEventsSlugManageSubmissionsRoute =
   AuthedEventsSlugManageSubmissionsRouteImport.update({
     id: '/submissions',
     path: '/submissions',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageTabsRoute =
+  AuthedEventsSlugManageTabsRouteImport.update({
+    id: '/tabs',
+    path: '/tabs',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
 const AuthedEventsSlugManageTeamsRoute =
@@ -974,6 +988,7 @@ export interface FileRoutesByFullPath {
   '/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdRoute
+  '/events/$slug/checkin/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
@@ -993,6 +1008,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
   '/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
+  '/events/$slug/manage/tabs': typeof AuthedEventsSlugManageTabsRoute
   '/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
   '/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
@@ -1096,6 +1112,7 @@ export interface FileRoutesByTo {
   '/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdRoute
+  '/events/$slug/checkin/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
@@ -1115,6 +1132,7 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
   '/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
+  '/events/$slug/manage/tabs': typeof AuthedEventsSlugManageTabsRoute
   '/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
   '/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
@@ -1234,6 +1252,7 @@ export interface FileRoutesById {
   '/_authed/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/_authed/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/_authed/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdRoute
+  '/_authed/events/$slug/checkin_/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
   '/_authed/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/_authed/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
   '/_authed/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
@@ -1253,6 +1272,7 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
   '/_authed/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/_authed/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
+  '/_authed/events/$slug/manage/tabs': typeof AuthedEventsSlugManageTabsRoute
   '/_authed/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
   '/_authed/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/_authed/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
@@ -1371,6 +1391,7 @@ export interface FileRouteTypes {
     | '/admin/orgs/$slug/limits'
     | '/admin/x/$key/$'
     | '/events/$slug/agenda/$sessionId'
+    | '/events/$slug/checkin/kiosk'
     | '/events/$slug/judging/$submissionId'
     | '/events/$slug/manage/agenda'
     | '/events/$slug/manage/announcements'
@@ -1390,6 +1411,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/registration'
     | '/events/$slug/manage/security'
     | '/events/$slug/manage/submissions'
+    | '/events/$slug/manage/tabs'
     | '/events/$slug/manage/teams'
     | '/events/$slug/manage/webhooks'
     | '/events/$slug/pages/$page'
@@ -1493,6 +1515,7 @@ export interface FileRouteTypes {
     | '/admin/orgs/$slug/limits'
     | '/admin/x/$key/$'
     | '/events/$slug/agenda/$sessionId'
+    | '/events/$slug/checkin/kiosk'
     | '/events/$slug/judging/$submissionId'
     | '/events/$slug/manage/agenda'
     | '/events/$slug/manage/announcements'
@@ -1512,6 +1535,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/registration'
     | '/events/$slug/manage/security'
     | '/events/$slug/manage/submissions'
+    | '/events/$slug/manage/tabs'
     | '/events/$slug/manage/teams'
     | '/events/$slug/manage/webhooks'
     | '/events/$slug/pages/$page'
@@ -1630,6 +1654,7 @@ export interface FileRouteTypes {
     | '/_authed/admin/orgs/$slug/limits'
     | '/_authed/admin/x/$key/$'
     | '/_authed/events/$slug/agenda/$sessionId'
+    | '/_authed/events/$slug/checkin_/kiosk'
     | '/_authed/events/$slug/judging/$submissionId'
     | '/_authed/events/$slug/manage/agenda'
     | '/_authed/events/$slug/manage/announcements'
@@ -1649,6 +1674,7 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/registration'
     | '/_authed/events/$slug/manage/security'
     | '/_authed/events/$slug/manage/submissions'
+    | '/_authed/events/$slug/manage/tabs'
     | '/_authed/events/$slug/manage/teams'
     | '/_authed/events/$slug/manage/webhooks'
     | '/_authed/events/$slug/pages/$page'
@@ -2373,6 +2399,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugAgendaSessionIdRouteImport
       parentRoute: typeof AuthedEventsSlugAgendaRouteRoute
     }
+    '/_authed/events/$slug/checkin_/kiosk': {
+      id: '/_authed/events/$slug/checkin_/kiosk'
+      path: '/checkin/kiosk'
+      fullPath: '/events/$slug/checkin/kiosk'
+      preLoaderRoute: typeof AuthedEventsSlugCheckinKioskRouteImport
+      parentRoute: typeof AuthedEventsSlugRouteRoute
+    }
     '/_authed/events/$slug/judging/': {
       id: '/_authed/events/$slug/judging/'
       path: '/'
@@ -2518,6 +2551,13 @@ declare module '@tanstack/react-router' {
       path: '/submissions'
       fullPath: '/events/$slug/manage/submissions'
       preLoaderRoute: typeof AuthedEventsSlugManageSubmissionsRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/tabs': {
+      id: '/_authed/events/$slug/manage/tabs'
+      path: '/tabs'
+      fullPath: '/events/$slug/manage/tabs'
+      preLoaderRoute: typeof AuthedEventsSlugManageTabsRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
     '/_authed/events/$slug/manage/teams': {
@@ -2819,6 +2859,7 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageRegistrationRoute: typeof AuthedEventsSlugManageRegistrationRoute
   AuthedEventsSlugManageSecurityRoute: typeof AuthedEventsSlugManageSecurityRoute
   AuthedEventsSlugManageSubmissionsRoute: typeof AuthedEventsSlugManageSubmissionsRoute
+  AuthedEventsSlugManageTabsRoute: typeof AuthedEventsSlugManageTabsRoute
   AuthedEventsSlugManageTeamsRoute: typeof AuthedEventsSlugManageTeamsRoute
   AuthedEventsSlugManageWebhooksRoute: typeof AuthedEventsSlugManageWebhooksRoute
   AuthedEventsSlugManageIndexRoute: typeof AuthedEventsSlugManageIndexRoute
@@ -2849,6 +2890,7 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageSecurityRoute: AuthedEventsSlugManageSecurityRoute,
     AuthedEventsSlugManageSubmissionsRoute:
       AuthedEventsSlugManageSubmissionsRoute,
+    AuthedEventsSlugManageTabsRoute: AuthedEventsSlugManageTabsRoute,
     AuthedEventsSlugManageTeamsRoute: AuthedEventsSlugManageTeamsRoute,
     AuthedEventsSlugManageWebhooksRoute: AuthedEventsSlugManageWebhooksRoute,
     AuthedEventsSlugManageIndexRoute: AuthedEventsSlugManageIndexRoute,
@@ -2876,6 +2918,7 @@ interface AuthedEventsSlugRouteRouteChildren {
   AuthedEventsSlugTeamRoute: typeof AuthedEventsSlugTeamRoute
   AuthedEventsSlugWelcomeRoute: typeof AuthedEventsSlugWelcomeRoute
   AuthedEventsSlugIndexRoute: typeof AuthedEventsSlugIndexRoute
+  AuthedEventsSlugCheckinKioskRoute: typeof AuthedEventsSlugCheckinKioskRoute
   AuthedEventsSlugPagesPageRoute: typeof AuthedEventsSlugPagesPageRoute
   AuthedEventsSlugResultsPresentRoute: typeof AuthedEventsSlugResultsPresentRoute
   AuthedEventsSlugPagesIndexRoute: typeof AuthedEventsSlugPagesIndexRoute
@@ -2902,6 +2945,7 @@ const AuthedEventsSlugRouteRouteChildren: AuthedEventsSlugRouteRouteChildren = {
   AuthedEventsSlugTeamRoute: AuthedEventsSlugTeamRoute,
   AuthedEventsSlugWelcomeRoute: AuthedEventsSlugWelcomeRoute,
   AuthedEventsSlugIndexRoute: AuthedEventsSlugIndexRoute,
+  AuthedEventsSlugCheckinKioskRoute: AuthedEventsSlugCheckinKioskRoute,
   AuthedEventsSlugPagesPageRoute: AuthedEventsSlugPagesPageRoute,
   AuthedEventsSlugResultsPresentRoute: AuthedEventsSlugResultsPresentRoute,
   AuthedEventsSlugPagesIndexRoute: AuthedEventsSlugPagesIndexRoute,
