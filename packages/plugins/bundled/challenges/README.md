@@ -65,12 +65,13 @@ event of that name need `?org=<organization URL name>`. A frozen scoreboard stay
 
 Pick **Capture the flag** when creating an event (the event's **Format** setting is `ctf`). It uses the same plugin, so
 there is nothing else to install. Jeopardy-style: challenges with flags, categories, dynamic scoring, hints that cost
-points, first blood and a team scoreboard.
+points, first solves and a team scoreboard.
 
 1. Create the event. Add the **Contest** window on the agenda (challenges show and flags are accepted) and the
    **Scoreboard** window (the board teams can see). Organizers see everything at any time. If players form teams, open
    the Teams window as well.
-2. **Edit challenges** (organizers): title, category, Markdown description, points, a flag and any hints.
+2. **Jury** (organizers and the jury): the list of challenges; open one, or add one, to edit its title, category,
+   Markdown description, points, flag and hints on its own page.
 3. Teams open **Challenges**, send flags, and watch **Scoreboard**.
 
 ### Flags
@@ -91,7 +92,7 @@ points, first blood and a team scoreboard.
   two solves are worth 475.
 - A **hint** with a cost takes that many points from the team that unlocks it, immediately and for good. Hints are numbered;
   editing a challenge's hint list renumbers them, so don't reorder hints once teams may have unlocked them.
-- **First blood** is the first team to solve a challenge, shown on the challenge and counted on the board.
+- **First solve** is the first team to solve a challenge, shown on the challenge and counted on the board.
 - **Freeze**: set a time and everyone but organizers sees the board, scores and dynamic values as they were then.
 
 CTF teams don't have submissions, so this doesn't feed rounds or published results. Read the final order from the

@@ -816,6 +816,7 @@ describe("org-scoped plugins and event types", () => {
         kind: "contest",
         teamSize: [1, 1],
         settings: {},
+        judgeConversations: false,
       },
       {
         id: "contest.open",
@@ -826,6 +827,7 @@ describe("org-scoped plugins and event types", () => {
         kind: "custom",
         teamSize: [1, 4],
         settings: {},
+        judgeConversations: false,
       },
     ]);
   });

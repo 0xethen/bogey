@@ -1,10 +1,6 @@
 import { createElement, useEffect, type ComponentType } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import {
-  definePluginRuntime,
-  type PluginContext,
-  type PluginRouteContext,
-} from "@bogey/plugins/runtime";
+import { definePluginRuntime, type PluginRouteContext } from "@bogey/plugins/runtime";
 import { problemsQueryOptions } from "./db.ts";
 import { manifest } from "./manifest.ts";
 import { JuryPage, ProblemPage } from "./jury/problem-view.tsx";
@@ -14,7 +10,9 @@ import { problemSlug, useGoTo } from "./shared.tsx";
 import { ConversationTopic } from "./contest/topic.tsx";
 import { ManageOverview } from "./contest/overview.tsx";
 import { LanguagesControl } from "./contest/languages-control.tsx";
-import { ChallengesPage, ManagePage, ScoreboardPage } from "./ctf/pages.tsx";
+import { ChallengesPage, ScoreboardPage } from "./ctf/pages.tsx";
+import { CtfJuryPage } from "./ctf/jury.tsx";
+import { juryChallengesQueryOptions } from "./ctf/database.ts";
 import type { Settings } from "./shared.tsx";
 
 function titleFrom(queryClient: QueryClient, eventId: string, splat: string, fallback: string) {
@@ -31,7 +29,7 @@ function titleFrom(queryClient: QueryClient, eventId: string, splat: string, fal
 
 function byFormat(
   contest: ComponentType<PluginRouteContext<Settings>>,
-  ctf: ComponentType<PluginContext>,
+  ctf: ComponentType<PluginRouteContext<Settings>>,
 ): ComponentType<PluginRouteContext<Settings>> {
   return function FormatPage(context) {
     return context.settings.format === "ctf"
@@ -45,6 +43,25 @@ function ProblemsRoute(context: PluginRouteContext<Settings>) {
   return problemSlug(context.splat)
     ? createElement(ProblemPage, context)
     : createElement(Problems, context);
+}
+
+function challengeTitle(queryClient: QueryClient, eventId: string, splat: string) {
+  const id = problemSlug(splat);
+  if (!id) return "Jury";
+  if (id === "new") return "New challenge";
+  return (
+    queryClient
+      .getQueryData(juryChallengesQueryOptions(eventId).queryKey)
+      ?.find((challenge) => challenge.id === id)?.title ?? "Challenge"
+  );
+}
+
+function ToJury() {
+  const goTo = useGoTo();
+  useEffect(() => {
+    void goTo("/jury", { replace: true });
+  }, [goTo]);
+  return null;
 }
 
 // the plugin's root and the old /problem/<slug> addresses go to /problems
@@ -65,12 +82,15 @@ export default definePluginRuntime(manifest, {
         titleFrom(queryClient, eventId, splat, "Problems"),
     },
     "/ctf": ChallengesPage,
-    "/ctf/manage": ManagePage,
+    "/ctf/manage": ToJury,
     "/problem": ToProblems,
     "/scoreboard": byFormat(Scoreboard, ScoreboardPage),
     "/jury": {
-      component: JuryPage,
-      title: ({ queryClient, eventId, splat }) => titleFrom(queryClient, eventId, splat, "Jury"),
+      component: byFormat(JuryPage, CtfJuryPage),
+      title: ({ queryClient, eventId, splat, settings }) =>
+        settings.format === "ctf"
+          ? challengeTitle(queryClient, eventId, splat)
+          : titleFrom(queryClient, eventId, splat, "Jury"),
     },
   },
   serverRoutes: {

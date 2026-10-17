@@ -43,6 +43,9 @@ const buttonVariants = cva(
           "h-9 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
         xs: "h-6 gap-1 px-2.5 text-xs has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-8 gap-1 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        // `sm` with its `ButtonLabel` hidden on phones (below the `sm` breakpoint), leaving the icon
+        "sm-icon-on-phones":
+          "h-8 gap-1 px-3 max-sm:w-8 max-sm:px-0 max-sm:[&_[data-slot=button-label]]:sr-only",
         lg: "h-10 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
         "icon-3xs": "size-4.5 [&_svg:not([class*='size-'])]:size-3.5",
         "icon-2xs": "size-5 [&_svg:not([class*='size-'])]:size-3",
@@ -119,4 +122,9 @@ function Button({
   );
 }
 
-export { Button, buttonVariants };
+/** A button's words, which `size="sm-icon-on-phones"` hides on phones; give the button an `aria-label`. */
+function ButtonLabel({ children }: { children: ReactNode }) {
+  return <span data-slot="button-label">{children}</span>;
+}
+
+export { Button, ButtonLabel, buttonVariants };

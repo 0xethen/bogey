@@ -19,7 +19,7 @@ export type Challenge = {
   points: number;
   solves: number;
   solved: boolean;
-  first_blood: string | null;
+  first_solve: string | null;
   hints: Hint[];
 };
 
@@ -30,11 +30,32 @@ export type ScoreRow = {
   team_name: string;
   score: number;
   solves: number;
-  first_bloods: number;
+  first_solves: number;
   last_solve_at: string;
 };
 
 export type FlagKind = "static" | "regex";
+
+const juryHintSchema = z.object({ ordinal: z.number(), cost: z.number(), content_md: z.string() });
+
+export type JuryChallenge = {
+  id: string;
+  title: string;
+  category: string;
+  description_md: string;
+  scoring: "static" | "dynamic";
+  points_initial: number;
+  points_min: number;
+  decay: number;
+  visible: boolean;
+  flag_kind: FlagKind | null;
+  case_sensitive: boolean;
+  points: number;
+  solves: number;
+  hints: z.infer<typeof juryHintSchema>[];
+};
+
+type JuryChallengeRow = Omit<JuryChallenge, "hints"> & { hints: unknown };
 
 export type ChallengeInput = {
   title: string;
@@ -65,6 +86,7 @@ export type CtfDatabase = {
         Returns: string;
       };
       ctf_delete_challenge: { Args: { p_id: string }; Returns: undefined };
+      ctf_jury_challenges: { Args: { p_event: string }; Returns: JuryChallengeRow[] };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
@@ -94,5 +116,20 @@ export const scoreboardQueryOptions = (eventId: string) =>
       return unwrap(error ? toFailure(error, "loading the scoreboard") : ok(data ?? []));
     },
     refetchInterval: 30_000,
+    retry: retryPolicy,
+  });
+
+export const juryChallengesQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["ctf", "jury", eventId] as const,
+    queryFn: async (): Promise<JuryChallenge[]> => {
+      const { data, error } = await client().rpc("ctf_jury_challenges", { p_event: eventId });
+      if (error) return unwrap(toFailure(error, "loading challenges"));
+      return unwrap(
+        ok(
+          (data ?? []).map((row) => ({ ...row, hints: z.array(juryHintSchema).parse(row.hints) })),
+        ),
+      );
+    },
     retry: retryPolicy,
   });

@@ -101,7 +101,7 @@ export function Rejudgings({ eventId, problems }: { eventId: string; problems: T
       description="Judge solutions again, for a wrong test or a changed limit. The new verdicts wait here until you look at what changes and apply them; the scoreboard keeps the old ones until then."
     >
       <form.AppForm>
-        <form.Form className="flex flex-wrap items-start gap-3">
+        <form.Form className="flex flex-wrap items-center gap-3">
           <div className="w-48">
             <form.Field name="problem">
               {(field) => (

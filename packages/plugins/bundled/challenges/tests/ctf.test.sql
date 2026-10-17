@@ -61,7 +61,7 @@ select is(public.ctf_submit_flag((select id from made where name = 'web'), 'flag
 
 select is((select points from public.ctf_challenges_for_team(tests.u('ev')) where title = 'Web'), 475, 'dynamic points fall with solves');
 select is((select score from public.ctf_scoreboard(tests.u('ev')) where team_name = 'B'), 445, 'a team''s score is points less hints');
-select is((select first_bloods from public.ctf_scoreboard(tests.u('ev')) where team_name = 'A'), 2, 'first blood goes to the first solver');
+select is((select first_solves from public.ctf_scoreboard(tests.u('ev')) where team_name = 'A'), 2, 'the first team to solve a challenge gets its first solve');
 reset role;
 
 update public.event_windows set override = 'closed' where event_id = tests.u('ev') and key = 'challenges.scoreboard';

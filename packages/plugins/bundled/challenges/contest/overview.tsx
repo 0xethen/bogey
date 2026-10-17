@@ -50,7 +50,13 @@ export function ManageOverview({ eventId, settings }: PluginContext<Settings>) {
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-fg">
           {!contest ? (
-            "No contest window is set. Add one in Agenda."
+            <>
+              No contest window is set. Add one in{" "}
+              <RouterLink className="link" to={`/events/${slug}/manage/agenda`} hash="windows">
+                Agenda
+              </RouterLink>
+              .
+            </>
           ) : running ? (
             contest.closes_at ? (
               <>

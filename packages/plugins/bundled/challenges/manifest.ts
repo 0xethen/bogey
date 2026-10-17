@@ -26,6 +26,7 @@ export const manifest = definePlugin({
         "Individuals or teams solve problems against a clock, with a live scoreboard. Choose between ICPC, IOI or least characters (code golf) scoring.",
       kind: "contest",
       teamSize: [1, 1],
+      judgeConversations: true,
     },
     {
       key: "ctf",
@@ -35,6 +36,7 @@ export const manifest = definePlugin({
       kind: "custom",
       teamSize: [1, 4],
       settings: { format: "ctf" },
+      judgeConversations: true,
     },
   ],
   limits: {
@@ -173,22 +175,17 @@ export const manifest = definePlugin({
       splat: true,
       showWhen: { setting: "format", in: ["contest"] },
     },
-    { path: "/ctf", label: "Challenges", showWhen: { setting: "format", in: ["ctf"] } },
+    {
+      path: "/ctf",
+      label: "Challenges",
+      showWhen: { setting: "format", in: ["ctf"] },
+      window: "contest",
+    },
     { path: "/problem", splat: true },
     { path: "/scoreboard", label: "Scoreboard" },
-    {
-      path: "/jury",
-      label: "Jury",
-      permission: "challenges.jury",
-      splat: true,
-      showWhen: { setting: "format", in: ["contest"] },
-    },
-    {
-      path: "/ctf/manage",
-      label: "Edit challenges",
-      permission: "event.manage",
-      showWhen: { setting: "format", in: ["ctf"] },
-    },
+    { path: "/jury", label: "Jury", permission: "challenges.jury", splat: true },
+    // where the CTF's challenges used to be edited; it goes to the jury now
+    { path: "/ctf/manage" },
   ],
   settings: {
     format: {

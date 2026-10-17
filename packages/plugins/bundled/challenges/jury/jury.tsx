@@ -20,7 +20,7 @@ import {
 import { toSlug } from "@bogey/utils/keys";
 import { cn } from "@bogey/ui/lib/utils";
 import { Badge } from "@bogey/ui/components/badge";
-import { Button } from "@bogey/ui/components/button";
+import { Button, ButtonLabel } from "@bogey/ui/components/button";
 import { CodeEditor, DEFAULT_EDITOR_SETTINGS } from "@bogey/ui/components/code-editor";
 import {
   Collapsible,
@@ -191,17 +191,21 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
                     <TableCell className="text-muted-fg">{points(problem.points)}</TableCell>
                     <TableCell className="text-right">
                       <Button
-                        size="sm"
+                        size="sm-icon-on-phones"
                         variant="ghost"
+                        aria-label={`Edit ${problem.title}`}
+                        title="Edit"
                         render={<Link to="/problems" splat={problem.slug} />}
                         nativeButton={false}
                       >
                         <IconEdit />
-                        Edit
+                        <ButtonLabel>Edit</ButtonLabel>
                       </Button>
                       <Button
-                        size="sm"
+                        size="sm-icon-on-phones"
                         variant="ghost"
+                        aria-label={`Rejudge every solution to ${problem.label}...`}
+                        title="Rejudge..."
                         disabled={again.isPending}
                         confirm={{
                           title: `Rejudge every solution to ${problem.label}?`,
@@ -219,7 +223,7 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
                         }
                       >
                         <IconRefresh />
-                        Rejudge...
+                        <ButtonLabel>Rejudge...</ButtonLabel>
                       </Button>
                     </TableCell>
                   </TableRow>

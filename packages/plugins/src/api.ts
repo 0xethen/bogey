@@ -933,6 +933,7 @@ export interface MountedEventType {
   kind: PluginEventKind;
   teamSize: readonly [min: number, max: number];
   settings: Record<string, PluginSettingValue>;
+  judgeConversations: boolean;
 }
 
 export function pluginEventTypes(installed: Tuple<PluginManifest>): MountedEventType[] {
@@ -946,6 +947,7 @@ export function pluginEventTypes(installed: Tuple<PluginManifest>): MountedEvent
       kind: type.kind ?? "custom",
       teamSize: type.teamSize ?? [1, 4],
       settings: type.settings ?? {},
+      judgeConversations: type.judgeConversations ?? false,
     })),
   );
 }
