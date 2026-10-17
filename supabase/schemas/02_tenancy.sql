@@ -185,6 +185,30 @@ create trigger auth_users_strip_password
   when (new.encrypted_password is not null and new.encrypted_password <> '')
   execute function private.strip_password();
 
+-- security.maxPasskeys caps the passkeys one person can add; 0 turns adding them off
+create function private.limit_passkeys()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_max int := coalesce((private.instance_setting('accounts') ->> 'maxPasskeys')::int, 5);
+begin
+  if (select count(*) from auth.mfa_factors
+      where user_id = new.user_id and factor_type = 'webauthn') >= v_max then
+    raise exception 'You can add at most % passkey(s)', v_max using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger auth_mfa_factors_limit_passkeys
+  before insert on auth.mfa_factors
+  for each row
+  when (new.factor_type = 'webauthn')
+  execute function private.limit_passkeys();
+
 create function private.signup_org(p_user_metadata jsonb)
 returns uuid
 language sql

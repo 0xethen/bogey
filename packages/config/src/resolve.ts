@@ -42,6 +42,7 @@ const configSchema = z.object({
       verboseErrors: z.boolean().optional(),
       requireAdminMfa: z.boolean().optional(),
       deviceSignOut: z.boolean().optional(),
+      maxPasskeys: settingsRegistry.accounts.schema.shape.maxPasskeys,
       headers: z
         .object({
           frameAncestors: z.array(frameSource).optional(),
@@ -153,6 +154,7 @@ function operatorSettingsOf(config: z.infer<typeof configSchema>): OperatorSetti
   const accounts = declared({
     requireAdminMfa: config.security?.requireAdminMfa,
     deviceSignOut: config.security?.deviceSignOut,
+    maxPasskeys: config.security?.maxPasskeys,
   });
   const network = declared({
     clientIpHeader: config.network?.clientIpHeader,

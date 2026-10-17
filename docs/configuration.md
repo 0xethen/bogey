@@ -51,6 +51,7 @@ export default defineConfig({
     verboseErrors: false,
     requireAdminMfa: true,
     deviceSignOut: false,
+    maxPasskeys: 5,
     headers: { frameAncestors: ["'self'"], hsts: true },
   },
   email: {
@@ -115,6 +116,7 @@ bogey.config.ts" ([ADR 0029](adr/0029-operator-keys.md)):
 | `network.trustedProxies`   | `network.trustedProxies`   | The app servers whose forwarded visitor address the database believes                                            |
 | `security.requireAdminMfa` | `accounts.requireAdminMfa` | Whether instance admins need an authenticator app (default `true`)                                               |
 | `security.deviceSignOut`   | `accounts.deviceSignOut`   | Whether people can sign out one of their other devices from Account (default `false`)                            |
+| `security.maxPasskeys`     | `accounts.maxPasskeys`     | How many passkeys one person can add, at most 9 (default `5`; `0` turns passkeys off)                            |
 
 The server writes the ones the file sets to the database on its first request after it
 starts. `bogey config apply` writes them without a restart, and `bogey config check` and

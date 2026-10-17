@@ -20,6 +20,7 @@ export default defineConfig({
   //   verboseErrors: false,
   //   requireAdminMfa: true,
   //   deviceSignOut: false,
+  //   maxPasskeys: 5,
   //   headers: { frameAncestors: ["'self'"], hsts: true },
   // },
   // email: {

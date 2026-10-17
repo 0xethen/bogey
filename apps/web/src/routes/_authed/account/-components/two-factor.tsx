@@ -5,6 +5,7 @@ import { IconDeviceMobile, IconFingerprint, IconShieldCheck } from "@tabler/icon
 import type { ReactNode } from "react";
 import { browserClient } from "@bogey/db/browser";
 import { getPublicEnv } from "@bogey/db/env";
+import { resolveSettings } from "@bogey/config/settings";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
@@ -19,6 +20,8 @@ import { useT } from "#/lib/translate.tsx";
 interface MfaState {
   apps: Tuple<Factor>;
   passkeys: Tuple<Factor>;
+  /** How many passkeys one person can add (security.maxPasskeys in bogey.config.ts). */
+  maxPasskeys: number;
   current: AuthenticatorAssuranceLevels | null;
   next: AuthenticatorAssuranceLevels | null;
 }
@@ -26,16 +29,24 @@ interface MfaState {
 const mfaKey = ["account", "mfa"] as const;
 
 async function loadState(): Promise<MfaState> {
-  const mfa = browserClient().auth.mfa;
-  const [factors, level] = await Promise.all([
+  const supabase = browserClient();
+  const mfa = supabase.auth.mfa;
+  const [factors, level, settings] = await Promise.all([
     mfa.listFactors(),
     mfa.getAuthenticatorAssuranceLevel(),
+    supabase.rpc("settings_for", { p_namespaces: ["accounts"] }),
   ]);
   if (factors.error) throw factors.error;
   if (level.error) throw level.error;
+  if (settings.error) throw settings.error;
+  const accounts =
+    settings.data && typeof settings.data === "object" && !Array.isArray(settings.data)
+      ? settings.data.accounts
+      : undefined;
   return {
     apps: factors.data.totp,
     passkeys: factors.data.webauthn,
+    maxPasskeys: resolveSettings("accounts", accounts).maxPasskeys,
     current: level.data.currentLevel,
     next: level.data.nextLevel,
   };
@@ -190,6 +201,7 @@ export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
 
   const app = state.data?.apps[0];
   const passkeys = state.data?.passkeys ?? [];
+  const maxPasskeys = state.data?.maxPasskeys ?? 0;
   const usable = host ? passkeys : [];
   const any = app ?? passkeys[0];
   const needsCode = any && state.data?.current !== "aal2";
@@ -330,32 +342,45 @@ export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
               </Button>
             )}
           </FactorRow>
-          {passkeys.map((passkey) => (
+          {(maxPasskeys > 0 || passkeys.length > 0) && (
             <FactorRow
-              key={passkey.id}
               icon={<IconFingerprint />}
-              name={passkey.friendly_name || t("twoFactor.passkey")}
-              status={t("twoFactor.passkeyAdded")}
+              name={t("twoFactor.passkeys")}
+              status={
+                passkeys.length
+                  ? t("twoFactor.passkeyCount", { count: passkeys.length, max: maxPasskeys })
+                  : t("twoFactor.notSetUp")
+              }
             >
-              <RemoveButton
-                pending={remove.isPending}
-                title={t("twoFactor.removePasskeyTitle")}
-                last={!app && passkeys.length === 1}
-                onRemove={() => remove.mutate(passkey.id)}
-              />
+              {host && passkeys.length < maxPasskeys && (
+                <Button
+                  size="sm"
+                  variant={passkeys.length ? "outline" : "secondary"}
+                  disabled={addPasskey.isPending}
+                  onClick={() => addPasskey.mutate()}
+                >
+                  {addPasskey.isPending && <Spinner />}
+                  {passkeys.length ? t("twoFactor.addAnotherPasskey") : t("twoFactor.addPasskey")}
+                </Button>
+              )}
             </FactorRow>
-          ))}
-          {host && (
-            <div>
-              <Button
-                size="sm"
-                variant={passkeys.length ? "outline" : "secondary"}
-                disabled={addPasskey.isPending}
-                onClick={() => addPasskey.mutate()}
-              >
-                {addPasskey.isPending ? <Spinner /> : <IconFingerprint />}
-                {passkeys.length ? t("twoFactor.addAnotherPasskey") : t("twoFactor.addPasskey")}
-              </Button>
+          )}
+          {passkeys.length > 0 && (
+            <div className="ms-8 flex flex-col gap-3">
+              {passkeys.map((passkey) => (
+                <FactorRow
+                  key={passkey.id}
+                  name={passkey.friendly_name || t("twoFactor.passkey")}
+                  status={t("twoFactor.passkeyAdded")}
+                >
+                  <RemoveButton
+                    pending={remove.isPending}
+                    title={t("twoFactor.removePasskeyTitle")}
+                    last={!app && passkeys.length === 1}
+                    onRemove={() => remove.mutate(passkey.id)}
+                  />
+                </FactorRow>
+              ))}
             </div>
           )}
           <ErrorAlert
@@ -382,14 +407,14 @@ function FactorRow({
   status,
   children,
 }: {
-  icon: ReactNode;
+  icon?: ReactNode;
   name: string;
   status: string;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <span className="text-muted-fg [&_svg]:size-5">{icon}</span>
+      {icon && <span className="text-muted-fg [&_svg]:size-5">{icon}</span>}
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium">{name}</span>
         <span className="text-xs text-muted-fg">{status}</span>

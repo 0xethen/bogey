@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authed/admin/settings/accounts")({
       }),
       ...searchSettings(
         "accounts",
-        ["portfolios", "deletionRequests", "requireAdminMfa", "deviceSignOut"],
+        ["portfolios", "deletionRequests", "requireAdminMfa", "deviceSignOut", "maxPasskeys"],
         t,
       ),
       signInSearch(t),
@@ -46,7 +46,13 @@ function RouteComponent() {
         <SettingFields
           scope={INSTANCE}
           namespace="accounts"
-          keys={["portfolios", "deletionRequests", "requireAdminMfa", "deviceSignOut"]}
+          keys={[
+            "portfolios",
+            "deletionRequests",
+            "requireAdminMfa",
+            "deviceSignOut",
+            "maxPasskeys",
+          ]}
           onSaved={() => queryClient.invalidateQueries({ queryKey: ["account"] })}
         />
       </Screen.Section>

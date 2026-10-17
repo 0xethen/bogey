@@ -27,6 +27,8 @@ export interface InstanceConfig {
     /** Lets people sign out one of their other devices, or all of them, from Account. Off by default:
      * someone who got into an account could otherwise sign its owner out. */
     deviceSignOut?: boolean;
+    /** How many passkeys one person can add (default 5, at most 9); 0 turns passkeys off. */
+    maxPasskeys?: number;
     headers?: {
       frameAncestors?: Tuple<string>;
       hsts?: boolean;
