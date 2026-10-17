@@ -259,6 +259,7 @@ function PasswordLogin({ person }: { person: InstancePerson }) {
   });
   return (
     <div className="-my-1.5 flex flex-col gap-1">
+      {/* TODO: fix spacing with+without button */}
       <div className="flex items-center gap-2">
         <span className="whitespace-nowrap text-muted-fg">
           {person.admin

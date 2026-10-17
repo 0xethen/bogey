@@ -1643,7 +1643,7 @@ export const en = {
   "adminOrgs.addressHelp": "Used in the default hostname; participants don't see it.",
   "adminOrgs.hostnames": "Hostnames",
   "adminOrgs.hostname": "Hostname",
-  "adminOrgs.hostnameHelp": "Where the org is served. Add more later.",
+  "adminOrgs.hostnameHelp": "Where the org is served primarily. Add more later.",
   "adminOrgs.none": "None",
   "adminOrgs.status": "Status",
   "adminOrgs.created": "Created",

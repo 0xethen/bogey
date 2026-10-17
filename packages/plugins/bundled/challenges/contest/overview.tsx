@@ -76,7 +76,7 @@ export function ManageOverview({ eventId, settings }: PluginContext<Settings>) {
               value={data.problems}
             />
             <Stat icon={IconFileCode} label="Solutions sent" value={data.solutions} />
-            <Stat icon={IconHourglass} label="Waiting to be judged" value={data.waiting} />
+            <Stat icon={IconHourglass} label="Waiting for judgement" value={data.waiting} />
           </StatGroup>
         )}
       </div>
