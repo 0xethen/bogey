@@ -153,6 +153,41 @@ test("it refuses a dirty tree, another branch, an empty changelog and an existin
   expect(empty.output).toContain("Unreleased section is empty");
 });
 
+test("a release committed and tagged but not pushed is pushed or undone, not released past", async () => {
+  const pending = {
+    "git log -1 --format=%s": { stdout: "[release] Bogey v0.1.1\n" },
+    "git rev-parse --verify --quiet refs/tags/v0.1.1": { status: 0 },
+  };
+  const asked = scripted(["push"]);
+  const pushed = fake(pending);
+  const push = await runRelease(root, [], asked.prompter, pushed.run, at);
+  expect(asked.asked).toEqual(["v0.1.1 is committed and tagged here but not pushed."]);
+  expect(push.exitCode).toBe(0);
+  expect(pushed.calls).toContain("git push --atomic origin main v0.1.1");
+  expect(pushed.calls.some((call) => call.startsWith("git commit"))).toBe(false);
+
+  const undone = fake(pending);
+  const undo = await runRelease(root, ["undo"], null, undone.run, at);
+  expect(undo.exitCode).toBe(0);
+  expect(undone.calls).toContain("git tag -d v0.1.1");
+  expect(undone.calls).toContain("git reset --keep HEAD~1");
+
+  const alone = await runRelease(root, ["patch"], null, fake(pending).run, at);
+  expect(alone.exitCode).toBe(1);
+  expect(alone.output).toContain("bogey release undo");
+});
+
+test("undo refuses a release that reached origin, and anything that isn't a release", async () => {
+  const published = fake({
+    "git log -1 --format=%s": { stdout: "[release] Bogey v0.1.1\n" },
+    "git rev-parse --verify --quiet refs/tags/v0.1.1": { status: 0 },
+    "git ls-remote": { stdout: "abc\trefs/tags/v0.1.1\n" },
+  });
+  expect((await runRelease(root, ["undo"], null, published.run, at)).exitCode).toBe(1);
+  expect(published.calls.some((call) => call.startsWith("git tag -d"))).toBe(false);
+  expect((await runRelease(root, ["undo"], null, fake().run, at)).exitCode).toBe(1);
+});
+
 test("check compares a tag with its package.json and changelog", async () => {
   const stamped = stampChangelog(CHANGELOG, "0.2.0", "2026-10-08");
   const good = fake({

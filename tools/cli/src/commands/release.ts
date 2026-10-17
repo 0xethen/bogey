@@ -1,7 +1,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { findRepoRoot } from "../lib/repo-root.ts";
-import { releasedPath, releasedVersion, spawnRunner, type Runner } from "../lib/migrations.ts";
+import {
+  releasedPath,
+  releasedVersion,
+  spawnRunner,
+  type ProcessResult,
+  type Runner,
+} from "../lib/migrations.ts";
 import type { Prompter } from "../lib/prompt.ts";
 import { parseFlags } from "../lib/flags.ts";
 import type { CliResult } from "../cli.ts";
@@ -10,6 +16,7 @@ export const USAGE = `bogey release [patch | minor | major | pre | <version>] [-
               [--push] [--skip-checks] [--no-freeze] [--dry-run]
 bogey release check <tag>
 bogey release sync <tag> [--yes]
+bogey release undo
 
 Releases Bogey from main, in order:
 
@@ -23,6 +30,10 @@ Releases Bogey from main, in order:
   5. commits "[release] Bogey v<version>" and tags it v<version>
   6. pushes main and the tag to origin with --push, or asks; the tag starts
      .github/workflows/release.yml, which publishes the image and the GitHub release
+
+Run again while the last release is committed and tagged but not pushed, it offers to push it
+or undo it instead of starting another (--push pushes it). \`bogey release undo\` deletes that
+tag and the release commit, keeping any uncommitted changes; it refuses once the tag is on origin.
 
 patch, minor and major bump package.json's version; --pre beta makes it a
 prerelease (minor --pre beta: 0.1.0 → 0.2.0-beta.0), and pre bumps the
@@ -235,6 +246,15 @@ export function releaseProblems(root: string, tag: string, ref: string, run: Run
   return problems;
 }
 
+/** The release HEAD is, while its tag hasn't reached origin; null otherwise. */
+export function pendingRelease(git: (...args: string[]) => ProcessResult): string | null {
+  const subject = git("log", "-1", "--format=%s").stdout.trim();
+  const tag = /^\[release\] Bogey (v\S+)$/.exec(subject)?.[1];
+  if (!tag || git("rev-parse", "--verify", "--quiet", `refs/tags/${tag}`).status !== 0) return null;
+  const remote = git("ls-remote", "--tags", "origin", `refs/tags/${tag}`);
+  return remote.status === 0 && remote.stdout.trim() ? null : tag;
+}
+
 type Outcome = { ok: true; output: string } | { ok: false; output: string };
 
 function step(result: { status: number | null; stdout: string; stderr: string }): Outcome {
@@ -272,6 +292,63 @@ export async function runRelease(
     const tag = positional[1];
     if (!tag) return { exitCode: 1, output: "bogey release sync <tag> [--yes]" };
     return syncNotes(root, tag, flags.yes === true, prompter, run);
+  }
+
+  const undo = (tag: string): CliResult => {
+    const deleted = step(git("tag", "-d", tag));
+    if (!deleted.ok) return { exitCode: 1, output: `✗ git tag -d ${tag}\n${deleted.output}` };
+    // --keep, not --hard: changes made since the release stay
+    const reset = step(git("reset", "--keep", "HEAD~1"));
+    if (!reset.ok) return { exitCode: 1, output: `✗ git reset --keep HEAD~1\n${reset.output}` };
+    return { exitCode: 0, output: `✓ undid ${tag}: its tag and release commit are gone` };
+  };
+  const publish = (tag: string, log: string[]): CliResult => {
+    const pushed = step(git("push", "--atomic", "origin", "main", tag));
+    if (!pushed.ok)
+      return { exitCode: 1, output: [...log, `✗ git push\n${pushed.output}`].join("\n") };
+    const origin = /github\.com[:/]([^/]+\/[^/.]+)/.exec(
+      git("remote", "get-url", "origin").stdout,
+    )?.[1];
+    log.push(
+      "✓ pushed: GitHub Actions is building the release",
+      ...(origin ? [`  https://github.com/${origin}/actions/workflows/release.yml`] : []),
+    );
+    return { exitCode: 0, output: log.join("\n") };
+  };
+
+  if (positional[0] === "undo") {
+    const tag = pendingRelease(git);
+    return tag
+      ? undo(tag)
+      : {
+          exitCode: 1,
+          output:
+            "bogey release undo: HEAD isn't a release that's still only here (committed and tagged, not pushed).",
+        };
+  }
+
+  // a release that was committed and tagged but not pushed is finished first, not released past
+  const pending = flags["dry-run"] ? null : pendingRelease(git);
+  if (pending) {
+    const choice =
+      flags.push === true
+        ? "push"
+        : prompter
+          ? await prompter.select({
+              message: `${pending} is committed and tagged here but not pushed.`,
+              options: [
+                { value: "push", label: `Push main and ${pending} to origin` },
+                { value: "undo", label: `Undo ${pending}`, hint: "delete its tag and commit" },
+                { value: "leave", label: "Leave it" },
+              ],
+            })
+          : "leave";
+    if (choice === "push") return publish(pending, []);
+    if (choice === "undo") return undo(pending);
+    return {
+      exitCode: 1,
+      output: `${pending} is committed and tagged but not pushed.\nTo publish: git push --atomic origin main ${pending}\nTo undo: vpr bogey release undo`,
+    };
   }
 
   const packagePath = join(root, "package.json");
@@ -392,18 +469,9 @@ export async function runRelease(
     log.push(
       "",
       `Not pushed. To publish: git push --atomic origin main ${tag}`,
-      `To undo: git tag -d ${tag} && git reset --hard HEAD~1`,
+      "To undo: vpr bogey release undo",
     );
     return { exitCode: 0, output: log.join("\n") };
   }
-  const pushed = step(git("push", "--atomic", "origin", "main", tag));
-  if (!pushed.ok) return stop(`✗ git push\n${pushed.output}`);
-  const origin = /github\.com[:/]([^/]+\/[^/.]+)/.exec(
-    git("remote", "get-url", "origin").stdout,
-  )?.[1];
-  log.push(
-    "✓ pushed: GitHub Actions is building the release",
-    ...(origin ? [`  https://github.com/${origin}/actions/workflows/release.yml`] : []),
-  );
-  return { exitCode: 0, output: log.join("\n") };
+  return publish(tag, log);
 }

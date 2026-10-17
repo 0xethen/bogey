@@ -340,6 +340,7 @@ bogey release [patch | minor | major | pre | <version>] [--pre <id>]
               [--push] [--skip-checks] [--no-freeze] [--dry-run]
 bogey release check <tag>
 bogey release sync <tag> [--yes]
+bogey release undo
 
 Releases Bogey from main, in order:
 
@@ -353,6 +354,10 @@ Releases Bogey from main, in order:
   5. commits "[release] Bogey v<version>" and tags it v<version>
   6. pushes main and the tag to origin with --push, or asks; the tag starts
      .github/workflows/release.yml, which publishes the image and the GitHub release
+
+Run again while the last release is committed and tagged but not pushed, it offers to push it
+or undo it instead of starting another (--push pushes it). `bogey release undo` deletes that
+tag and the release commit, keeping any uncommitted changes; it refuses once the tag is on origin.
 
 patch, minor and major bump package.json's version; --pre beta makes it a
 prerelease (minor --pre beta: 0.1.0 → 0.2.0-beta.0), and pre bumps the
