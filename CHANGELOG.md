@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.2.0 (2026-10-17)
+
 - Announcements can go to the people in a session: everyone signed up for or placed in a session of a choose-one slot (a workshop, not lunch), plus its hosts. Pick it under Sessions in the composer's Audience.
 - Rubrics for events with several themes: under Manage → Judging → Criteria, add a rubric per theme and put criteria in it; criteria left on Every rubric count for every project. Each project is scored on the shared criteria plus its rubric's. Judges pick a project's rubric on the score sheet (Judges pick the rubric, on by default), and teams can pick their own on their submission (Teams pick their rubric, off by default, showing rubric names or their criteria too). The results preview names each project's rubric.
 - Judges can flag a project for deliberation. While it's flagged, the judges deliberating see each other's scores and notes on it, discuss it on the project's page and resolve it. Judging settings choose who deliberates (the project's judges by default, every judge, or nobody), can flag projects on their own when judges' totals are far apart, and hold publishing until flags are resolved (on by default). Organizers see every flag under Manage → Judging → Deliberation.
