@@ -104,8 +104,8 @@ export const Route = createFileRoute("/_authed/account/")({
   staticData: {
     title: msg("accountNav.profile"),
     settings: (t) => [
-      ...searchFields(nameSchema(t), t("profile.nameTitle"), "your-name"),
-      ...searchFields(portfolioSchema(t), t("profile.pageTitle"), "your-public-page"),
+      ...searchFields(nameSchema(t), "profile", t("profile.nameTitle")),
+      ...searchFields(portfolioSchema(t), "portfolio", t("profile.pageTitle")),
       searchSection(t("profile.signOut"), { keywords: ["log out"], id: "sign-out" }),
       searchSection(t("profile.danger"), {
         keywords: ["delete account", "remove"],
@@ -178,7 +178,7 @@ function NameSection({ initial }: { initial: string }) {
       description={t("profile.nameHelp")}
     >
       <form.AppForm>
-        <form.Form unsaved="save" className="flex flex-col gap-3">
+        <form.Form unsaved="save" anchor="profile" className="flex flex-col gap-3">
           <form.Field name="displayName">
             {(field) => (
               <field.Field>
@@ -246,7 +246,7 @@ function PortfolioForm({ profile }: { profile: Profile | null }) {
       description={t("profile.pageHelp")}
     >
       <form.AppForm>
-        <form.Form unsaved="save" className="flex flex-col gap-4">
+        <form.Form unsaved="save" anchor="portfolio" className="flex flex-col gap-4">
           <form.Field name="handle">
             {(field) => <field.TextField autoComplete="username" />}
           </form.Field>

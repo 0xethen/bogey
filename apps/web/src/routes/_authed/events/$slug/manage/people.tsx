@@ -46,6 +46,7 @@ import { Screen } from "@bogey/ui/components/screen";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/people")({
   staticData: {
@@ -277,7 +278,20 @@ function RouteComponent() {
         <Screen.Section
           id="waitlist"
           title={t("managePeople.waitlist")}
-          description={t("managePeople.waitlistHelp")}
+          description={
+            <Linked
+              text={t("managePeople.waitlistHelp", { autoPromote: LINK })}
+              links={[
+                <SettingLink
+                  key="autoPromote"
+                  to={`/events/${event.slug}/manage/registration`}
+                  hash="registration.autoPromote"
+                >
+                  {t("path.autoPromote")}
+                </SettingLink>,
+              ]}
+            />
+          }
           actions={
             <BulkReview eventId={event.id} ids={chosen} onDone={() => setSelected(new Set())} />
           }

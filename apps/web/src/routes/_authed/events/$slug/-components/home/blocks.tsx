@@ -55,6 +55,7 @@ import { Screen } from "@bogey/ui/components/screen";
 import { Separator } from "@bogey/ui/components/separator";
 import { Timeline } from "#/components/event/agenda/timeline.tsx";
 import { useNow } from "@bogey/ui/hooks/now";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
 import { cn } from "@bogey/ui/lib/utils";
 import { AgendaSummary } from "#/components/event/agenda/agenda.tsx";
@@ -388,7 +389,18 @@ function PrizesBlock({
   const t = useT();
   const { data: prizes = [] } = useQuery(eventPrizesQueryOptions(eventId));
   if (prizes.length === 0) {
-    return customizing ? <Placeholder title={title}>{t("home.prizesEmpty")}</Placeholder> : null;
+    return customizing ? (
+      <Placeholder title={title}>
+        <Linked
+          text={t("home.prizesEmpty", { prizes: LINK })}
+          links={[
+            <SettingLink key="prizes" to={`/events/${slug}/manage/prizes`}>
+              {t("path.managePrizes")}
+            </SettingLink>,
+          ]}
+        />
+      </Placeholder>
+    ) : null;
   }
   return (
     <Screen.Section
@@ -540,7 +552,24 @@ export function HomeBlockView({
     case "about": {
       const images = block.images ?? [];
       if (!data.about && images.length === 0) {
-        if (customizing) return <Placeholder title={title}>{t("home.aboutEmpty")}</Placeholder>;
+        if (customizing) {
+          return (
+            <Placeholder title={title}>
+              <Linked
+                text={t("home.aboutEmpty", { details: LINK })}
+                links={[
+                  <SettingLink
+                    key="details"
+                    to={`/events/${event.slug}/manage/details`}
+                    hash="details.about"
+                  >
+                    {t("path.manageDetails")}
+                  </SettingLink>,
+                ]}
+              />
+            </Placeholder>
+          );
+        }
         return data.access?.role ? null : <AboutPending eventId={event.id} title={title} />;
       }
       return (
@@ -563,7 +592,18 @@ export function HomeBlockView({
 
     case "badge":
       if (!windowByKey(data.windows, "checkin") || !data.access?.role) {
-        return customizing ? <Placeholder title={title}>{t("home.badgeOff")}</Placeholder> : null;
+        return customizing ? (
+          <Placeholder title={title}>
+            <Linked
+              text={t("home.badgeOff", { agenda: LINK })}
+              links={[
+                <SettingLink key="agenda" to={`/events/${event.slug}/manage/agenda`} hash="windows">
+                  {t("path.manageAgenda")}
+                </SettingLink>,
+              ]}
+            />
+          </Placeholder>
+        ) : null;
       }
       return <BadgeCard eventId={event.id} endsAt={event.ends_at} />;
 
@@ -749,7 +789,22 @@ export function HomeBlockView({
       if (!at) {
         return customizing ? (
           <Placeholder title={title || t("block.countdown")}>
-            {block.to === "start" ? t("home.countdownStart") : t("home.countdownEnd")}
+            <Linked
+              text={
+                block.to === "start"
+                  ? t("home.countdownStart", { details: LINK })
+                  : t("home.countdownEnd", { details: LINK })
+              }
+              links={[
+                <SettingLink
+                  key="details"
+                  to={`/events/${event.slug}/manage/details`}
+                  hash={block.to === "start" ? "details.startsAt" : "details.endsAt"}
+                >
+                  {t("path.manageDetails")}
+                </SettingLink>,
+              ]}
+            />
           </Placeholder>
         ) : null;
       }

@@ -30,6 +30,7 @@ import { SubmissionAnswers } from "#/components/event/submission/submission-answ
 import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/submissions")({
   staticData: {
@@ -236,7 +237,14 @@ function RouteComponent() {
       title={t("window.submissions")}
       description={
         !formWindow ? (
-          t("manageSubs.noWindow", { form: form.title })
+          <Linked
+            text={t("manageSubs.noWindow", { form: form.title, agenda: LINK })}
+            links={[
+              <SettingLink key="agenda" to={`/events/${event.slug}/manage/agenda`} hash="windows">
+                {t("path.agenda")}
+              </SettingLink>,
+            ]}
+          />
         ) : isWindowOpen(formWindow) ? (
           t("manageSubs.isOpen", { form: form.title })
         ) : (

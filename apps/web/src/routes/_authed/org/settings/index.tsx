@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authed/org/settings/")({
     title: msg("orgSettings.general"),
     settings: (t) => [
       searchSection(t("orgSettings.name"), { id: "name" }),
-      ...searchFields(orgNameSchema(t), t("orgSettings.name"), "name"),
+      ...searchFields(orgNameSchema(t), "org", t("orgSettings.name")),
       searchSection(t("accounts.section"), { id: "accounts" }),
       ...searchSettings("registration", ["signup"], t),
       searchSection(t("orgTab.audit"), { id: "audit-log" }),
@@ -99,7 +99,7 @@ function OrgName() {
   return (
     <Screen.Section id="name" title={t("orgSettings.name")}>
       <form.AppForm>
-        <form.Form unsaved="save" className="flex flex-col gap-3">
+        <form.Form unsaved="save" anchor="org" className="flex flex-col gap-3">
           <form.Field name="name">
             {(field) => (
               <field.Field>

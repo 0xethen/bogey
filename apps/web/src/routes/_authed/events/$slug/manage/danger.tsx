@@ -36,6 +36,7 @@ import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
 type Event = Pick<Tables<"events">, "id" | "slug" | "name">;
 
@@ -70,7 +71,20 @@ function RouteComponent() {
       <Screen.Section
         id="clean-up"
         title={t("danger.cleanUp")}
-        description={t("danger.cleanUpHelp")}
+        description={
+          <Linked
+            text={t("danger.cleanUpHelp", { security: LINK })}
+            links={[
+              <SettingLink
+                key="security"
+                to={`/events/${event.slug}/manage/security`}
+                hash="publishing"
+              >
+                {t("path.security")}
+              </SettingLink>,
+            ]}
+          />
+        }
       >
         <div className="flex flex-col gap-2">
           <PruneParticipants event={event} />

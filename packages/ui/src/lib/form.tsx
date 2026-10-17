@@ -1,5 +1,7 @@
 import { useUiText } from "./ui-text.ts";
 import {
+  createContext,
+  useContext,
   useLayoutEffect,
   useRef,
   type ComponentProps,
@@ -42,6 +44,7 @@ import {
   FieldLegend,
 } from "../components/field";
 import { useUnsavedEntry } from "./unsaved.ts";
+import { cn } from "./utils.ts";
 import { fieldMeta, validatorSchema, type SchemaFieldMeta } from "./form-meta.ts";
 
 export { fieldHelp } from "./form-meta.ts";
@@ -92,8 +95,27 @@ export const remoteCheck = {
   bailIfInvalid: true,
 };
 
-function FormField({ field, ...props }: ComponentProps<typeof FieldRoot> & { field: AnyFieldApi }) {
-  return <FieldRoot data-invalid={field.meta.isInvalid || undefined} {...props} />;
+// `<form.Form anchor="details">` gives each field the address `#details.<name>`, like a setting's
+const AnchorGroup = createContext<string | undefined>(undefined);
+
+export function fieldAnchor(group: string, name: string): string {
+  return `${group}.${name}`;
+}
+
+function FormField({
+  field,
+  className,
+  ...props
+}: ComponentProps<typeof FieldRoot> & { field: AnyFieldApi }) {
+  const group = useContext(AnchorGroup);
+  return (
+    <FieldRoot
+      id={group ? fieldAnchor(group, field.name) : undefined}
+      data-invalid={field.meta.isInvalid || undefined}
+      className={cn(group && "jump-target", className)}
+      {...props}
+    />
+  );
 }
 
 function FormLabel({
@@ -710,10 +732,13 @@ function OptionsField({
 
 function Form({
   unsaved,
+  anchor,
   children,
   ...props
 }: ComponentProps<"form"> & {
   unsaved?: "save" | "draft";
+  /** Each field is addressable as `#<anchor>.<name>`, and highlighted when a link lands on it. */
+  anchor?: string;
 }) {
   const form = useFormContext();
   return (
@@ -732,7 +757,7 @@ function Form({
     >
       {unsaved === "save" && <SaveBarEntry />}
       {unsaved === "draft" && <DraftGuard />}
-      {children}
+      <AnchorGroup.Provider value={anchor}>{children}</AnchorGroup.Provider>
     </form>
   );
 }

@@ -61,7 +61,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/details")({
   staticData: {
     title: msg("details.title"),
     settings: (t) => [
-      ...searchFields(detailsSchema(t)),
+      ...searchFields(detailsSchema(t), "details"),
       searchSection(t("details.venue"), { id: "venue" }),
       ...searchSettings("venue", ["format", "mapUrl", "onlineUrl", "onlineLabel"], t),
     ],
@@ -187,7 +187,7 @@ function RouteComponent() {
       }
     >
       <form.AppForm>
-        <form.Form unsaved="save">
+        <form.Form unsaved="save" anchor="details">
           <FieldGroup>
             <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
               <form.Field name="name">{(field) => <field.TextField required />}</form.Field>

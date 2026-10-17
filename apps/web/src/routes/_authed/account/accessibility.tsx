@@ -31,13 +31,13 @@ export const Route = createFileRoute("/_authed/account/accessibility")({
   staticData: {
     title: msg("accountNav.accessibility"),
     settings: (t) => [
-      { label: t("a11y.textSize"), hash: "text-size", keywords: ["zoom", "bigger"] },
-      { label: t("a11y.font"), hash: "font", keywords: ["dyslexia", "hyperlegible"] },
-      { label: t("a11y.spoilers"), hash: "spoilers" },
+      { label: t("a11y.textSize"), hash: "a11y.textSize", keywords: ["zoom", "bigger"] },
+      { label: t("a11y.font"), hash: "a11y.font", keywords: ["dyslexia", "hyperlegible"] },
+      { label: t("a11y.spoilers"), hash: "a11y.spoilers" },
       ...SWITCHES.map(({ id, label, description }) => ({
         label: t(label),
         description: t(description),
-        hash: id,
+        hash: `a11y.${id}`,
       })),
     ],
   },
@@ -71,7 +71,7 @@ function RouteComponent() {
   return (
     <Screen title={t("accountNav.accessibility")} description={t("a11y.intro")} width="embedded">
       <div className="flex flex-col gap-4">
-        <Field>
+        <Field id="a11y.textSize" className="jump-target">
           <FieldLabel htmlFor="text-size">{t("a11y.textSize")}</FieldLabel>
           <OptSelect
             id="text-size"
@@ -81,12 +81,12 @@ function RouteComponent() {
           />
           <FieldDescription>{t("a11y.textSizeHelp")}</FieldDescription>
         </Field>
-        <Field>
+        <Field id="a11y.font" className="jump-target">
           <FieldLabel htmlFor="font">{t("a11y.font")}</FieldLabel>
           <OptSelect id="font" value={font.value} options={named(FONTS)} onChange={font.set} />
           <FieldDescription>{t("a11y.fontHelp")}</FieldDescription>
         </Field>
-        <Field>
+        <Field id="a11y.spoilers" className="jump-target">
           <FieldLabel htmlFor="spoilers">{t("a11y.spoilers")}</FieldLabel>
           <OptSelect
             id="spoilers"
@@ -99,7 +99,12 @@ function RouteComponent() {
           </FieldDescription>
         </Field>
         {SWITCHES.map((item) => (
-          <Field key={item.id} orientation="horizontal" className="justify-between">
+          <Field
+            key={item.id}
+            id={`a11y.${item.id}`}
+            orientation="horizontal"
+            className="jump-target justify-between"
+          >
             <div className="flex flex-col gap-1">
               <FieldLabel htmlFor={item.id}>{t(item.label)}</FieldLabel>
               <FieldDescription>{t(item.description)}</FieldDescription>

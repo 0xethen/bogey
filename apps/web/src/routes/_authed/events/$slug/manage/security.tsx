@@ -9,6 +9,7 @@ import { PluginSettingSections } from "#/components/settings/sections/plugin-sec
 import { msg, useT } from "#/lib/translate.tsx";
 import { NetworkSection, prefetchNetworkSection } from "./-components/network-section.tsx";
 import { VisibilityPicker } from "./-components/visibility-picker.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/security")({
   staticData: {
@@ -61,7 +62,20 @@ function RouteComponent() {
       <Screen.Section
         id="access"
         title={t("security.access")}
-        description={t("security.accessHelp")}
+        description={
+          <Linked
+            text={t("security.accessHelp", { registration: LINK })}
+            links={[
+              <SettingLink
+                key="registration"
+                to={`/events/${event.slug}/manage/registration`}
+                hash="invite-links"
+              >
+                {t("path.registration")}
+              </SettingLink>,
+            ]}
+          />
+        }
       >
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}
@@ -72,7 +86,20 @@ function RouteComponent() {
       <Screen.Section
         id="privacy"
         title={t("security.privacy")}
-        description={t("security.privacyHelp")}
+        description={
+          <Linked
+            text={t("security.privacyHelp", { about: LINK })}
+            links={[
+              <SettingLink
+                key="about"
+                to={`/events/${event.slug}/manage/details`}
+                hash="details.about"
+              >
+                {t("path.about")}
+              </SettingLink>,
+            ]}
+          />
+        }
       >
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}

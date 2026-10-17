@@ -65,6 +65,7 @@ import { ANNOUNCEMENTS } from "#/components/event/messaging/announcements.tsx";
 import { ChatFeed, ChatMessage } from "#/components/event/messaging/chat.tsx";
 import { MessageBox } from "#/components/event/messaging/message-box.tsx";
 import { MessageAttachments } from "#/components/event/messaging/message-attachments.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
 export const messagesSearch = z.object({
   c: z
@@ -604,6 +605,7 @@ const blockSchema = (t: T) =>
 // stops the asker or their team from starting or replying to conversations
 function BlockButton({ conversation }: { conversation: Conversation }) {
   const t = useT();
+  const viewer = useEventViewer();
   const schema = useMemo(() => blockSchema(t), [t]);
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -651,7 +653,20 @@ function BlockButton({ conversation }: { conversation: Conversation }) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t("conv.blockTitle")}</DialogTitle>
-            <DialogDescription>{t("conv.blockBody")}</DialogDescription>
+            <DialogDescription>
+              <Linked
+                text={t("conv.blockBody", { messages: LINK })}
+                links={[
+                  <SettingLink
+                    key="messages"
+                    to={`/events/${viewer?.event.slug ?? ""}/manage/messages`}
+                    hash="blocked"
+                  >
+                    {t("path.manageMessages")}
+                  </SettingLink>,
+                ]}
+              />
+            </DialogDescription>
           </DialogHeader>
           <form.AppForm>
             <form.Form>

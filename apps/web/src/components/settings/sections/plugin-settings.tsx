@@ -118,7 +118,7 @@ function LockedSettings({
       {locked.map(([name, setting]) => {
         const id = `${manifest.key}-${name}-locked`;
         return (
-          <Field key={name}>
+          <Field key={name} id={`${manifest.key}.${name}`} className="jump-target">
             <FieldLabel htmlFor={id}>{setting.label}</FieldLabel>
             <fieldset disabled>
               <Control
@@ -207,7 +207,12 @@ export function PluginSettings({
             />
           );
           return setting.type === "boolean" ? (
-            <Field key={name} orientation="horizontal" className="justify-between">
+            <Field
+              key={name}
+              id={`${manifest.key}.${name}`}
+              orientation="horizontal"
+              className="jump-target justify-between"
+            >
               <div className="flex flex-col gap-1">
                 <FieldLabel htmlFor={id}>{setting.label}</FieldLabel>
                 {setting.description && <FieldDescription>{setting.description}</FieldDescription>}
@@ -215,7 +220,7 @@ export function PluginSettings({
               {control}
             </Field>
           ) : (
-            <Field key={name}>
+            <Field key={name} id={`${manifest.key}.${name}`} className="jump-target">
               <FieldLabel htmlFor={id}>{setting.label}</FieldLabel>
               {control}
               {setting.description && <FieldDescription>{setting.description}</FieldDescription>}

@@ -7,7 +7,7 @@ import { useT } from "#/lib/translate.tsx";
 interface Props {
   name: string;
   recover?: ReactNode;
-  note?: string;
+  note?: ReactNode;
   detail?: boolean;
   children: ReactNode;
 }

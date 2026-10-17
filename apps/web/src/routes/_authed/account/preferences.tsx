@@ -22,10 +22,10 @@ export const Route = createFileRoute("/_authed/account/preferences")({
     title: msg("accountNav.preferences"),
     settings: (t) => [
       searchSection(t("prefs.section"), { id: "time-and-appearance" }),
-      { label: t("account.language"), hash: "language", keywords: ["locale", "translate"] },
-      { label: t("prefs.timezone"), hash: "timezone" },
-      { label: t("prefs.clock24"), hash: "clock-24h", keywords: ["clock"] },
-      { label: t("prefs.theme"), hash: "theme", keywords: ["dark mode", "light mode"] },
+      { label: t("account.language"), hash: "prefs.language", keywords: ["locale", "translate"] },
+      { label: t("prefs.timezone"), hash: "prefs.timezone" },
+      { label: t("prefs.clock24"), hash: "prefs.clock24h", keywords: ["clock"] },
+      { label: t("prefs.theme"), hash: "prefs.theme", keywords: ["dark mode", "light mode"] },
     ],
   },
   component: RouteComponent,
@@ -70,7 +70,7 @@ function LanguageField() {
   );
   if (languages.length < 2) return null;
   return (
-    <Field>
+    <Field id="prefs.language" className="jump-target">
       <FieldLabel htmlFor="language">{t("account.language")}</FieldLabel>
       <OptSelect
         id="language"
@@ -113,7 +113,7 @@ function RouteComponent() {
     <Screen title={t("accountNav.preferences")} width="embedded">
       <Screen.Section id="time-and-appearance" title={t("prefs.section")}>
         <LanguageField />
-        <Field>
+        <Field id="prefs.timezone" className="jump-target">
           <FieldLabel htmlFor="timezone">{t("prefs.timezone")}</FieldLabel>
           <OptSelect
             id="timezone"
@@ -123,7 +123,7 @@ function RouteComponent() {
           />
           <FieldDescription>{t("prefs.timezoneHelp")}</FieldDescription>
         </Field>
-        <Field orientation="horizontal" className="justify-between">
+        <Field id="prefs.clock24h" orientation="horizontal" className="jump-target justify-between">
           <FieldLabel htmlFor="clock-24h">{t("prefs.clock24")}</FieldLabel>
           <Switch
             id="clock-24h"
@@ -131,7 +131,7 @@ function RouteComponent() {
             onCheckedChange={(checked) => clock.set(checked)}
           />
         </Field>
-        <Field>
+        <Field id="prefs.theme" className="jump-target">
           <FieldLabel htmlFor="theme">{t("prefs.theme")}</FieldLabel>
           <OptSelect
             id="theme"

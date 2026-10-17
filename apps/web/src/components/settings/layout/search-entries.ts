@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { settingControl, type CoreNamespace, type SettingsValue } from "@bogey/config/settings";
+import { fieldAnchor } from "@bogey/ui/lib/form";
 import { schemaFields } from "@bogey/ui/lib/form-meta";
 import { toSlug } from "@bogey/utils/keys";
 import { sayOr, type T } from "#/lib/translate.tsx";
@@ -45,15 +46,16 @@ export function searchSettings<N extends CoreNamespace>(
   });
 }
 
+/** A form's fields, each at `#<group>.<name>`: the group its `<form.Form anchor>` names. */
 export function searchFields(
   schema: z.core.$ZodType,
+  group: string,
   sectionTitle?: string,
-  sectionId?: string,
 ): SettingsSearchEntry[] {
   return schemaFields(schema).map((field) => ({
     label: field.label,
     description: field.description,
-    hash: sectionTitle ? (sectionId ?? toSlug(sectionTitle)) : undefined,
+    hash: fieldAnchor(group, field.key),
     keywords: sectionTitle ? [sectionTitle] : [],
   }));
 }

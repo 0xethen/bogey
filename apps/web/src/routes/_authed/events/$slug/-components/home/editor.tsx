@@ -39,6 +39,8 @@ import {
 import { homePanelsOf } from "./plugin-panels.tsx";
 import { ImageInput } from "#/components/event/submission/image-input.tsx";
 import { useT, type PlainKey, type T } from "#/lib/translate.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
+import { useEventViewer } from "#/lib/viewer.ts";
 
 type Column = keyof HomeLayout;
 
@@ -647,7 +649,9 @@ function BlockSettings({
 
       {block.type === "about" && (
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-muted-fg">{t("homeEditor.aboutHelp")}</p>
+          <p className="text-sm text-muted-fg">
+            <AboutHelp />
+          </p>
           <Rows
             rows={block.images ?? []}
             max={12}
@@ -751,5 +755,23 @@ function BlockSettings({
         </Field>
       )}
     </div>
+  );
+}
+
+function AboutHelp() {
+  const t = useT();
+  const slug = useEventViewer()?.event.slug ?? "";
+  return (
+    <Linked
+      text={t("homeEditor.aboutHelp", { details: LINK, privacy: LINK })}
+      links={[
+        <SettingLink key="details" to={`/events/${slug}/manage/details`} hash="details.about">
+          {t("path.manageDetails")}
+        </SettingLink>,
+        <SettingLink key="privacy" to={`/events/${slug}/manage/security`} hash="privacy.about">
+          {t("path.beforeApproval")}
+        </SettingLink>,
+      ]}
+    />
   );
 }

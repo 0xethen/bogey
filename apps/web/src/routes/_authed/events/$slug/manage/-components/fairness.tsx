@@ -25,6 +25,8 @@ import {
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { type PlainKey, type T, useHelperSay, useT } from "#/lib/translate.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
+import { useEventViewer } from "#/lib/viewer.ts";
 
 const pairSchema = (t: T) =>
   z.object({
@@ -248,6 +250,7 @@ const FLAG_TEXT = {
 
 export function Calibration({ eventId }: { eventId: string }) {
   const t = useT();
+  const slug = useEventViewer()?.event.slug ?? "";
   const { data: judges } = useSuspenseQuery(judgeCalibrationQueryOptions(eventId));
   if (judges.length === 0) return null;
   const flags = calibrationFlags(judges);
@@ -255,7 +258,20 @@ export function Calibration({ eventId }: { eventId: string }) {
     <Screen.Section
       id="how-judges-score"
       title={t("manageJudging.howScore")}
-      description={t("fairness.calibrationHelp")}
+      description={
+        <Linked
+          text={t("fairness.calibrationHelp", { settings: LINK })}
+          links={[
+            <SettingLink
+              key="normalize"
+              to={`/events/${slug}/manage/judging`}
+              hash="judging.normalize"
+            >
+              {t("path.judgingNormalize")}
+            </SettingLink>,
+          ]}
+        />
+      }
     >
       <DisclosureList>
         {judges.map((judge) => {

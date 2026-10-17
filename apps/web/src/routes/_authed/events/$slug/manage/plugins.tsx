@@ -119,6 +119,7 @@ function RouteComponent() {
             return (
               <DisclosureRow
                 key={manifest.key}
+                id={`plugins.${manifest.key}`}
                 title={
                   <>
                     {manifest.name} <span className="font-normal">v{manifest.version}</span>

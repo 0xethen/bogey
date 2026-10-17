@@ -4,6 +4,7 @@ import { cn } from "@bogey/ui/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsible.tsx";
 
 export function DisclosureRow({
+  id,
   title,
   meta,
   leading,
@@ -13,6 +14,8 @@ export function DisclosureRow({
   onOpenChange,
   defaultOpen,
 }: {
+  /** An address a link can land on (`#plugins.challenges`); the row is highlighted when it does. */
+  id?: string;
   title: ReactNode;
   meta?: ReactNode;
   leading?: ReactNode;
@@ -25,7 +28,13 @@ export function DisclosureRow({
   const expandable = children !== undefined && children !== null && children !== false;
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange} defaultOpen={defaultOpen}>
+    <Collapsible
+      id={id}
+      className={id ? "jump-target" : undefined}
+      open={open}
+      onOpenChange={onOpenChange}
+      defaultOpen={defaultOpen}
+    >
       <div className="flex items-center gap-3 py-3">
         <CollapsibleTrigger
           disabled={!expandable}
