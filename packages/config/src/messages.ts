@@ -2934,7 +2934,7 @@ export const en = {
   "manageAgenda.attendanceIntro":
     "Sessions that take attendance. Required ones and people's picks count as missed when someone wasn't there.",
   "manageAgenda.hereOnly": "{here} here",
-  "manageAgenda.missedOnly": "Show those who missed something",
+  "manageAgenda.missedOnly": "Show only those who missed something",
   "manageAgenda.nobodyMissed": "Nobody has missed anything.",
   "manageAgenda.expectedOf": "{done} of {total} expected",
   "manageAgenda.nothingRequired": "Nothing required",
