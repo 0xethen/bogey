@@ -28,6 +28,7 @@
     "@bogey/utils": "workspace:*",
     "@supabase/ssr": "catalog:",
     "@supabase/supabase-js": "catalog:",
+    "@tanstack/pacer": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -1,10 +1,20 @@
 import { useEffect, useId } from "react";
-import { useQueryClient, type QueryKey } from "@tanstack/react-query";
+import { useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
+import { Throttler } from "@tanstack/pacer";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Database } from "./types.ts";
 import { browserClient } from "./browser.ts";
 
 type CoreTable = keyof Database["public"]["Tables"];
+
+const LIVE_WAIT_MS = 1_000;
+
+function throttledInvalidate(queryClient: QueryClient, key: string) {
+  return new Throttler(
+    () => void queryClient.invalidateQueries({ queryKey: JSON.parse(key) as QueryKey }),
+    { wait: LIVE_WAIT_MS, leading: true, trailing: true },
+  );
+}
 
 export function useLiveInvalidate(
   table: CoreTable | (string & Record<never, never>),
@@ -18,13 +28,15 @@ export function useLiveInvalidate(
   useEffect(() => {
     if (!enabled) return;
     const supabase = browserClient();
+    const invalidate = throttledInvalidate(queryClient, key);
     const channel = supabase
       .channel(`live:${table}:${filter ?? "*"}:${key}:${id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table, filter }, () => {
-        void queryClient.invalidateQueries({ queryKey: JSON.parse(key) as QueryKey });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table, filter }, () =>
+        invalidate.maybeExecute(),
+      )
       .subscribe();
     return () => {
+      invalidate.cancel();
       void supabase.removeChannel(channel);
     };
   }, [table, filter, key, id, enabled, queryClient]);
@@ -63,8 +75,11 @@ export function useLiveBroadcast(
 
   useEffect(() => {
     if (!enabled) return;
-    return listen(topic, () => {
-      void queryClient.invalidateQueries({ queryKey: JSON.parse(key) as QueryKey });
-    });
+    const invalidate = throttledInvalidate(queryClient, key);
+    const stop = listen(topic, () => invalidate.maybeExecute());
+    return () => {
+      invalidate.cancel();
+      stop();
+    };
   }, [topic, key, enabled, queryClient]);
 }

@@ -295,6 +295,9 @@ catalogs:
     '@tanstack/markdown':
       specifier: ^1.0.0
       version: 1.0.0
+    '@tanstack/pacer':
+      specifier: ^0.23.1
+      version: 0.23.1
     '@tanstack/react-devtools':
       specifier: 0.10.13
       version: 0.10.13
@@ -307,6 +310,9 @@ catalogs:
     '@tanstack/react-hotkeys':
       specifier: ^0.13.0
       version: 0.13.0
+    '@tanstack/react-pacer':
+      specifier: ^0.24.1
+      version: 0.24.1
     '@tanstack/react-query':
       specifier: 5.104.1
       version: 5.104.1
@@ -566,6 +572,9 @@ importers:
       '@tanstack/react-hotkeys':
         specifier: 'catalog:'
         version: 0.13.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-pacer':
+        specifier: 'catalog:'
+        version: 0.24.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.104.1(react@19.3.0)
@@ -703,6 +712,9 @@ importers:
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.117.3
+      '@tanstack/pacer':
+        specifier: 'catalog:'
+        version: 0.23.1
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.104.1(react@19.3.0)
@@ -3021,6 +3033,10 @@ packages:
     resolution: {integrity: sha512-eQ1MyLKCHyXiH7NbdmB80W77OhiMgGBUb+qDx/8WMGbwg5Lf/NlfD0TfNYAqY77i8V3AxoDoYdICrQE5ADw4Yw==}
     engines: {node: '>=18'}
 
+  '@tanstack/pacer@0.23.1':
+    resolution: {integrity: sha512-ROZj19aPPGYebeRPhFZNRlqNaR2e4vkcLbgiXfbi5uJu8WiW/etsYmkcAcoSQRGOwGZbbioWRX7xssewDRVRhw==}
+    engines: {node: '>=20'}
+
   '@tanstack/query-core@5.103.2':
     resolution: {integrity: sha512-I8DkFXls5jXLqtm8+QpOhEmG07hIblhSZFzafg9wHsMSEvMzULy9hK17wU1T/ahfhMbtITJhbxutwwCoihkR7A==}
 
@@ -3049,6 +3065,13 @@ packages:
 
   '@tanstack/react-hotkeys@0.13.0':
     resolution: {integrity: sha512-+iF7bQe1YegbMa/mL7Zl490OXjSuGLlu2IPYd2YcvdeI8OcTHfdENPrRNk7PklWQ2WAIJjCVxMXiQ/Uiq8fzIQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+
+  '@tanstack/react-pacer@0.24.1':
+    resolution: {integrity: sha512-VjztEJmrNtLVdRrRaIsqx/+uX5qLHLp57dk19gVC/wLEu8ykU9twq6SKzhHSsajDEpNMauo7+bsFWAgjd+7Uiw==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=16.8'
@@ -7474,6 +7497,11 @@ snapshots:
 
   '@tanstack/pacer-lite@0.2.2': {}
 
+  '@tanstack/pacer@0.23.1':
+    dependencies:
+      '@tanstack/devtools-event-client': 0.5.0
+      '@tanstack/store': 0.11.2
+
   '@tanstack/query-core@5.103.2': {}
 
   '@tanstack/query-devtools@5.104.1(csstype@3.2.3)':
@@ -7528,6 +7556,13 @@ snapshots:
   '@tanstack/react-hotkeys@0.13.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
       '@tanstack/hotkeys': 0.11.0
+      '@tanstack/react-store': 0.11.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+
+  '@tanstack/react-pacer@0.24.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@tanstack/pacer': 0.23.1
       '@tanstack/react-store': 0.11.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)

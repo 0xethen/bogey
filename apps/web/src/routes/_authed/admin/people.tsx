@@ -1,5 +1,6 @@
 import { Button } from "@bogey/ui/components/button";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useDebouncedCallback } from "@tanstack/react-pacer/debouncer";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -59,14 +60,10 @@ function RouteComponent() {
   const people = useQuery({ ...instancePeopleQueryOptions(q), placeholderData: keepPreviousData });
 
   const [search, setSearch] = useState(q);
-  useEffect(() => {
-    if (search.trim() === q) return;
-    const timer = setTimeout(
-      () => void navigate({ search: { q: search.trim() || undefined }, replace: true }),
-      250,
-    );
-    return () => clearTimeout(timer);
-  }, [search, q, navigate]);
+  const applySearch = useDebouncedCallback(
+    (value: string) => void navigate({ search: { q: value.trim() || undefined }, replace: true }),
+    { wait: 250 },
+  );
 
   const setAdmin = useMutation({
     mutationFn: async (change: { email: string; admin: boolean }) =>
@@ -128,7 +125,10 @@ function RouteComponent() {
             aria-label={t("adminPeople.search")}
             placeholder={t("checkin.searchPlaceholder")}
             value={search}
-            onChange={(event) => setSearch(event.currentTarget.value)}
+            onChange={(event) => {
+              setSearch(event.currentTarget.value);
+              applySearch(event.currentTarget.value);
+            }}
           />
         </InputGroup>
         <ErrorAlert

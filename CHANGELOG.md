@@ -11,6 +11,7 @@ advisory (see docs/contributing.md#security-releases). -->
 ## Unreleased
 
 - Challenges: a try's tests are listed one per line with their time and memory, and the first failing test opens to its input, expected answer, output and errors. Samples, run output and compiler errors each have a copy button. Try a solution on the Jury page shows which test is running and which are still to come.
+- Live screens (the check-in desk, Messages, notifications, Manage → People, Teams and Submissions) refetch at most about once a second during a burst of changes instead of once per change, and still end on the latest state.
 
 ## 2.2.0 (2026-10-17)
 
