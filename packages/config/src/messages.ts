@@ -688,7 +688,6 @@ export const en = {
   "checkin.registerAndCheckIn": "Register and check in",
   "checkin.walkInFailed": "Couldn't add the walk-in",
   "checkin.presentTitle": "Present",
-  "checkin.hereOf": "{role} here of {total}",
   "checkin.noDivision": "No division",
   "checkin.divisionCount": "{division}: {here} of {total}",
   "checkin.recent": "Just checked in",
