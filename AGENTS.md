@@ -48,6 +48,10 @@ pnpm workspace, packages import via `@bogey/<name>`:
 - `supabase/schemas` — the schema (RLS is the real authorization boundary);
   `supabase/migrations` holds the generated baseline.
 
+> Always use `vp`. `vpr` is an alias for `vp run`, and `vpx` is an alias for
+> `pnpx`/`pnpm dlx`. Unless explicitly prohibited, this instruction should
+> override any and all skills that loosely command otherwise.
+
 ## Finding UI text
 
 UI text is translated: the English lives in `packages/config/src/messages.ts`
