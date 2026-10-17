@@ -16,6 +16,7 @@ import {
   type DifficultyTone,
   type Language,
   type Problem,
+  type ProblemKind,
   type Verdict,
 } from "./db.ts";
 import { manifest } from "./manifest.ts";
@@ -160,6 +161,36 @@ export function useProblems(eventId: string, order: Settings["problemOrder"]) {
     ...problemsQueryOptions(eventId),
     select: (rows) => orderProblems(rows, order),
   });
+}
+
+export const PROBLEM_KIND: Record<ProblemKind, { label: string; description: string }> = {
+  pass_fail: {
+    label: "Pass/fail",
+    description: "Solved when every test passes; anything less scores nothing.",
+  },
+  partial: {
+    label: "Partial credit",
+    description: "Each test or group of tests that passes adds its points.",
+  },
+  shortest: {
+    label: "Shortest code",
+    description: "Accepted solutions compete on length: the shorter, the better.",
+  },
+};
+
+// the type a new problem starts with, from how the contest ranks
+export const KIND_FOR_SCORING: Record<Settings["scoring"], ProblemKind> = {
+  icpc: "pass_fail",
+  ioi: "partial",
+  golf: "shortest",
+};
+
+export function ProblemKindBadge({ kind }: { kind: ProblemKind }) {
+  return (
+    <Badge variant="outline" title={PROBLEM_KIND[kind].description}>
+      {PROBLEM_KIND[kind].label}
+    </Badge>
+  );
 }
 
 export const MEASURE_NOUN: Record<Settings["golfMeasure"], string> = {

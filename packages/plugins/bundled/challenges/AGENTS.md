@@ -9,6 +9,10 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
 > `challenges_record_judging()` (`migrations/0_schema.sql`). Older notes below that name
 > `challenge_attempts` mean `challenges_solutions` and `challenges_judgings`.
 
+> A claimed judging's `scoring` comes from the problem's type (`kind`): `partial` sends `"ioi"`
+> (score each test), `shortest` sends `"golf"` and `pass_fail` sends `"icpc"`. The contest's own
+> `scoring` setting only decides how the scoreboard ranks.
+>
 > Scoring `golf` reaches the runner as `scoring: "golf"` in the claimed judging. A golf
 > verdict is still all-or-nothing (accepted or not); the length is read from the solution's
 > source in the database, so the runner needs no golf logic. Limits arrive already clamped to the

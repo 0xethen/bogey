@@ -89,6 +89,8 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
   const icpc = board.scoring === "icpc";
   const golf = board.scoring === "golf";
   const byLength = golf && board.golfPoints === "length";
+  // a length column whenever a problem is scored on length
+  const lengths = board.problems.some((problem) => problem.kind === "shortest");
   const solvedFirst = icpc || byLength;
   return (
     <div className="overflow-x-auto">
@@ -99,7 +101,7 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
             <TableHead>Team</TableHead>
             <TableHead className="text-right">{solvedFirst ? "Solved" : "Score"}</TableHead>
             {icpc && <TableHead className="text-right">Penalty</TableHead>}
-            {golf && <TableHead className="text-right">Length</TableHead>}
+            {lengths && <TableHead className="text-right">Length</TableHead>}
             {board.problems.map((problem) => (
               <TableHead key={problem.id} className="text-center font-mono" title={problem.title}>
                 {problem.label}
@@ -120,7 +122,7 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
                   {row.solved > 0 ? row.penalty : "–"}
                 </TableCell>
               )}
-              {golf && (
+              {lengths && (
                 <TableCell className="text-right font-mono text-muted-fg tabular-nums">
                   {row.solved > 0 ? row.total_length : "–"}
                 </TableCell>
@@ -153,7 +155,7 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
                               <span className="opacity-70">{cell.minutes}m</span>
                             )}
                           </>
-                        ) : golf ? (
+                        ) : problem.kind === "shortest" ? (
                           <>
                             <span>
                               {cell.solved ? (cell.length ?? "–") : "–"}

@@ -1,7 +1,7 @@
 import { strToU8 } from "fflate";
 import type { PluginServerContext } from "@bogey/plugins/runtime";
 import type { Json } from "@bogey/db/types";
-import type { ChallengesDatabase } from "../db.ts";
+import type { ChallengesDatabase, ProblemKind } from "../db.ts";
 import {
   PackageError,
   extensionFor,
@@ -103,6 +103,10 @@ async function writeAttachments(
   }
 }
 
+function kindOf(scoring: boolean): ProblemKind {
+  return scoring ? "partial" : "pass_fail";
+}
+
 function problemValues(read: ParsedPackage) {
   const groups: Json = Object.fromEntries(
     Object.entries(read.groups).map(([key, rule]) => [
@@ -122,6 +126,7 @@ function problemValues(read: ParsedPackage) {
     checker_language: read.validator?.language ?? null,
     test_groups: groups,
     ...(read.points === null ? {} : { points: read.points }),
+    ...(read.scoring === undefined ? {} : { kind: kindOf(read.scoring) }),
   };
 }
 
@@ -257,7 +262,7 @@ export async function exportPackage(request: Request, ctx: PluginServerContext):
   const problem = await db
     .from("challenges_problems")
     .select(
-      "id, slug, title, statement_md, time_limit_ms, memory_limit_mb, output_limit_kb, checker, checker_tolerance",
+      "id, slug, title, statement_md, time_limit_ms, memory_limit_mb, output_limit_kb, checker, checker_tolerance, kind",
     )
     .eq("id", problemId)
     .eq("event_id", ctx.eventId)
@@ -320,6 +325,7 @@ export async function exportPackage(request: Request, ctx: PluginServerContext):
 
   const bytes = writePackage({
     name: row.title,
+    scoring: row.kind === "partial",
     timeLimitMs: row.time_limit_ms,
     memoryLimitMb: row.memory_limit_mb,
     outputLimitKb: row.output_limit_kb,

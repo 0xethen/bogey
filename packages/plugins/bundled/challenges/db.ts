@@ -31,6 +31,10 @@ type DifficultyRow = {
   sort: number;
 };
 
+/** How a solution to the problem is scored: all tests or nothing, points per test, or shortest accepted code. */
+export type ProblemKind = "pass_fail" | "partial" | "shortest";
+export const PROBLEM_KINDS: Tuple<ProblemKind> = ["pass_fail", "partial", "shortest"];
+
 /** Code golf by ranges: a solution up to `max` long scores `points` (the smallest range it fits). */
 export type GolfBracket = { max: number; points: number };
 
@@ -50,6 +54,7 @@ type ProblemRow = {
   checker_language: string | null;
   points: number;
   golf_brackets: GolfBracket[];
+  kind: ProblemKind;
   visible: boolean;
   sort: number;
   difficulty: Difficulty | null;
@@ -168,6 +173,7 @@ type ProblemInsert = Pick<ProblemRow, "event_id" | "label" | "slug" | "title"> &
       | "output_limit_kb"
       | "points"
       | "golf_brackets"
+      | "kind"
       | "visible"
       | "sort"
       | "difficulty"
@@ -315,13 +321,14 @@ export type Problem = Pick<
   | "output_limit_kb"
   | "points"
   | "golf_brackets"
+  | "kind"
   | "difficulty"
   | "visible"
   | "sort"
 >;
 
 const PROBLEM_COLUMNS =
-  "id, label, slug, title, statement_md, statement_pdf_path, time_limit_ms, memory_limit_mb, output_limit_kb, points, golf_brackets, difficulty, visible, sort";
+  "id, label, slug, title, statement_md, statement_pdf_path, time_limit_ms, memory_limit_mb, output_limit_kb, points, golf_brackets, kind, difficulty, visible, sort";
 
 export const problemsQueryOptions = (eventId: string) =>
   queryOptions({
@@ -628,7 +635,13 @@ const scoreboardSchema = z.object({
   freezeAt: z.string().nullable(),
   startedAt: z.string().nullable(),
   problems: z.array(
-    z.object({ id: z.string(), label: z.string(), title: z.string(), points: z.number() }),
+    z.object({
+      id: z.string(),
+      label: z.string(),
+      title: z.string(),
+      points: z.number(),
+      kind: z.enum(["pass_fail", "partial", "shortest"]).optional(),
+    }),
   ),
   rows: z.array(
     z.object({

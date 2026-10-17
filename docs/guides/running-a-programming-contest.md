@@ -13,8 +13,11 @@ path; the plugin's README and the runner's README have the detail.
 ## Set up
 
 1. **New event → Programming contest.** The event starts with the plugin on.
-2. **Manage → Plugins → Challenges**: choose the contest style (ICPC: solved problems then penalty; IOI: points from tests; code golf: the
-   shortest accepted solution scores most), the languages, the problem IDs, the freeze time and the attempt limit.
+2. **Manage → Plugins → Challenges**: choose how the scoreboard ranks (ICPC: solved problems then penalty; IOI: total points; code golf:
+   total length or points from length), the languages, the problem IDs, the freeze time and the attempt limit.
+   Each problem has its own **type**, so one contest can mix them: **Pass/fail** (every test passes, or nothing), **Partial credit**
+   (points for each test or group that passes) and **Shortest code** (accepted, then the fewest characters). A new problem starts with
+   the type that fits the contest; a Kattis package with `type: scoring` imports as Partial credit.
 3. **Manage → Agenda**: add the **Contest** window (problems visible, submissions accepted) and the **Scoreboard** window (the public board).
 4. **Start the runner** where the contest will run (see [the runner README](../../tools/runner/README.md)):
    build the language images once, run `node src/main.ts --self-test`, then start it with the project's address and service key. With

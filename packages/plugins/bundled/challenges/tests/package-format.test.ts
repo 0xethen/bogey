@@ -301,3 +301,13 @@ test("a custom checker survives a round trip", () => {
   expect(read.checker).toBe("custom");
   expect(read.validator?.source).toBe("int main(){return 42;}");
 });
+
+test("type: scoring marks a partial-credit problem, and pass-fail is the default", () => {
+  const withType = (extra: string) =>
+    readPackage(zip({ ...basic, "problem.yaml": `name: X\n${extra}\n` })).scoring;
+  expect(withType("type: scoring")).toBe(true);
+  expect(withType("type: pass-fail")).toBe(false);
+  expect(withType("")).toBe(undefined);
+  const scored = readPackage(writePackage({ ...readPackage(zip(basic)), scoring: true }));
+  expect(scored.scoring).toBe(true);
+});

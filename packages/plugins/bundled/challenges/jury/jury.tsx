@@ -74,6 +74,7 @@ import { JurySolutions, Rejudgings, Verification } from "./jury-tools.tsx";
 import { ContestExport, ImportPackage, ProblemPackage } from "./package-tools.tsx";
 import { isPreviewSupported, runClientPreview, sameOutput } from "../preview-runner.ts";
 import { TestResults } from "../contest/results.tsx";
+import { PROBLEM_KINDS } from "../db.ts";
 import {
   allowedLanguages,
   DifficultyBadge,
@@ -81,8 +82,10 @@ import {
   idProblem,
   ID_KINDS,
   Link,
+  KIND_FOR_SCORING,
   MEASURE_NOUN,
   nextId,
+  PROBLEM_KIND,
   points,
   TONE_CLASS,
   useDifficulties,
@@ -582,11 +585,8 @@ function problemSchema(settings: Settings, pdfPath: string | null) {
         .max(120, "Keep it under 120 characters")
         .meta({ label: "Title", placeholder: "Two Sum" }),
       difficulty: z.string().meta({ label: "Difficulty" }),
-      points: z
-        .number()
-        .min(0, "0 or more")
-        .max(100_000)
-        .meta({ label: settings.scoring === "golf" ? "Points for the shortest" : "Points" }),
+      kind: z.enum(["pass_fail", "partial", "shortest"]).meta({ label: "Type" }),
+      points: z.number().min(0, "0 or more").max(100_000).meta({ label: "Points" }),
       timeLimitMs: z
         .int()
         .min(100, "At least 100 ms")
@@ -657,7 +657,7 @@ function problemSchema(settings: Settings, pdfPath: string | null) {
 
 type ProblemValues = z.infer<ReturnType<typeof problemSchema>>;
 
-function valuesOf(problem: Problem | undefined, next: string): ProblemValues {
+function valuesOf(problem: Problem | undefined, next: string, settings: Settings): ProblemValues {
   return {
     label: problem?.label ?? next,
     slug: problem?.slug ?? "",
@@ -665,6 +665,7 @@ function valuesOf(problem: Problem | undefined, next: string): ProblemValues {
     difficulty: problem?.difficulty ?? "none",
     points: problem?.points ?? 100,
     golfBrackets: problem?.golf_brackets ?? [],
+    kind: problem?.kind ?? KIND_FOR_SCORING[settings.scoring],
     timeLimitMs: problem?.time_limit_ms ?? 2000,
     memoryLimitMb: problem?.memory_limit_mb ?? 256,
     outputLimitKb: problem?.output_limit_kb ?? 8192,
@@ -769,7 +770,7 @@ function ProblemForm({
   const schema = problemSchema(settings, pdfPath);
   const form = useAppForm({
     ...appFormOptions.strictSchema({
-      defaultValues: valuesOf(problem, next),
+      defaultValues: valuesOf(problem, next, settings),
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
     }),
@@ -783,6 +784,7 @@ function ProblemForm({
           difficulty: value.difficulty === "none" ? null : value.difficulty,
           points: value.points,
           golf_brackets: [...value.golfBrackets].sort((a, b) => a.max - b.max),
+          kind: value.kind,
           time_limit_ms: value.timeLimitMs,
           memory_limit_mb: value.memoryLimitMb,
           output_limit_kb: value.outputLimitKb,
@@ -839,67 +841,93 @@ function ProblemForm({
                 </field.Field>
               )}
             </form.Field>
-            {!(
-              settings.scoring === "golf" &&
-              settings.golfPoints !== "ratio" &&
-              settings.golfPoints !== "rank"
-            ) && (
-              <form.Field name="points">
-                {(field) => <field.NumberField min={0} max={100_000} />}
-              </form.Field>
-            )}
-          </div>
-          {settings.scoring === "golf" && settings.golfPoints === "brackets" && (
-            <form.Field name="golfBrackets">
-              {(list) => (
-                <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4">
-                  <legend className="px-1 text-sm font-medium">Points by length</legend>
-                  <p className="text-xs text-muted-fg">
-                    A solution earns the points of the smallest range it fits, counted in{" "}
-                    {MEASURE_NOUN[settings.golfMeasure]}. Longer than every range earns 0.
-                  </p>
-                  {list.value.map((_range, index) => (
-                    <div key={index} className="flex items-end gap-2">
-                      <form.Field name={`golfBrackets[${index}].max`}>
-                        {(field) => <field.NumberField min={1} max={1_000_000} />}
-                      </form.Field>
-                      <form.Field name={`golfBrackets[${index}].points`}>
-                        {(field) => <field.NumberField min={0} max={100_000} />}
-                      </form.Field>
-                      <Button
-                        type="button"
-                        size="icon-sm"
-                        variant="ghost"
-                        className="mb-1 text-destructive"
-                        aria-label="Remove this range"
-                        title="Remove this range"
-                        onClick={() => list.removeValue(index)}
-                      >
-                        <IconTrash />
-                      </Button>
-                    </div>
-                  ))}
-                  <div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const last = list.value.at(-1);
-                        list.pushValue({
-                          max: last ? last.max * 2 : 100,
-                          points: last ? Math.max(0, Math.round(last.points / 2)) : 100,
-                        });
-                      }}
-                    >
-                      <IconPlus />
-                      Add a range
-                    </Button>
-                  </div>
-                </fieldset>
+            <form.Field name="kind">
+              {(field) => (
+                <field.Field>
+                  <field.Label />
+                  <FieldSelect
+                    field={field}
+                    options={PROBLEM_KINDS.map((kind) => ({
+                      value: kind,
+                      label: PROBLEM_KIND[kind].label,
+                      description: PROBLEM_KIND[kind].description,
+                    }))}
+                  />
+                </field.Field>
               )}
             </form.Field>
-          )}
+          </div>
+          <form.Subscribe selector={(state) => state.values.kind}>
+            {(kind) =>
+              !(kind === "shortest" && settings.golfPoints === "brackets") && (
+                <form.Field name="points">
+                  {(field) => (
+                    <field.NumberField
+                      min={0}
+                      max={100_000}
+                      label={kind === "shortest" ? "Points for the shortest" : undefined}
+                    />
+                  )}
+                </form.Field>
+              )
+            }
+          </form.Subscribe>
+          <form.Subscribe selector={(state) => state.values.kind}>
+            {(kind) =>
+              kind === "shortest" &&
+              settings.golfPoints === "brackets" && (
+                <form.Field name="golfBrackets">
+                  {(list) => (
+                    <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4">
+                      <legend className="px-1 text-sm font-medium">Points by length</legend>
+                      <p className="text-xs text-muted-fg">
+                        A solution earns the points of the smallest range it fits, counted in{" "}
+                        {MEASURE_NOUN[settings.golfMeasure]}. Longer than every range earns 0.
+                      </p>
+                      {list.value.map((_range, index) => (
+                        <div key={index} className="flex items-end gap-2">
+                          <form.Field name={`golfBrackets[${index}].max`}>
+                            {(field) => <field.NumberField min={1} max={1_000_000} />}
+                          </form.Field>
+                          <form.Field name={`golfBrackets[${index}].points`}>
+                            {(field) => <field.NumberField min={0} max={100_000} />}
+                          </form.Field>
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="ghost"
+                            className="mb-1 text-destructive"
+                            aria-label="Remove this range"
+                            title="Remove this range"
+                            onClick={() => list.removeValue(index)}
+                          >
+                            <IconTrash />
+                          </Button>
+                        </div>
+                      ))}
+                      <div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const last = list.value.at(-1);
+                            list.pushValue({
+                              max: last ? last.max * 2 : 100,
+                              points: last ? Math.max(0, Math.round(last.points / 2)) : 100,
+                            });
+                          }}
+                        >
+                          <IconPlus />
+                          Add a range
+                        </Button>
+                      </div>
+                    </fieldset>
+                  )}
+                </form.Field>
+              )
+            }
+          </form.Subscribe>
           <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4">
             <legend className="px-1 text-sm font-medium">Limits for this problem</legend>
             <div className="grid gap-4 sm:grid-cols-3">

@@ -69,6 +69,8 @@ import {
   Link,
   MEASURE_NOUN,
   points,
+  PROBLEM_KIND,
+  ProblemKindBadge,
   signals,
   topics,
   useContest,
@@ -116,6 +118,7 @@ export function Workspace({
       description={
         <span className="inline-flex flex-wrap items-center gap-2">
           <span className="font-mono font-medium text-fg">{problem.label}</span>
+          <ProblemKindBadge kind={problem.kind} />
           <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
           {points(problem.points)}
           <Button
@@ -201,6 +204,15 @@ function ProblemInfo({
         <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
           <Facts
             facts={[
+              {
+                label: "Type",
+                value: (
+                  <span className="flex flex-col gap-0.5">
+                    <span>{PROBLEM_KIND[problem.kind].label}</span>
+                    <span className="text-muted-fg">{PROBLEM_KIND[problem.kind].description}</span>
+                  </span>
+                ),
+              },
               { label: "Time limit", value: `${problem.time_limit_ms / 1000} s per test` },
               { label: "Memory", value: `${problem.memory_limit_mb} MB` },
               { label: "Worth", value: points(problem.points) },
@@ -223,13 +235,7 @@ function ProblemInfo({
             ]}
           />
           <div className="flex flex-col gap-2 text-sm text-muted-fg">
-            <p>
-              {settings.scoring === "icpc"
-                ? `Solving counts once. Each rejected try before your first accepted one adds ${settings.penaltyMinutes} minutes to your time${settings.countCompileErrors ? ", compile errors included" : ""}.`
-                : settings.scoring === "golf"
-                  ? `Code golf: your shortest accepted solution counts, measured in ${MEASURE_NOUN[settings.golfMeasure]}. ${golfRule(settings, problem)}`
-                  : "Each test that passes adds to the problem's points; your best solution counts."}
-            </p>
+            <p>{scoringRule(settings, problem)}</p>
             <p>
               Read from standard input and write to standard output. Your solution runs against the
               samples and hidden tests, and its output has to match, give or take trailing spaces.
@@ -251,10 +257,29 @@ function ProblemInfo({
   );
 }
 
+// what this problem is worth by its type, and how the contest ranks it
+function scoringRule(settings: Settings, problem: Problem): string {
+  const board =
+    settings.scoring === "icpc"
+      ? ` The scoreboard counts problems solved; each rejected try before your first accepted one adds ${settings.penaltyMinutes} minutes to your time${settings.countCompileErrors ? ", compile errors included" : ""}.`
+      : "";
+  switch (problem.kind) {
+    case "shortest":
+      return `Your shortest accepted solution counts, measured in ${MEASURE_NOUN[settings.golfMeasure]}. ${golfRule(settings, problem)}${board}`;
+    case "partial":
+      return `Each test or group of tests that passes adds to the problem's points; your best solution counts.${board}`;
+    default:
+      return `Solving it, every test passing, earns its points; anything less earns none.${board}`;
+  }
+}
+
 function golfRule(settings: Settings, problem: Problem): string {
   switch (settings.golfPoints) {
     case "length":
-      return "Teams are ranked by problems solved, then by their total length: the fewer, the better.";
+      if (settings.scoring === "golf") {
+        return "Teams are ranked by problems solved, then by their total length: the fewer, the better.";
+      }
+      return "The shortest earns the problem's points; yours earns that times shortest ÷ yours.";
     case "brackets": {
       const ranges = [...problem.golf_brackets].sort((a, b) => a.max - b.max);
       return ranges.length
@@ -581,7 +606,7 @@ function Editor({
           lineWrapping: settings.editorLineWrapping,
         }}
       />
-      {settings.scoring === "golf" && (
+      {problem.kind === "shortest" && (
         <GolfLength settings={settings} source={source} attempts={tries.data ?? []} />
       )}
       {blocked && <p className="text-sm text-muted-fg">{blocked}</p>}
@@ -783,7 +808,7 @@ function Tries({
                 <span className="text-muted-fg">
                   <RelativeTime value={attempt.submittedAt} /> · {attempt.language}
                   {attempt.timeMs !== null && ` · ${attempt.timeMs} ms`}
-                  {settings.scoring === "golf" &&
+                  {problem.kind === "shortest" &&
                     ` · ${attemptLength(attempt, settings.golfMeasure)} ${MEASURE_NOUN[settings.golfMeasure]}`}
                 </span>
                 <span className="ml-auto">

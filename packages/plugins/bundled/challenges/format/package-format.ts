@@ -33,6 +33,8 @@ export type ProblemPackage = {
   groups: Readonly<Record<string, GroupRule>>;
   attachments: Tuple<PackageFile>;
   solutions: Tuple<PackageSolution>;
+  /** Kattis `type: scoring`: points per test group; otherwise pass/fail. */
+  scoring?: boolean;
 };
 
 export type ParsedPackage = ProblemPackage & {
@@ -375,6 +377,13 @@ export function readPackage(bytes: Uint8Array): ParsedPackage {
   };
 
   const meta = yamlAt("problem.yaml") ?? {};
+  // `type: scoring` (or a list naming it) marks a problem scored by test groups
+  const typeValue = meta.type;
+  const types = (Array.isArray(typeValue) ? typeValue : [typeValue]).flatMap((each) => {
+    const text = asString(each);
+    return text ? text.split(/\s+/) : [];
+  });
+  const scoring = types.length === 0 ? undefined : types.includes("scoring");
 
   const nameValue = meta.name;
   const name =
@@ -620,6 +629,7 @@ export function readPackage(bytes: Uint8Array): ParsedPackage {
     groups,
     attachments,
     solutions,
+    ...(scoring === undefined ? {} : { scoring }),
     points,
     warnings,
   };
@@ -653,6 +663,7 @@ export function writePackage(problem: ProblemPackage): Uint8Array {
   else validation.push("default");
   const yaml = [
     `name: ${yamlText(problem.name)}`,
+    ...(problem.scoring ? ["type: scoring"] : []),
     `validation: ${validation.join(" ")}`,
     "limits:",
     `  time_limit: ${problem.timeLimitMs / 1000}`,

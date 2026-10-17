@@ -11,6 +11,7 @@ import { Skeleton } from "@bogey/ui/components/skeleton";
 import { recentAttemptsQueryOptions } from "../db.ts";
 import {
   DifficultyBadge,
+  ProblemKindBadge,
   Link,
   MEASURE_NOUN,
   points,
@@ -47,7 +48,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
             ? `Ranked by problems solved, then time (minutes to solve${settings.penaltyMinutes && ` plus ${settings.penaltyMinutes} for each incorrect attempt`}).`
             : settings.scoring === "golf"
               ? `Code golf: the shortest accepted solution wins, counted in ${MEASURE_NOUN[settings.golfMeasure]}.`
-              : "Ranked by points from each problem's best solution."}
+              : "Ranked by points: each problem's type says what a solution to it is worth."}
         </>
       }
       actions={
@@ -112,8 +113,9 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
                   {problem.title}
                 </span>
                 <span className="mt-auto flex flex-wrap items-center gap-2 text-sm text-muted-fg">
+                  <ProblemKindBadge kind={problem.kind} />
                   <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
-                  {points(problem.points)}
+                  {problem.kind !== "shortest" && points(problem.points)}
                   {jury && !problem.visible && <span>· Hidden</span>}
                 </span>
               </Link>

@@ -31,6 +31,7 @@ advisory (see docs/contributing.md#security-releases). -->
   - Code golf is scored by total length by default (problems solved, then the fewest characters), and the leaderboard shows it. A new **Length ranges** score gives points for each range of lengths, set per problem in the jury editor. Events that kept the old default ("in proportion") switch to total length; pick **In proportion** again to keep it.
   - **Run** uses the code as it is now: Python starts from a fresh namespace each run, so names from earlier versions no longer linger. Errors show only the lines from the participant's code, with a checkbox for the runner's lines.
   - **Show error messages** (Solving settings, on by default): off, judged solutions only say that they errored or didn't compile.
+  - Each problem has a type: **Pass/fail**, **Partial credit** or **Shortest code**, shown on the problem list, the problem page and its details. One contest can mix them: the contest's scoring now only says how the scoreboard ranks, and each problem's type says what a solution to it is worth. Existing problems take the type of their contest's scoring; problem packages read and write `type: scoring`.
   - Problems live at `/problems` and `/problems/<problem>`, so the Problems link stays highlighted on a problem; old addresses redirect.
   - **Languages** is picked from a list of the instance's languages, and a new **Code editor** section turns autocomplete and line wrapping on or off for the contest.
   - A problem's details show when the contest starts and ends, with the exact time and how far off it is.
@@ -39,7 +40,7 @@ advisory (see docs/contributing.md#security-releases). -->
 ### Upgrade notes
 
 - Adds the `session_announcements`, `rubrics_and_deliberation`, `about_for_members`, `clear_event_data`, `session_levels`, `chat_blocks`, `limit_wording`, `unlimited_team_leaves` and `password_logins` migrations; `bogey upgrade` applies them.
-- The bundled `challenges` plugin adds the `2_golf_ranges_and_errors` migration; `bogey upgrade` applies it.
+- The bundled `challenges` plugin adds the `2_golf_ranges_and_errors` and `3_problem_types` migrations; `bogey upgrade` applies them. The runner needs no update.
 - `about_for_members` puts each event's old About in front of its For participants text. Events that only had About stay public (Before approval → About is set to share it); events that had both start members-only, so check those if part of About should stay public and move that part to a Text block. A homepage's For participants block becomes About, or is removed when the page already has one. `events.description_md` is dropped.
 
 ## 2.1.3 (2026-10-16)
