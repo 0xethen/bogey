@@ -867,7 +867,7 @@ export const en = {
   "agenda.yourPickLower": "your pick",
   "agenda.enterCode": "Enter the code shown in the room",
   "agenda.codeLabel": "Attendance code",
-  "agenda.codePlaceholder": "Code from the room, like K7QX2M",
+  "agenda.codePlaceholder": "K7QX2M",
   "agenda.checkingIn": "Checking in...",
   "agenda.checkedInTo": "You're checked in to {session}.",
   "window.registration": "Registration",
