@@ -1,19 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { agendaQueryOptions } from "@bogey/db/queries/sessions";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { Screen } from "@bogey/ui/components/screen";
-import {
-  AgendaView,
-  CheckInForm,
-  hasRequired,
-  RequiredNote,
-} from "#/components/event/agenda/agenda.tsx";
+import { AgendaView, hasRequired, RequiredNote } from "#/components/event/agenda/agenda.tsx";
 import { participates, useEventViewer } from "#/lib/viewer.ts";
 import { agendaMilestones } from "#/lib/windows.ts";
 import { sessionKindsWithPlugins } from "#/lib/plugins.ts";
 import { useT } from "#/lib/translate.tsx";
+import { LINK, Linked } from "#/components/settings/setting-link.tsx";
 
 const agendaSettings = (eventId: string) =>
   settingsQueryOptions({ eventId }, ["agenda", "schedule"]);
@@ -55,13 +51,21 @@ function RouteComponent() {
       }
     >
       {checksIn && (
-        <Screen.Section
-          id="check-in"
-          title={t("agenda.checkIn")}
-          description={t("agenda.checkInHelp")}
-        >
-          <CheckInForm eventId={event.id} />
-        </Screen.Section>
+        <p className="text-sm text-muted-fg">
+          <Linked
+            text={t("agenda.checkInOnTab", { checkin: LINK })}
+            links={[
+              <Link
+                key="checkin"
+                to="/events/$slug/checkin"
+                params={{ slug: event.slug }}
+                className="link"
+              >
+                {t("agenda.checkInTab")}
+              </Link>,
+            ]}
+          />
+        </p>
       )}
       {agenda.slots.length === 0 && milestones.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("agenda.empty")}</p>

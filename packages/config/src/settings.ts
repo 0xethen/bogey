@@ -19,6 +19,10 @@ export interface SettingField<V> {
   label: string;
   description?: string;
   options?: Tuple<SettingOption<NonNullable<V>>>;
+  /** For a list setting: what it can hold, picked several at a time. */
+  choices?: Tuple<SettingOption<string>>;
+  /** Choices that are always in the list and can't be taken out. */
+  always?: Tuple<string>;
   placeholder?: string;
 }
 
@@ -1188,8 +1192,16 @@ export const settingsRegistry = {
       allowWalkIns: false,
       badgeEmailHours: 24,
       requiredToCompete: false,
+      takers: ["organizer", "staff"],
     },
     schema: z.object({
+      takers: z
+        .array(z.enum(["organizer", "staff", "judge"]))
+        .max(3)
+        .optional()
+        .describe(
+          "Roles that work the check-in desk and take attendance in sessions; organizers always can",
+        ),
       confirmName: z
         .boolean()
         .optional()
@@ -1234,6 +1246,16 @@ export const settingsRegistry = {
       requiredToCompete: {
         label: say("setting.checkin.requiredToCompete"),
         description: say("setting.checkin.requiredToCompete.help"),
+      },
+      takers: {
+        label: say("setting.checkin.takers"),
+        description: say("setting.checkin.takers.help"),
+        choices: [
+          { value: "organizer", label: say("setting.checkin.takers.organizer") },
+          { value: "staff", label: say("setting.checkin.takers.staff") },
+          { value: "judge", label: say("setting.checkin.takers.judge") },
+        ],
+        always: ["organizer"],
       },
     },
   }),
@@ -1565,6 +1587,13 @@ export type SettingControl =
   | { kind: "select"; label: string; description?: string; options: Tuple<SettingOption<string>> }
   | { kind: "switch"; label: string; description?: string }
   | {
+      kind: "multiselect";
+      label: string;
+      description?: string;
+      options: Tuple<SettingOption<string>>;
+      always: Tuple<string>;
+    }
+  | {
       kind: "number";
       label: string;
       description?: string;
@@ -1584,6 +1613,15 @@ export function settingControl<N extends CoreNamespace>(
   const field = fields[key];
   if (!field) return null;
   const description = field.description ?? settingDescription(namespace, key);
+  if (field.choices) {
+    return {
+      kind: "multiselect",
+      label: field.label,
+      description,
+      options: field.choices,
+      always: field.always ?? [],
+    };
+  }
   if (field.options) {
     const options = field.options.map((option) => ({ ...option, value: String(option.value) }));
     return { kind: "select", label: field.label, description, options };

@@ -836,6 +836,8 @@ export const en = {
   "agenda.pick": "Pick one session in each round. You can switch while sign-ups are open.",
   "agenda.checkIn": "Check in",
   "agenda.checkInHelp": "Enter the code shown in the room when a session starts.",
+  "agenda.checkInOnTab": "Checking in to a session? Enter the room's code on the {checkin} tab.",
+  "agenda.checkInTab": "Check-in",
   "agenda.empty": "Nothing is on the agenda yet.",
   "page.title": "Page",
   "page.plugin": "Plugin",
@@ -1296,7 +1298,7 @@ export const en = {
   "manageTabs.forAgenda": "Everyone, once there's an agenda",
   "manageTabs.forTeam": "Participants, when teams have more than one person",
   "manageTabs.forSubmission": "Participants, when there's a submission window",
-  "manageTabs.forCheckin": "Staff at the check-in desk",
+  "manageTabs.forCheckin": "Attendance takers, and participants checking in",
   "manageTabs.forJudging": "Judges",
   "manageTabs.forResults": "Everyone, once there's a results window",
   "homepageSetup.current": "Current setup",
@@ -3350,6 +3352,12 @@ export const en = {
   "setting.checkin.selfCheckIn": "Self check-in",
   "setting.checkin.selfCheckIn.help":
     "People enter the venue code, which changes every ten minutes and is shown on the check-in screen, while the Check-in window is open.",
+  "setting.checkin.takers": "Who takes attendance",
+  "setting.checkin.takers.help":
+    "They work the check-in desk and take attendance in sessions. Organizers always can.",
+  "setting.checkin.takers.organizer": "Organizers",
+  "setting.checkin.takers.staff": "Staff",
+  "setting.checkin.takers.judge": "Judges",
   "setting.checkin.requiredToCompete": "Check in before competing",
   "setting.checkin.requiredToCompete.help":
     "Best for in-person events. Participants who haven't checked in can't change teams, submit or vote.",

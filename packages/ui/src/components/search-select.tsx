@@ -43,6 +43,8 @@ export function MultiSelect({
   onValueChange,
   placeholder,
   empty,
+  always = [],
+  disabled,
 }: {
   id?: string;
   options: Tuple<SearchSelectOption>;
@@ -50,6 +52,9 @@ export function MultiSelect({
   onValueChange: (value: string[]) => void;
   placeholder?: string;
   empty?: string;
+  /** Values that stay picked: their chips have no remove button. */
+  always?: Tuple<string>;
+  disabled?: boolean;
 }) {
   const t = useUiText();
   const anchor = useComboboxAnchor();
@@ -66,14 +71,19 @@ export function MultiSelect({
     <Combobox
       items={grouped ? groupOptions(options) : options.map((option) => option.value)}
       multiple
-      value={[...value]}
-      onValueChange={(next: string[]) => onValueChange(next)}
+      value={[...new Set([...always, ...value])]}
+      onValueChange={(next: string[]) => onValueChange([...new Set([...always, ...next])])}
       itemToStringLabel={label}
+      disabled={disabled}
     >
       <ComboboxChips ref={anchor}>
         <ComboboxValue>
           {(selected: string[]) =>
-            selected.map((key) => <ComboboxChip key={key}>{label(key)}</ComboboxChip>)
+            selected.map((key) => (
+              <ComboboxChip key={key} showRemove={!always.includes(key)}>
+                {label(key)}
+              </ComboboxChip>
+            ))
           }
         </ComboboxValue>
         <ComboboxChipsInput id={id} placeholder={value.length ? undefined : placeholder} />

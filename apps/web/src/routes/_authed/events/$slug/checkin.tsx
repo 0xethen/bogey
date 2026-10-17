@@ -39,26 +39,58 @@ import {
 import { Stat, StatGroup } from "@bogey/ui/components/stat";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { QrScanner } from "#/components/event/qr-scanner.tsx";
-import { inEvent, atTheDesk } from "#/lib/viewer.ts";
+import { inEvent, checksIn } from "#/lib/viewer.ts";
+import { agendaQueryOptions } from "@bogey/db/queries/sessions";
+import { CheckInForm } from "#/components/event/agenda/agenda.tsx";
+import { BadgeCard } from "./-components/home/badge-card.tsx";
 import { useRoleLabel } from "#/lib/roles.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/checkin")({
-  staticData: { title: msg("checkin.title"), command: { when: inEvent(atTheDesk) } },
+  staticData: { title: msg("checkin.title"), command: { when: inEvent(checksIn) } },
   beforeLoad: ({ context, params }) => {
-    if (!can(context.access, "people.checkin")) {
+    if (!can(context.access, "people.checkin") && context.access.role !== "participant") {
       throw Route.redirect({ to: "/events/$slug", params, replace: true });
     }
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(checkinRosterQueryOptions(context.event.id)),
+      can(context.access, "people.checkin")
+        ? context.query.ensureQueryData(checkinRosterQueryOptions(context.event.id))
+        : context.query.ensureQueryData(agendaQueryOptions(context.event.id)),
       context.query.ensureQueryData(
         settingsQueryOptions({ eventId: context.event.id }, ["checkin"]),
       ),
     ]),
   component: RouteComponent,
 });
+
+function RouteComponent() {
+  const { access } = Route.useRouteContext();
+  return can(access, "people.checkin") ? <Desk /> : <ParticipantCheckIn />;
+}
+
+/** What a participant checks in with: their badge at the desk, and the room's code in a session. */
+function ParticipantCheckIn() {
+  const t = useT();
+  const { event } = Route.useRouteContext();
+  const { data: agenda } = useSuspenseQuery(agendaQueryOptions(event.id));
+  const sessions = agenda.slots.some((slot) => slot.sessions.some((s) => s.takesAttendance));
+  return (
+    <Screen title={t("checkin.title")}>
+      <BadgeCard eventId={event.id} endsAt={event.ends_at} />
+      {sessions && (
+        <Screen.Section
+          id="session-check-in"
+          title={t("agenda.checkIn")}
+          description={t("agenda.checkInHelp")}
+        >
+          <CheckInForm eventId={event.id} />
+        </Screen.Section>
+      )}
+    </Screen>
+  );
+}
 
 function VenueCode({ eventId }: { eventId: string }) {
   const t = useT();
@@ -97,7 +129,7 @@ const walkInSchema = (t: T) =>
       .meta({ label: t("checkin.name") }),
   });
 
-function RouteComponent() {
+function Desk() {
   const t = useT();
   const roleLabel = useRoleLabel();
   const codeSchema = useMemo(() => badgeCodeSchema(t), [t]);

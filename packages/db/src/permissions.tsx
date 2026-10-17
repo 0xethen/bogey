@@ -6,6 +6,7 @@ import { createServerClient } from "./server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "./errors.ts";
 import { requireId } from "./queries/validate.ts";
 import type { Enums } from "./types.ts";
+import { resolveSettings } from "@bogey/config/settings";
 
 export type EventRole = Enums<"event_role">;
 
@@ -36,6 +37,8 @@ export function can(access: EventAccess | null | undefined, permission: Permissi
   return access.grants.includes(permission);
 }
 
+const ATTENDANCE = ["people.checkin", "sessions.attendance"] as const;
+
 export const getEventAccessFn = createServerFn({ method: "GET" })
   .validator((eventId: unknown) => requireId(eventId, "eventId"))
   .handler(async ({ data: eventId }): Promise<DbResult<EventAccess>> => {
@@ -43,7 +46,7 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
 
-    const [event, member, roleGrants, matrix, orgRoles] = await Promise.all([
+    const [event, member, roleGrants, matrix, orgRoles, checkin] = await Promise.all([
       supabase.from("events").select("org_id").eq("id", eventId).maybeSingle(),
       userId
         ? supabase
@@ -64,6 +67,7 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
       userId
         ? supabase.from("org_members").select("org_id, role").eq("user_id", userId)
         : Promise.resolve({ data: [], error: null }),
+      supabase.rpc("settings_for", { p_namespaces: ["checkin"], p_event: eventId }),
     ]);
 
     const error = event.error ?? member.error ?? roleGrants.error ?? matrix.error;
@@ -76,6 +80,14 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
     const roleKeys = (roleGrants.data ?? []).map((row) => row.role_key);
     const byRole: Record<string, string[]> = {};
     for (const row of matrix.data ?? []) (byRole[row.role_key] ??= []).push(row.permission);
+    // who takes attendance is the event's checkin.takers, as private.holds_permission reads it
+    const checkinValue: unknown =
+      checkin.data && typeof checkin.data === "object" && !Array.isArray(checkin.data)
+        ? checkin.data.checkin
+        : undefined;
+    for (const taker of resolveSettings("checkin", checkinValue).takers ?? []) {
+      (byRole[taker] ??= []).push(...ATTENDANCE);
+    }
 
     const held = new Set<string>(role ? (byRole[role] ?? []) : []);
     for (const key of roleKeys) for (const permission of byRole[key] ?? []) held.add(permission);

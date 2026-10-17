@@ -32,8 +32,7 @@ alter table public.checkins enable row level security;
 alter table public.member_codes enable row level security;
 alter table public.badge_emails enable row level security;
 
-insert into public.role_permissions (role_key, permission) values
-  ('staff', 'people.checkin');
+-- people.checkin and sessions.attendance come from checkin.takers (private.holds_permission)
 
 create policy checkins_select on public.checkins for select to authenticated
   using (user_id = (select auth.uid()) or (select private.has_permission(event_id, 'people.checkin')));

@@ -10,6 +10,11 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Check-in tab for participants: their badge and QR code, self check-in, and the room's code for sessions that take attendance. The agenda links there instead of asking for the code itself. Attendance takers still get the desk.
+- Manage → Registration → Who takes attendance picks the roles that work the check-in desk and take attendance in sessions (organizers and staff by default; organizers always can). The database enforces it.
+- Settings set in `bogey.config.ts` say where: "Set in bogey.config.ts (security.deviceSignOut)".
+- Choosing the default organization (Instance → Settings) no longer fails with "tenancy.appUrl can no longer be changed in the app" when `appUrl` is set in `bogey.config.ts`. Saving any instance setting next to one from the file had the same problem.
+- `bogey release` run again while the last release is committed and tagged but not pushed offers to push it or undo it, instead of starting another version. `bogey release undo` deletes that tag and commit and keeps uncommitted changes.
 - Account → Security shows passkeys like the authenticator app: one Passkeys row saying "Not set up" or how many are added, with "Add a passkey" or "Add another", and each passkey listed under it. Each person can add up to 5; set `security: { maxPasskeys }` in `bogey.config.ts` to change it (at most 9, or `0` to turn adding passkeys off). The database enforces it.
 - Lockdown 1.1 holds its cover on the server: while a participant's cover is up (out of full screen, the required browser missing, or stopped), they hold no permission in the event, so its pages and data are refused even through the API, every page sends them to the event's home, and the tabs are hidden. Organizers are never covered. Plugins can do the same by defining a gate (`private.<key>_gate`; see docs/plugins.md).
 - Manage → Tabs arranges the event's tabs: drag them into order, rename them, hide them, or show one only while a window is open (organizers always see it). Plugin tabs are included, and plugins can tie a tab to a window themselves (the CTF's Challenges tab shows while the contest is open). The active tab's underline now slides in.
@@ -22,7 +27,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ### Upgrade notes
 
-- Run `vpr bogey db migrate` and `vpr bogey plugins migrate`. Lockdown 1.1's gate needs this release's `plugin_gates` migration. The team board and participants' conversations with organizers are now off by default, so an existing event that never set them turns them off; turn them back on in Manage → Teams and Manage → Messages (or at the organization level) if it uses them.
+- Run `vpr bogey db migrate` and `vpr bogey plugins migrate`. Staff's `people.checkin` and `sessions.attendance` rows leave the role matrix: Who takes attendance (`checkin.takers`) decides now, and its default (organizers and staff) keeps things as they were. Lockdown 1.1's gate needs this release's `plugin_gates` migration. The team board and participants' conversations with organizers are now off by default, so an existing event that never set them turns them off; turn them back on in Manage → Teams and Manage → Messages (or at the organization level) if it uses them.
 - The CTF's `ctf_scoreboard` returns `first_solves` and `ctf_challenges_for_team` returns `first_solve`, instead of `first_bloods` and `first_blood`.
 
 ## 2.2.0 (2026-10-17)

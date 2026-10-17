@@ -11,6 +11,4 @@ Plugins add permissions as `<plugin>.<name>` and roles as `<plugin>.<role>`.
 | `event.compete` | yes |  |  |
 | `event.view` | yes | yes | yes |
 | `judging.score` |  |  | yes |
-| `people.checkin` |  | yes |  |
 | `people.view` |  | yes |  |
-| `sessions.attendance` |  | yes |  |

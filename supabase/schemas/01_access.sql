@@ -94,6 +94,14 @@ begin
     return true;
   end if;
 
+  -- who takes attendance is the event's checkin.takers, not the role matrix; a plugin role can
+  -- still grant it below
+  if p_permission in ('people.checkin', 'sessions.attendance')
+     and coalesce(private.event_setting(p_event, 'checkin') -> 'takers', '["organizer","staff"]')
+       ? v_role::text then
+    return true;
+  end if;
+
   return exists (
     select 1 from public.role_permissions rp
     where rp.permission = p_permission

@@ -62,7 +62,14 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/registration"
       searchSection(t("window.checkin"), { id: "check-in" }),
       ...searchSettings(
         "checkin",
-        ["requiredToCompete", "confirmName", "allowWalkIns", "selfCheckIn", "badgeEmailHours"],
+        [
+          "requiredToCompete",
+          "confirmName",
+          "allowWalkIns",
+          "selfCheckIn",
+          "badgeEmailHours",
+          "takers",
+        ],
         t,
       ),
       searchSection(t("manageReg.links"), { keywords: ["share", "link"], id: "invite-links" }),
@@ -124,6 +131,7 @@ function RouteComponent() {
             "allowWalkIns",
             "selfCheckIn",
             "badgeEmailHours",
+            "takers",
           ]}
         />
       </Screen.Section>

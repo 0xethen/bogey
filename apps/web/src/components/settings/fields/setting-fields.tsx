@@ -30,10 +30,18 @@ import { useUnsavedEntry } from "@bogey/ui/lib/unsaved";
 import { Input } from "@bogey/ui/components/input";
 import { NumberInput } from "@bogey/ui/components/number-field";
 import { OptSelect } from "@bogey/ui/components/opt-select";
+import { MultiSelect } from "@bogey/ui/components/search-select";
 import { SettingRow, type SettingLock, type SettingSource } from "./setting-row.tsx";
 import { Switch } from "@bogey/ui/components/switch";
 import { useLocale } from "@bogey/ui/lib/locale";
 import { sayOr, useT, type PlainKey, type T } from "#/lib/translate.tsx";
+
+// lists compare by what they hold, so picking a role and unpicking it again leaves nothing to save
+function sameSetting(a: unknown, b: unknown): boolean {
+  return Array.isArray(a) && Array.isArray(b)
+    ? a.length === b.length && a.every((item, index) => Object.is(item, b[index]))
+    : Object.is(a, b);
+}
 
 function valueAt(values: object, key: string): unknown {
   return new Map(Object.entries(values)).get(key);
@@ -130,9 +138,9 @@ export function SettingFields<N extends CoreNamespace>({
       const next = { ...current };
       for (const [key, value] of Object.entries(changes)) {
         const unchanged = has(own, key)
-          ? Object.is(value, valueAt(own, key))
+          ? sameSetting(value, valueAt(own, key))
           : value === null ||
-            Object.is(value, resolve(scope.scope, key, own, inherited, () => {}, t).value);
+            sameSetting(value, resolve(scope.scope, key, own, inherited, () => {}, t).value);
         if (unchanged) delete next[key];
         else next[key] = value;
       }
@@ -227,6 +235,29 @@ export function SettingFields<N extends CoreNamespace>({
               placeholder={placeholder}
               disabled={disabled}
               scrub={scope.scope !== "event"}
+              onValueChange={(next) => change({ [key]: next })}
+            />
+          </SettingRow>
+        ) : control.kind === "multiselect" ? (
+          <SettingRow
+            key={key}
+            id={id}
+            anchor={`${namespace}.${key}`}
+            keyName={key}
+            label={label}
+            description={description}
+            source={source}
+            lock={source.kind === "operator" ? undefined : lockFor(key)}
+          >
+            <MultiSelect
+              id={id}
+              value={Array.isArray(value) ? value.filter((item) => typeof item === "string") : []}
+              always={control.always}
+              options={control.options.map((option) => ({
+                value: option.value,
+                label: sayOr(t, `setting.${namespace}.${key}.${option.value}`, option.label),
+              }))}
+              disabled={disabled}
               onValueChange={(next) => change({ [key]: next })}
             />
           </SettingRow>

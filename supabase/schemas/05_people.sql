@@ -63,7 +63,6 @@ insert into public.role_permissions (role_key, permission) values
   ('participant', 'event.compete'),
   ('staff', 'event.view'),
   ('staff', 'people.view'),
-  ('staff', 'sessions.attendance'),
   ('judge', 'event.view'),
   ('judge', 'judging.score');
 

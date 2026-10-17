@@ -6,7 +6,7 @@ import type { EventTab } from "#/components/navigation/header/TabRow.tsx";
 import { pluginTabs } from "#/lib/plugins.ts";
 import type { PlainKey, T } from "#/lib/translate.tsx";
 import {
-  atTheDesk,
+  checksIn,
   hasAgenda,
   hasResults,
   hasSubmissionPage,
@@ -60,7 +60,7 @@ export function eventTabs(
       show: hasSubmissionPage,
     },
     { key: "messages", label: t("eventTab.messages"), to: `${base}/messages` },
-    { key: "checkin", label: t("eventTab.checkin"), to: `${base}/checkin`, show: atTheDesk },
+    { key: "checkin", label: t("eventTab.checkin"), to: `${base}/checkin`, show: checksIn },
     { key: "judging", label: t("eventTab.judging"), to: `${base}/judging`, show: judgesOnly },
     { key: "results", label: t("eventTab.results"), to: `${base}/results`, show: hasResults },
     ...pluginTabs(slug, plugins, pluginSettings),

@@ -268,6 +268,7 @@ Set at: instance, org, event.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
+| `takers` | list | `["organizer","staff"]` | Roles that work the check-in desk and take attendance in sessions; organizers always can |
 | `confirmName` | on / off | `true` | Show each person's name at the desk so staff can check it against ID |
 | `allowWalkIns` | on / off | `false` | Let staff register and check in people who aren't on the roster |
 | `badgeEmailHours` | whole number (0 to 336) | `24` | Email each person their check-in code this many hours before the event starts; 0 sends none |
