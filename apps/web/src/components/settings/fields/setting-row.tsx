@@ -15,7 +15,7 @@ export type SettingSource =
   | { kind: "own"; onReset: () => void }
   | { kind: "inherited"; from?: string }
   | { kind: "locked"; by: string }
-  | { kind: "operator" };
+  | { kind: "operator"; path?: string | null };
 
 function Label({
   id,
@@ -90,7 +90,11 @@ function Origin({ source }: { source: SettingSource }) {
     return <p className="text-xs text-muted-fg">{t("settingRow.lockedBy", { by: source.by })}</p>;
   }
   if (source.kind === "operator") {
-    return <p className="text-xs text-muted-fg">{t("settingRow.operator")}</p>;
+    return (
+      <p className="text-xs text-muted-fg">
+        {source.path ? t("settingRow.operatorAt", { path: source.path }) : t("settingRow.operator")}
+      </p>
+    );
   }
   if (source.kind === "inherited" && source.from) {
     return <p className="text-xs text-muted-fg">{t("settingRow.from", { from: source.from })}</p>;

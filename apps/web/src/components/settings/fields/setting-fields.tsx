@@ -18,6 +18,7 @@ import {
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import {
   isOperatorKey,
+  operatorConfigPath,
   scopesBelow,
   settingControl,
   type CoreNamespace,
@@ -176,7 +177,7 @@ export function SettingFields<N extends CoreNamespace>({
         );
         const value = resolved.value;
         const source: SettingSource = isOperatorKey(namespace, scope.scope, key)
-          ? { kind: "operator" }
+          ? { kind: "operator", path: operatorConfigPath(namespace, key) }
           : resolved.source;
         const disabled = source.kind === "locked" || source.kind === "operator";
         const placeholder =

@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ownSettingsQueryOptions } from "@bogey/db/queries/settings";
 import { Screen } from "@bogey/ui/components/screen";
 import { Textarea } from "@bogey/ui/components/textarea";
+import { operatorConfigPath } from "@bogey/config/settings";
 import {
   prefetchSettingFields,
   SettingFields,
@@ -59,7 +60,7 @@ function RouteComponent() {
         keyName="trustedProxies"
         label={t("network.appServers")}
         description={t("network.appServersHelp")}
-        source={{ kind: "operator" }}
+        source={{ kind: "operator", path: operatorConfigPath("network", "trustedProxies") }}
       >
         <Textarea
           id="network-trustedProxies"

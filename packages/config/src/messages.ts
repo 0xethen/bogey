@@ -1421,6 +1421,7 @@ export const en = {
   "settingRow.lockedBy": "Locked by {by}",
   "settingRow.from": "From {from}",
   "settingRow.operator": "Set in bogey.config.ts",
+  "settingRow.operatorAt": "Set in bogey.config.ts ({path})",
   "settingSource.org": "the organization",
   "settingSource.instance": "the instance",
   "settingSource.orgs": "organizations",
@@ -3207,10 +3208,10 @@ export const en = {
     "People can ask for their account to be deleted from Account settings. Requests wait for an admin under Deletions.",
   "setting.accounts.deviceSignOut": "Sign out other devices",
   "setting.accounts.deviceSignOut.help":
-    "People can sign out one of their other devices, or all of them, from Account > Security. Set security.deviceSignOut in bogey.config.ts.",
+    "People can sign out one of their other devices, or all of them, from Account > Security.",
   "setting.accounts.maxPasskeys": "Passkeys per person",
   "setting.accounts.maxPasskeys.help":
-    "How many passkeys one person can add from Account > Security; 0 turns passkeys off. Set security.maxPasskeys in bogey.config.ts.",
+    "How many passkeys one person can add from Account > Security; 0 turns passkeys off.",
   "setting.accounts.requireAdminMfa": "Two-factor for instance admins",
   "setting.accounts.requireAdminMfa.help":
     "Instance admins must verify an authenticator app code each session before being granted access to the database. Turn off from the CLI with bogey mfa off!",

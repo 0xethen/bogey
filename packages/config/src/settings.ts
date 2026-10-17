@@ -31,6 +31,8 @@ export interface SettingsNamespace<S extends z.ZodObject, D extends Partial<z.in
   schema: S;
   fields?: SettingFields<z.infer<S>>;
   operator?: Tuple<keyof z.infer<S> & string>;
+  /** Where bogey.config.ts holds the operator keys ("security"), or "" for its top level. */
+  operatorIn?: string;
 }
 
 function namespace<S extends z.ZodObject, const D extends Partial<z.infer<S>>>(
@@ -398,6 +400,7 @@ export const settingsRegistry = {
     scopes: ["instance"],
     defaults: {},
     operator: ["appUrl"],
+    operatorIn: "",
     schema: z.object({
       defaultOrg: z.uuid().optional().describe("Org used when a host matches no domain"),
       appUrl: webAddress
@@ -425,6 +428,7 @@ export const settingsRegistry = {
       maxPasskeys: 5,
     },
     operator: ["requireAdminMfa", "deviceSignOut", "maxPasskeys"],
+    operatorIn: "security",
     schema: z.object({
       portfolios: z
         .boolean()
@@ -534,6 +538,7 @@ export const settingsRegistry = {
     scopes: ["instance"],
     defaults: { clientIpHeader: "x-forwarded-for", trustedHops: 1, trustedProxies: [] },
     operator: ["clientIpHeader", "trustedHops", "trustedProxies"],
+    operatorIn: "network",
     schema: z.object({
       clientIpHeader: z
         .enum(["x-forwarded-for", "cf-connecting-ip", "x-real-ip"])
@@ -1477,6 +1482,13 @@ export function operatorKeys(namespace: CoreNamespace): Tuple<string> {
 
 export function isOperatorKey(namespace: CoreNamespace, scope: SettingScope, key: string): boolean {
   return scope === "instance" && operatorKeys(namespace).includes(key);
+}
+
+/** Where bogey.config.ts sets an operator key (`security.deviceSignOut`), or null when it doesn't. */
+export function operatorConfigPath(namespace: CoreNamespace, key: string): string | null {
+  const definition: { operatorIn?: string } = settingsRegistry[namespace];
+  if (!operatorKeys(namespace).includes(key) || definition.operatorIn === undefined) return null;
+  return definition.operatorIn ? `${definition.operatorIn}.${key}` : key;
 }
 
 export function isSettingKey(namespace: CoreNamespace, key: string): boolean {
