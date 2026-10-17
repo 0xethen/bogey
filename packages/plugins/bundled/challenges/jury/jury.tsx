@@ -141,12 +141,12 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<Link to="/scoreboard" />}
+            nativeButton={false}
           >
             Scoreboard
           </Button>
-          <Button size="sm" nativeButton={false} render={<Link to="/jury" splat="new" />}>
+          <Button size="sm" render={<Link to="/jury" splat="new" />} nativeButton={false}>
             <IconPlus />
             Add a problem
           </Button>
@@ -194,6 +194,7 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
                         size="sm"
                         variant="ghost"
                         render={<Link to="/problems" splat={problem.slug} />}
+                        nativeButton={false}
                       >
                         <IconEdit />
                         Edit
@@ -729,7 +730,7 @@ export function ProblemEditor({
       width="wide"
       actions={
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" nativeButton={false} render={<Link to="/jury" />}>
+          <Button size="sm" variant="ghost" render={<Link to="/jury" />} nativeButton={false}>
             <IconArrowLeft />
             Jury
           </Button>
@@ -737,8 +738,8 @@ export function ProblemEditor({
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<Link to="/problems" splat={problem.slug} />}
+              nativeButton={false}
             >
               Participant view
             </Button>
