@@ -53,7 +53,7 @@ export function Notice({
           )}
         />
         {unread && (
-          <span className="absolute right-[-3px] bottom-0.5 size-2 rounded-pill bg-primary ring-2 ring-background">
+          <span className="absolute -right-0.75 bottom-0.5 size-2 rounded-pill bg-primary ring-2 ring-background">
             <span className="sr-only">{t("notice.new")}</span>
           </span>
         )}

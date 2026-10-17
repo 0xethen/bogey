@@ -161,7 +161,7 @@ export function ChallengesPage({ eventId }: PluginContext) {
   const challenges = useQuery(challengesQueryOptions(eventId));
   const groups = groupByCategory(challenges.data ?? []);
   return (
-    <Screen title="Challenges" description="Find the flags. Solve a challenge for your whole team.">
+    <Screen title="Challenges" description="Find the flags to solve a challenge for your team.">
       <ErrorAlert error={messageOf(challenges.error)} title="Can't show challenges" />
       {challenges.data?.length === 0 && <p className="text-sm text-muted-fg">No challenges yet.</p>}
       {groups.map((group) => (
@@ -534,7 +534,7 @@ export function ManagePage({ eventId }: PluginContext) {
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="destructive"
                     confirm={{
                       title: `Delete ${challenge.title}?`,
                       description: "Its solves are deleted with it and scores change.",

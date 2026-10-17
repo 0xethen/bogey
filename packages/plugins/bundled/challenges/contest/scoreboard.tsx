@@ -58,7 +58,7 @@ export function Scoreboard({ eventId, settings }: PluginContext<Settings>) {
 
 function describe(settings: Settings, board: ScoreboardData | undefined): string {
   if (board?.frozen) {
-    return "FROZEN: tries post-freeze show as pending until the final standings are revealed.";
+    return "Scoreboard is frozen. Tries show as pending until the final standings are revealed.";
   }
   if (settings.scoring === "icpc") {
     return "Problems solved, then penalty minutes. Number on green show how many tries it took.";
@@ -81,7 +81,8 @@ function Standings({ board }: { board: UseQueryResult<ScoreboardData, unknown> }
       </LockedNotice>
     );
   }
-  if (board.data.rows.length === 0) return <p className="text-sm text-muted-fg">No teams yet.</p>;
+  if (board.data.rows.length === 0)
+    return <p className="py-4 text-sm text-muted-fg">No teams yet.</p>;
   return <ScoreTable board={board.data} />;
 }
 

@@ -1784,8 +1784,10 @@ export const en = {
   "schema.behind":
     "The database is {count, plural, one {# migration} other {# migrations}} behind this app",
   "schema.ahead": "The database is newer than this app",
-  "schema.behindHelp": "Pages that use the new schema will fail until you run",
-  "schema.aheadHelp": "It has migrations this build doesn't know. Deploy the matching app version.",
+  "schema.behindHelp":
+    "Pages that use the new schema will fail until you run. If you think this is a mistake, try restarting the app.",
+  "schema.aheadHelp":
+    "Deploy the matching app version to resolve the migrations unfamiliar to this build. If you think this is a mistake, try restarting the app.",
   "schema.releaseOut": "Bogey {version} is out",
   "schema.runsSee": "This instance runs {version}. See",
   "schema.whatChanged": "what changed",
@@ -2054,7 +2056,7 @@ export const en = {
   "danger.pruneNoSubmission": "No submitted project",
   "danger.pruneBody":
     "{count, plural, =0 {No participants match.} one {Removes # participant from the event and their team.} other {Removes # participants from the event and their teams.}}",
-  "danger.waiting": "Decline waiting registrations",
+  "danger.waiting": "Decline waiting",
   "danger.waitingHelp":
     "Decline every pending and waitlisted registration. Each person is notified.",
   "danger.waitingBody":
@@ -2316,7 +2318,7 @@ export const en = {
   "managePeople.removeSelfTitle": "Remove yourself?",
   "managePeople.removeSelfBody": "You lose access to this event.",
   "managePeople.removeBody": "{name} loses access to this event. Their team and submissions stay.",
-  "managePeople.removeButton": "Remove from event...",
+  "managePeople.removeButton": "Kick...",
   "managePeople.invitedHelp":
     "{count, plural, one {# participant has} other {# participants have}} not signed in yet. Once they sign in, they'll join {event} automatically",
   "managePeople.invitedAgo": "Invited",
