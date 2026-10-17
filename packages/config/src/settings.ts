@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { layoutProblem } from "@bogey/utils/email-layout";
+import { en, type MessageKey } from "./messages.ts";
 import { SIGN_IN_PROVIDER_KEYS } from "./sign-in.ts";
 
 export { DEFAULT_EMAIL_TEMPLATES, type EmailTemplateKey } from "./email.ts";
+
+const say = (key: MessageKey): string => en[key];
 
 export type SettingScope = "instance" | "org" | "event";
 
@@ -276,10 +279,10 @@ export const settingsRegistry = {
       accent: hex.optional().describe("Accent color"),
     }),
     fields: {
-      name: { label: "Name" },
+      name: { label: say("setting.branding.name") },
       shortName: {
-        label: "Short name",
-        description: "Used where space is tight, like breadcrumbs.",
+        label: say("setting.branding.shortName"),
+        description: say("setting.branding.shortName.help"),
       },
     },
   }),
@@ -311,41 +314,39 @@ export const settingsRegistry = {
     }),
     fields: {
       capacity: {
-        label: "Participant limit",
-        description:
-          "Once this many participants are approved, new registrations join the waitlist. 0 has no limit.",
+        label: say("setting.registration.capacity"),
+        description: say("setting.registration.capacity.help"),
         placeholder: "0",
       },
       autoPromote: {
-        label: "Move people up the waitlist",
-        description:
-          "When someone withdraws or is declined, the person waiting longest is approved.",
+        label: say("setting.registration.autoPromote"),
+        description: say("setting.registration.autoPromote.help"),
       },
       signup: {
-        label: "Who can create an account",
+        label: say("setting.registration.signup"),
         options: [
-          { value: "open", label: "Anyone" },
-          { value: "invite", label: "People invited or imported to an event" },
-          { value: "closed", label: "No one new" },
+          { value: "open", label: say("setting.registration.signup.open") },
+          { value: "invite", label: say("setting.registration.signup.invite") },
+          { value: "closed", label: say("setting.registration.signup.closed") },
         ],
       },
       mode: {
-        label: "Who can join an event",
-        description: "Applies while registration is open. Invite links work in every mode.",
+        label: say("setting.registration.mode"),
+        description: say("setting.registration.mode.help"),
         options: [
           {
             value: "open",
-            label: "Anyone can join",
+            label: say("setting.registration.mode.open"),
             description: "Registrations are approved at once",
           },
           {
             value: "review",
-            label: "Organizers approve",
+            label: say("setting.registration.mode.review"),
             description: "Each registration waits for review",
           },
           {
             value: "invite",
-            label: "Invite only",
+            label: say("setting.registration.mode.invite"),
             description: "Only invite links and invited people",
           },
         ],
@@ -391,9 +392,8 @@ export const settingsRegistry = {
     }),
     fields: {
       appUrl: {
-        label: "App address",
-        description:
-          "The address the database calls to send Bogey's own email (registrations, invitations, results). Without it, queued email waits.",
+        label: say("setting.tenancy.appUrl"),
+        description: say("setting.tenancy.appUrl.help"),
         placeholder: "https://hacks.example.com",
       },
     },
@@ -428,24 +428,20 @@ export const settingsRegistry = {
     }),
     fields: {
       portfolios: {
-        label: "Public pages",
-        description:
-          "People can create a profile in Account settings at /@handle to display their projects, awards, and the events they came to.",
+        label: say("setting.accounts.portfolios"),
+        description: say("setting.accounts.portfolios.help"),
       },
       deletionRequests: {
-        label: "Deletion requests",
-        description:
-          "People can ask for their account to be deleted from Account settings. Requests wait for an admin under Deletions.",
+        label: say("setting.accounts.deletionRequests"),
+        description: say("setting.accounts.deletionRequests.help"),
       },
       deviceSignOut: {
-        label: "Sign out other devices",
-        description:
-          "People can sign out one of their other devices, or all of them, from Account > Security. Set security.deviceSignOut in bogey.config.ts.",
+        label: say("setting.accounts.deviceSignOut"),
+        description: say("setting.accounts.deviceSignOut.help"),
       },
       requireAdminMfa: {
-        label: "Two-factor for instance admins",
-        description:
-          "Instance admins must verify an authenticator app code each session before being granted access to the database. Turn off from the CLI with bogey mfa off!",
+        label: say("setting.accounts.requireAdminMfa"),
+        description: say("setting.accounts.requireAdminMfa.help"),
       },
     },
   }),
@@ -471,8 +467,8 @@ export const settingsRegistry = {
     }),
     fields: {
       retentionDays: {
-        label: "Keep audit entries for (days)",
-        description: "Older entries are deleted each night (minimum 30 days to prevent tampering).",
+        label: say("setting.audit.retentionDays"),
+        description: say("setting.audit.retentionDays.help"),
       },
     },
   }),
@@ -529,26 +525,26 @@ export const settingsRegistry = {
     }),
     fields: {
       clientIpHeader: {
-        label: "Visitor IP comes from",
+        label: say("setting.network.clientIpHeader"),
         options: [
           {
             value: "x-forwarded-for",
-            label: "X-Forwarded-For",
+            label: say("setting.network.clientIpHeader.x-forwarded-for"),
             description: "Self-hosted Supabase behind your own proxies",
           },
           {
             value: "cf-connecting-ip",
-            label: "CF-Connecting-IP",
+            label: say("setting.network.clientIpHeader.cf-connecting-ip"),
             description: "Behind Cloudflare",
           },
           {
             value: "x-real-ip",
-            label: "X-Real-IP",
+            label: say("setting.network.clientIpHeader.x-real-ip"),
             description: "Only if your proxy overwrites it",
           },
         ],
       },
-      trustedHops: { label: "Proxies in front of Supabase" },
+      trustedHops: { label: say("setting.network.trustedHops") },
     },
   }),
   seo: namespace({
@@ -566,13 +562,12 @@ export const settingsRegistry = {
     }),
     fields: {
       indexing: {
-        label: "Show in search engines",
-        description:
-          "Public pages like sign-in, join links and project galleries. Signed-in pages are never listed.",
+        label: say("setting.seo.indexing"),
+        description: say("setting.seo.indexing.help"),
       },
       description: {
-        label: "Description",
-        description: "Shown under the name in search results and link previews.",
+        label: say("setting.seo.description"),
+        description: say("setting.seo.description.help"),
         placeholder: "Hackathons and competitions, run on Bogey.",
       },
     },
@@ -632,15 +627,21 @@ export const settingsRegistry = {
         .describe("Most open invite links one organization can have"),
     }),
     fields: {
-      eventsPerOrg: { label: "Events per organization", placeholder: "No limit" },
-      adminsPerOrg: { label: "Owners and admins per organization", placeholder: "No limit" },
-      participantsPerEvent: { label: "Participants per event", placeholder: "No limit" },
-      emailsPerDay: { label: "Emails per organization per day", placeholder: "No limit" },
-      storageMbPerOrg: { label: "Storage per organization (MB)", placeholder: "No limit" },
-      maxUploadMb: { label: "Largest upload (MB)", placeholder: "No limit" },
-      customDomainsPerOrg: { label: "Hostnames per organization", placeholder: "No limit" },
+      eventsPerOrg: { label: say("setting.limits.eventsPerOrg"), placeholder: "No limit" },
+      adminsPerOrg: { label: say("setting.limits.adminsPerOrg"), placeholder: "No limit" },
+      participantsPerEvent: {
+        label: say("setting.limits.participantsPerEvent"),
+        placeholder: "No limit",
+      },
+      emailsPerDay: { label: say("setting.limits.emailsPerDay"), placeholder: "No limit" },
+      storageMbPerOrg: { label: say("setting.limits.storageMbPerOrg"), placeholder: "No limit" },
+      maxUploadMb: { label: say("setting.limits.maxUploadMb"), placeholder: "No limit" },
+      customDomainsPerOrg: {
+        label: say("setting.limits.customDomainsPerOrg"),
+        placeholder: "No limit",
+      },
       pendingInvitesPerOrg: {
-        label: "Open invite links per organization",
+        label: say("setting.limits.pendingInvitesPerOrg"),
         placeholder: "No limit",
       },
     },
@@ -678,43 +679,40 @@ export const settingsRegistry = {
     }),
     fields: {
       reminderHours: {
-        label: "Remind teams with a draft (hours before)",
-        description: "Teams that only have an unsubmitted draft get one reminder. 0 sends none.",
+        label: say("setting.submissions.reminderHours"),
+        description: say("setting.submissions.reminderHours.help"),
         placeholder: "24",
       },
       maxTracks: {
-        label: "Most prizes a team can enter",
-        description:
-          "Teams choose prizes on their submission. Organizers can always place entries.",
+        label: say("setting.submissions.maxTracks"),
+        description: say("setting.submissions.maxTracks.help"),
         placeholder: "Any number",
       },
       deletion: {
-        label: "Who can delete a submission",
-        description: "Organizers can always delete from Submissions.",
+        label: say("setting.submissions.deletion"),
+        description: say("setting.submissions.deletion.help"),
         options: [
           {
             value: "allow",
-            label: "Teams can delete their own",
+            label: say("setting.submissions.deletion.allow"),
           },
           {
             value: "request",
-            label: "Teams can ask organizers",
+            label: say("setting.submissions.deletion.request"),
           },
           {
             value: "none",
-            label: "Organizers only",
+            label: say("setting.submissions.deletion.none"),
           },
         ],
       },
       publicToggle: {
-        label: "Teams choose gallery visibility",
-        description:
-          "Off keeps every submission as it is: teams see the gallery switch but can't change it.",
+        label: say("setting.submissions.publicToggle"),
+        description: say("setting.submissions.publicToggle.help"),
       },
       autoSubmit: {
-        label: "Submit complete drafts at close",
-        description:
-          "Drafts with every required item filled in are submitted when the form closes.",
+        label: say("setting.submissions.autoSubmit"),
+        description: say("setting.submissions.autoSubmit.help"),
       },
     },
   }),
@@ -744,32 +742,30 @@ export const settingsRegistry = {
     }),
     fields: {
       countdownLabel: {
-        label: "Countdown label",
+        label: say("setting.schedule.countdownLabel"),
         placeholder: "Submissions close in",
-        description:
-          'Shown before the time left in the header while submissions are open, on tablets and computers. Phones show only the time. Empty uses "Submissions close in".',
+        description: say("setting.schedule.countdownLabel.help"),
       },
       showEventTimezone: {
-        label: "Times in the event's timezone",
-        description:
-          'For in-person events: everyone sees times where the event is, like "8:00 PM EDT". Off, each person sees their own time.',
+        label: say("setting.schedule.showEventTimezone"),
+        description: say("setting.schedule.showEventTimezone.help"),
       },
       display: {
-        label: "Windows participants see",
+        label: say("setting.schedule.display"),
         options: [
           {
             value: "list",
-            label: "What's open and next",
+            label: say("setting.schedule.display.list"),
             description: "On the event home, and their dates on the agenda",
           },
           {
             value: "timeline",
-            label: "Full timeline",
+            label: say("setting.schedule.display.timeline"),
             description: "Every window on a time axis, and their dates on the agenda",
           },
           {
             value: "hidden",
-            label: "Don't show",
+            label: say("setting.schedule.display.hidden"),
             description: "Not on the event home or the agenda",
           },
         ],
@@ -798,8 +794,8 @@ export const settingsRegistry = {
     }),
     fields: {
       reminderMinutes: {
-        label: "Remind people (minutes before)",
-        description: "Sent for sessions people signed up for. 0 sends none.",
+        label: say("setting.agenda.reminderMinutes"),
+        description: say("setting.agenda.reminderMinutes.help"),
         placeholder: "30",
       },
     },
@@ -826,9 +822,8 @@ export const settingsRegistry = {
     }),
     fields: {
       enabled: {
-        label: "Identity setup",
-        description:
-          "Welcome new participants with Initial Setup. The first time a participant opens the event, they confirm their name (it starts as the first part of their email address) and set up a team before anything else.",
+        label: say("setting.identity.enabled"),
+        description: say("setting.identity.enabled.help"),
       },
     },
   }),
@@ -848,25 +843,24 @@ export const settingsRegistry = {
     }),
     fields: {
       enabled: {
-        label: "Messages",
-        description: "Turns messaging on for the event. Choose who can talk to whom below.",
+        label: say("setting.chat.enabled"),
+        description: say("setting.chat.enabled.help"),
       },
       staff: {
-        label: "Organizers and judges",
-        description: "Organizers and judges can message each other.",
+        label: say("setting.chat.staff"),
+        description: say("setting.chat.staff.help"),
       },
       participants: {
-        label: "Participants and organizers",
-        description: "Participants can message organizers.",
+        label: say("setting.chat.participants"),
+        description: say("setting.chat.participants.help"),
       },
       judges: {
-        label: "Participants and judges",
-        description:
-          "Participants can message judges, and judges can start a conversation with a team (unless judging is blind). Organizers see these conversations.",
+        label: say("setting.chat.judges"),
+        description: say("setting.chat.judges.help"),
       },
       copyTeam: {
-        label: "Include the whole team",
-        description: "Teammates see and can reply to each other's conversations.",
+        label: say("setting.chat.copyTeam"),
+        description: say("setting.chat.copyTeam.help"),
       },
     },
   }),
@@ -884,9 +878,8 @@ export const settingsRegistry = {
     }),
     fields: {
       enabled: {
-        label: "Certificates",
-        description:
-          "Lets participants, judges and staff claim a certificate from the event's Certificates page. Organizers can also issue them all at once.",
+        label: say("setting.certificates.enabled"),
+        description: say("setting.certificates.enabled.help"),
       },
     },
   }),
@@ -911,26 +904,24 @@ export const settingsRegistry = {
     }),
     fields: {
       toasts: {
-        label: "Show notifications",
-        description:
-          "People with the event open see a new announcement pop up in the corner, wherever they are in the event.",
+        label: say("setting.announcements.toasts"),
+        description: say("setting.announcements.toasts.help"),
       },
       urgentStays: {
-        label: "Urgents persist",
-        description: "Urgent announcements stay on screen until dismissed, instead of fading.",
+        label: say("setting.announcements.urgentStays"),
+        description: say("setting.announcements.urgentStays.help"),
       },
       postAs: {
-        label: "Posted as",
-        description: "The default in the composer. Organizers always see who posted.",
+        label: say("setting.announcements.postAs"),
+        description: say("setting.announcements.postAs.help"),
         options: [
-          { value: "author", label: "The organizer who posts it" },
-          { value: "organizers", label: "The organizers, without a name" },
+          { value: "author", label: say("setting.announcements.postAs.author") },
+          { value: "organizers", label: say("setting.announcements.postAs.organizers") },
         ],
       },
       judges: {
-        label: "Judges can post",
-        description:
-          "Judges can post announcements from Messages, always under their own name. Only organizers can delete them.",
+        label: say("setting.announcements.judges"),
+        description: say("setting.announcements.judges.help"),
       },
     },
   }),
@@ -973,45 +964,40 @@ export const settingsRegistry = {
     }),
     fields: {
       switching: {
-        label: "Let people switch teams",
-        description:
-          "Participants can leave their team and join or start another while teams are open. Turn this off to stop people from making endless teams; organizers can still move anyone in Manage > Teams.",
+        label: say("setting.teams.switching"),
+        description: say("setting.teams.switching.help"),
       },
       leaveLimit: {
-        label: "Times someone can leave a team",
-        description:
-          "Stops people from leaving and starting team after team. Disbanding counts too. 0 means no limit; organizers can still move anyone.",
+        label: say("setting.teams.leaveLimit"),
+        description: say("setting.teams.leaveLimit.help"),
         placeholder: "0",
       },
       creation: {
-        label: "Who can start a team",
+        label: say("setting.teams.creation"),
         options: [
-          { value: "participants", label: "Participants" },
+          { value: "participants", label: say("setting.teams.creation.participants") },
           {
             value: "organizers",
-            label: "Organizers only",
+            label: say("setting.teams.creation.organizers"),
             description: "Participants join the teams you set up, with their codes",
           },
         ],
       },
       askOrganizer: {
-        label: "Point to Messages when switching is off",
-        description:
-          "Someone on the wrong team is offered a link to message the organizers, as long as Messages lets participants write to them. Otherwise they're just told to ask an organizer.",
+        label: say("setting.teams.askOrganizer"),
+        description: say("setting.teams.askOrganizer.help"),
       },
       board: {
-        label: "Team board",
-        description:
-          "People without a team say what they're good at, teams say what they need, and they ask or invite each other on the Team page. Organizers can match everyone left over in Manage > Teams either way.",
+        label: say("setting.teams.board"),
+        description: say("setting.teams.board.help"),
       },
       disband: {
-        label: "Who can disband a team",
-        description:
-          "Disbanding removes everyone from the team and deletes it, while teams are open. Organizers can always remove teams.",
+        label: say("setting.teams.disband"),
+        description: say("setting.teams.disband.help"),
         options: [
-          { value: "captain", label: "Its captain" },
-          { value: "members", label: "Anyone on it" },
-          { value: "none", label: "Organizers only" },
+          { value: "captain", label: say("setting.teams.disband.captain") },
+          { value: "members", label: say("setting.teams.disband.members") },
+          { value: "none", label: say("setting.teams.disband.none") },
         ],
       },
     },
@@ -1028,9 +1014,8 @@ export const settingsRegistry = {
     }),
     fields: {
       askOnJoin: {
-        label: "Ask when they join",
-        description:
-          "Participants without a division pick one the first time they open the event. Turn off when divisions come from your roster, or you'll assign them.",
+        label: say("setting.divisions.askOnJoin"),
+        description: say("setting.divisions.askOnJoin.help"),
       },
     },
   }),
@@ -1048,24 +1033,36 @@ export const settingsRegistry = {
     }),
     fields: {
       format: {
-        label: "Format",
+        label: say("setting.venue.format"),
         options: [
-          { value: "in-person", label: "In person", description: "Everyone is at a venue" },
-          { value: "online", label: "Online", description: "Everyone takes part remotely" },
-          { value: "hybrid", label: "Hybrid", description: "At a venue, and remotely too" },
+          {
+            value: "in-person",
+            label: say("setting.venue.format.in-person"),
+            description: "Everyone is at a venue",
+          },
+          {
+            value: "online",
+            label: say("setting.venue.format.online"),
+            description: "Everyone takes part remotely",
+          },
+          {
+            value: "hybrid",
+            label: say("setting.venue.format.hybrid"),
+            description: "At a venue, and remotely too",
+          },
         ],
       },
       mapUrl: {
-        label: "Directions link",
-        description: "Shown beside the location (in Details) on the event home.",
+        label: say("setting.venue.mapUrl"),
+        description: say("setting.venue.mapUrl.help"),
         placeholder: "https://maps.app.goo.gl/...",
       },
       onlineUrl: {
-        label: "Online link",
-        description: "Shown to members only, never on public pages.",
+        label: say("setting.venue.onlineUrl"),
+        description: say("setting.venue.onlineUrl.help"),
         placeholder: "https://discord.gg/...",
       },
-      onlineLabel: { label: "Online link name", placeholder: "Discord" },
+      onlineLabel: { label: say("setting.venue.onlineLabel"), placeholder: "Discord" },
     },
   }),
   privacy: namespace({
@@ -1088,27 +1085,38 @@ export const settingsRegistry = {
     }),
     fields: {
       about: {
-        label: "About",
-        description:
-          "The event's About text. For text everyone sees, add a Text block to the homepage instead.",
+        label: say("setting.privacy.about"),
+        description: say("setting.privacy.about.help"),
         options: [
-          { value: "members", label: "Members only", description: "Once they're approved" },
-          { value: "public", label: "Everyone who can see the event" },
+          {
+            value: "members",
+            label: say("setting.privacy.about.members"),
+            description: "Once they're approved",
+          },
+          { value: "public", label: say("setting.privacy.about.public") },
         ],
       },
       agenda: {
-        label: "Agenda",
-        description: "Sessions, times, rooms and hosts.",
+        label: say("setting.privacy.agenda"),
+        description: say("setting.privacy.agenda.help"),
         options: [
-          { value: "members", label: "Members only", description: "Once they're approved" },
-          { value: "public", label: "Everyone who can see the event" },
+          {
+            value: "members",
+            label: say("setting.privacy.agenda.members"),
+            description: "Once they're approved",
+          },
+          { value: "public", label: say("setting.privacy.agenda.public") },
         ],
       },
       tracks: {
-        label: "Tracks and prizes",
+        label: say("setting.privacy.tracks"),
         options: [
-          { value: "public", label: "Everyone who can see the event" },
-          { value: "members", label: "Members only", description: "Once they're approved" },
+          { value: "public", label: say("setting.privacy.tracks.public") },
+          {
+            value: "members",
+            label: say("setting.privacy.tracks.members"),
+            description: "Once they're approved",
+          },
         ],
       },
     },
@@ -1162,25 +1170,23 @@ export const settingsRegistry = {
         .describe("Participants can't change teams, submit or vote until they've checked in"),
     }),
     fields: {
-      confirmName: { label: "Confirm names at the desk" },
+      confirmName: { label: say("setting.checkin.confirmName") },
       allowWalkIns: {
-        label: "Take walk-ins",
-        description: "Staff can add someone by email at the desk.",
+        label: say("setting.checkin.allowWalkIns"),
+        description: say("setting.checkin.allowWalkIns.help"),
       },
       badgeEmailHours: {
-        label: "Email the check-in code (hours before)",
-        description: "0 doesn't email it.",
+        label: say("setting.checkin.badgeEmailHours"),
+        description: say("setting.checkin.badgeEmailHours.help"),
         placeholder: "24",
       },
       selfCheckIn: {
-        label: "Self check-in",
-        description:
-          "People enter the venue code, which changes every ten minutes and is shown on the check-in screen, while the Check-in window is open.",
+        label: say("setting.checkin.selfCheckIn"),
+        description: say("setting.checkin.selfCheckIn.help"),
       },
       requiredToCompete: {
-        label: "Check in before competing",
-        description:
-          "Best for in-person events. Participants who haven't checked in can't change teams, submit or vote.",
+        label: say("setting.checkin.requiredToCompete"),
+        description: say("setting.checkin.requiredToCompete.help"),
       },
     },
   }),
@@ -1217,29 +1223,28 @@ export const settingsRegistry = {
     }),
     fields: {
       enabled: {
-        label: "Popular vote",
-        description:
-          "Opens with the Popular vote window. Votes become a popular-vote award proposal.",
+        label: say("setting.voting.enabled"),
+        description: say("setting.voting.enabled.help"),
       },
       who: {
-        label: "Who can vote",
+        label: say("setting.voting.who"),
         options: [
-          { value: "participants", label: "Participants" },
+          { value: "participants", label: say("setting.voting.who.participants") },
           {
             value: "members",
-            label: "Everyone in the event",
+            label: say("setting.voting.who.members"),
             description: "Judges, staff and participants",
           },
           {
             value: "signedIn",
-            label: "Anyone signed in",
+            label: say("setting.voting.who.signedIn"),
             description: "Needs the public gallery",
           },
         ],
       },
-      votesPerPerson: { label: "Votes per person" },
-      ownTeam: { label: "Teams can vote for themselves" },
-      showCounts: { label: "Show counts while voting" },
+      votesPerPerson: { label: say("setting.voting.votesPerPerson") },
+      ownTeam: { label: say("setting.voting.ownTeam") },
+      showCounts: { label: say("setting.voting.showCounts") },
     },
   }),
   judging: namespace({
@@ -1305,88 +1310,88 @@ export const settingsRegistry = {
         .describe("Results can't be published while a project is flagged"),
     }),
     fields: {
-      blind: { label: "Blind judging" },
+      blind: { label: say("setting.judging.blind") },
       normalize: {
-        label: "Even out harsh and generous judges",
-        description:
-          "Scores are compared within each judge before they are averaged, so no one judge decides the order. The preview shows both rankings.",
+        label: say("setting.judging.normalize"),
+        description: say("setting.judging.normalize.help"),
         options: [
-          { value: "none", label: "No", description: "Use scores as given" },
+          {
+            value: "none",
+            label: say("setting.judging.normalize.none"),
+            description: "Use scores as given",
+          },
           {
             value: "minmax",
-            label: "By each judge's range",
+            label: say("setting.judging.normalize.minmax"),
             description: "Their lowest to their highest",
           },
           {
             value: "zscore",
-            label: "By standard deviations",
+            label: say("setting.judging.normalize.zscore"),
             description: "Distance from their average",
           },
         ],
       },
       minJudges: {
-        label: "Fewest judges per entry",
-        description: "The results preview warns about entries with fewer before you publish.",
+        label: say("setting.judging.minJudges"),
+        description: say("setting.judging.minJudges.help"),
       },
       shareWithTeams: {
-        label: "What teams see from judges",
-        description: "After results are published, on their submission page.",
+        label: say("setting.judging.shareWithTeams"),
+        description: say("setting.judging.shareWithTeams.help"),
         options: [
-          { value: "none", label: "Nothing" },
-          { value: "feedback", label: "Notes judges chose to share" },
+          { value: "none", label: say("setting.judging.shareWithTeams.none") },
+          { value: "feedback", label: say("setting.judging.shareWithTeams.feedback") },
           {
             value: "scores",
-            label: "Notes and average scores",
+            label: say("setting.judging.shareWithTeams.scores"),
             description: "Per criterion, without who gave them",
           },
         ],
       },
       showRankings: {
-        label: "Who sees the ranking",
-        description: "Awards are public either way. Set this before you publish.",
+        label: say("setting.judging.showRankings"),
+        description: say("setting.judging.showRankings.help"),
         options: [
-          { value: "organizers", label: "Organizers only" },
-          { value: "everyone", label: "Everyone" },
+          { value: "organizers", label: say("setting.judging.showRankings.organizers") },
+          { value: "everyone", label: say("setting.judging.showRankings.everyone") },
         ],
       },
       judgeRubric: {
-        label: "Judges pick the rubric",
-        description:
-          "A judge can pick or change a project's rubric on its score sheet. One pick per project, shared by all its judges.",
+        label: say("setting.judging.judgeRubric"),
+        description: say("setting.judging.judgeRubric.help"),
       },
       teamRubric: {
-        label: "Teams pick their rubric",
-        description: "Teams choose a rubric on their submission while they can still edit it.",
+        label: say("setting.judging.teamRubric"),
+        description: say("setting.judging.teamRubric.help"),
       },
       teamRubricShows: {
-        label: "What teams see",
+        label: say("setting.judging.teamRubricShows"),
         options: [
-          { value: "name", label: "Rubric names" },
-          { value: "criteria", label: "Names and their criteria" },
+          { value: "name", label: say("setting.judging.teamRubricShows.name") },
+          { value: "criteria", label: say("setting.judging.teamRubricShows.criteria") },
         ],
       },
       deliberation: {
-        label: "Who deliberates",
-        description:
-          "Judges can flag a project to discuss it. While it's flagged, the judges deliberating see each other's scores and notes on it, then resolve it.",
+        label: say("setting.judging.deliberation"),
+        description: say("setting.judging.deliberation.help"),
         options: [
-          { value: "off", label: "Nobody", description: "No flags" },
+          { value: "off", label: say("setting.judging.deliberation.off"), description: "No flags" },
           {
             value: "assigned",
-            label: "Its judges",
+            label: say("setting.judging.deliberation.assigned"),
             description: "Judges assigned to it or who scored it",
           },
-          { value: "all", label: "Every judge" },
+          { value: "all", label: say("setting.judging.deliberation.all") },
         ],
       },
       flagGap: {
-        label: "Flag on disagreement",
-        description:
-          "Points out of 100 judges' totals for one project may differ by before it's flagged on its own. 0 turns it off.",
+        label: say("setting.judging.flagGap"),
+        description: say("setting.judging.flagGap.help"),
       },
       holdFlagged: {
-        label: "Hold results while flagged",
-        description: "Publishing waits until every flagged project is resolved.",
+        label: say("setting.judging.holdFlagged"),
+        description: say("setting.judging.holdFlagged.help"),
       },
     },
   }),
