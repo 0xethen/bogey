@@ -716,7 +716,7 @@ export const en = {
   "kiosk.registeredHelp":
     "You're registered. Sign in with your email, then show your badge at the desk to check in.",
   "kiosk.next": "Next person",
-  "kiosk.offTitle": "This event doesn't take walk-ins",
+  "kiosk.offTitle": "This event doesn't accept walk-ins",
   "kiosk.offBody": "Turn on {setting} to use the kiosk.",
   "badges.title": "Badges",
   "badges.toPrint": "{count} to print for {event}.",
@@ -800,7 +800,7 @@ export const en = {
   "path.about": "Details, under About",
   "path.autoPromote": "Registration > Move people up the waitlist",
   "path.judgingNormalize": "Judging settings",
-  "path.walkIns": "Registration > Take walk-ins",
+  "path.walkIns": "Registration > Accept walk-ins",
   "event.missingPublic": "Some pages of the event are missing while its organizers sort it out.",
   "event.wrapperBroken":
     "The page is shown without it. Turn it off in {plugins} if this keeps happening.",
@@ -3343,7 +3343,7 @@ export const en = {
   "setting.privacy.tracks.public": "Everyone who can see the event",
   "setting.privacy.tracks.members": "Members only",
   "setting.checkin.confirmName": "Confirm names at the desk",
-  "setting.checkin.allowWalkIns": "Take walk-ins",
+  "setting.checkin.allowWalkIns": "Accept walk-ins",
   "setting.checkin.allowWalkIns.help": "Staff can add someone by email at the desk.",
   "setting.checkin.badgeEmailHours": "Email the check-in code (hours before)",
   "setting.checkin.badgeEmailHours.help": "0 doesn't email it.",

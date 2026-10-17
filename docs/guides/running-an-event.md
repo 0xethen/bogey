@@ -225,7 +225,7 @@ code on a participant's badge with the camera, type the eight-character code und
 by name or email; each person is checked in with who did it and how, and a mistake is undone
 with one click. The tab shows counts by role and division, and a venue code for **Self
 check-in** (it changes every ten minutes; put it on a screen and people enter it on the event
-home). With **Take walk-ins** on, staff can register someone who isn't on the roster.
+home). With **Accept walk-ins** on, staff can register someone who isn't on the roster.
 
 Participants see their badge on the event home while the event is on, and are emailed their code
 a day before (**Check-in** settings under Manage → Registration). **Manage → People → Print
