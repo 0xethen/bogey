@@ -10,6 +10,7 @@
     "./components/chat/*": "./src/components/chat/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/form": "./src/lib/form.tsx",
+    "./lib/highlighter": "./src/lib/highlighter.tsx",
     "./lib/markdown-preferences": "./src/lib/markdown-preferences.tsx",
     "./lib/time-format": "./src/lib/time-format.tsx",
     "./lib/locale": "./src/lib/locale.tsx"
