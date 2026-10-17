@@ -62,6 +62,7 @@ import { Route as GallerySlugProjectIdRouteImport } from './routes/gallery/$slug
 import { Route as GallerySlugPresentRouteImport } from './routes/gallery/$slug/present'
 import { Route as XKeySplatRouteImport } from './routes/x/$key/$'
 import { Route as AuthedAdminOrgsIndexRouteImport } from './routes/_authed/admin/orgs/index'
+import { Route as AuthedAdminOrgsSlugRouteRouteImport } from './routes/_authed/admin/orgs/$slug/route'
 import { Route as AuthedAdminOrgsNewRouteImport } from './routes/_authed/admin/orgs/new'
 import { Route as AuthedAdminSettingsIndexRouteImport } from './routes/_authed/admin/settings/index'
 import { Route as AuthedAdminSettingsAccountsRouteImport } from './routes/_authed/admin/settings/accounts'
@@ -98,6 +99,8 @@ import { Route as ApiV1EventsIndexRouteImport } from './routes/api/v1/events/ind
 import { Route as ApiXKeyIndexRouteImport } from './routes/api/x/$key/index'
 import { Route as ApiXKeySplatRouteImport } from './routes/api/x/$key/$'
 import { Route as AuthedAccountXKeySplatRouteImport } from './routes/_authed/account/x/$key/$'
+import { Route as AuthedAdminOrgsSlugIndexRouteImport } from './routes/_authed/admin/orgs/$slug/index'
+import { Route as AuthedAdminOrgsSlugLimitsRouteImport } from './routes/_authed/admin/orgs/$slug/limits'
 import { Route as AuthedAdminXKeySplatRouteImport } from './routes/_authed/admin/x/$key/$'
 import { Route as AuthedEventsSlugAgendaIndexRouteImport } from './routes/_authed/events/$slug/agenda/index'
 import { Route as AuthedEventsSlugAgendaSessionIdRouteImport } from './routes/_authed/events/$slug/agenda/$sessionId'
@@ -410,6 +413,12 @@ const AuthedAdminOrgsIndexRoute = AuthedAdminOrgsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthedAdminOrgsRouteRoute,
 } as any)
+const AuthedAdminOrgsSlugRouteRoute =
+  AuthedAdminOrgsSlugRouteRouteImport.update({
+    id: '/$slug',
+    path: '/$slug',
+    getParentRoute: () => AuthedAdminOrgsRouteRoute,
+  } as any)
 const AuthedAdminOrgsNewRoute = AuthedAdminOrgsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -609,6 +618,18 @@ const AuthedAccountXKeySplatRoute = AuthedAccountXKeySplatRouteImport.update({
   path: '/x/$key/$',
   getParentRoute: () => AuthedAccountRouteRoute,
 } as any)
+const AuthedAdminOrgsSlugIndexRoute =
+  AuthedAdminOrgsSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthedAdminOrgsSlugRouteRoute,
+  } as any)
+const AuthedAdminOrgsSlugLimitsRoute =
+  AuthedAdminOrgsSlugLimitsRouteImport.update({
+    id: '/limits',
+    path: '/limits',
+    getParentRoute: () => AuthedAdminOrgsSlugRouteRoute,
+  } as any)
 const AuthedAdminXKeySplatRoute = AuthedAdminXKeySplatRouteImport.update({
   id: '/x/$key/$',
   path: '/x/$key/$',
@@ -912,6 +933,7 @@ export interface FileRoutesByFullPath {
   '/events/': typeof AuthedEventsIndexRoute
   '/org/': typeof AuthedOrgIndexRoute
   '/gallery/$slug/': typeof GallerySlugIndexRoute
+  '/admin/orgs/$slug': typeof AuthedAdminOrgsSlugRouteRouteWithChildren
   '/events/$slug/agenda': typeof AuthedEventsSlugAgendaRouteRouteWithChildren
   '/events/$slug/judging': typeof AuthedEventsSlugJudgingRouteRouteWithChildren
   '/events/$slug/manage': typeof AuthedEventsSlugManageRouteRouteWithChildren
@@ -949,6 +971,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/events/': typeof ApiV1EventsIndexRoute
   '/api/x/$key/': typeof ApiXKeyIndexRoute
   '/account/x/$key/$': typeof AuthedAccountXKeySplatRoute
+  '/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
@@ -984,6 +1007,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/events/$slug/gallery': typeof ApiV1EventsSlugGalleryRoute
   '/api/v1/events/$slug/hackathon.json': typeof ApiV1EventsSlugHackathonDotjsonRoute
   '/api/v1/events/$slug/results': typeof ApiV1EventsSlugResultsRoute
+  '/admin/orgs/$slug/': typeof AuthedAdminOrgsSlugIndexRoute
   '/events/$slug/agenda/': typeof AuthedEventsSlugAgendaIndexRoute
   '/events/$slug/judging/': typeof AuthedEventsSlugJudgingIndexRoute
   '/events/$slug/manage/': typeof AuthedEventsSlugManageIndexRoute
@@ -1069,6 +1093,7 @@ export interface FileRoutesByTo {
   '/api/v1/events': typeof ApiV1EventsIndexRoute
   '/api/x/$key': typeof ApiXKeyIndexRoute
   '/account/x/$key/$': typeof AuthedAccountXKeySplatRoute
+  '/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
@@ -1104,6 +1129,7 @@ export interface FileRoutesByTo {
   '/api/v1/events/$slug/gallery': typeof ApiV1EventsSlugGalleryRoute
   '/api/v1/events/$slug/hackathon.json': typeof ApiV1EventsSlugHackathonDotjsonRoute
   '/api/v1/events/$slug/results': typeof ApiV1EventsSlugResultsRoute
+  '/admin/orgs/$slug': typeof AuthedAdminOrgsSlugIndexRoute
   '/events/$slug/agenda': typeof AuthedEventsSlugAgendaIndexRoute
   '/events/$slug/judging': typeof AuthedEventsSlugJudgingIndexRoute
   '/events/$slug/manage': typeof AuthedEventsSlugManageIndexRoute
@@ -1167,6 +1193,7 @@ export interface FileRoutesById {
   '/_authed/events/': typeof AuthedEventsIndexRoute
   '/_authed/org/': typeof AuthedOrgIndexRoute
   '/gallery/$slug/': typeof GallerySlugIndexRoute
+  '/_authed/admin/orgs/$slug': typeof AuthedAdminOrgsSlugRouteRouteWithChildren
   '/_authed/events/$slug/agenda': typeof AuthedEventsSlugAgendaRouteRouteWithChildren
   '/_authed/events/$slug/judging': typeof AuthedEventsSlugJudgingRouteRouteWithChildren
   '/_authed/events/$slug/manage': typeof AuthedEventsSlugManageRouteRouteWithChildren
@@ -1204,6 +1231,7 @@ export interface FileRoutesById {
   '/api/v1/events/': typeof ApiV1EventsIndexRoute
   '/api/x/$key/': typeof ApiXKeyIndexRoute
   '/_authed/account/x/$key/$': typeof AuthedAccountXKeySplatRoute
+  '/_authed/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/_authed/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/_authed/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdRoute
   '/_authed/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
@@ -1239,6 +1267,7 @@ export interface FileRoutesById {
   '/api/v1/events/$slug/gallery': typeof ApiV1EventsSlugGalleryRoute
   '/api/v1/events/$slug/hackathon.json': typeof ApiV1EventsSlugHackathonDotjsonRoute
   '/api/v1/events/$slug/results': typeof ApiV1EventsSlugResultsRoute
+  '/_authed/admin/orgs/$slug/': typeof AuthedAdminOrgsSlugIndexRoute
   '/_authed/events/$slug/agenda/': typeof AuthedEventsSlugAgendaIndexRoute
   '/_authed/events/$slug/judging/': typeof AuthedEventsSlugJudgingIndexRoute
   '/_authed/events/$slug/manage/': typeof AuthedEventsSlugManageIndexRoute
@@ -1301,6 +1330,7 @@ export interface FileRouteTypes {
     | '/events/'
     | '/org/'
     | '/gallery/$slug/'
+    | '/admin/orgs/$slug'
     | '/events/$slug/agenda'
     | '/events/$slug/judging'
     | '/events/$slug/manage'
@@ -1338,6 +1368,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/'
     | '/api/x/$key/'
     | '/account/x/$key/$'
+    | '/admin/orgs/$slug/limits'
     | '/admin/x/$key/$'
     | '/events/$slug/agenda/$sessionId'
     | '/events/$slug/judging/$submissionId'
@@ -1373,6 +1404,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/$slug/gallery'
     | '/api/v1/events/$slug/hackathon.json'
     | '/api/v1/events/$slug/results'
+    | '/admin/orgs/$slug/'
     | '/events/$slug/agenda/'
     | '/events/$slug/judging/'
     | '/events/$slug/manage/'
@@ -1458,6 +1490,7 @@ export interface FileRouteTypes {
     | '/api/v1/events'
     | '/api/x/$key'
     | '/account/x/$key/$'
+    | '/admin/orgs/$slug/limits'
     | '/admin/x/$key/$'
     | '/events/$slug/agenda/$sessionId'
     | '/events/$slug/judging/$submissionId'
@@ -1493,6 +1526,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/$slug/gallery'
     | '/api/v1/events/$slug/hackathon.json'
     | '/api/v1/events/$slug/results'
+    | '/admin/orgs/$slug'
     | '/events/$slug/agenda'
     | '/events/$slug/judging'
     | '/events/$slug/manage'
@@ -1555,6 +1589,7 @@ export interface FileRouteTypes {
     | '/_authed/events/'
     | '/_authed/org/'
     | '/gallery/$slug/'
+    | '/_authed/admin/orgs/$slug'
     | '/_authed/events/$slug/agenda'
     | '/_authed/events/$slug/judging'
     | '/_authed/events/$slug/manage'
@@ -1592,6 +1627,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/'
     | '/api/x/$key/'
     | '/_authed/account/x/$key/$'
+    | '/_authed/admin/orgs/$slug/limits'
     | '/_authed/admin/x/$key/$'
     | '/_authed/events/$slug/agenda/$sessionId'
     | '/_authed/events/$slug/judging/$submissionId'
@@ -1627,6 +1663,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/$slug/gallery'
     | '/api/v1/events/$slug/hackathon.json'
     | '/api/v1/events/$slug/results'
+    | '/_authed/admin/orgs/$slug/'
     | '/_authed/events/$slug/agenda/'
     | '/_authed/events/$slug/judging/'
     | '/_authed/events/$slug/manage/'
@@ -2042,6 +2079,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedAdminOrgsIndexRouteImport
       parentRoute: typeof AuthedAdminOrgsRouteRoute
     }
+    '/_authed/admin/orgs/$slug': {
+      id: '/_authed/admin/orgs/$slug'
+      path: '/$slug'
+      fullPath: '/admin/orgs/$slug'
+      preLoaderRoute: typeof AuthedAdminOrgsSlugRouteRouteImport
+      parentRoute: typeof AuthedAdminOrgsRouteRoute
+    }
     '/_authed/admin/orgs/new': {
       id: '/_authed/admin/orgs/new'
       path: '/new'
@@ -2293,6 +2337,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/account/x/$key/$'
       preLoaderRoute: typeof AuthedAccountXKeySplatRouteImport
       parentRoute: typeof AuthedAccountRouteRoute
+    }
+    '/_authed/admin/orgs/$slug/': {
+      id: '/_authed/admin/orgs/$slug/'
+      path: '/'
+      fullPath: '/admin/orgs/$slug/'
+      preLoaderRoute: typeof AuthedAdminOrgsSlugIndexRouteImport
+      parentRoute: typeof AuthedAdminOrgsSlugRouteRoute
+    }
+    '/_authed/admin/orgs/$slug/limits': {
+      id: '/_authed/admin/orgs/$slug/limits'
+      path: '/limits'
+      fullPath: '/admin/orgs/$slug/limits'
+      preLoaderRoute: typeof AuthedAdminOrgsSlugLimitsRouteImport
+      parentRoute: typeof AuthedAdminOrgsSlugRouteRoute
     }
     '/_authed/admin/x/$key/$': {
       id: '/_authed/admin/x/$key/$'
@@ -2625,12 +2683,30 @@ const AuthedAccountRouteRouteChildren: AuthedAccountRouteRouteChildren = {
 const AuthedAccountRouteRouteWithChildren =
   AuthedAccountRouteRoute._addFileChildren(AuthedAccountRouteRouteChildren)
 
+interface AuthedAdminOrgsSlugRouteRouteChildren {
+  AuthedAdminOrgsSlugLimitsRoute: typeof AuthedAdminOrgsSlugLimitsRoute
+  AuthedAdminOrgsSlugIndexRoute: typeof AuthedAdminOrgsSlugIndexRoute
+}
+
+const AuthedAdminOrgsSlugRouteRouteChildren: AuthedAdminOrgsSlugRouteRouteChildren =
+  {
+    AuthedAdminOrgsSlugLimitsRoute: AuthedAdminOrgsSlugLimitsRoute,
+    AuthedAdminOrgsSlugIndexRoute: AuthedAdminOrgsSlugIndexRoute,
+  }
+
+const AuthedAdminOrgsSlugRouteRouteWithChildren =
+  AuthedAdminOrgsSlugRouteRoute._addFileChildren(
+    AuthedAdminOrgsSlugRouteRouteChildren,
+  )
+
 interface AuthedAdminOrgsRouteRouteChildren {
+  AuthedAdminOrgsSlugRouteRoute: typeof AuthedAdminOrgsSlugRouteRouteWithChildren
   AuthedAdminOrgsNewRoute: typeof AuthedAdminOrgsNewRoute
   AuthedAdminOrgsIndexRoute: typeof AuthedAdminOrgsIndexRoute
 }
 
 const AuthedAdminOrgsRouteRouteChildren: AuthedAdminOrgsRouteRouteChildren = {
+  AuthedAdminOrgsSlugRouteRoute: AuthedAdminOrgsSlugRouteRouteWithChildren,
   AuthedAdminOrgsNewRoute: AuthedAdminOrgsNewRoute,
   AuthedAdminOrgsIndexRoute: AuthedAdminOrgsIndexRoute,
 }

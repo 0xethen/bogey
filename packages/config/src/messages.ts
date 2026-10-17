@@ -1652,12 +1652,23 @@ export const en = {
   "adminOrgs.ownerHelp": "Someone who has signed in before. Leave empty to own it yourself.",
   "adminOrgs.ownersAdmins": "Owners and admins",
   "adminOrgs.openSite": "Open site",
-  "adminOrgs.addHostname": "Add hostname...",
-  "adminOrgs.limits": "Limits...",
+  "adminOrgs.openSiteOn": "Open on",
+  "adminOrgs.hostnamesButton": "Hostnames...",
+  "adminOrgs.limits": "Limits",
   "adminOrgs.statusButton": "Status...",
-  "adminOrgs.addHostnameTitle": "Add a hostname",
-  "adminOrgs.addHostnameHelp":
-    "Point the hostname's DNS at this instance first. People can then reach {org} there too.",
+  "adminOrgs.restrictButton": "Restrict...",
+  "adminOrgs.hostnamesTitle": "{org}'s hostnames",
+  "adminOrgs.hostnamesHelp":
+    "Where people reach {org}. Point a new hostname's DNS at this instance before adding it.",
+  "adminOrgs.primary": "Primary",
+  "adminOrgs.removeHostname": "Remove",
+  "adminOrgs.removeHostnameOf": "Remove {hostname}",
+  "adminOrgs.removeHostnameTitle": "Remove {hostname}?",
+  "adminOrgs.removeHostnameBody":
+    "People can't reach {org} there anymore, and links that use it stop working.",
+  "adminOrgs.removeHostnameHere":
+    "You're on it now, so this page stops working too. Use another hostname to come back.",
+  "adminOrgs.removeHostnameFailed": "Couldn't remove the hostname",
   "adminOrgs.theOrg": "the organization",
   "adminOrgs.addHostnameButton": "Add hostname",
   "adminOrgs.slugRule": "Lowercase letters, numbers and single dashes",
@@ -1695,9 +1706,8 @@ export const en = {
   "orgLimit.limitOf": "{name} limit",
   "orgLimit.save": "Save limits",
   "orgLimit.loadFailed": "Couldn't load the limits",
-  "orgLimit.title": "{org}'s limits",
   "orgLimit.intro":
-    'Change what this organization may use. "Instance default" follows Instance > Settings.',
+    'Change what this organization may use. "Instance default" follows Instance > Settings > Limits.',
   "adminPeople.intro":
     "Everyone with an account on this instance. Platform admins manage every organization and the instance's settings, but aren't org members unless added separately.",
   "adminPeople.failed": "Couldn't change their access",

@@ -227,6 +227,41 @@ export const addOrgDomainFn = createServerFn({ method: "POST" })
     return ok(null);
   });
 
+export const removeOrgDomainFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as { orgId?: unknown; hostname?: unknown };
+    if (typeof raw.hostname !== "string" || !raw.hostname) throw new Error("hostname is required");
+    return { orgId: requireId(raw.orgId, "orgId"), hostname: raw.hostname.trim().toLowerCase() };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const supabase = createServerClient();
+    const { data: removed, error } = await supabase
+      .from("org_domains")
+      .delete()
+      .eq("org_id", data.orgId)
+      .eq("hostname", data.hostname)
+      .select("is_primary");
+    if (error) return toFailure(error, "removing the hostname");
+    if (!removed.length) return fail("not_found", "That hostname is already gone.");
+    if (!removed.some((row) => row.is_primary)) return ok(null);
+    // the org's links use its primary hostname, so the next one takes over
+    const { data: next, error: nextError } = await supabase
+      .from("org_domains")
+      .select("hostname")
+      .eq("org_id", data.orgId)
+      .order("hostname")
+      .limit(1)
+      .maybeSingle();
+    if (nextError) return toFailure(nextError, "picking the next primary hostname");
+    if (!next) return ok(null);
+    const { error: promoteError } = await supabase
+      .from("org_domains")
+      .update({ is_primary: true })
+      .eq("hostname", next.hostname);
+    if (promoteError) return toFailure(promoteError, "picking the next primary hostname");
+    return ok(null);
+  });
+
 const HOSTNAME = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 

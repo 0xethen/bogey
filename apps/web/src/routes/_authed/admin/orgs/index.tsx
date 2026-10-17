@@ -1,23 +1,29 @@
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   addOrgDomainFn,
   instanceOrgsQueryOptions,
+  removeOrgDomainFn,
   type InstanceOrg,
 } from "@bogey/db/queries/instance";
-import {
-  OrgLimitsDialog,
-  orgLimitsDialog,
-  OrgStatusDialog,
-  orgStatusDialog,
-} from "./-components/org-admin-dialogs.tsx";
+import { OrgStatusDialog, orgStatusDialog } from "./-components/org-status.tsx";
 import { ownSettingsQueryOptions } from "@bogey/db/queries/settings";
-import { requestFailure } from "@bogey/db/errors";
+import { requestFailure, unwrap } from "@bogey/db/errors";
 import { formatDate } from "@bogey/utils/time";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuTrigger,
+} from "@bogey/ui/components/context-menu";
+import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import { Item, ItemActions, ItemContent, ItemTitle } from "@bogey/ui/components/item";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import {
   createDialogHandle,
@@ -40,7 +46,7 @@ import {
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { hostnameSchema } from "./-components/hostname.ts";
-import { IconExternalLink, IconPlus } from "@tabler/icons-react";
+import { IconExternalLink, IconPlus, IconTrash } from "@tabler/icons-react";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/admin/orgs/")({
@@ -55,7 +61,7 @@ export const Route = createFileRoute("/_authed/admin/orgs/")({
 
 const INSTANCE = { scope: "instance" } as const;
 
-const addHostname = createDialogHandle<InstanceOrg>();
+const hostnamesDialog = createDialogHandle<InstanceOrg>();
 
 function siteUrl(hostname: string): string {
   return `${/(^|\.)localhost(:\d+)?$/.test(hostname) ? "http" : "https"}://${hostname}`;
@@ -86,9 +92,8 @@ function RouteComponent() {
         </Button>
       }
     >
-      <AddHostnameDialog />
+      <HostnamesDialog />
       <OrgStatusDialog />
-      <OrgLimitsDialog />
       <DisclosureList>
         {orgs.map((org) => (
           <DisclosureRow
@@ -136,44 +141,30 @@ function RouteComponent() {
                 ]}
               />
               <div className="flex flex-wrap gap-2">
-                {org.hostnames[0] && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    nativeButton={false}
-                    render={
-                      <a
-                        href={siteUrl(org.hostnames[0])}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      />
-                    }
-                  >
-                    <IconExternalLink />
-                    {t("adminOrgs.openSite")}
-                  </Button>
-                )}
+                {org.hostnames[0] && <OpenSite hostnames={org.hostnames} />}
                 <DialogTrigger
-                  handle={addHostname}
+                  handle={hostnamesDialog}
                   payload={org}
                   render={<Button size="sm" variant="outline" />}
                 >
-                  <IconPlus />
-                  {t("adminOrgs.addHostname")}
+                  {t("adminOrgs.hostnamesButton")}
                 </DialogTrigger>
-                <DialogTrigger
-                  handle={orgLimitsDialog}
-                  payload={org}
-                  render={<Button size="sm" variant="outline" />}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link to="/admin/orgs/$slug/limits" params={{ slug: org.slug }} />}
                 >
                   {t("adminOrgs.limits")}
-                </DialogTrigger>
+                </Button>
                 <DialogTrigger
                   handle={orgStatusDialog}
                   payload={org}
                   render={<Button size="sm" variant="outline" />}
                 >
-                  {t("adminOrgs.statusButton")}
+                  {org.status === "active"
+                    ? t("adminOrgs.restrictButton")
+                    : t("adminOrgs.statusButton")}
                 </DialogTrigger>
               </div>
             </div>
@@ -184,24 +175,120 @@ function RouteComponent() {
   );
 }
 
-function AddHostnameDialog() {
+// right-click lists every hostname; a plain click opens the primary one
+function OpenSite({ hostnames }: { hostnames: Tuple<string> }) {
   const t = useT();
   return (
-    <Dialog handle={addHostname}>
-      {({ payload }) => (
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("adminOrgs.addHostnameTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("adminOrgs.addHostnameHelp", {
-                org: payload?.name ?? t("adminOrgs.theOrg"),
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          {payload && <AddHostnameForm org={payload} />}
-        </DialogContent>
-      )}
+    <ContextMenu>
+      <ContextMenuTrigger render={<span className="contents" />}>
+        <Button
+          size="sm"
+          variant="outline"
+          nativeButton={false}
+          render={
+            <a href={siteUrl(hostnames[0] ?? "")} target="_blank" rel="noreferrer noopener" />
+          }
+        >
+          <IconExternalLink />
+          {t("adminOrgs.openSite")}
+        </Button>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuGroup>
+          <ContextMenuLabel>{t("adminOrgs.openSiteOn")}</ContextMenuLabel>
+          {hostnames.map((hostname) => (
+            <ContextMenuItem
+              key={hostname}
+              onClick={() => window.open(siteUrl(hostname), "_blank", "noopener,noreferrer")}
+            >
+              <IconExternalLink />
+              {hostname}
+            </ContextMenuItem>
+          ))}
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+function HostnamesDialog() {
+  const t = useT();
+  const { data: orgs } = useSuspenseQuery(instanceOrgsQueryOptions());
+  return (
+    <Dialog handle={hostnamesDialog}>
+      {({ payload }) => {
+        // the payload is a snapshot; read the live row so removals show
+        const org = orgs.find((each) => each.id === payload?.id) ?? payload;
+        const name = org?.name ?? t("adminOrgs.theOrg");
+        return (
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("adminOrgs.hostnamesTitle", { org: name })}</DialogTitle>
+              <DialogDescription>{t("adminOrgs.hostnamesHelp", { org: name })}</DialogDescription>
+            </DialogHeader>
+            {org && (
+              <div className="flex flex-col gap-4">
+                <HostnameList org={org} />
+                <AddHostnameForm org={org} />
+              </div>
+            )}
+          </DialogContent>
+        );
+      }}
     </Dialog>
+  );
+}
+
+function HostnameList({ org }: { org: InstanceOrg }) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: async (hostname: string) =>
+      unwrap(await removeOrgDomainFn({ data: { orgId: org.id, hostname } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["instance"] }),
+  });
+  if (org.hostnames.length === 0) return null;
+  return (
+    <>
+      <ErrorAlert error={remove.error} title={t("adminOrgs.removeHostnameFailed")} />
+      <ul className="flex flex-col gap-2">
+        {org.hostnames.map((hostname, index) => (
+          <li key={hostname}>
+            <Item variant="outline" size="sm">
+              <ItemContent>
+                <ItemTitle>
+                  <code>{hostname}</code>
+                  {index === 0 && <Badge variant="secondary">{t("adminOrgs.primary")}</Badge>}
+                </ItemTitle>
+              </ItemContent>
+              <ItemActions>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={t("adminOrgs.removeHostnameOf", { hostname })}
+                  disabled={remove.isPending}
+                  confirm={{
+                    title: t("adminOrgs.removeHostnameTitle", { hostname }),
+                    description: [
+                      t("adminOrgs.removeHostnameBody", { org: org.name }),
+                      typeof window !== "undefined" && window.location.host === hostname
+                        ? t("adminOrgs.removeHostnameHere")
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" "),
+                    label: t("adminOrgs.removeHostname"),
+                  }}
+                  onClick={() => remove.mutate(hostname)}
+                >
+                  <IconTrash />
+                </Button>
+              </ItemActions>
+            </Item>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -223,12 +310,12 @@ function AddHostnameForm({ org }: { org: InstanceOrg }) {
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
     }),
-    onSubmit: async ({ value, createValidationError }) => {
+    onSubmit: async ({ value, formApi, createValidationError }) => {
       const result = await addOrgDomainFn({
         data: { orgId: org.id, hostname: value.hostname },
       }).catch(requestFailure);
       if (!result.ok) return createValidationError({ fields: { hostname: result.error.message } });
-      addHostname.close();
+      formApi.reset();
       await queryClient.invalidateQueries({ queryKey: ["instance"] });
       return undefined;
     },
