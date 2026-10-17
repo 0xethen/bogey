@@ -430,7 +430,7 @@ export const settingsRegistry = {
       portfolios: {
         label: "Public pages",
         description:
-          "People can set a handle on Account for a page at /@handle with their projects, awards and the events they came to.",
+          "People can create a profile in Account settings at /@handle to display their projects, awards, and the events they came to.",
       },
       deletionRequests: {
         label: "Deletion requests",

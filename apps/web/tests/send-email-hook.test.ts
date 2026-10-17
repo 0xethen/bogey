@@ -77,17 +77,33 @@ describe("what the hook renders", () => {
   test("an org's wording wins per kind, and the rest falls back to the instance", () => {
     const context = emailContext(org, [
       row("instance", "email", {
-        templates: { signIn: { subject: "Instance {{code}}", body: "Instance body {{code}}" } },
+        templates: { announcement: { subject: "Instance news", body: "Instance body" } },
       }),
       row("org", "email", {
-        templates: { invite: { subject: "Org invite", body: "You're in {{link}}" } },
+        templates: { "registration.received": { subject: "Org got it", body: "Thanks" } },
       }),
     ]);
-    expect(templateFor(context, "signIn", EMAIL_KINDS.signIn).subject).toBe("Instance {{code}}");
-    expect(templateFor(context, "invite", EMAIL_KINDS.invite).subject).toBe("Org invite");
-    expect(templateFor(context, "emailChange", EMAIL_KINDS.emailChange).subject).toContain(
-      "Confirm",
+    expect(templateFor(context, "announcement", EMAIL_KINDS.announcement).subject).toBe(
+      "Instance news",
     );
+    expect(
+      templateFor(context, "registration.received", EMAIL_KINDS["registration.received"]).subject,
+    ).toBe("Org got it");
+  });
+
+  test("sign-in emails ignore wording stored in the app", () => {
+    const context = emailContext(org, [
+      row("instance", "email", {
+        templates: { signIn: { subject: "Instance {{code}}", body: "evil.example {{code}}" } },
+      }),
+      row("org", "email", {
+        templates: { "invite@es": { subject: "Org invite", body: "evil.example {{link}}" } },
+      }),
+    ]);
+    expect(templateFor(context, "signIn", EMAIL_KINDS.signIn).subject).toBe(
+      EMAIL_KINDS.signIn.defaults.subject,
+    );
+    expect(context.templates["invite@es"]).toBeUndefined();
   });
 
   test("the layout comes from the instance; an org's stored layout is ignored", () => {
