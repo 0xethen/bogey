@@ -24,7 +24,8 @@ advisory (see docs/contributing.md#security-releases). -->
 - The check-in desk's button says Check in, instead of keeping the last person's name after a scan.
 - Your badge is its own home block (Badge), shown while the event has a Check-in window. New in-person events put it at the top of the side column; for an existing event, add it in Customize home. The format presets now only add session types several sessions share (workshops, talks, livestreams, office hours).
 - Instance admins can allow password sign-in for anyone in Instance → People; the person sets their own password in Account → Security, and turning it off clears it and signs them out everywhere. Admins' own passwords (Account → Security) now actually work: the database used to throw every password away. Admin grants and password changes are listed under Instance → People → Changes.
-- Account → Security shows where you're signed in, and signs out one device, every other one, or everywhere.
+- Account → Security shows where you're signed in and can sign out everywhere. Signing out one device or every other one is off by default, because a stolen session could use it to keep the real person out; set `security: { deviceSignOut: true }` in `bogey.config.ts` to allow it.
+- The emails that carry a sign-in code or link (sign-in, sign-up, invitation, email change, reauthentication) are now set only in `bogey.config.ts` under `email.authTemplates`, so an admin account can't point everyone's sign-in links somewhere else. They no longer appear in Instance or organization email settings.
 - Manage → People lists the event's people in a table: check people (or all of them) to set their role or division, check them in, or remove them at once. Role changes and removal skip you.
 - Events can set the words before the submission countdown in the header (Manage → Agenda → What participants see → Countdown label). Tablets and computers show them; phones show only the time.
 - Programming contests:
@@ -39,7 +40,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ### Upgrade notes
 
-- Adds the `session_announcements`, `rubrics_and_deliberation`, `about_for_members`, `clear_event_data`, `session_levels`, `chat_blocks`, `limit_wording`, `unlimited_team_leaves` and `password_logins` migrations; `bogey upgrade` applies them.
+- Adds the `session_announcements`, `rubrics_and_deliberation`, `about_for_members`, `clear_event_data`, `session_levels`, `chat_blocks`, `limit_wording`, `unlimited_team_leaves`, `password_logins` and `device_sign_out` migrations; `bogey upgrade` applies them.
+- Wording you set in the app for the sign-in, sign-up, invitation, email change or reauthentication emails is ignored from now on, and Bogey's default wording is used. To keep yours, copy it into `email.authTemplates` in `bogey.config.ts` (see docs/configuration.md) and restart.
 - The bundled `challenges` plugin adds the `2_golf_ranges_and_errors` and `3_problem_types` migrations; `bogey upgrade` applies them. The runner needs no update.
 - `about_for_members` puts each event's old About in front of its For participants text. Events that only had About stay public (Before approval → About is set to share it); events that had both start members-only, so check those if part of About should stay public and move that part to a Text block. A homepage's For participants block becomes About, or is removed when the page already has one. `events.description_md` is dropped.
 

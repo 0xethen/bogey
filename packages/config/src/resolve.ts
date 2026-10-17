@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { THEMES, type ThemeKey } from "./themes.gen.ts";
-import { isCoreNamespace, settingsRegistry, type CoreNamespace } from "./settings.ts";
+import {
+  EMAIL_TEMPLATE_KEY,
+  emailTemplate,
+  isCoreNamespace,
+  settingsRegistry,
+  type CoreNamespace,
+} from "./settings.ts";
+import { AUTH_EMAIL_KEYS, EMAIL_KINDS, emailTemplateProblem } from "./email.ts";
 import type { InstanceConfig } from "./define.ts";
 
 const themeKeys = THEMES.map((theme) => theme.key) as unknown as [ThemeKey, ...ThemeKey[]];
@@ -34,6 +41,7 @@ const configSchema = z.object({
     .object({
       verboseErrors: z.boolean().optional(),
       requireAdminMfa: z.boolean().optional(),
+      deviceSignOut: z.boolean().optional(),
       headers: z
         .object({
           frameAncestors: z.array(frameSource).optional(),
@@ -41,6 +49,29 @@ const configSchema = z.object({
           contentSecurityPolicy: z.union([z.string().min(1), z.literal(false)]).optional(),
         })
         .strict()
+        .optional(),
+    })
+    .strict()
+    .optional(),
+  email: z
+    .object({
+      authTemplates: z
+        .record(z.string().regex(EMAIL_TEMPLATE_KEY), emailTemplate)
+        .superRefine((templates, ctx) => {
+          for (const [key, template] of Object.entries(templates)) {
+            const kind = authKindOf(key);
+            if (!kind) {
+              ctx.addIssue({
+                code: "custom",
+                path: [key],
+                message: `only ${AUTH_EMAIL_KEYS.join(", ")} go here; set other emails in the app`,
+              });
+              continue;
+            }
+            const problem = emailTemplateProblem(EMAIL_KINDS[kind], template);
+            if (problem) ctx.addIssue({ code: "custom", path: [key], message: problem });
+          }
+        })
         .optional(),
     })
     .strict()
@@ -60,7 +91,14 @@ export const RUNTIME_KEYS = [
   "security",
   "plugins.disabled",
   "events",
+  "email",
 ] as const;
+
+// "signIn@fr" and "signIn" are both the sign-in email
+export function authKindOf(key: string): (typeof AUTH_EMAIL_KEYS)[number] | null {
+  const base = key.split("@")[0] ?? key;
+  return AUTH_EMAIL_KEYS.find((kind) => kind === base) ?? null;
+}
 
 export interface SecurityHeaders {
   frameAncestors: Tuple<string>;
@@ -75,6 +113,7 @@ export interface ResolvedConfig {
   security: { verboseErrors: boolean; headers: SecurityHeaders };
   trustProxy: boolean;
   operator: OperatorSettings;
+  authEmailTemplates: Readonly<Record<string, { subject: string; body: string }>>;
   disabledPlugins: Tuple<string>;
   eventDeletion: boolean;
   upstream: string;
@@ -111,7 +150,10 @@ function declared(values: Record<string, unknown>): Record<string, unknown> | un
 function operatorSettingsOf(config: z.infer<typeof configSchema>): OperatorSettings {
   const out: OperatorSettings = {};
   const tenancy = declared({ appUrl: config.appUrl });
-  const accounts = declared({ requireAdminMfa: config.security?.requireAdminMfa });
+  const accounts = declared({
+    requireAdminMfa: config.security?.requireAdminMfa,
+    deviceSignOut: config.security?.deviceSignOut,
+  });
   const network = declared({
     clientIpHeader: config.network?.clientIpHeader,
     trustedHops: config.network?.trustedHops,
@@ -141,6 +183,7 @@ export function resolveConfig(raw: unknown): ResolvedConfig {
     },
     trustProxy: config.network?.trustProxy ?? false,
     operator: operatorSettingsOf(config),
+    authEmailTemplates: config.email?.authTemplates ?? {},
     disabledPlugins: config.plugins?.disabled ?? [],
     eventDeletion: config.events?.uiDeletion ?? true,
     upstream,

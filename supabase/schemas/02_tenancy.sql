@@ -144,17 +144,22 @@ as $$
 $$;
 grant execute on function public.my_sessions() to authenticated;
 
--- signs one of the caller's own sessions out; its refresh token goes with it
+-- signs one of the caller's own sessions out; its refresh token goes with it.
+-- off unless the operator sets security.deviceSignOut: a stolen session could end the real one
 create function public.end_my_session(p_session uuid)
 returns boolean
-language sql
+language plpgsql
 security definer
 set search_path = ''
 as $$
-  with gone as (
-    delete from auth.sessions where id = p_session and user_id = (select auth.uid()) returning 1
-  )
-  select exists (select 1 from gone);
+begin
+  if not coalesce((private.instance_setting('accounts') ->> 'deviceSignOut')::boolean, false) then
+    raise exception 'Signing out other devices is turned off on this instance'
+      using errcode = '42501';
+  end if;
+  delete from auth.sessions where id = p_session and user_id = (select auth.uid());
+  return found;
+end;
 $$;
 grant execute on function public.end_my_session(uuid) to authenticated;
 

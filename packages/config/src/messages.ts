@@ -505,6 +505,8 @@ export const en = {
   "devices.title": "Where you're signed in",
   "devices.intro":
     "Each browser or app signed in to your account. Sign out any you don't recognize.",
+  "devices.introEverywhere":
+    "Each browser or app signed in to your account. If you don't recognize one, sign out everywhere.",
   "devices.browserOn": "{browser} on {os}",
   "devices.unknown": "Unknown device",
   "devices.this": "This device",
@@ -1411,6 +1413,8 @@ export const en = {
   "email.eventIntro":
     "E-mail configuration for registration, invitations, results and more. Uses organization settings by default.",
   "email.intro": "Messages sent by Bogey on your behalf.",
+  "email.authInConfig":
+    "Sign-in, sign-up, invitation, email change and reauthentication emails carry codes and links, so they're only changed in bogey.config.ts under email.authTemplates.",
   "email.layout": "Layout",
   "email.layoutHelp":
     "The HTML every email is rendered into: header, card and footer. Organizations change their wording, never this. Leave it blank for Bogey's layout.",
@@ -2831,7 +2835,7 @@ export const en = {
   "manageAgenda.icon": "Icon",
   "manageAgenda.typesFailed": "Couldn't save the types",
   "manageAgenda.typesHelp":
-    "Group sessions that share a format, like Talk or Workshop, with a color, an icon and optional levels. One-offs like Lunch, Check-in or the Opening don't need a type.",
+    "Group sessions that share a format, like Talk or Workshop, with a color, an icon and optional levels. For one-offs (like lunch, check-in, or the event opening), a type is not needed.",
   "manageAgenda.noTypes": "No types yet. Sessions show as plain Sessions.",
   "manageAgenda.typeNoun": "type",
   "manageAgenda.typeInUse":
@@ -3118,10 +3122,13 @@ export const en = {
     "The address the database calls to send Bogey's own email (registrations, invitations, results). Without it, queued email waits.",
   "setting.accounts.portfolios": "Public pages",
   "setting.accounts.portfolios.help":
-    "People can set a handle on Account for a page at /@handle with their projects, awards and the events they came to.",
+    "People can create a profile in Account settings at /@handle to display their projects, awards, and the events they came to.",
   "setting.accounts.deletionRequests": "Deletion requests",
   "setting.accounts.deletionRequests.help":
     "People can ask for their account to be deleted from Account settings. Requests wait for an admin under Deletions.",
+  "setting.accounts.deviceSignOut": "Sign out other devices",
+  "setting.accounts.deviceSignOut.help":
+    "People can sign out one of their other devices, or all of them, from Account > Security. Set security.deviceSignOut in bogey.config.ts.",
   "setting.accounts.requireAdminMfa": "Two-factor for instance admins",
   "setting.accounts.requireAdminMfa.help":
     "Instance admins must verify an authenticator app code each session before being granted access to the database. Turn off from the CLI with bogey mfa off!",

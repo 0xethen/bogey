@@ -52,13 +52,14 @@ Only the operator sets `appUrl` for the instance, in [bogey.config.ts](../config
 
 Set at: instance.
 
-Only the operator sets `requireAdminMfa` for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.
+Only the operator sets `requireAdminMfa`, `deviceSignOut` for the instance, in [bogey.config.ts](../configuration.md#keys-only-the-file-sets) or with the CLI; admins can't change it in the app.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `portfolios` | on / off | `false` | People can have a public page at /@handle with their projects and awards |
 | `deletionRequests` | on / off | `true` | Let people ask for their account to be deleted from Account settings |
 | `requireAdminMfa` | on / off | `true` | Instance admins need an authenticator app before they can use Instance pages |
+| `deviceSignOut` | on / off | `false` | People can sign out one of their other devices, or all of them, from Account |
 
 ## Sign-in methods (`signin`)
 

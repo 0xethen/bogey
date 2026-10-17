@@ -49,29 +49,32 @@ export function DevicesSection() {
     // this device is signed out too, so start over at sign-in
     onSuccess: () => window.location.assign("/auth/login"),
   });
-  const list = devices.data ?? [];
+  const list = devices.data?.devices ?? [];
+  const signOutOthers = devices.data?.signOutOthers ?? false;
   const busy = one.isPending || others.isPending || everywhere.isPending;
 
   return (
     <Screen.Section
       id="devices"
       title={t("devices.title")}
-      description={t("devices.intro")}
+      description={t(signOutOthers ? "devices.intro" : "devices.introEverywhere")}
       actions={
         <>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy || list.filter((device) => !device.current).length === 0}
-            confirm={{
-              title: t("devices.othersTitle"),
-              description: t("devices.othersBody"),
-              label: t("devices.othersConfirm"),
-            }}
-            onClick={() => others.mutate()}
-          >
-            {t("devices.others")}
-          </Button>
+          {signOutOthers && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy || list.filter((device) => !device.current).length === 0}
+              confirm={{
+                title: t("devices.othersTitle"),
+                description: t("devices.othersBody"),
+                label: t("devices.othersConfirm"),
+              }}
+              onClick={() => others.mutate()}
+            >
+              {t("devices.others")}
+            </Button>
+          )}
           <Button
             size="sm"
             variant="destructive"
@@ -123,7 +126,7 @@ export function DevicesSection() {
                       {t("devices.signedIn")} <RelativeTime value={device.createdAt} />
                     </ItemDescription>
                   </ItemContent>
-                  {!device.current && (
+                  {signOutOthers && !device.current && (
                     <ItemActions>
                       <Button
                         size="sm"

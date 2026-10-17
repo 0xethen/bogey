@@ -141,6 +141,30 @@ test("operator keys are checked like the settings they become", () => {
   );
 });
 
+test("device sign-out is an operator key, off unless declared", () => {
+  expect(resolveConfig({ brand: { name: "A" } }).operator).toEqual({});
+  expect(
+    resolveConfig({ brand: { name: "A" }, security: { deviceSignOut: true } }).operator,
+  ).toEqual({ accounts: { deviceSignOut: true } });
+});
+
+test("sign-in emails come from the file and must keep their code and link", () => {
+  const signIn = { subject: "Sign in", body: "{{code}} or {{link}}" };
+  expect(
+    resolveConfig({ brand: { name: "A" }, email: { authTemplates: { signIn } } })
+      .authEmailTemplates,
+  ).toEqual({ signIn });
+  expect(
+    configProblems({
+      brand: { name: "A" },
+      email: { authTemplates: { signIn: { subject: "Hi", body: "click evil.example" } } },
+    })[0],
+  ).toMatch(/^email\.authTemplates\.signIn/);
+  expect(
+    configProblems({ brand: { name: "A" }, email: { authTemplates: { welcome: signIn } } })[0],
+  ).toMatch(/only signIn/);
+});
+
 test("a change keeps the database's other keys and names only what differs", () => {
   const changes = operatorChanges(
     { accounts: { requireAdminMfa: true }, network: { trustedHops: 2 } },

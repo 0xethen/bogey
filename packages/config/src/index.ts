@@ -12,6 +12,7 @@ export const upstream = config.upstream;
 export const repository: string | null = config.repository;
 export const trustProxy: boolean = config.trustProxy;
 export const operatorSettings = config.operator;
+export const authEmailTemplates = config.authEmailTemplates;
 export const securityHeaders: Readonly<Record<string, string>> = securityHeadersOf(
   config.security.headers,
 );

@@ -50,7 +50,13 @@ export default defineConfig({
   security: {
     verboseErrors: false,
     requireAdminMfa: true,
+    deviceSignOut: false,
     headers: { frameAncestors: ["'self'"], hsts: true },
+  },
+  email: {
+    authTemplates: {
+      signIn: { subject: "Your {{org}} sign-in link", body: "Use {{code}} or open {{link}}." },
+    },
   },
   repository: "github:acme/bogey",
   updates: { check: true },
@@ -84,6 +90,13 @@ export default defineConfig({
   turn it on once the site is served over HTTPS for good;
   `contentSecurityPolicy` is a full policy string, off by default because plugins
   load their own scripts. `X-Content-Type-Options` and `Referrer-Policy` are always sent.
+- **`email.authTemplates`:** the wording of the emails that carry a sign-in
+  code or link: `signIn`, `signUp`, `invite`, `emailChange` and
+  `reauthentication`, with `@<language>` for a translation (`signIn@es`). Each
+  must keep `{{code}}` and `{{link}}` (`reauthentication` only `{{code}}`). They're set only here, because an admin
+  who could rewrite them could send everyone's sign-in links somewhere else;
+  Instance, organization and event email settings cover the rest. Leave a kind
+  out for Bogey's wording.
 - **`network.trustProxy`:** `true` when a proxy that overwrites X-Forwarded-For
   (like `deploy/compose.yml`'s Caddy) fronts the app, so the app forwards the
   visitor's address to the database.
@@ -101,6 +114,7 @@ bogey.config.ts" ([ADR 0029](adr/0029-operator-keys.md)):
 | `network.trustedHops`      | `network.trustedHops`      | How many proxies in front of Supabase append to X-Forwarded-For                                                  |
 | `network.trustedProxies`   | `network.trustedProxies`   | The app servers whose forwarded visitor address the database believes                                            |
 | `security.requireAdminMfa` | `accounts.requireAdminMfa` | Whether instance admins need an authenticator app (default `true`)                                               |
+| `security.deviceSignOut`   | `accounts.deviceSignOut`   | Whether people can sign out one of their other devices from Account (default `false`)                            |
 
 The server writes the ones the file sets to the database on its first request after it
 starts. `bogey config apply` writes them without a restart, and `bogey config check` and
@@ -108,6 +122,10 @@ starts. `bogey config apply` writes them without a restart, and `bogey config ch
 whatever the database has, and only the CLI can change it. `bogey mfa off` still lets
 locked-out admins back in; if the file says `requireAdminMfa: true`, change it there too,
 or the next restart turns it back on.
+
+`deviceSignOut` is off because whoever holds a stolen session could use it to sign the real
+person out and keep them out. With it off, Account → "Where you're signed in" still lists
+every device and offers "Sign out everywhere", which ends the stolen session too.
 
 ### When a change applies
 

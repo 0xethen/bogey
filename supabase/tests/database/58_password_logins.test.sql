@@ -1,5 +1,5 @@
 begin;
-select plan(10);
+select plan(11);
 
 select tests.create_user(tests.u(n), n || '@pw.test') from unnest(array['boss','pat','sam']) n;
 insert into public.platform_admins (user_id) values (tests.u('boss')) on conflict do nothing;
@@ -30,7 +30,15 @@ select tests.as_user(tests.u('boss'));
 select throws_ok($$select public.set_password_login(tests.u('boss'), true)$$, '22023', null, 'instance admins manage their own password');
 reset role;
 select is((select count(*)::integer from public.instance_audit where target_id = tests.u('pat')), 2, 'turning it on and off is recorded');
-select is(public.end_my_session(gen_random_uuid()), false, 'signing out a session that isn''t yours does nothing');
+select tests.as_user(tests.u('pat'));
+select throws_ok($$select public.end_my_session(gen_random_uuid())$$, '42501', null, 'signing out one device is off by default');
+reset role;
+insert into public.settings (scope, namespace, value) values ('instance', 'accounts', '{"deviceSignOut": true}')
+  on conflict (scope, org_id, event_id, namespace)
+  do update set value = public.settings.value || excluded.value;
+select tests.as_user(tests.u('pat'));
+select is(public.end_my_session(gen_random_uuid()), false, 'once the operator allows it, a session that isn''t yours is left alone');
+reset role;
 
 select * from finish();
 rollback;

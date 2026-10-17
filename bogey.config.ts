@@ -19,7 +19,13 @@ export default defineConfig({
   // security: {
   //   verboseErrors: false,
   //   requireAdminMfa: true,
+  //   deviceSignOut: false,
   //   headers: { frameAncestors: ["'self'"], hsts: true },
+  // },
+  // email: {
+  //   authTemplates: {
+  //     signIn: { subject: "Your {{org}} sign-in link", body: "Use {{code}} or open {{link}}." },
+  //   },
   // },
   // repository: "github:0xethen/bogey",
   // updates: { check: true },

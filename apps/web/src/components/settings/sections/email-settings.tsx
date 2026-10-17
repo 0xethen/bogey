@@ -52,15 +52,10 @@ export interface EmailKindEntry {
 const coreEntries = (keys: Tuple<EmailTemplateKey>): Tuple<EmailKindEntry> =>
   keys.map((key) => ({ key, kind: EMAIL_KINDS[key] }));
 
-export function emailKindEntries(
-  scope: Scope["scope"],
-  pluginKinds: Tuple<EmailKindEntry> = [],
-): Tuple<EmailKindEntry> {
+export function emailKindEntries(pluginKinds: Tuple<EmailKindEntry> = []): Tuple<EmailKindEntry> {
+  // sign-in emails carry codes and links, so only bogey.config.ts can change them
   const auth: Tuple<string> = AUTH_EMAIL_KEYS;
-  return [
-    ...coreEntries(EMAIL_KIND_KEYS.filter((key) => scope !== "event" || !auth.includes(key))),
-    ...pluginKinds,
-  ];
+  return [...coreEntries(EMAIL_KIND_KEYS.filter((key) => !auth.includes(key))), ...pluginKinds];
 }
 
 export function emailSearchEntries(
@@ -78,7 +73,7 @@ export function emailSearchEntries(
           }),
         ]
       : []),
-    ...emailKindEntries(scope, pluginKinds).map(({ key, kind }) =>
+    ...emailKindEntries(pluginKinds).map(({ key, kind }) =>
       searchSection(kindName(t, key, kind), {
         description: kindHelp(t, key, kind),
         keywords: ["email", "subject"],
@@ -328,10 +323,7 @@ function EmailSettingsForm({
   const queryClient = useQueryClient();
   const templates = current.templates ?? {};
   const instance = scope.scope === "instance";
-  const entries = useMemo(
-    () => emailKindEntries(scope.scope, pluginKinds),
-    [scope.scope, pluginKinds],
-  );
+  const entries = useMemo(() => emailKindEntries(pluginKinds), [pluginKinds]);
   const schema = useMemo(() => settingsSchema(entries, t), [entries, t]);
   const form = useAppForm({
     ...appFormOptions.strictSchema({
@@ -380,6 +372,7 @@ function EmailSettingsForm({
       <form.Form unsaved="save" className="flex flex-col gap-10">
         <Screen.Section id="email" title={t("email.title")} description={t("email.intro")}>
           {instance && <HookStatus />}
+          {instance && <p className="text-sm text-muted-fg">{t("email.authInConfig")}</p>}
           {languages.length > 0 && (
             <form.Subscribe selector={(state) => state.isDirty}>
               {(dirty) => (

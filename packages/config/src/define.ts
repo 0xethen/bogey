@@ -24,11 +24,19 @@ export interface InstanceConfig {
   security?: {
     verboseErrors?: boolean;
     requireAdminMfa?: boolean;
+    /** Lets people sign out one of their other devices, or all of them, from Account. Off by default:
+     * someone who got into an account could otherwise sign its owner out. */
+    deviceSignOut?: boolean;
     headers?: {
       frameAncestors?: Tuple<string>;
       hsts?: boolean;
       contentSecurityPolicy?: string | false;
     };
+  };
+  email?: {
+    /** Sign-in, sign-up, invitation, email-change and reauthentication emails, by kind (`signIn`, or
+     * `signIn@fr`). Only set here: in the app they could be rewritten to send sign-in codes elsewhere. */
+    authTemplates?: Record<string, { subject: string; body: string }>;
   };
   upstream?: string;
   repository?: string | false;

@@ -3,7 +3,8 @@ import { createTransport } from "nodemailer";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { createAdminClient } from "@bogey/db/admin";
 import { jsonRecord, type Json } from "@bogey/db/types";
-import { brand } from "@bogey/config";
+import { authEmailTemplates, brand } from "@bogey/config";
+import { authKindOf } from "@bogey/config/resolve";
 import {
   AUTH_EMAIL_KEYS,
   EMAIL_KIND_KEYS,
@@ -136,7 +137,13 @@ export function emailContext(
     senderName: email.senderName ?? orgName,
     accent: branding.accent,
     layout: email.layout ?? DEFAULT_EMAIL_LAYOUT,
-    templates: email.templates ?? {},
+    // sign-in style emails come only from bogey.config.ts, never from settings anyone can edit
+    templates: {
+      ...Object.fromEntries(
+        Object.entries(email.templates ?? {}).filter(([key]) => authKindOf(key) === null),
+      ),
+      ...authEmailTemplates,
+    },
   };
 }
 

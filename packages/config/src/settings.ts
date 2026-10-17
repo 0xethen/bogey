@@ -36,10 +36,10 @@ function namespace<S extends z.ZodObject, const D extends Partial<z.infer<S>>>(
   return definition;
 }
 
-const EMAIL_TEMPLATE_KEY =
+export const EMAIL_TEMPLATE_KEY =
   /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-z][a-z0-9_-]*)*(@[a-z]{2,3}(-[A-Za-z0-9]+)*)?$/;
 
-const emailTemplate = z.object({
+export const emailTemplate = z.object({
   subject: z.string().trim().min(1).max(150),
   body: z.string().trim().min(1).max(5000),
 });
@@ -401,8 +401,13 @@ export const settingsRegistry = {
   accounts: namespace({
     label: "Accounts",
     scopes: ["instance"],
-    defaults: { deletionRequests: true, requireAdminMfa: true, portfolios: false },
-    operator: ["requireAdminMfa"],
+    defaults: {
+      deletionRequests: true,
+      requireAdminMfa: true,
+      portfolios: false,
+      deviceSignOut: false,
+    },
+    operator: ["requireAdminMfa", "deviceSignOut"],
     schema: z.object({
       portfolios: z
         .boolean()
@@ -416,6 +421,10 @@ export const settingsRegistry = {
         .boolean()
         .optional()
         .describe("Instance admins need an authenticator app before they can use Instance pages"),
+      deviceSignOut: z
+        .boolean()
+        .optional()
+        .describe("People can sign out one of their other devices, or all of them, from Account"),
     }),
     fields: {
       portfolios: {
@@ -427,6 +436,11 @@ export const settingsRegistry = {
         label: "Deletion requests",
         description:
           "People can ask for their account to be deleted from Account settings. Requests wait for an admin under Deletions.",
+      },
+      deviceSignOut: {
+        label: "Sign out other devices",
+        description:
+          "People can sign out one of their other devices, or all of them, from Account > Security. Set security.deviceSignOut in bogey.config.ts.",
       },
       requireAdminMfa: {
         label: "Two-factor for instance admins",
