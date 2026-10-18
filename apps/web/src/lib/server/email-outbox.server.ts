@@ -118,11 +118,16 @@ function optOutKind(vars: Record<string, string>): string | null {
   return kind;
 }
 
+// domains that can never receive mail (RFC 2606 and 6761), used by demo and test accounts
+const RESERVED_MAIL = /@(?:[^@]+\.)?(?:example|invalid|test|localhost|example\.(?:com|net|org))$/i;
+
 async function sendOne(
   row: OutboxRow,
   secret: string,
   contexts: Map<string, Promise<EmailContext>>,
 ): Promise<Outcome> {
+  if (RESERVED_MAIL.test(row.to_email))
+    return { outcome: "skipped", reason: "the address is on a reserved domain" };
   const admin = createAdminClient();
   const { data: org } = await admin
     .from("orgs")

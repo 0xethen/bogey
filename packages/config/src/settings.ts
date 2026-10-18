@@ -1398,6 +1398,8 @@ export const settingsRegistry = {
       deliberation: "assigned",
       flagGap: 0,
       holdFlagged: true,
+      judgeExport: "off",
+      assignment: { perProject: 1, rules: [], exclude: [] },
     },
     schema: z.object({
       blind: z.boolean().optional().describe("Hide team names from judges"),
@@ -1444,6 +1446,15 @@ export const settingsRegistry = {
         .boolean()
         .optional()
         .describe("Results can't be published while a project is flagged"),
+      judgeExport: z
+        .enum(["off", "projects", "results"])
+        .optional()
+        .describe("What judges can download in the projects spreadsheet"),
+      assignment: judgingAssignmentSchema
+        .optional()
+        .describe(
+          "How Assign judges picks: judges per project, rules asking for judges with a tag, and tags kept out",
+        ),
     }),
     fields: {
       blind: { label: say("setting.judging.blind") },
@@ -1528,6 +1539,40 @@ export const settingsRegistry = {
       holdFlagged: {
         label: say("setting.judging.holdFlagged"),
         description: say("setting.judging.holdFlagged.help"),
+      },
+      judgeExport: {
+        label: say("setting.judging.judgeExport"),
+        description: say("setting.judging.judgeExport.help"),
+        options: [
+          { value: "off", label: say("setting.judging.judgeExport.off") },
+          {
+            value: "projects",
+            label: say("setting.judging.judgeExport.projects"),
+            description: "Without members or judging results",
+          },
+          {
+            value: "results",
+            label: say("setting.judging.judgeExport.results"),
+            description: "Ranks, scores and averages per criterion",
+          },
+        ],
+      },
+    },
+  }),
+  tags: namespace({
+    label: "Tags",
+    scopes: ["instance", "org"],
+    defaults: { eventTags: true },
+    schema: z.object({
+      eventTags: z
+        .boolean()
+        .optional()
+        .describe("Organizers can make tags for their own event, on top of the org's"),
+    }),
+    fields: {
+      eventTags: {
+        label: say("setting.tags.eventTags"),
+        description: say("setting.tags.eventTags.help"),
       },
     },
   }),

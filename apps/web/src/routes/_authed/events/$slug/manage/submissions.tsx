@@ -1,4 +1,5 @@
 import { exportHref } from "#/lib/exports.ts";
+import { ProjectExport } from "#/components/event/project-export.tsx";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -92,15 +93,16 @@ function RouteComponent() {
     <>
       {form && (
         <>
-          <Button
-            size="sm"
-            variant="outline"
-            nativeButton={false}
-            render={<a href={exportHref(event.slug, "submissions", form.key)} download />}
-          >
-            <IconDownload />
-            {t("manageTeams.export")}
-          </Button>
+          <ProjectExport
+            event={event}
+            formKey={form.key}
+            trigger={
+              <Button size="sm" variant="outline">
+                <IconDownload />
+                {t("projectExport.button")}
+              </Button>
+            }
+          />
           <Button
             size="sm"
             variant="outline"

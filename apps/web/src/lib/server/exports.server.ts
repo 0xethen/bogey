@@ -6,8 +6,26 @@ import { jsonRecord, type Json, type Tables } from "@bogey/db/types";
 import { readFields, type Answer, type FormField } from "@bogey/utils/registration-form";
 import { scaleScores, type Normalize } from "@bogey/utils/score-scale";
 import type { CsvCell } from "@bogey/utils/csv";
-import { csvResponse, zipResponse, type ZipEntry } from "#/lib/server/download.server.ts";
+import { formatMessage } from "@bogey/utils/messages";
+import { en } from "@bogey/config/messages";
+import {
+  csvResponse,
+  xlsxResponse,
+  zipResponse,
+  type ZipEntry,
+} from "#/lib/server/download.server.ts";
 import { isExportKind, type ExportKind } from "#/lib/exports.ts";
+import {
+  availableColumns,
+  columnId,
+  columnNeed,
+  isExportAccess,
+  parseColumn,
+  presetColumns,
+  PROJECT_FIELDS,
+  type ProjectExportAccess,
+  type ProjectFieldKey,
+} from "#/lib/project-export.ts";
 
 export class ExportError extends Error {
   constructor(
@@ -352,14 +370,78 @@ async function namesOf(supabase: Client, ids: Tuple<string>): Promise<Map<string
   return new Map(profiles.map((profile) => [profile.id, profile.display_name]));
 }
 
+interface ExportResult {
+  roundName: string;
+  rank: number | null;
+  divisionRank: number | null;
+  score: number | null;
+  rawScore: number | null;
+  judges: number | null;
+  criteria: Record<string, number>;
+}
+
+function parseExportResults(raw: Json): Map<string, ExportResult> {
+  const out = new Map<string, ExportResult>();
+  if (!Array.isArray(raw)) return out;
+  for (const entry of raw) {
+    const row = jsonRecord(entry);
+    if (typeof row.submission_id !== "string") continue;
+    const number = (value: Json | undefined) => (typeof value === "number" ? value : null);
+    const criteria: Record<string, number> = {};
+    for (const [id, mean] of Object.entries(jsonRecord(row.criteria ?? null))) {
+      if (typeof mean === "number") criteria[id] = mean;
+    }
+    out.set(row.submission_id, {
+      roundName: typeof row.round_name === "string" ? row.round_name : "",
+      rank: number(row.rank),
+      divisionRank: number(row.division_rank),
+      score: number(row.score),
+      rawScore: number(row.raw_score),
+      judges: number(row.judges),
+      criteria,
+    });
+  }
+  return out;
+}
+
+async function exportAccess(supabase: Client, event: Event): Promise<ProjectExportAccess> {
+  const { data, error } = await supabase.rpc("project_export_access", { p_event: event.id });
+  if (error) throw new ExportError(500, error.message);
+  return isExportAccess(data) ? data : "off";
+}
+
+// one row per project of a form; `fields` picks the columns (the basic preset when it's missing)
 async function submissions(
   supabase: Client,
   event: Event,
-  formKey: string | null,
+  params: URLSearchParams,
 ): Promise<Response> {
-  const form = await findForm(supabase, event, formKey);
-  const [items, rows, teamRows, trackRows, links, files, divisions] = await Promise.all([
+  const form = await findForm(supabase, event, params.get("form"));
+  const [access, items, criteriaRows] = await Promise.all([
+    exportAccess(supabase, event),
     supabase.from("submission_items").select("*").eq("form_id", form.id).order("sort"),
+    supabase.from("criteria").select("id, label").eq("event_id", event.id).order("sort"),
+  ]);
+  const itemList = must(items);
+  const criteria = must(criteriaRows);
+  const available = availableColumns(itemList, criteria, access);
+  const requested = params.get("fields");
+  const allowed = new Set(available.map(columnId));
+  const columns = requested
+    ? requested.split(",").flatMap((id) => {
+        const column = parseColumn(id.trim());
+        return column && allowed.has(columnId(column)) ? [column] : [];
+      })
+    : presetColumns("basic", available);
+  if (columns.length === 0) throw new ExportError(400, "Pick at least one column to export.");
+  const wants = (key: ProjectFieldKey) =>
+    columns.some((column) => column.kind === "field" && column.key === key);
+  const wantsResults = columns.some(
+    (column) =>
+      column.kind === "criterion" || (column.kind === "field" && columnNeed(column) === "results"),
+  );
+
+  const [rows, teamRows, trackRows, links, files, divisions] = await Promise.all([
     readAll((from, to) =>
       supabase
         .from("submissions")
@@ -395,48 +477,163 @@ async function submissions(
   const divisionNames = new Map(must(divisions).map((division) => [division.id, division.name]));
   const tracksOf = Map.groupBy(links, (row) => row.submission_id);
   const filesOf = Map.groupBy(files, (row) => row.submission_id);
-  const columns = must(items);
+  const criterionLabels = new Map(criteria.map((criterion) => [criterion.id, criterion.label]));
+  const itemByKey = new Map(itemList.map((item) => [item.key, item]));
 
-  return csvResponse(
-    fileName(event.slug, "submissions", "csv", form.key),
-    [
-      "Team",
-      "Division",
-      "Title",
-      "Status",
-      "Submitted at",
-      "Table",
-      "Tracks",
-      "Public",
-      ...columns.map((item) => item.label),
-    ],
-    rows.map((row) => {
-      const team = teamById.get(row.team_id);
-      const answers = jsonRecord(row.answers);
-      const cell = (key: string, kind: string): CsvCell => {
-        if (kind === "file") {
-          return (filesOf.get(row.id) ?? [])
-            .filter((file) => file.item_key === key)
-            .map((file) => file.file_name)
-            .join("; ");
-        }
-        const value = answers[key];
-        if (typeof value === "boolean") return yesNo(value);
-        return typeof value === "string" || typeof value === "number" ? value : "";
-      };
-      return [
-        team?.name,
-        team?.division_id ? divisionNames.get(team.division_id) : "",
-        row.title,
-        row.status,
-        row.submitted_at,
-        row.table_label,
-        (tracksOf.get(row.id) ?? []).map((link) => trackNames.get(link.track_id)).join("; "),
-        yesNo(row.is_public),
-        ...columns.map((item) => cell(item.key, item.kind)),
-      ];
-    }),
+  const membersOf = new Map<string, { name: string; email: string }[]>();
+  if (wants("members") || wants("emails")) {
+    const [memberRows, regs] = await Promise.all([
+      readAll((from, to) =>
+        supabase
+          .from("team_members")
+          .select("team_id, user_id, role")
+          .eq("event_id", event.id)
+          .order("team_id")
+          .order("user_id")
+          .range(from, to),
+      ),
+      readAll((from, to) =>
+        supabase
+          .from("registrations")
+          .select("id, user_id, email, full_name")
+          .eq("event_id", event.id)
+          .not("user_id", "is", null)
+          .order("id")
+          .range(from, to),
+      ),
+    ]);
+    const names = await namesOf(
+      supabase,
+      memberRows.map((row) => row.user_id),
+    );
+    const registration = new Map(regs.flatMap((row) => (row.user_id ? [[row.user_id, row]] : [])));
+    for (const row of memberRows) {
+      const reg = registration.get(row.user_id);
+      const list = membersOf.get(row.team_id) ?? [];
+      list.push({ name: names.get(row.user_id) ?? reg?.full_name ?? "", email: reg?.email ?? "" });
+      membersOf.set(row.team_id, list);
+    }
+  }
+
+  const [results, awardRows, voteRows] = await Promise.all([
+    wantsResults
+      ? supabase.rpc("project_export_results", { p_event: event.id })
+      : Promise.resolve(null),
+    wants("awards")
+      ? supabase
+          .from("awards")
+          .select("submission_id, label")
+          .eq("event_id", event.id)
+          .order("sort")
+      : Promise.resolve(null),
+    wants("votes") ? supabase.rpc("vote_counts", { p_event: event.id }) : Promise.resolve(null),
+  ]);
+  const resultOf = results ? parseExportResults(must(results)) : new Map<string, ExportResult>();
+  const awardsOf = Map.groupBy(awardRows ? must(awardRows) : [], (row) => row.submission_id);
+  const votesOf = new Map(
+    (voteRows ? must(voteRows) : []).map((row) => [row.submission_id, row.votes]),
   );
+
+  const header = columns.map((column) => {
+    if (column.kind === "answer") return itemByKey.get(column.key)?.label ?? column.key;
+    if (column.kind === "criterion")
+      return formatMessage(en["projectExport.criterionColumn"], {
+        criterion: criterionLabels.get(column.key) ?? column.key,
+      });
+    return en[
+      PROJECT_FIELDS.find((field) => field.key === column.key)?.label ?? "projectExport.field.title"
+    ];
+  });
+
+  const body = rows.map((row) => {
+    const team = teamById.get(row.team_id);
+    const result = resultOf.get(row.id);
+    const answers = jsonRecord(row.answers);
+    const people = membersOf.get(row.team_id) ?? [];
+    const answer = (key: string): CsvCell => {
+      if (itemByKey.get(key)?.kind === "file") {
+        return (filesOf.get(row.id) ?? [])
+          .filter((file) => file.item_key === key)
+          .map((file) => file.file_name)
+          .join("; ");
+      }
+      const value = answers[key];
+      if (typeof value === "boolean") return yesNo(value);
+      if (Array.isArray(value))
+        return value.filter((entry) => typeof entry === "string").join("; ");
+      return typeof value === "string" || typeof value === "number" ? value : "";
+    };
+    const field = (key: ProjectFieldKey): CsvCell => {
+      switch (key) {
+        case "title":
+          return row.title;
+        case "team":
+          return team?.name;
+        case "members":
+          return people.map((person) => person.name).join("; ");
+        case "emails":
+          return people
+            .map((person) => person.email)
+            .filter(Boolean)
+            .join("; ");
+        case "division":
+          return team?.division_id ? divisionNames.get(team.division_id) : "";
+        case "tracks":
+          return (tracksOf.get(row.id) ?? [])
+            .map((link) => trackNames.get(link.track_id))
+            .join("; ");
+        case "status":
+          return row.status;
+        case "submittedAt":
+          return row.submitted_at;
+        case "table":
+          return row.table_label;
+        case "public":
+          return yesNo(row.is_public);
+        case "round":
+          return result?.roundName;
+        case "rank":
+          return result?.rank;
+        case "divisionRank":
+          return result?.divisionRank;
+        case "score":
+          return result?.score;
+        case "rawScore":
+          return result?.rawScore;
+        case "judges":
+          return result?.judges;
+        case "awards":
+          return (awardsOf.get(row.id) ?? []).map((award) => award.label).join("; ");
+        case "votes":
+          return votesOf.get(row.id) ?? 0;
+      }
+    };
+    return columns.map((column) =>
+      column.kind === "field"
+        ? field(column.key)
+        : column.kind === "answer"
+          ? answer(column.key)
+          : result?.criteria[column.key],
+    );
+  });
+  const rankAt = columns.findIndex((column) => column.kind === "field" && column.key === "rank");
+  if (rankAt >= 0) {
+    const rankOf = (cells: Tuple<CsvCell>) => {
+      const value = cells[rankAt];
+      return typeof value === "number" ? value : Infinity;
+    };
+    body.sort((a, b) => rankOf(a) - rankOf(b));
+  }
+
+  if (params.get("format") === "xlsx") {
+    return xlsxResponse(
+      fileName(event.slug, "projects", "xlsx", form.key),
+      form.title,
+      header,
+      body,
+    );
+  }
+  return csvResponse(fileName(event.slug, "projects", "csv", form.key), header, body);
 }
 
 const safeSegment = (text: string) =>
@@ -743,8 +940,9 @@ async function audit(supabase: Client, event: Event): Promise<Response> {
 export async function exportResponse(
   slug: string,
   rawKind: string,
-  formKey: string | null,
+  params: URLSearchParams,
 ): Promise<Response> {
+  const formKey = params.get("form");
   try {
     if (!isExportKind(rawKind)) throw new ExportError(404, "There's no such export.");
     const supabase = createServerClient();
@@ -758,7 +956,7 @@ export async function exportResponse(
       case "teams":
         return await teams(supabase, event);
       case "submissions":
-        return await submissions(supabase, event, formKey);
+        return await submissions(supabase, event, params);
       case "submission-files":
         return await submissionFiles(supabase, event, formKey);
       case "scores":

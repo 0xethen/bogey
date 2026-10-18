@@ -10,15 +10,17 @@ import { OptSelect } from "@bogey/ui/components/opt-select";
 import {
   judgeQueueQueryOptions,
   judgingRoundsQueryOptions,
+  projectExportAccessQueryOptions,
   type JudgeQueueItem,
 } from "@bogey/db/queries/judging";
+import { ProjectExport } from "#/components/event/project-export.tsx";
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import { DisclosureList } from "@bogey/ui/components/disclosure-row";
 import { LinkRow } from "@bogey/ui/components/link-row";
 import { StatusDot } from "@bogey/ui/components/status-dot";
 import { Screen } from "@bogey/ui/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
-import { IconInfoCircle } from "@tabler/icons-react";
+import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import { msg, useT } from "#/lib/translate.tsx";
 
 const ALL = "all";
@@ -46,6 +48,7 @@ function RouteComponent() {
       ? isWindowOpen(windowByKey(windows, "judging"))
       : queue.some((item) => isWindowOpen(windowByKey(windows, windowOf(item))));
   const { data: prizes = [] } = useQuery(eventPrizesQueryOptions(event.id));
+  const { data: exportAccess = "off" } = useQuery(projectExportAccessQueryOptions(event.id));
   const [track, setTrack] = useState(ALL);
   const visible = track === ALL ? queue : queue.filter((item) => item.trackIds.includes(track));
   const assigned = visible.filter((item) => item.assigned);
@@ -120,6 +123,19 @@ function RouteComponent() {
       title={t("judging.title")}
       description={assigned.length ? t("judging.progress", { done, total: assigned.length }) : ""}
       width="narrow"
+      actions={
+        exportAccess !== "off" && (
+          <ProjectExport
+            event={event}
+            trigger={
+              <Button size="sm" variant="outline">
+                <IconDownload />
+                {t("projectExport.judgeButton")}
+              </Button>
+            }
+          />
+        )
+      }
     >
       {!open && (
         <Alert>

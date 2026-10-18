@@ -1,5 +1,6 @@
-import { Zip, ZipPassThrough } from "fflate";
+import { strToU8, Zip, ZipPassThrough, zipSync } from "fflate";
 import { csvChunks, type CsvCell, type CsvOptions } from "@bogey/utils/csv";
+import { xlsxFiles } from "@bogey/utils/xlsx";
 
 export function contentDisposition(filename: string): string {
   const ascii = filename.replace(/[^\x20-\x7e]|["\\%]/g, "_");
@@ -26,6 +27,24 @@ export function csvResponse(
   return new Response(body, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": contentDisposition(filename),
+      "Cache-Control": NO_STORE,
+    },
+  });
+}
+
+export function xlsxResponse(
+  filename: string,
+  sheet: string,
+  header: Tuple<string>,
+  rows: Iterable<Tuple<CsvCell>>,
+): Response {
+  const files = Object.fromEntries(
+    Object.entries(xlsxFiles(sheet, header, rows)).map(([path, xml]) => [path, strToU8(xml)]),
+  );
+  return new Response(zipSync(files, { level: 6 }), {
+    headers: {
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": contentDisposition(filename),
       "Cache-Control": NO_STORE,
     },

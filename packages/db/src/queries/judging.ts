@@ -864,6 +864,23 @@ export const previewResultsQueryOptions = (eventId: string) =>
     retry: retryPolicy,
   });
 
+// what the caller may put in the projects spreadsheet: off, projects, results or all
+export const projectExportAccessFn = createServerFn({ method: "GET" })
+  .validator((eventId: unknown) => requireId(eventId, "eventId"))
+  .handler(async ({ data: eventId }): Promise<DbResult<string>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase.rpc("project_export_access", { p_event: eventId });
+    if (error) return toFailure(error, "checking downloads");
+    return ok(data);
+  });
+
+export const projectExportAccessQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["project-export-access", eventId] as const,
+    queryFn: async () => unwrap(await projectExportAccessFn({ data: eventId })),
+    retry: retryPolicy,
+  });
+
 export const publishResultsFn = createServerFn({ method: "POST" })
   .validator((eventId: unknown) => requireId(eventId, "eventId"))
   .handler(async ({ data: eventId }): Promise<DbResult<string>> => {

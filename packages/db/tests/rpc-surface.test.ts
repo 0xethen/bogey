@@ -67,6 +67,8 @@ const SIGNED_IN = {
   cast_vote: "checks the voting window, who may vote, the cap and own-team rule, then audits",
   retract_vote: "takes back the caller's vote while voting is open and audits it",
   assign_round_robin: "organizers assign judges across teams they can't all read",
+  set_person_tags:
+    "replaces one person's tags in one scope after checking who may hand them out; audited",
   cancel_submission_deletion: "clears a field teams can't write directly",
   check_in_session: "matches a code the caller can't read and records attendance",
   choose_session: "checks the slot kind, window and capacity, then audits the pick",
@@ -111,6 +113,7 @@ const SIGNED_IN = {
   post_announcement: "posts with its audience rows in one transaction and audits it",
   my_sessions: "the caller's own signed-in sessions, which live in the auth schema",
   end_my_session: "signs one of the caller's own sessions out of the auth schema",
+  rename_passkey: "renames one of the caller's own passkeys, which live in the auth schema",
   set_password_login:
     "platform admins let someone keep a password, which the database otherwise strips, and clear it",
   block_from_chat: "organizers stop a person or team from messaging, audited",

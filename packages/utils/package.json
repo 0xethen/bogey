@@ -18,6 +18,7 @@
     "./email-layout": "./src/email-layout.ts",
     "./markdown": "./src/markdown.ts",
     "./csv": "./src/csv.ts",
+    "./xlsx": "./src/xlsx.ts",
     "./awards": "./src/awards.ts",
     "./rounds": "./src/rounds.ts",
     "./pending": "./src/pending.ts",
