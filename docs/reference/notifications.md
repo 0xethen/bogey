@@ -28,6 +28,7 @@ Plugins add their own as `<plugin>.<kind>`.
 | `checkin.badge` | Check-in code | Event | bell and email | can be turned off | Your code for the check-in desk, before the event. |
 | `certificate.issued` | Certificates | Event | bell and email | can be turned off | A certificate for you is ready. |
 | `session.reminder` | Session reminders | Event | bell | can be turned off | A session you signed up for is about to start. |
+| `window.reminder` | Schedule reminders | Event | bell | can be turned off | Something on the event's schedule, like submissions or judging, is about to open. |
 
 ## Email wording
 

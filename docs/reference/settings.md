@@ -136,6 +136,10 @@ Set at: instance, org, event.
 | `reminderHours` | whole number (0 to 336) | `24` | Remind teams that only have a draft this many hours before submissions close; 0 sends none |
 | `publicToggle` | on / off | `false` | Whether teams can choose to hide their submission from the public gallery |
 | `deletion` | `none` · `request` · `allow` | `allow` | Whether teams can delete their submissions, or ask organizers to |
+| `submittedTitle` | text | — | The heading teams see once their project is submitted |
+| `submittedBody` | text | — | The line under it; {when} becomes when they submitted |
+| `prizePrompt` | text | — | What teams read above the prizes they can enter |
+| `prizeImage` | `icon` · `banner` | — | Whether a prize's image is a small icon beside it or a banner across it |
 
 ## Schedule (`schedule`)
 
@@ -155,7 +159,8 @@ Set at: instance, org, event.
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `kinds` | list | `[]` | Session types, like Talk and Workshop, each with a color and icon |
-| `reminderMinutes` | whole number (0 to 1440) | `30` | Remind people this many minutes before a session they signed up for; 0 sends none |
+| `reminderMinutes` | whole number (0 to 1440) | `5` | Remind people this many minutes before a session they signed up for or a window opens (a window can set its own); 0 sends none |
+| `tabMenu` | on / off | `true` | List the sessions that have a page of their own under the Agenda tab |
 
 ## Event home (`home`)
 
@@ -304,6 +309,16 @@ Set at: instance, org, event.
 | `deliberation` | `off` · `assigned` · `all` | `assigned` | Who discusses a flagged project |
 | `flagGap` | whole number (0 to 100) | `0` | Flag a project when its judges' totals are further apart than this (0 is off) |
 | `holdFlagged` | on / off | `true` | Results can't be published while a project is flagged |
+| `judgeExport` | `off` · `projects` · `results` | `off` | What judges can download in the projects spreadsheet |
+| `assignment` | group | `{"perProject":1,"rules":[],"exclude":[]}` | How Assign judges picks: judges per project, rules asking for judges with a tag, and tags kept out |
+
+## Tags (`tags`)
+
+Set at: instance, org.
+
+| Key | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `eventTags` | on / off | `true` | Organizers can make tags for their own event, on top of the org's |
 
 ## Plugins (`plugins`)
 

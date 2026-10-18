@@ -26,6 +26,7 @@ commands that author Bogey (schema, themes, types, release) and the ones that co
 | [`mfa`](#mfa) | Turn the authenticator-app requirement for instance admins on or off | checkout, container |
 | [`org`](#org) | Set up the first organization, create others, and manage their hostnames | checkout, container |
 | [`plugins`](#plugins) | List, inspect, enable, disable or scaffold plugins | checkout; container: `list`, `info`, `outdated`, `status`, `migrate`, `sql` |
+| [`preflight`](#preflight) | Check the instance can take an event of N people, and what to raise if not | checkout, container |
 | [`restart`](#restart) | Restart the app from deploy/compose.yml, or rebuild it with --build | checkout, host |
 | [`stop`](#stop) | Stop the app's containers | checkout, host |
 | [`queues`](#queues) | Show waiting mail and webhook deliveries | checkout, container |
@@ -298,6 +299,31 @@ bogey plugins: manage plugins (packages/plugins/installed/<key>, and bundled/<ke
 Short flags: -y --yes, -n --dry-run, -f --force, -d --db-url
 ```
 
+## preflight
+
+```
+bogey preflight [--people <n>] [--event <org/slug>] [--db-url <postgres url>] [--json]
+
+Checks that this instance can take an event of <n> people (participants, judges and staff
+together) before doors open, and says what to change when it can't:
+
+  Auth       the sign-in, code-check, session-refresh and email limits GoTrue enforces. Sign-in
+             runs on the Bogey server, so they're sized as if everyone shared one IP. Read from
+             the Management API on Supabase Cloud (needs SUPABASE_ACCESS_TOKEN), from GOTRUE_*
+             variables when they're set here, or from supabase/config.toml for a CLI stack.
+  Realtime   how many connections, joins and messages the Realtime tenant takes (self-hosted
+             and CLI stacks; Cloud's depend on the plan).
+  Database   connections already in use, failed pg_cron jobs and whether the email drain runs.
+  Email      mail waiting in the outbox.
+  Backup     how old the newest folder under backups/ is.
+
+--event counts the event's members and approved registrations when --people isn't given, and
+notes when the freeze starts. The database checks need DATABASE_URL (or --db-url) and psql.
+Exits non-zero on anything that would break at that size; notes are what's tight.
+
+Short flags: -d --db-url
+```
+
 ## restart
 
 ```
@@ -419,7 +445,7 @@ imports (packages/ui/src/styles/themes.css) and the theme list
 ## types
 
 ```
-bogey types [--mcp <url> | supabase gen types args...]
+bogey types [--schema [--check] | --mcp <url> | supabase gen types args...]
 
 Regenerates packages/db/src/types/database.gen.ts, keeping only what
 supabase/schemas creates (plugin tables are left out). The types describe the
@@ -432,22 +458,29 @@ current schema (bogey db repair first), and commit them. Production never runs t
   bogey types --project-id <ref>                 a Supabase Cloud project (SUPABASE_ACCESS_TOKEN)
   bogey types --local                            from `supabase start` (needs Docker)
   bogey types --mcp http://localhost:8080/mcp   a self-hosted Studio MCP (SSH tunnel)
+  bogey types --schema                           only packages/db/src/types/schema.gen.ts, which needs no
+                                                 database; --check fails when it's stale
+
+Every form also writes packages/db/src/types/schema.gen.ts: the permissions,
+audit actions and checked column values supabase/schemas defines, read from the files.
+`bogey watch --schema` keeps it current while you edit them.
 
 Needs the Supabase CLI (brew install supabase/tap/supabase); --local and
 --db-url run it. The output is laid out with vp fmt before plugin entries are dropped.
 
-Short flags: -d --db-url
+Short flags: -d --db-url, -c --check
 ```
 
 ## watch
 
 ```
-bogey watch [--themes] [--settings] [--email]
+bogey watch [--themes] [--schema] [--settings] [--email]
 
 Regenerates files derived from the repo while you work (`pnpm dev` runs it).
 With no flags, runs every watcher.
 
   --themes    packages/ui/src/styles/themes → themes.css and @bogey/config/themes
+  --schema    supabase/schemas → packages/db/src/types/schema.gen.ts (permissions, audit actions, checks)
   --settings  packages/config/src/settings.ts → SQL defaults, baseline, docs/reference
   --email     packages/utils/templates/layout.html, packages/config/src/email.ts → layout.gen.ts, supabase/templates
 ```

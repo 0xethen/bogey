@@ -1227,6 +1227,7 @@ export type Database = {
           kind: string;
           location: string | null;
           name: string;
+          page_md: string;
           required: boolean;
           slot_id: string;
           sort: number;
@@ -1248,6 +1249,7 @@ export type Database = {
           kind?: string;
           location?: string | null;
           name: string;
+          page_md?: string;
           required?: boolean;
           slot_id: string;
           sort?: number;
@@ -1268,6 +1270,7 @@ export type Database = {
           kind?: string;
           location?: string | null;
           name?: string;
+          page_md?: string;
           required?: boolean;
           slot_id?: string;
           sort?: number;
@@ -1334,6 +1337,7 @@ export type Database = {
           key: string;
           opens_at: string | null;
           override: Database["public"]["Enums"]["window_override"] | null;
+          reminder_minutes: number | null;
           updated_at: string;
           updated_by: string | null;
         };
@@ -1344,6 +1348,7 @@ export type Database = {
           key: string;
           opens_at?: string | null;
           override?: Database["public"]["Enums"]["window_override"] | null;
+          reminder_minutes?: number | null;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -1353,6 +1358,7 @@ export type Database = {
           key?: string;
           opens_at?: string | null;
           override?: Database["public"]["Enums"]["window_override"] | null;
+          reminder_minutes?: number | null;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -3313,6 +3319,128 @@ export type Database = {
           },
         ];
       };
+      tag_holders: {
+        Row: {
+          assigned_by: string | null;
+          created_at: string;
+          event_id: string | null;
+          member_org: string | null;
+          org_id: string;
+          tag_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          assigned_by?: string | null;
+          created_at?: string;
+          event_id?: string | null;
+          member_org?: never;
+          org_id: string;
+          tag_id: string;
+          user_id: string;
+        };
+        Update: {
+          assigned_by?: string | null;
+          created_at?: string;
+          event_id?: string | null;
+          member_org?: never;
+          org_id?: string;
+          tag_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tag_holders_assigned_by_fkey";
+            columns: ["assigned_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tag_holders_event_id_user_id_fkey";
+            columns: ["event_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "event_members";
+            referencedColumns: ["event_id", "user_id"];
+          },
+          {
+            foreignKeyName: "tag_holders_member_org_user_id_fkey";
+            columns: ["member_org", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "org_members";
+            referencedColumns: ["org_id", "user_id"];
+          },
+          {
+            foreignKeyName: "tag_holders_tag_id_fkey";
+            columns: ["tag_id"];
+            isOneToOne: false;
+            referencedRelation: "tags";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tag_holders_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tags: {
+        Row: {
+          created_at: string;
+          description: string;
+          event_id: string | null;
+          id: string;
+          name: string;
+          org_id: string;
+          permissions: string[];
+          sort: number;
+          tone: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          description?: string;
+          event_id?: string | null;
+          id?: string;
+          name: string;
+          org_id: string;
+          permissions?: string[];
+          sort?: number;
+          tone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string;
+          event_id?: string | null;
+          id?: string;
+          name?: string;
+          org_id?: string;
+          permissions?: string[];
+          sort?: number;
+          tone?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tags_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tags_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "orgs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       team_members: {
         Row: {
           event_id: string;
@@ -4371,6 +4499,8 @@ export type Database = {
         Returns: string;
       };
       preview_results: { Args: { p_event: string }; Returns: Json };
+      project_export_access: { Args: { p_event: string }; Returns: string };
+      project_export_results: { Args: { p_event: string }; Returns: Json };
       prune_participants: {
         Args: {
           p_confirm?: string;
@@ -4447,6 +4577,7 @@ export type Database = {
         Returns: undefined;
       };
       remove_window: { Args: { p_event: string; p_key: string }; Returns: undefined };
+      rename_passkey: { Args: { p_factor: string; p_name: string }; Returns: undefined };
       report_page: {
         Args: { p_org: string; p_path: string; p_reason: string };
         Returns: undefined;
@@ -4571,6 +4702,10 @@ export type Database = {
         Returns: undefined;
       };
       set_password_login: { Args: { p_enabled: boolean; p_user: string }; Returns: undefined };
+      set_person_tags: {
+        Args: { p_event?: string; p_org?: string; p_tags: string[]; p_user: string };
+        Returns: undefined;
+      };
       set_platform_admin: { Args: { p_admin: boolean; p_email: string }; Returns: undefined };
       set_report_handled: { Args: { p_handled: boolean; p_id: string }; Returns: undefined };
       set_role_grants: {
@@ -4607,6 +4742,7 @@ export type Database = {
         Args: { p_event?: string; p_namespaces: string[]; p_org?: string };
         Returns: Json;
       };
+      settings_for_events: { Args: { p_events: string[]; p_namespaces: string[] }; Returns: Json };
       skip_submission: { Args: { p_skipped?: boolean; p_submission: string }; Returns: undefined };
       submit_project: {
         Args: { p_submission: string; p_submit?: boolean };
