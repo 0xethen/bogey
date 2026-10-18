@@ -182,7 +182,7 @@ function RouteComponent() {
           <>
             <GalleryLink event={event} />
             {manages && (
-              <Button size="sm" variant="ghost" onClick={() => setCustomize(true)}>
+              <Button size="sm" variant="outline" onClick={() => setCustomize(true)}>
                 <IconLayoutDashboard />
                 {t("home.customize")}
               </Button>
