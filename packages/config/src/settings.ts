@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { layoutProblem } from "@bogey/utils/email-layout";
+import { TAG_REF } from "@bogey/utils/keys";
 import { en, type MessageKey } from "./messages.ts";
 import { SIGN_IN_PROVIDER_KEYS } from "./sign-in.ts";
 
@@ -23,6 +24,8 @@ export interface SettingField<V> {
   choices?: Tuple<SettingOption<string>>;
   /** Choices that are always in the list and can't be taken out. */
   always?: Tuple<string>;
+  /** The org's and event's tags can be picked beside the choices, held as "tag:<id>". */
+  withTags?: boolean;
   placeholder?: string;
 }
 
@@ -1263,11 +1266,11 @@ export const settingsRegistry = {
     },
     schema: z.object({
       takers: z
-        .array(z.enum(["organizer", "staff", "judge"]))
-        .max(3)
+        .array(z.union([z.enum(["organizer", "staff", "judge"]), z.string().regex(TAG_REF)]))
+        .max(23)
         .optional()
         .describe(
-          "Roles that work the check-in desk and take attendance in sessions; organizers always can",
+          "Roles, or tags (tag:<id>), that work the check-in desk and take attendance in sessions; organizers always can",
         ),
       confirmName: z
         .boolean()
@@ -1323,6 +1326,7 @@ export const settingsRegistry = {
           { value: "judge", label: say("setting.checkin.takers.judge") },
         ],
         always: ["organizer"],
+        withTags: true,
       },
     },
   }),
@@ -1758,3 +1762,5 @@ export function settingControl<N extends CoreNamespace>(
   if (inner instanceof z.ZodBoolean) return { kind: "switch", label: field.label, description };
   return null;
 }
+      withTags: boolean;
+      withTags: field.withTags ?? false,

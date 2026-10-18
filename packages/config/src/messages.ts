@@ -3544,7 +3544,8 @@ export const en = {
     "People enter the venue code, which changes every ten minutes and is shown on the check-in screen, while the Check-in window is open.",
   "setting.checkin.takers": "Who takes attendance",
   "setting.checkin.takers.help":
-    "They work the check-in desk and take attendance in sessions. Organizers always can.",
+    "They work the check-in desk and take attendance in sessions: pick roles, tags, or both. Organizers always can.",
+  "settingFields.roles": "Roles",
   "setting.checkin.takers.organizer": "Organizers",
   "setting.checkin.takers.staff": "Staff",
   "setting.checkin.takers.judge": "Judges",

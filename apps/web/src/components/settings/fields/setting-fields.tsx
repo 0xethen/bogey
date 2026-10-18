@@ -30,7 +30,10 @@ import { useUnsavedEntry } from "@bogey/ui/lib/unsaved";
 import { Input } from "@bogey/ui/components/input";
 import { NumberInput } from "@bogey/ui/components/number-field";
 import { OptSelect } from "@bogey/ui/components/opt-select";
-import { MultiSelect } from "@bogey/ui/components/search-select";
+import { MultiSelect, type SearchSelectOption } from "@bogey/ui/components/search-select";
+import { tagsQueryOptions } from "@bogey/db/queries/tags";
+import { TAG_REF, tagRef } from "@bogey/utils/keys";
+import { useEventViewer } from "#/lib/viewer.ts";
 import { SettingRow, type SettingLock, type SettingSource } from "./setting-row.tsx";
 import { Switch } from "@bogey/ui/components/switch";
 import { useLocale } from "@bogey/ui/lib/locale";
@@ -83,6 +86,29 @@ function resolve<N extends CoreNamespace>(
   };
 }
 
+// tags that a role list can hold beside its roles; instance settings have no tags to offer
+function useTagChoices(
+  scope: OwnScope,
+  wanted: boolean,
+): { tagChoices: Tuple<SearchSelectOption>; tagsLoaded: boolean } {
+  const t = useT();
+  const viewer = useEventViewer();
+  const orgId =
+    scope.orgId ?? (scope.eventId && viewer?.event.id === scope.eventId ? viewer.event.org_id : "");
+  const tags = useQuery({
+    ...tagsQueryOptions({ orgId, eventId: scope.eventId }),
+    enabled: wanted && scope.scope !== "instance" && orgId !== "",
+  });
+  return {
+    tagChoices: (tags.data ?? []).map((tag) => ({
+      value: tagRef(tag.id),
+      label: tag.name,
+      group: t("tags.title"),
+    })),
+    tagsLoaded: tags.isSuccess,
+  };
+}
+
 export function SettingFields<N extends CoreNamespace>({
   scope,
   namespace,
@@ -131,6 +157,13 @@ export function SettingFields<N extends CoreNamespace>({
       onSaved?.();
     },
   });
+  const { tagChoices, tagsLoaded } = useTagChoices(
+    scope,
+    keys.some((key) => {
+      const control = settingControl(namespace, key);
+      return control?.kind === "multiselect" && control.withTags;
+    }),
+  );
   const [draft, setDraft] = useState<Record<string, unknown>>({});
   const [generation, setGeneration] = useState(0);
   const change = (changes: Record<string, unknown>) =>
@@ -251,12 +284,30 @@ export function SettingFields<N extends CoreNamespace>({
           >
             <MultiSelect
               id={id}
-              value={Array.isArray(value) ? value.filter((item) => typeof item === "string") : []}
+              value={
+                Array.isArray(value)
+                  ? value.filter(
+                      (item): item is string =>
+                        typeof item === "string" &&
+                        // a deleted tag drops out of the list, once the tags are in
+                        (!TAG_REF.test(item) ||
+                          !tagsLoaded ||
+                          tagChoices.some((tag) => tag.value === item)),
+                    )
+                  : []
+              }
               always={control.always}
-              options={control.options.map((option) => ({
-                value: option.value,
-                label: sayOr(t, `setting.${namespace}.${key}.${option.value}`, option.label),
-              }))}
+              options={[
+                ...control.options.map((option) => ({
+                  value: option.value,
+                  label: sayOr(t, `setting.${namespace}.${key}.${option.value}`, option.label),
+                  group:
+                    control.withTags && tagChoices.length > 0
+                      ? t("settingFields.roles")
+                      : undefined,
+                })),
+                ...(control.withTags ? tagChoices : []),
+              ]}
               disabled={disabled}
               onValueChange={(next) => change({ [key]: next })}
             />

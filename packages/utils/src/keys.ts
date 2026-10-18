@@ -8,6 +8,11 @@ export const NAMESPACED_KEY = /^[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9]*(-[a-
 
 export const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
+/** A tag in a list of roles ("tag:<uuid>"), where a setting picks people by role or by tag. */
+export const TAG_REF = /^tag:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export const tagRef = (tagId: string): string => `tag:${tagId}`;
+
 export const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function toSlug(name: string, max = 64): string {

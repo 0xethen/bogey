@@ -1,5 +1,5 @@
 begin;
-select plan(6);
+select plan(8);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'takers-org', 'Takers');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max) values
@@ -27,7 +27,20 @@ select tests.as_user(tests.u('staff1'));
 select ok(not private.has_permission(tests.u('ev'), 'sessions.attendance'), 'and staff stop when left out');
 reset role;
 select tests.as_user(tests.u('p1'));
-select ok(not private.has_permission(tests.u('ev'), 'people.checkin'), 'participants never take attendance');
+select ok(not private.has_permission(tests.u('ev'), 'people.checkin'), 'participants don''t by role');
+reset role;
+
+-- a tag in the list lets whoever holds it take attendance, whatever their role
+insert into public.tags (id, org_id, event_id, name) values (tests.u('volunteer'), tests.u('org'), tests.u('ev'), 'Volunteer');
+insert into public.tag_holders (tag_id, user_id, org_id, event_id)
+  values (tests.u('volunteer'), tests.u('p1'), tests.u('org'), tests.u('ev'));
+update public.settings set value = jsonb_build_object('takers', jsonb_build_array('organizer', 'tag:' || tests.u('volunteer')))
+  where event_id = tests.u('ev') and namespace = 'checkin';
+select tests.as_user(tests.u('p1'));
+select ok(private.has_permission(tests.u('ev'), 'sessions.attendance'), 'a tagged participant takes attendance');
+reset role;
+select tests.as_user(tests.u('judge1'));
+select ok(not private.has_permission(tests.u('ev'), 'people.checkin'), 'untagged judges don''t');
 
 select * from finish();
 rollback;

@@ -77,6 +77,7 @@ as $$
 declare
   v_uid uuid := (select auth.uid());
   v_role public.event_role;
+  v_takers jsonb;
 begin
   if v_uid is null then
     return false;
@@ -94,12 +95,16 @@ begin
     return true;
   end if;
 
-  -- who takes attendance is the event's checkin.takers, not the role matrix; a plugin role can
-  -- still grant it below
-  if p_permission in ('people.checkin', 'sessions.attendance')
-     and coalesce(private.event_setting(p_event, 'checkin') -> 'takers', '["organizer","staff"]')
-       ? v_role::text then
-    return true;
+  -- who takes attendance is the event's checkin.takers, not the role matrix: roles, and tags as
+  -- "tag:<id>"; a plugin role can still grant it below
+  if p_permission in ('people.checkin', 'sessions.attendance') then
+    v_takers := coalesce(private.event_setting(p_event, 'checkin') -> 'takers', '["organizer","staff"]');
+    if v_takers ? v_role::text or exists (
+      select 1 from unnest(private.held_tags(p_event, v_uid)) held(id)
+      where v_takers ? ('tag:' || held.id::text)
+    ) then
+      return true;
+    end if;
   end if;
 
   return exists (

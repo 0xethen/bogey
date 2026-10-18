@@ -7,6 +7,7 @@ import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "./errors.ts";
 import { requireId } from "./queries/validate.ts";
 import type { CorePermission, Enums } from "./types.ts";
 import { resolveSettings } from "@bogey/config/settings";
+import { TAG_REF, tagRef } from "@bogey/utils/keys";
 
 export type EventRole = Enums<"event_role">;
 
@@ -64,7 +65,7 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
       userId
         ? supabase
             .from("tag_holders")
-            .select("org_id, event_id, tags(permissions)")
+            .select("tag_id, org_id, event_id, tags(permissions)")
             .eq("user_id", userId)
             .or(`event_id.is.null,event_id.eq.${eventId}`)
         : Promise.resolve({ data: [], error: null }),
@@ -87,6 +88,7 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
         : {};
     const checkinValue: unknown = settings.checkin;
     for (const taker of resolveSettings("checkin", checkinValue).takers ?? []) {
+      if (TAG_REF.test(taker)) continue;
       (byRole[taker] ??= []).push(...ATTENDANCE);
     }
 
@@ -94,10 +96,14 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
     for (const key of roleKeys) for (const permission of byRole[key] ?? []) held.add(permission);
     // tags add permissions on top of a role, as private.tags_grant does; event tags only while allowed
     const eventTags = resolveSettings("tags", settings.tags).eventTags;
+    // checkin.takers can name tags too ("tag:<id>")
+    const takers = new Set<string>(resolveSettings("checkin", checkinValue).takers ?? []);
     if (role) {
       for (const row of tagGrants.data ?? []) {
         if (row.org_id !== event.data?.org_id || (row.event_id && !eventTags)) continue;
         for (const permission of row.tags?.permissions ?? []) held.add(permission);
+        if (takers.has(tagRef(row.tag_id)))
+          for (const permission of ATTENDANCE) held.add(permission);
       }
     }
 
