@@ -366,6 +366,13 @@ export const en = {
   "prefs.themeLight": "Light",
   "prefs.themeDark": "Dark",
   "prefs.saveFailed": "Couldn't save your preferences",
+  "prefs.homeSection": "Home page",
+  "prefs.home": "Where the logo takes you",
+  "prefs.homeHelp": "Also where you land after signing in.",
+  "prefs.homeDefault": "Default ({place})",
+  "prefs.homeEvents": "All events",
+  "prefs.homeOrg": "Organization home",
+  "prefs.homeAdmin": "Instance home",
 
   "a11y.intro": "Changes apply as you pick them, on this account's devices.",
   "a11y.textSize": "Text size",

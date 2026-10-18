@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isOrgAdmin } from "@bogey/db/auth";
+import { usePreference } from "@bogey/db/queries/preferences";
+import { eventsQueryOptions } from "@bogey/db/queries/events";
 import { updateProfileFn, type ProfileChanges } from "@bogey/db/queries/profile";
 import { unwrap } from "@bogey/db/errors";
 import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
@@ -16,16 +19,19 @@ import { useSessionRefresh } from "#/lib/refresh.ts";
 import { useClockPreference } from "#/lib/time.ts";
 import { useDraft } from "#/components/unsaved-changes/index.tsx";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
+import { HOME_PREFERENCE, isHomeChoice, type HomeChoice } from "#/lib/home.ts";
 
 export const Route = createFileRoute("/_authed/account/preferences")({
   staticData: {
     title: msg("accountNav.preferences"),
     settings: (t) => [
       searchSection(t("prefs.section"), { id: "time-and-appearance" }),
+      searchSection(t("prefs.homeSection"), { id: "home-page" }),
       { label: t("account.language"), hash: "prefs.language", keywords: ["locale", "translate"] },
       { label: t("prefs.timezone"), hash: "prefs.timezone" },
       { label: t("prefs.clock24"), hash: "prefs.clock24h", keywords: ["clock"] },
       { label: t("prefs.theme"), hash: "prefs.theme", keywords: ["dark mode", "light mode"] },
+      { label: t("prefs.home"), hash: "prefs.home", keywords: ["start page", "logo", "landing"] },
     ],
   },
   component: RouteComponent,
@@ -79,6 +85,48 @@ function LanguageField() {
         onChange={setLanguage}
       />
       <FieldDescription>{t("account.languageHelp")}</FieldDescription>
+    </Field>
+  );
+}
+
+function HomeField() {
+  const t = useT();
+  const { session } = Route.useRouteContext();
+  const home = usePreference<HomeChoice>(
+    HOME_PREFERENCE.namespace,
+    HOME_PREFERENCE.key,
+    "default",
+    isHomeChoice,
+  );
+  const events = useQuery({
+    ...eventsQueryOptions(session.org?.id ?? ""),
+    enabled: Boolean(session.org),
+  });
+  const orgAdmin = isOrgAdmin(session);
+  const mine = (events.data ?? []).filter((event) => orgAdmin || event.myRole !== null);
+  const options: { value: HomeChoice; label: string }[] = [
+    {
+      value: "default",
+      label: t("prefs.homeDefault", {
+        place: session.platformAdmin ? t("prefs.homeAdmin") : t("prefs.homeEvents"),
+      }),
+    },
+    { value: "events", label: t("prefs.homeEvents") },
+    ...(orgAdmin ? [{ value: "org" as const, label: t("prefs.homeOrg") }] : []),
+    ...(session.platformAdmin ? [{ value: "admin" as const, label: t("prefs.homeAdmin") }] : []),
+    ...mine.map((event) => ({ value: `event:${event.id}` as const, label: event.name })),
+  ];
+  // a pick that's gone (left the event) shows as the default, which is where "/" sends them
+  const value = options.some((option) => option.value === home.value) ? home.value : "default";
+  return (
+    <Field id="prefs.home" className="jump-target">
+      <FieldLabel htmlFor="home">{t("prefs.home")}</FieldLabel>
+      <OptSelect id="home" value={value} options={options} onChange={home.set} />
+      <FieldDescription>{t("prefs.homeHelp")}</FieldDescription>
+      <ErrorAlert
+        error={home.error instanceof Error ? home.error : null}
+        title={t("prefs.saveFailed")}
+      />
     </Field>
   );
 }
@@ -141,6 +189,9 @@ function RouteComponent() {
           />
         </Field>
         <ErrorAlert error={save.error} title={t("prefs.saveFailed")} />
+      </Screen.Section>
+      <Screen.Section id="home-page" title={t("prefs.homeSection")}>
+        <HomeField />
       </Screen.Section>
     </Screen>
   );
