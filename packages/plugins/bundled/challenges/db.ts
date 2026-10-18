@@ -7,7 +7,7 @@ import type { Json } from "@bogey/db/types";
 export type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | "OLE" | "JE";
 export type RejudgingStatus = "pending" | "applied" | "cancelled";
 type JudgingStatus = "queued" | "running" | "done" | "failed";
-type Checker = "exact" | "tokens" | "float" | "custom";
+export type Checker = "exact" | "tokens" | "float" | "custom";
 export type Difficulty = string;
 
 export const DIFFICULTY_TONES = [
@@ -58,8 +58,55 @@ type ProblemRow = {
   visible: boolean;
   sort: number;
   difficulty: Difficulty | null;
+  bank_problem_id: string | null;
   created_at: string;
   updated_at: string;
+};
+
+/** A problem in the organization's bank, outside any event (migrations/7_bank_and_run_script.sql). */
+export type BankProblemRow = {
+  id: string;
+  org_id: string;
+  category: string;
+  slug: string;
+  title: string;
+  statement_md: string;
+  time_limit_ms: number;
+  memory_limit_mb: number;
+  output_limit_kb: number;
+  checker: Checker;
+  checker_tolerance: number | null;
+  checker_source: string | null;
+  checker_language: string | null;
+  run_script: string | null;
+  points: number;
+  kind: ProblemKind;
+  golf_brackets: GolfBracket[];
+  test_groups: Json;
+  source_problem_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type BankTestcaseRow = {
+  id: string;
+  bank_problem_id: string;
+  ordinal: number;
+  is_sample: boolean;
+  group_key: string | null;
+  points: number | null;
+  input: string;
+  answer: string;
+};
+
+type BankSolutionRow = {
+  id: string;
+  bank_problem_id: string;
+  language_key: string;
+  source: string;
+  expected_verdict: Verdict;
+  label: string;
 };
 
 type TestcaseRow = {
@@ -183,6 +230,7 @@ type ProblemInsert = Pick<ProblemRow, "event_id" | "label" | "slug" | "title"> &
     >
   > & {
     checker_source?: string | null;
+    run_script?: string | null;
     test_groups?: Json;
   };
 
@@ -218,6 +266,9 @@ export type ChallengesDatabase = {
       challenges_judgings: Table<JudgingRow>;
       challenges_rejudgings: Table<RejudgingRow>;
       challenges_judging_runs: Table<RunRow>;
+      challenges_bank_problems: Table<BankProblemRow, Partial<BankProblemRow>>;
+      challenges_bank_testcases: Table<BankTestcaseRow, Partial<BankTestcaseRow>>;
+      challenges_bank_solutions: Table<BankSolutionRow, Partial<BankSolutionRow>>;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -289,6 +340,27 @@ export type ChallengesDatabase = {
         }[];
       };
       challenges_log_ccs_export: { Args: { p_event: string }; Returns: undefined };
+      challenges_scripts: {
+        Args: { p_problem: string };
+        Returns: {
+          checker_source: string | null;
+          checker_language: string | null;
+          run_script: string | null;
+        };
+      };
+      challenges_bank_save: { Args: { p_problem: string; p_category?: string }; Returns: string };
+      challenges_bank_use: {
+        Args: { p_bank: string; p_event: string; p_label: string };
+        Returns: string;
+      };
+      challenges_problem_copy: {
+        Args: { p_problem: string; p_event: string; p_label: string };
+        Returns: string;
+      };
+      challenges_jury_events: {
+        Args: { p_org: string };
+        Returns: { id: string; slug: string; name: string; starts_at: string | null }[];
+      };
       challenges_log_package: {
         Args: { p_problem: string; p_imported: boolean; p_tests: number };
         Returns: undefined;
@@ -325,10 +397,14 @@ export type Problem = Pick<
   | "difficulty"
   | "visible"
   | "sort"
+  | "checker"
+  | "checker_tolerance"
+  | "checker_language"
+  | "bank_problem_id"
 >;
 
 const PROBLEM_COLUMNS =
-  "id, label, slug, title, statement_md, statement_pdf_path, time_limit_ms, memory_limit_mb, output_limit_kb, points, golf_brackets, kind, difficulty, visible, sort";
+  "id, label, slug, title, statement_md, statement_pdf_path, time_limit_ms, memory_limit_mb, output_limit_kb, points, golf_brackets, kind, difficulty, visible, sort, checker, checker_tolerance, checker_language, bank_problem_id";
 
 export const problemsQueryOptions = (eventId: string) =>
   queryOptions({
@@ -895,7 +971,10 @@ export async function verifyProblem(problemId: string): Promise<number> {
   return unwrap(error ? toFailure(error, "verifying the problem") : ok(data));
 }
 
-export type ProblemDraft = Omit<Problem, "id" | "statement_pdf_path">;
+export type ProblemDraft = Omit<Problem, "id" | "statement_pdf_path" | "bank_problem_id"> & {
+  checker_source?: string | null;
+  run_script?: string | null;
+};
 
 export async function saveProblem(
   eventId: string,
@@ -1088,3 +1167,146 @@ export const problemPackageUrl = (eventId: string, problemId: string) =>
 
 export const ccsExportUrl = (eventId: string) =>
   `/api/x/challenges/ccs-export?${new URLSearchParams({ event: eventId })}`;
+
+// ── scripts, the bank and reuse ─────────────────────────────────────────
+
+export type Scripts = ChallengesDatabase["public"]["Functions"]["challenges_scripts"]["Returns"];
+
+/** The compare script (custom checker) and run script, which browsers can't select directly. */
+export const scriptsQueryOptions = (problemId: string) =>
+  queryOptions({
+    queryKey: ["challenges", "scripts", problemId] as const,
+    queryFn: async (): Promise<Scripts> => {
+      const { data, error } = await client().rpc("challenges_scripts", { p_problem: problemId });
+      return unwrap(error ? toFailure(error, "loading the scripts") : ok(data));
+    },
+    retry: retryPolicy,
+  });
+
+export type BankProblem = Omit<BankProblemRow, "checker_source" | "run_script" | "test_groups"> & {
+  tests: number;
+  solutions: number;
+};
+
+const BANK_COLUMNS =
+  "id, org_id, category, slug, title, statement_md, time_limit_ms, memory_limit_mb, output_limit_kb, checker, checker_tolerance, checker_language, points, kind, golf_brackets, source_problem_id, created_by, created_at, updated_at";
+
+function tally(rows: Tuple<{ bank_problem_id: string }>): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const row of rows)
+    counts.set(row.bank_problem_id, (counts.get(row.bank_problem_id) ?? 0) + 1);
+  return counts;
+}
+
+/** The organization's bank, newest first; RLS shows it to its admins and its events' juries. */
+export const bankQueryOptions = (orgId: string) =>
+  queryOptions({
+    queryKey: ["challenges", "bank", orgId] as const,
+    queryFn: async (): Promise<BankProblem[]> => {
+      const problems = await client()
+        .from("challenges_bank_problems")
+        .select(BANK_COLUMNS)
+        .eq("org_id", orgId)
+        .order("updated_at", { ascending: false });
+      if (problems.error) return unwrap(toFailure(problems.error, "loading the problem bank"));
+      const ids = (problems.data ?? []).map((row) => row.id);
+      if (ids.length === 0) return [];
+      const [tests, solutions] = await Promise.all([
+        client()
+          .from("challenges_bank_testcases")
+          .select("bank_problem_id")
+          .in("bank_problem_id", ids),
+        client()
+          .from("challenges_bank_solutions")
+          .select("bank_problem_id")
+          .in("bank_problem_id", ids),
+      ]);
+      const failed = tests.error ?? solutions.error;
+      if (failed) return unwrap(toFailure(failed, "loading the problem bank"));
+      const testCounts = tally(tests.data ?? []);
+      const solutionCounts = tally(solutions.data ?? []);
+      return (problems.data ?? []).map((row) => ({
+        ...row,
+        tests: testCounts.get(row.id) ?? 0,
+        solutions: solutionCounts.get(row.id) ?? 0,
+      }));
+    },
+    retry: retryPolicy,
+  });
+
+export async function saveToBank(problemId: string, category: string | null): Promise<string> {
+  const { data, error } = await client().rpc("challenges_bank_save", {
+    p_problem: problemId,
+    ...(category === null ? {} : { p_category: category }),
+  });
+  return unwrap(error ? toFailure(error, "saving it to the bank") : ok(data));
+}
+
+export async function addFromBank(bankId: string, eventId: string, label: string): Promise<string> {
+  const { data, error } = await client().rpc("challenges_bank_use", {
+    p_bank: bankId,
+    p_event: eventId,
+    p_label: label,
+  });
+  if (error?.code === "23505") {
+    return unwrap(fail("invalid", "Another problem already has that ID."));
+  }
+  return unwrap(error ? toFailure(error, "adding it from the bank") : ok(data));
+}
+
+export async function copyProblem(
+  problemId: string,
+  eventId: string,
+  label: string,
+): Promise<string> {
+  const { data, error } = await client().rpc("challenges_problem_copy", {
+    p_problem: problemId,
+    p_event: eventId,
+    p_label: label,
+  });
+  if (error?.code === "23505") {
+    return unwrap(fail("invalid", "That contest already has a problem with that ID."));
+  }
+  return unwrap(error ? toFailure(error, "copying the problem") : ok(data));
+}
+
+export async function updateBankProblem(
+  id: string,
+  values: Pick<BankProblemRow, "category" | "title">,
+): Promise<void> {
+  const { error } = await client().from("challenges_bank_problems").update(values).eq("id", id);
+  unwrap(error ? toFailure(error, "saving it") : ok(null));
+}
+
+export async function deleteBankProblem(id: string): Promise<void> {
+  const { error } = await client().from("challenges_bank_problems").delete().eq("id", id);
+  unwrap(error ? toFailure(error, "removing it from the bank") : ok(null));
+}
+
+export type JuryEvent =
+  ChallengesDatabase["public"]["Functions"]["challenges_jury_events"]["Returns"][number];
+
+/** The organization's events with challenges whose jury the viewer is on. */
+export const juryEventsQueryOptions = (orgId: string) =>
+  queryOptions({
+    queryKey: ["challenges", "jury-events", orgId] as const,
+    queryFn: async (): Promise<JuryEvent[]> => {
+      const { data, error } = await client().rpc("challenges_jury_events", { p_org: orgId });
+      return unwrap(error ? toFailure(error, "loading your contests") : ok(data ?? []));
+    },
+    retry: retryPolicy,
+  });
+
+/** The labels another event's problems already use, to pick a free one for a copy. */
+export const problemLabelsQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["challenges", "problem-labels", eventId] as const,
+    queryFn: async (): Promise<Array<Pick<Problem, "label">>> => {
+      const { data, error } = await client()
+        .from("challenges_problems")
+        .select("label")
+        .eq("event_id", eventId);
+      return unwrap(error ? toFailure(error, "loading its problems") : ok(data ?? []));
+    },
+    retry: retryPolicy,
+  });

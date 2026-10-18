@@ -13,6 +13,7 @@ const problem = (extra: Partial<Problem> = {}): Problem => ({
   checker_tolerance: null,
   checker_source: null,
   checker_language: null,
+  run_script: null,
   points: 100,
   test_groups: {},
   ...extra,

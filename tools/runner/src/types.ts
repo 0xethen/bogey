@@ -35,6 +35,8 @@ export interface Problem {
   checker_tolerance: number | null;
   checker_source: string | null;
   checker_language: Language | null;
+  /** DOMjudge's run script: POSIX sh, called as `run <input> <output> <program...>` */
+  run_script: string | null;
   points: number;
   test_groups: Record<string, GroupRule>;
 }

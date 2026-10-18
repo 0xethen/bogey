@@ -33,6 +33,7 @@
     "@bogey/utils": "workspace:*",
     "@tabler/icons-react": "catalog:",
     "fflate": "catalog:",
+    "recharts": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

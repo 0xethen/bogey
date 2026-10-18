@@ -1,4 +1,4 @@
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Api } from "./api.ts";
 import { builtinMatch } from "./checkers.ts";
@@ -155,6 +155,65 @@ class Checking {
   }
 }
 
+/**
+ * Runs the solution on one test. With a run script, the script runs it instead, DOMjudge's way:
+ * `sh /script/run /io/input /io/output <run command...>` in the solution's image, and what it
+ * writes to /io/output is the program's output. Its own stdout is ignored; its stderr is kept.
+ */
+async function runTest(
+  deps: JudgeDeps,
+  problem: Problem,
+  language: Language,
+  dirs: { work: string; script: string | null; io: string | null },
+  input: string,
+  limits: { timeMs: number; memoryMb: number; outputBytes: number },
+): Promise<ExecResult> {
+  const base = {
+    image: language.image,
+    cwd: "/work",
+    timeMs: limits.timeMs,
+    memoryMb: limits.memoryMb,
+    cpus: deps.limits.cpus,
+    pids: deps.limits.pids,
+    maxOutputBytes: limits.outputBytes,
+    tmpfsMb: 64,
+  };
+  if (problem.run_script === null || !dirs.script || !dirs.io) {
+    return deps.sandbox.exec(
+      {
+        ...base,
+        command: language.run_cmd,
+        mounts: [{ host: dirs.work, container: "/work", writable: false }],
+        stdin: input,
+      },
+      deps.signal,
+    );
+  }
+  const output = join(dirs.io, "output");
+  await rm(output, { force: true });
+  await writeFile(join(dirs.io, "input"), input, "utf-8");
+  const result = await deps.sandbox.exec(
+    {
+      ...base,
+      command: `sh /script/run /io/input /io/output ${language.run_cmd}`,
+      mounts: [
+        { host: dirs.work, container: "/work", writable: false },
+        { host: dirs.script, container: "/script", writable: false },
+        { host: dirs.io, container: "/io", writable: true },
+      ],
+      stdin: "",
+    },
+    deps.signal,
+  );
+  const size = await stat(output).then(
+    (info) => info.size,
+    () => 0,
+  );
+  if (size > limits.outputBytes) return { ...result, stdout: "", outputExceeded: true };
+  const stdout = size === 0 ? "" : await readFile(output, "utf-8");
+  return { ...result, stdout };
+}
+
 function verdictOfRun(result: ExecResult, limitMs: number): Verdict | "check" {
   if (result.timedOut) return "TLE";
   if (result.outputExceeded) return "OLE";
@@ -211,6 +270,14 @@ export async function judge(claim: Claim, deps: JudgeDeps): Promise<Outcome> {
     }
     const caseDir = await makeDir(deps.workDir, "t-");
     extra.push(caseDir);
+    let scriptDir: string | null = null;
+    let ioDir: string | null = null;
+    if (problem.run_script !== null) {
+      scriptDir = await makeDir(deps.workDir, "s-");
+      ioDir = await makeDir(deps.workDir, "i-");
+      extra.push(scriptDir, ioDir);
+      await writeFile(join(scriptDir, "run"), problem.run_script, "utf-8");
+    }
     const checking = new Checking(deps, caseDir, checkerDir);
 
     const timeLimit = mb(problem.time_limit_ms, limits.maxTimeMs);
@@ -226,21 +293,17 @@ export async function judge(claim: Claim, deps: JudgeDeps): Promise<Outcome> {
       deps.signal?.throwIfAborted();
 
       const data = await deps.api.testData(test.id);
-      const result = await deps.sandbox.exec(
+      const result = await runTest(
+        deps,
+        problem,
+        language,
+        { work: dir, script: scriptDir, io: ioDir },
+        data.input,
         {
-          image: language.image,
-          command: language.run_cmd,
-          cwd: "/work",
-          mounts: [{ host: dir, container: "/work", writable: false }],
-          stdin: data.input,
           timeMs: timeLimit,
           memoryMb: mb(problem.memory_limit_mb, limits.maxMemoryMb),
-          cpus: limits.cpus,
-          pids: limits.pids,
-          maxOutputBytes: mb(problem.output_limit_kb, limits.maxOutputKb) * 1024,
-          tmpfsMb: 64,
+          outputBytes: mb(problem.output_limit_kb, limits.maxOutputKb) * 1024,
         },
-        deps.signal,
       );
 
       let verdict = verdictOfRun(result, timeLimit);

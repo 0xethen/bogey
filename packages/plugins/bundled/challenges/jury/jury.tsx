@@ -2,7 +2,6 @@ import { Fragment, useRef, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
-  IconArrowLeft,
   IconCircleCheck,
   IconCircleDashed,
   IconCircleX,
@@ -55,11 +54,9 @@ import {
   appFormOptions,
   errorVisibility,
   FieldSelect,
-  fieldHelp,
   rewardEarlyPunishLate,
   useAppForm,
 } from "@bogey/ui/lib/form";
-import { FileDrop } from "@bogey/ui/components/file-drop";
 import {
   addAttachment,
   attachmentsQueryOptions,
@@ -73,10 +70,7 @@ import {
   removeAttachment,
   setIgnored,
   saveDifficulties,
-  saveProblem,
   saveProblemOrder,
-  setStatementPdf,
-  uploadStatementPdf,
   saveTestcases,
   teamNamesQueryOptions,
   testcasesQueryOptions,
@@ -84,33 +78,36 @@ import {
   type Problem,
   type Testcase,
 } from "../db.ts";
-import { JurySolutions, Rejudgings, Verification } from "./jury-tools.tsx";
-import { ContestExport, ImportPackage, ProblemPackage } from "./package-tools.tsx";
+import { Rejudgings, Verification } from "./jury-tools.tsx";
+import { AddFromBank } from "../bank/bank.tsx";
+import { SolutionChart } from "./solution-chart.tsx";
+import { ContestExport, ImportPackage } from "./package-tools.tsx";
 import { isPreviewSupported, runClientPreview, sameOutput } from "../preview-runner.ts";
 import { TestResults } from "../contest/results.tsx";
-import { PROBLEM_KINDS } from "../db.ts";
 import {
   allowedLanguages,
   DifficultyBadge,
   editorLanguage,
-  idProblem,
-  ID_KINDS,
   Link,
-  KIND_FOR_SCORING,
-  MEASURE_NOUN,
   nextId,
   OutputBlock,
-  PROBLEM_KIND,
   points,
   TONE_CLASS,
-  useDifficulties,
   useGoTo,
   useProblems,
   VerdictBadge,
   type Settings,
 } from "../shared.tsx";
 
-export function JuryHome({ eventId, settings }: { eventId: string; settings: Settings }) {
+export function JuryHome({
+  eventId,
+  orgId,
+  settings,
+}: {
+  eventId: string;
+  orgId: string | null;
+  settings: Settings;
+}) {
   const queryClient = useQueryClient();
   const problems = useProblems(eventId, settings.problemOrder);
   const recent = useQuery({
@@ -120,6 +117,9 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
   });
   const teams = useQuery(teamNamesQueryOptions(eventId));
   const labels = new Map((problems.data ?? []).map((problem) => [problem.id, problem.label]));
+  const timeLimits = new Map(
+    (problems.data ?? []).map((problem) => [problem.id, problem.time_limit_ms]),
+  );
   const again = useMutation({
     mutationFn: rejudge,
     onSuccess: () =>
@@ -146,6 +146,7 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
           >
             Scoreboard
           </Button>
+          <AddFromBank eventId={eventId} orgId={orgId} settings={settings} />
           <Button size="sm" render={<Link to="/jury" splat="new" />} nativeButton={false}>
             <IconPlus />
             Add a problem
@@ -326,7 +327,13 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
                       <IconEyeOff />
                     </Button>
                   </div>
-                  <CollapsibleContent className="pb-4">
+                  <CollapsibleContent className="flex flex-col gap-4 pb-4">
+                    {attempt.verdict !== null && (
+                      <SolutionChart
+                        solutionId={attempt.id}
+                        timeLimitMs={timeLimits.get(attempt.problemId) ?? 1000}
+                      />
+                    )}
                     <TestResults solutionId={attempt.id} judged={attempt.verdict !== null} />
                   </CollapsibleContent>
                 </Collapsible>
@@ -571,493 +578,6 @@ function DifficultiesForm({
   );
 }
 
-const STATEMENT_KINDS = [
-  { value: "text", label: "Write it" },
-  { value: "pdf", label: "Upload a PDF" },
-] as const;
-
-function problemSchema(settings: Settings, pdfPath: string | null) {
-  const kind = ID_KINDS[settings.idKind];
-  return z
-    .object({
-      label: z
-        .string()
-        .trim()
-        .superRefine((value, ctx) => {
-          const problem = idProblem(settings.idKind, value);
-          if (problem) ctx.addIssue({ code: "custom", message: problem });
-        })
-        .meta({ label: "ID", placeholder: kind.placeholder })
-        .describe(kind.label),
-      slug: z
-        .string()
-        .trim()
-        .regex(/^([a-z0-9]([a-z0-9-]{0,62}[a-z0-9])?)?$/, "Lowercase letters, digits and dashes")
-        .meta({ label: "URL name", placeholder: "two-sum" })
-        .register(
-          fieldHelp,
-          (slug) => `Its page is /problem/${slug || "(slug)"}. Uses the title by default.`,
-        ),
-      title: z
-        .string()
-        .trim()
-        .min(1, "Give it a title")
-        .max(120, "Keep it under 120 characters")
-        .meta({ label: "Title", placeholder: "Two Sum" }),
-      difficulty: z.string().meta({ label: "Difficulty" }),
-      kind: z.enum(["pass_fail", "partial", "shortest"]).meta({ label: "Type" }),
-      points: z.number().min(0, "0 or more").max(100_000).meta({ label: "Points" }),
-      timeLimitMs: z
-        .int()
-        .min(100, "At least 100 ms")
-        .max(60_000, "At most 60 seconds")
-        .meta({ label: "Time (ms)" }),
-      memoryLimitMb: z
-        .int()
-        .min(16, "At least 16 MB")
-        .max(4096, "At most 4096 MB")
-        .meta({ label: "Memory (MB)" }),
-      outputLimitKb: z
-        .int()
-        .min(1, "At least 1 KB")
-        .max(65_536, "At most 64 MB")
-        .meta({ label: "Output (KB)" }),
-      visible: z
-        .boolean()
-        .meta({ label: "Visible to participants" })
-        .describe("While the contest runs. The jury can see all problems."),
-      sort: z
-        .int()
-        .min(-1000)
-        .max(1000)
-        .meta({ label: "Position" })
-        .describe("Lower comes first. Easier to drag them into place on the Jury page."),
-      golfBrackets: z
-        .array(
-          z.object({
-            max: z
-              .int("A whole number")
-              .min(1, "At least 1")
-              .max(1_000_000)
-              .meta({ label: "Up to" }),
-            points: z.number("A number").min(0, "0 or more").max(100_000).meta({ label: "Points" }),
-          }),
-        )
-        .max(20, "At most 20 ranges")
-        .superRefine((ranges, ctx) => {
-          const seen = new Set<number>();
-          ranges.forEach((range, index) => {
-            if (seen.has(range.max)) {
-              ctx.addIssue({
-                code: "custom",
-                path: [index, "max"],
-                message: "Two ranges end here",
-              });
-            }
-            seen.add(range.max);
-          });
-        }),
-      statementKind: z.enum(["text", "pdf"]).meta({ label: "Statement" }),
-      statement: z.string().max(100_000).meta({
-        label: "Statement",
-        placeholder: "What to read (stdin), what to print (stdout), and the limits on the input.",
-      }),
-      statementPdf: z
-        .instanceof(File)
-        .nullable()
-        .meta({ label: "Statement PDF" })
-        .describe("Up to 20 MB. Participants see it in the page and can download it."),
-    })
-    .superRefine((value, ctx) => {
-      if (value.statementKind === "pdf" && !value.statementPdf && !pdfPath) {
-        ctx.addIssue({ code: "custom", path: ["statementPdf"], message: "Choose the PDF" });
-      }
-    });
-}
-
-type ProblemValues = z.infer<ReturnType<typeof problemSchema>>;
-
-function valuesOf(problem: Problem | undefined, next: string, settings: Settings): ProblemValues {
-  return {
-    label: problem?.label ?? next,
-    slug: problem?.slug ?? "",
-    title: problem?.title ?? "",
-    difficulty: problem?.difficulty ?? "none",
-    points: problem?.points ?? 100,
-    golfBrackets: problem?.golf_brackets ?? [],
-    kind: problem?.kind ?? KIND_FOR_SCORING[settings.scoring],
-    timeLimitMs: problem?.time_limit_ms ?? 2000,
-    memoryLimitMb: problem?.memory_limit_mb ?? 256,
-    outputLimitKb: problem?.output_limit_kb ?? 8192,
-    visible: problem?.visible ?? true,
-    sort: problem?.sort ?? 0,
-    statementKind: problem?.statement_pdf_path ? "pdf" : "text",
-    statement: problem?.statement_md ?? "",
-    statementPdf: null,
-  };
-}
-
-function seconds(ms: number): string {
-  return ms % 1000 === 0 ? `${ms / 1000} second${ms === 1000 ? "" : "s"}` : `${ms} ms`;
-}
-
-// The limits as they are when the button is pressed, for the statement to quote.
-function limitsMarkdown(
-  values: Pick<ProblemValues, "timeLimitMs" | "memoryLimitMb" | "outputLimitKb">,
-) {
-  const output =
-    values.outputLimitKb % 1024 === 0
-      ? `${values.outputLimitKb / 1024} MB`
-      : `${values.outputLimitKb} KB`;
-  return [
-    "## Limits",
-    "",
-    `- Time: ${seconds(values.timeLimitMs)} per test`,
-    `- Memory: ${values.memoryLimitMb} MB`,
-    `- Output: ${output}`,
-  ].join("\n");
-}
-
-export function ProblemEditor({
-  eventId,
-  settings,
-  problem,
-}: {
-  eventId: string;
-  settings: Settings;
-  problem: Problem | undefined;
-}) {
-  const problems = useProblems(eventId, settings.problemOrder);
-  return (
-    <Screen
-      title={problem ? `${problem.label}. ${problem.title}` : "New problem"}
-      width="wide"
-      actions={
-        <div className="flex gap-2">
-          <Button size="sm" variant="ghost" render={<Link to="/jury" />} nativeButton={false}>
-            <IconArrowLeft />
-            Jury
-          </Button>
-          {problem && (
-            <Button
-              size="sm"
-              variant="outline"
-              render={<Link to="/problems" splat={problem.slug} />}
-              nativeButton={false}
-            >
-              Participant view
-            </Button>
-          )}
-        </div>
-      }
-    >
-      <ProblemForm
-        key={problem?.id ?? "new"}
-        eventId={eventId}
-        settings={settings}
-        problem={problem}
-        next={nextId(settings.idKind, problems.data ?? [])}
-      />
-      {problem && (
-        <>
-          <Tests eventId={eventId} problem={problem} />
-          <TrySolution problem={problem} settings={settings} />
-          <JurySolutions eventId={eventId} problem={problem} />
-          <Files eventId={eventId} problem={problem} />
-          <ProblemPackage eventId={eventId} problem={problem} />
-          <RemoveProblem eventId={eventId} problem={problem} />
-        </>
-      )}
-    </Screen>
-  );
-}
-
-function ProblemForm({
-  eventId,
-  settings,
-  problem,
-  next,
-}: {
-  eventId: string;
-  settings: Settings;
-  problem: Problem | undefined;
-  next: string;
-}) {
-  const queryClient = useQueryClient();
-  const goTo = useGoTo();
-  const difficulties = useDifficulties(eventId);
-  const pdfPath = problem?.statement_pdf_path ?? null;
-  const schema = problemSchema(settings, pdfPath);
-  const form = useAppForm({
-    ...appFormOptions.strictSchema({
-      defaultValues: valuesOf(problem, next, settings),
-      errorVisibility,
-      validators: [rewardEarlyPunishLate(schema)],
-    }),
-    onSubmit: async ({ value, formApi, createValidationError }) => {
-      const slug = value.slug.trim() || toSlug(value.title, 64) || toSlug(value.label, 64);
-      try {
-        const id = await saveProblem(eventId, problem?.id ?? null, {
-          label: value.label.trim(),
-          slug,
-          title: value.title.trim(),
-          difficulty: value.difficulty === "none" ? null : value.difficulty,
-          points: value.points,
-          golf_brackets: [...value.golfBrackets].sort((a, b) => a.max - b.max),
-          kind: value.kind,
-          time_limit_ms: value.timeLimitMs,
-          memory_limit_mb: value.memoryLimitMb,
-          output_limit_kb: value.outputLimitKb,
-          visible: value.visible,
-          sort: value.sort,
-          statement_md: value.statement,
-        });
-        const nextPdf =
-          value.statementKind === "text"
-            ? null
-            : value.statementPdf
-              ? await uploadStatementPdf(eventId, id, value.statementPdf)
-              : pdfPath;
-        if (nextPdf !== pdfPath) await setStatementPdf(id, nextPdf, pdfPath);
-        formApi.setFieldValue("statementPdf", null);
-      } catch (error) {
-        return createValidationError(error instanceof Error ? error.message : "Couldn't save it.");
-      }
-      await queryClient.invalidateQueries({ queryKey: problemsQueryOptions(eventId).queryKey });
-      if (!problem || problem.slug !== slug) {
-        await goTo("/jury", { splat: slug, replace: true });
-      }
-      return undefined;
-    },
-  });
-
-  return (
-    <Screen.Section title="Problem">
-      <form.AppForm>
-        {problem ? <form.SaveBarEntry /> : <form.DraftGuard />}
-        <form.Form className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-[7rem_minmax(0,1fr)_minmax(0,1fr)]">
-            <form.Field name="label">{(field) => <field.TextField required />}</form.Field>
-            <form.Field name="title">{(field) => <field.TextField required />}</form.Field>
-            <form.Field name="slug">{(field) => <field.TextField />}</form.Field>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <form.Field name="difficulty">
-              {(field) => (
-                <field.Field>
-                  <field.Label />
-                  <FieldSelect
-                    field={field}
-                    options={[
-                      { value: "none", label: "Not shown" },
-                      ...difficulties.map((each) => ({ value: each.key, label: each.label })),
-                    ]}
-                  />
-                  {difficulties.length === 0 && (
-                    <field.Description>
-                      Add difficulties on the Jury page to choose from.
-                    </field.Description>
-                  )}
-                </field.Field>
-              )}
-            </form.Field>
-            <form.Field name="kind">
-              {(field) => (
-                <field.Field>
-                  <field.Label />
-                  <FieldSelect
-                    field={field}
-                    options={PROBLEM_KINDS.map((kind) => ({
-                      value: kind,
-                      label: PROBLEM_KIND[kind].label,
-                      description: PROBLEM_KIND[kind].description,
-                    }))}
-                  />
-                </field.Field>
-              )}
-            </form.Field>
-          </div>
-          <form.Subscribe selector={(state) => state.values.kind}>
-            {(kind) =>
-              !(kind === "shortest" && settings.golfPoints === "brackets") && (
-                <form.Field name="points">
-                  {(field) => (
-                    <field.NumberField
-                      min={0}
-                      max={100_000}
-                      label={kind === "shortest" ? "Points for the shortest" : undefined}
-                    />
-                  )}
-                </form.Field>
-              )
-            }
-          </form.Subscribe>
-          <form.Subscribe selector={(state) => state.values.kind}>
-            {(kind) =>
-              kind === "shortest" &&
-              settings.golfPoints === "brackets" && (
-                <form.Field name="golfBrackets">
-                  {(list) => (
-                    <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4">
-                      <legend className="px-1 text-sm font-medium">Points by length</legend>
-                      <p className="text-xs text-muted-fg">
-                        A solution earns the points of the smallest range it fits, counted in{" "}
-                        {MEASURE_NOUN[settings.golfMeasure]}. Longer than every range earns 0.
-                      </p>
-                      {list.value.map((_range, index) => (
-                        <div key={index} className="flex items-end gap-2">
-                          <form.Field name={`golfBrackets[${index}].max`}>
-                            {(field) => <field.NumberField min={1} max={1_000_000} />}
-                          </form.Field>
-                          <form.Field name={`golfBrackets[${index}].points`}>
-                            {(field) => <field.NumberField min={0} max={100_000} />}
-                          </form.Field>
-                          <Button
-                            type="button"
-                            size="icon-sm"
-                            variant="ghost"
-                            className="mb-1 text-destructive"
-                            aria-label="Remove this range"
-                            title="Remove this range"
-                            onClick={() => list.removeValue(index)}
-                          >
-                            <IconTrash />
-                          </Button>
-                        </div>
-                      ))}
-                      <div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const last = list.value.at(-1);
-                            list.pushValue({
-                              max: last ? last.max * 2 : 100,
-                              points: last ? Math.max(0, Math.round(last.points / 2)) : 100,
-                            });
-                          }}
-                        >
-                          <IconPlus />
-                          Add a range
-                        </Button>
-                      </div>
-                    </fieldset>
-                  )}
-                </form.Field>
-              )
-            }
-          </form.Subscribe>
-          <fieldset className="flex flex-col gap-3 rounded-2xl border border-border p-4">
-            <legend className="px-1 text-sm font-medium">Limits for this problem</legend>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <form.Field name="timeLimitMs">
-                {(field) => <field.NumberField min={100} max={60_000} step={100} />}
-              </form.Field>
-              <form.Field name="memoryLimitMb">
-                {(field) => <field.NumberField min={16} max={4096} />}
-              </form.Field>
-              <form.Field name="outputLimitKb">
-                {(field) => <field.NumberField min={1} max={65_536} />}
-              </form.Field>
-            </div>
-            <p className="text-xs text-muted-fg">
-              Limits per test. A problem attempting to use more won't save, and one saved before the
-              cap runs at the cap.
-            </p>
-          </fieldset>
-          <form.Field name="statementKind">
-            {(field) => (
-              <field.Field>
-                <field.Label />
-                <FieldSelect field={field} options={STATEMENT_KINDS} />
-              </field.Field>
-            )}
-          </form.Field>
-          <form.Subscribe selector={(state) => state.values.statementKind}>
-            {(statementKind) =>
-              statementKind === "pdf" ? (
-                <form.Field name="statementPdf">
-                  {(field) => (
-                    <field.Field>
-                      <field.Label />
-                      <FileDrop
-                        id={field.name}
-                        accept="application/pdf,.pdf"
-                        maxMb={20}
-                        multiple={false}
-                        invalid={field.meta.isInvalid}
-                        files={
-                          field.value
-                            ? [{ id: "new", name: field.value.name, sizeBytes: field.value.size }]
-                            : []
-                        }
-                        onAdd={([file]) => field.handleChange(file ?? null)}
-                        onRemove={() => field.handleChange(null)}
-                      />
-                      {pdfPath && !field.value ? (
-                        <field.Description>
-                          A PDF is saved. Drop another to replace it.
-                        </field.Description>
-                      ) : (
-                        <field.Description />
-                      )}
-                      <field.Error />
-                    </field.Field>
-                  )}
-                </form.Field>
-              ) : (
-                <form.Field name="statement">
-                  {(field) => (
-                    <field.MarkdownField
-                      rows={12}
-                      actions={
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            const current = field.value.trimEnd();
-                            const limits = limitsMarkdown({
-                              timeLimitMs: form.getFieldValue("timeLimitMs"),
-                              memoryLimitMb: form.getFieldValue("memoryLimitMb"),
-                              outputLimitKb: form.getFieldValue("outputLimitKb"),
-                            });
-                            field.handleChange(
-                              current ? `${current}\n\n${limits}\n` : `${limits}\n`,
-                            );
-                          }}
-                        >
-                          <IconPlus />
-                          Add limits
-                        </Button>
-                      }
-                    />
-                  )}
-                </form.Field>
-              )
-            }
-          </form.Subscribe>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <form.Field name="visible">{(field) => <field.SwitchField />}</form.Field>
-            {settings.problemOrder === "custom" && (
-              <form.Field name="sort">
-                {(field) => <field.NumberField min={-1000} max={1000} />}
-              </form.Field>
-            )}
-          </div>
-          <form.FormAlert title="Couldn't save the problem" />
-          {!problem && (
-            <div>
-              <form.Submit pending="Adding...">Add the problem</form.Submit>
-            </div>
-          )}
-        </form.Form>
-      </form.AppForm>
-    </Screen.Section>
-  );
-}
-
 const testSchema = z.object({
   uid: z.string(),
   isSample: z.boolean(),
@@ -1080,7 +600,7 @@ function testValues(cases: Tuple<Testcase>) {
   };
 }
 
-function Tests({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function Tests({ eventId, problem }: { eventId: string; problem: Problem }) {
   const cases = useQuery(testcasesQueryOptions(problem.id));
   if (cases.isPending) return <Skeleton className="h-32 w-full" />;
   if (cases.isError) {
@@ -1246,7 +766,7 @@ const RUN_VERDICTS = {
   error: "Error",
 } as const;
 
-function TrySolution({ problem, settings }: { problem: Problem; settings: Settings }) {
+export function TrySolution({ problem, settings }: { problem: Problem; settings: Settings }) {
   const cases = useQuery(testcasesQueryOptions(problem.id));
   const languages = useQuery(languagesQueryOptions());
   const allowed = allowedLanguages(languages.data ?? [], settings.languages);
@@ -1400,7 +920,7 @@ function TrySolution({ problem, settings }: { problem: Problem; settings: Settin
   );
 }
 
-function Files({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function Files({ eventId, problem }: { eventId: string; problem: Problem }) {
   const queryClient = useQueryClient();
   const files = useQuery(attachmentsQueryOptions(problem.id));
   const input = useRef<HTMLInputElement>(null);
@@ -1476,7 +996,7 @@ function Files({ eventId, problem }: { eventId: string; problem: Problem }) {
   );
 }
 
-function RemoveProblem({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function RemoveProblem({ eventId, problem }: { eventId: string; problem: Problem }) {
   const queryClient = useQueryClient();
   const goTo = useGoTo();
   const remove = useMutation({
@@ -1487,7 +1007,7 @@ function RemoveProblem({ eventId, problem }: { eventId: string; problem: Problem
     },
   });
   return (
-    <Screen.Section title="Remove">
+    <Screen.Section title="Danger zone">
       <ErrorAlert error={remove.error} title="Couldn't remove the problem" />
       <div>
         <Button

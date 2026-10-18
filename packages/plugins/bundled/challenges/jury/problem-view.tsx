@@ -3,9 +3,10 @@ import { useCan } from "@bogey/db/permissions";
 import type { PluginRouteContext } from "@bogey/plugins/runtime";
 import { Button } from "@bogey/ui/components/button";
 import { Screen } from "@bogey/ui/components/screen";
-import { JuryHome, ProblemEditor } from "./jury.tsx";
+import { JuryHome } from "./jury.tsx";
+import { ProblemEditor } from "./problem-editor.tsx";
 import { Workspace } from "../contest/problem.tsx";
-import { Link, problemSlug, useProblems, type Settings } from "../shared.tsx";
+import { Link, problemSlug, useLiveContest, useProblems, type Settings } from "../shared.tsx";
 
 type Context = PluginRouteContext<Settings>;
 
@@ -14,14 +15,27 @@ export function ProblemPage(context: Context) {
 }
 
 export function JuryPage(context: Context) {
+  useLiveContest(context.eventId);
   if (!problemSlug(context.splat)) {
-    return <JuryHome eventId={context.eventId} settings={context.settings} />;
+    return (
+      <JuryHome
+        eventId={context.eventId}
+        orgId={context.session.org?.id ?? null}
+        settings={context.settings}
+      />
+    );
   }
   return <ProblemRoute {...context} view="jury" />;
 }
 
 // /problem/<slug> is what participants see; /jury/<slug> edits it. Each links to the other.
-function ProblemRoute({ eventId, settings, splat, view }: Context & { view: "public" | "jury" }) {
+function ProblemRoute({
+  eventId,
+  settings,
+  splat,
+  session,
+  view,
+}: Context & { view: "public" | "jury" }) {
   const jury = useCan("challenges.jury");
   const problems = useProblems(eventId, settings.problemOrder);
   const slug = problemSlug(splat);
@@ -52,6 +66,7 @@ function ProblemRoute({ eventId, settings, splat, view }: Context & { view: "pub
     <ProblemEditor
       key={problem?.id ?? "new"}
       eventId={eventId}
+      orgId={session.org?.id ?? null}
       settings={settings}
       problem={problem}
     />

@@ -53,6 +53,7 @@
     "date-fns": "catalog:",
     "react-day-picker": "catalog:",
     "react-resizable-panels": "catalog:",
+    "recharts": "catalog:",
     "shadcn": "catalog:",
     "tw-animate-css": "catalog:",
     "zod": "catalog:"

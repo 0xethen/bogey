@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLiveBroadcast, useLiveInvalidate } from "@bogey/db/realtime";
 import { IconLoader2 } from "@tabler/icons-react";
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import { createPluginNav } from "@bogey/plugins/nav";
@@ -37,10 +39,45 @@ export const signals = createPluginSignals(manifest);
 
 export const CONTEST = pluginWindow(manifest, "contest");
 
+// setTimeout takes at most a 32-bit number of milliseconds
+const LONGEST_TIMEOUT = 2 ** 31 - 1;
+
 export function useContest(eventId: string) {
   const windows = useQuery(eventWindowsQueryOptions(eventId));
   const window = windowByKey(windows.data ?? [], CONTEST);
-  return { loaded: windows.isSuccess, window, running: isWindowOpen(window) };
+  // an organizer opening or closing it by hand reaches the page at once
+  useLiveInvalidate("event_windows", eventWindowsQueryOptions(eventId).queryKey, {
+    filter: `event_id=eq.${eventId}`,
+  });
+  // and so does it opening or closing on time
+  const [now, setNow] = useState(() => Date.now());
+  const next = [window?.opens_at, window?.closes_at]
+    .map((at) => (at ? new Date(at).getTime() : null))
+    .filter((at): at is number => at !== null && at > now)
+    .sort((a, b) => a - b)[0];
+  useEffect(() => {
+    if (next === undefined) return;
+    const timer = setTimeout(
+      () => setNow(Date.now()),
+      Math.min(next - Date.now() + 250, LONGEST_TIMEOUT),
+    );
+    return () => clearTimeout(timer);
+  }, [next]);
+  return { loaded: windows.isSuccess, window, running: isWindowOpen(window, new Date(now)) };
+}
+
+/**
+ * Keeps the contest's pages current: any verdict or problem change in the event reads the
+ * scoreboard and problems again, and the team's own solutions come through as they're judged.
+ */
+export function useLiveContest(eventId: string) {
+  const topic = `challenges:${eventId}`;
+  useLiveBroadcast(topic, ["challenges", "scoreboard", eventId]);
+  useLiveBroadcast(topic, problemsQueryOptions(eventId).queryKey);
+  useLiveBroadcast(topic, ["challenges", "jury-solutions", eventId]);
+  useLiveInvalidate("challenges_judgings", ["challenges", "attempts", eventId], {
+    filter: `event_id=eq.${eventId}`,
+  });
 }
 
 export const VERDICTS: Record<Verdict, string> = {
@@ -72,15 +109,19 @@ export function OutputBlock({
   text,
   variant,
   className,
+  contentClassName,
+  emptyText,
 }: {
   title?: string;
   text: string;
   variant?: "default" | "destructive";
   className?: string;
+  contentClassName?: string;
+  emptyText?: string;
 }) {
   const copy = text && <CodeBlockCopyButton value={text} />;
   return (
-    <CodeBlock size="sm" variant={variant}>
+    <CodeBlock size="sm" variant={variant} className={cn(className)}>
       {title ? (
         <CodeBlockHeader>
           <CodeBlockTitle>{title}</CodeBlockTitle>
@@ -89,8 +130,8 @@ export function OutputBlock({
       ) : (
         copy && <CodeBlockActions>{copy}</CodeBlockActions>
       )}
-      <CodeBlockContent wrap className={cn("max-h-48", className)}>
-        {text || <span className="text-muted-fg">(empty)</span>}
+      <CodeBlockContent wrap className={cn("max-h-48", contentClassName)}>
+        {text || <span className="text-muted-fg">{emptyText ?? "(empty)"}</span>}
       </CodeBlockContent>
     </CodeBlock>
   );
@@ -212,7 +253,7 @@ export const PROBLEM_KIND: Record<ProblemKind, { label: string; description: str
   },
   shortest: {
     label: "Shortest code",
-    description: "Accepted solutions compete on length: the shorter, the better.",
+    description: "Accepted solutions compete with their length: the shorter, the better.",
   },
 };
 
@@ -288,3 +329,55 @@ export const topics = {
     return { kind: match[1] === "problem" ? "problem" : "solution", id: match[2] };
   },
 };
+
+/** Where a team stands on a problem, as the scoreboard and Submissions grid color it. */
+export type CellState = "first" | "solved" | "tried" | "pending" | "untried";
+
+const CELL_TONES: Record<Settings["verdictColors"], Record<CellState, string>> = {
+  theme: {
+    first: "bg-primary text-primary-fg ring-2 ring-primary/35 ring-offset-1 ring-offset-background",
+    solved: "bg-primary text-primary-fg",
+    tried: "bg-muted text-muted-fg",
+    pending: "bg-primary/15 text-primary-text",
+    untried: "border border-dashed border-border text-muted-fg",
+  },
+  traffic: {
+    first: "bg-green-700 text-white ring-2 ring-green-600/35 ring-offset-1 ring-offset-background",
+    solved: "bg-green-600 text-white",
+    tried: "bg-red-500/85 text-white",
+    pending: "bg-amber-400/80 text-amber-950",
+    untried: "border border-dashed border-border text-muted-fg",
+  },
+};
+
+export const CELL_LABEL: Record<CellState, string> = {
+  first: "Solved first",
+  solved: "Solved",
+  tried: "Tried, not solved",
+  pending: "Being judged",
+  untried: "Not tried",
+};
+
+export function cellTone(colors: Settings["verdictColors"], state: CellState): string {
+  return CELL_TONES[colors][state];
+}
+
+/** The key under a grid: a small square in each state's color, and what it means. */
+export function CellLegend({
+  colors,
+  states,
+}: {
+  colors: Settings["verdictColors"];
+  states: Tuple<CellState>;
+}) {
+  return (
+    <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-fg">
+      {states.map((state) => (
+        <li key={state} className="flex items-center gap-1.5">
+          <span aria-hidden className={cn("size-3 rounded-[2px]", cellTone(colors, state))} />
+          {CELL_LABEL[state]}
+        </li>
+      ))}
+    </ul>
+  );
+}

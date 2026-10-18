@@ -78,6 +78,7 @@ function parseProblem(value: unknown): Problem {
     checker_tolerance: maybe(o.checker_tolerance, (v) => num(v, "problem.checker_tolerance")),
     checker_source: maybe(o.checker_source, (v) => text(v, "problem.checker_source")),
     checker_language: maybe(o.checker_language, parseLanguage),
+    run_script: maybe(o.run_script, (v) => text(v, "problem.run_script")),
     points: num(o.points, "problem.points"),
     test_groups: parseGroups(o.test_groups),
   };

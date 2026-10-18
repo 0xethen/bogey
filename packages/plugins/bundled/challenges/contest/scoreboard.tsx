@@ -18,7 +18,15 @@ import {
 } from "@bogey/ui/components/table";
 import { cn } from "@bogey/ui/lib/utils";
 import { scoreboardQueryOptions, type Scoreboard as ScoreboardData } from "../db.ts";
-import { Link, MEASURE_NOUN, useContest, type Settings } from "../shared.tsx";
+import {
+  CellLegend,
+  cellTone,
+  Link,
+  MEASURE_NOUN,
+  useContest,
+  useLiveContest,
+  type Settings,
+} from "../shared.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
 import type { View } from "./view-tabs.tsx";
 
@@ -27,9 +35,11 @@ export function Scoreboard({ eventId, settings }: PluginContext<Settings>) {
   const [view, setView] = useState<View>("public");
   const board = useQuery({
     ...scoreboardQueryOptions(eventId, jury && view === "jury"),
-    refetchInterval: 30_000,
+    // verdicts arrive live; this catches the freeze starting and a dropped connection
+    refetchInterval: 60_000,
   });
-  const standings = <Standings board={board} />;
+  useLiveContest(eventId);
+  const standings = <Standings board={board} colors={settings.verdictColors} />;
 
   return (
     <Screen
@@ -61,7 +71,7 @@ function describe(settings: Settings, board: ScoreboardData | undefined): string
     return "Scoreboard is frozen. Tries show as pending until the final standings are revealed.";
   }
   if (settings.scoring === "icpc") {
-    return "Problems solved, then penalty minutes. Number on green show how many tries it took.";
+    return "Problems solved, then penalty minutes. Each solved cell shows how many tries it took.";
   }
   if (settings.scoring === "golf") {
     const noun = MEASURE_NOUN[settings.golfMeasure];
@@ -72,7 +82,13 @@ function describe(settings: Settings, board: ScoreboardData | undefined): string
   return "Points from each problem's best solution.";
 }
 
-function Standings({ board }: { board: UseQueryResult<ScoreboardData, unknown> }) {
+function Standings({
+  board,
+  colors,
+}: {
+  board: UseQueryResult<ScoreboardData, unknown>;
+  colors: Settings["verdictColors"];
+}) {
   if (board.isPending) return <Skeleton className="h-64 w-full" />;
   if (board.isError) {
     return (
@@ -83,10 +99,21 @@ function Standings({ board }: { board: UseQueryResult<ScoreboardData, unknown> }
   }
   if (board.data.rows.length === 0)
     return <p className="py-4 text-sm text-muted-fg">No teams yet.</p>;
-  return <ScoreTable board={board.data} />;
+  return (
+    <div className="flex flex-col gap-3">
+      <ScoreTable board={board.data} colors={colors} />
+      <CellLegend colors={colors} states={["first", "solved", "tried", "pending"]} />
+    </div>
+  );
 }
 
-function ScoreTable({ board }: { board: ScoreboardData }) {
+function ScoreTable({
+  board,
+  colors,
+}: {
+  board: ScoreboardData;
+  colors: Settings["verdictColors"];
+}) {
   const icpc = board.scoring === "icpc";
   const golf = board.scoring === "golf";
   const byLength = golf && board.golfPoints === "length";
@@ -136,13 +163,16 @@ function ScoreTable({ board }: { board: ScoreboardData }) {
                       <span
                         className={cn(
                           "inline-flex min-w-12 flex-col items-center rounded-lg px-2 py-1 font-mono text-xs tabular-nums",
-                          cell.solved
-                            ? cell.first
-                              ? "bg-green-600/30 text-green-700 dark:text-green-300"
-                              : "bg-green-500/15 text-green-700 dark:text-green-300"
-                            : cell.pending > 0
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                              : "bg-red-500/12 text-red-700 dark:text-red-300",
+                          cellTone(
+                            colors,
+                            cell.solved
+                              ? cell.first
+                                ? "first"
+                                : "solved"
+                              : cell.pending > 0
+                                ? "pending"
+                                : "tried",
+                          ),
                         )}
                         title={cell.first ? "First to solve it" : undefined}
                       >

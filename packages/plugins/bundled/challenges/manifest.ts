@@ -75,6 +75,8 @@ export const manifest = definePlugin({
     "package_imported",
     "package_exported",
     "ccs_exported",
+    "problem_banked",
+    "problem_reused",
     "ctf_challenge_saved",
     "ctf_challenge_deleted",
     "ctf_solved",
@@ -100,6 +102,8 @@ export const manifest = definePlugin({
     package_imported: "imported a problem package",
     package_exported: "exported a problem package",
     ccs_exported: "exported contest data",
+    problem_banked: "saved a problem to the bank",
+    problem_reused: "reused a problem",
     ctf_challenge_saved: "saved a capture-the-flag challenge",
     ctf_challenge_deleted: "deleted a capture-the-flag challenge",
     ctf_solved: "captured a flag",
@@ -145,13 +149,20 @@ export const manifest = definePlugin({
       key: "problems",
       title: "Problems",
       page: "contest",
-      settings: ["idKind", "problemOrder", "languages"],
+      settings: ["idKind", "problemOrder", "languages", "problemsAfterContest"],
     },
     {
       key: "solving",
       title: "Solving",
       page: "contest",
-      settings: ["allowEditor", "allowUpload", "resultDetail", "showErrors", "separateErrors"],
+      settings: [
+        "allowEditor",
+        "allowUpload",
+        "waitForJudging",
+        "resultDetail",
+        "showErrors",
+        "separateErrors",
+      ],
     },
     {
       key: "editor",
@@ -164,7 +175,7 @@ export const manifest = definePlugin({
       key: "scoreboard",
       title: "Scoreboard",
       page: "contest",
-      settings: ["freezeMinutes", "freezeAt", "revealed", "verificationRequired"],
+      settings: ["freezeMinutes", "freezeAt", "revealed", "verificationRequired", "verdictColors"],
     },
   ],
   routes: [
@@ -181,11 +192,22 @@ export const manifest = definePlugin({
       showWhen: { setting: "format", in: ["ctf"] },
       window: "contest",
     },
+    {
+      path: "/submissions",
+      label: "Submissions",
+      splat: true,
+      permission: "event.compete",
+      showWhen: { setting: "format", in: ["contest"] },
+    },
+    // where submissions used to be; it goes to /submissions
+    { path: "/results", splat: true },
     { path: "/problem", splat: true },
     { path: "/scoreboard", label: "Scoreboard" },
     { path: "/jury", label: "Jury", permission: "challenges.jury", splat: true },
     // where the CTF's challenges used to be edited; it goes to the jury now
     { path: "/ctf/manage" },
+    // the organization's problems outside any event; its admins open it from Organization
+    { path: "/bank", area: "org", label: "Problem bank" },
   ],
   settings: {
     format: {
@@ -308,6 +330,17 @@ export const manifest = definePlugin({
         { setting: "scoring", in: ["icpc"] },
       ],
     },
+    verdictColors: {
+      type: "select",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Colors for solved and tried",
+      description: "On the scoreboard and each team's Submissions page.",
+      default: "theme",
+      options: [
+        { value: "theme", label: "The event's colors (solved in its main color)" },
+        { value: "traffic", label: "Green and red" },
+      ],
+    },
     freezeMinutes: {
       type: "number",
       showWhen: { setting: "format", in: ["contest"] },
@@ -332,6 +365,22 @@ export const manifest = definePlugin({
       description: "The languages teams can submit in. None picked allows every enabled one.",
       placeholder: "python, javascript, cpp",
       default: "",
+    },
+    problemsAfterContest: {
+      type: "boolean",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Show problems after the contest",
+      description:
+        "Off, problems are hidden from participants once the contest ends. The jury always sees them.",
+      default: false,
+    },
+    waitForJudging: {
+      type: "boolean",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Wait for a verdict before sending again",
+      description:
+        "A team can't send another solution to a problem until its last one has been judged.",
+      default: true,
     },
     attemptLimit: {
       type: "number",
@@ -441,6 +490,9 @@ export const manifest = definePlugin({
       "ctf_hint_unlocks",
       "ctf_solves",
       "ctf_attempts",
+      "challenges_bank_problems",
+      "challenges_bank_testcases",
+      "challenges_bank_solutions",
     ],
     settings: ["plugin.challenges"],
   },

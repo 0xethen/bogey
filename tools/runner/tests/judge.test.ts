@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, test } from "vite-plus/test";
@@ -88,6 +88,7 @@ function claim(
       checker_tolerance: null,
       checker_source: null,
       checker_language: null,
+      run_script: null,
       points: 100,
       test_groups: {},
     },
@@ -306,4 +307,39 @@ test("an aborted judging stops before the next test", async () => {
   });
   await assert.rejects(judge(claim(), { ...deps(sandbox), signal: controller.signal }));
   assert.equal(sandbox.calls.length, 1);
+});
+
+test("a run script runs the solution, and what it writes to its output file is the output", async () => {
+  const sandbox = new FakeSandbox(async (spec) => {
+    const io = spec.mounts.find((mount) => mount.container === "/io");
+    const script = spec.mounts.find((mount) => mount.container === "/script");
+    assert.ok(io && script, "the script and the test's files are mounted");
+    assert.equal(io.writable, true);
+    assert.equal(script.writable, false);
+    assert.equal(await readFile(join(script.host, "run"), "utf-8"), 'exec "$@" < "$1" > "$2"');
+    const input = await readFile(join(io.host, "input"), "utf-8");
+    await writeFile(join(io.host, "output"), input === "in-t2" ? "2\n" : "1\n");
+    return ran("ignored\n");
+  });
+  const outcome = await judge(
+    claim({ problem: { ...claim().problem, run_script: 'exec "$@" < "$1" > "$2"' } }),
+    deps(sandbox),
+  );
+  assert.equal(sandbox.calls[0]?.command, "sh /script/run /io/input /io/output python3 main.py");
+  assert.equal(sandbox.calls[0]?.stdin, "");
+  assert.equal(outcome.verdict, "WA", "the second test's output came from the file");
+  assert.equal(outcome.runs[0]?.output_excerpt, "1\n");
+});
+
+test("a run script writing more than the output limit is too much output", async () => {
+  const sandbox = new FakeSandbox(async (spec) => {
+    const io = spec.mounts.find((mount) => mount.container === "/io");
+    if (io) await writeFile(join(io.host, "output"), "x".repeat(17 * 1024));
+    return ran("");
+  });
+  const outcome = await judge(
+    claim({ problem: { ...claim().problem, run_script: "true" } }, [tc("t1")]),
+    deps(sandbox),
+  );
+  assert.equal(outcome.verdict, "OLE");
 });

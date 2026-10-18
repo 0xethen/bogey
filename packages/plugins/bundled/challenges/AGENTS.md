@@ -107,7 +107,11 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
   the jury sees inputs, answers and outputs; the team sees verdicts and times when
   `resultDetail` is `tests`, and inputs and outputs of samples only.
 - `checker_source` isn't selectable by browsers (column grant); the runner reads it.
-- Problems stay hidden until the contest window has opened, even with the scoreboard open.
+- Problems stay hidden until the contest window has opened, even with the scoreboard open, and
+  again once it has closed unless `problemsAfterContest` is on.
+- With `waitForJudging` (the default), a trigger on `challenges_solutions` refuses a team's
+  solution while its last one to that problem is queued or running. It's a trigger because a
+  plugin migration can't redefine `challenges_submit` (it names lockdown's function).
 
 ## Judging domain rules
 
@@ -120,3 +124,17 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
   no display name isn't consent to publish an address.
 - Statement-view is logged once per problem per visit, not per accordion
   toggle — the audit question is "when did they first see it."
+
+## Scripts, the bank and live updates
+
+- `run_script` (POSIX sh, DOMjudge's `run input output program...`) and `checker_source` (the compare
+  script) aren't selectable by browsers; the jury reads them with `challenges_scripts`. The runner gets
+  `run_script` in its claim and runs it in the solution's image (`runTest` in `tools/runner/src/judge.ts`).
+  The client preview runner never runs a run script.
+- The problem bank (`challenges_bank_*`, org-scoped) holds copies, never shared rows: `challenges_bank_save`,
+  `challenges_bank_use` and `challenges_problem_copy` all go through `private.challenges_copy_into`, which
+  re-queues jury solutions in the new event. Statement PDFs and attachments live in event storage and
+  aren't copied. A new problem column has to be added to the bank table and the copier too.
+- Pages stay current through `useLiveContest` (`shared.tsx`): a public broadcast on `challenges:<event>`
+  (any judging or problem change; the message is empty, pages refetch through RLS) and `postgres_changes`
+  on `challenges_judgings` for the team's own solutions. Polling is only the fallback.

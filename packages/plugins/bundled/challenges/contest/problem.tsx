@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   IconArrowLeft,
@@ -35,15 +35,9 @@ import { Facts } from "@bogey/ui/components/facts";
 import { Field, FieldLabel } from "@bogey/ui/components/field";
 import { Markdown } from "@bogey/ui/components/markdown";
 import { OptSelect } from "@bogey/ui/components/opt-select";
-import { ExactTime, RelativeTime } from "@bogey/ui/components/relative-time";
+import { ExactTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
-import { Skeleton } from "@bogey/ui/components/skeleton";
 import { Textarea } from "@bogey/ui/components/textarea";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@bogey/ui/components/collapsible";
 import { AskAbout } from "./ask.tsx";
 import { StatementPdf } from "./statement-pdf.tsx";
 import {
@@ -67,7 +61,7 @@ import {
 } from "../preview-runner.ts";
 import type { EditorLanguage } from "@bogey/ui/components/code-editor";
 import { Checkbox } from "@bogey/ui/components/checkbox";
-import { TestResults } from "./results.tsx";
+import { isJudging, LatestTry, untilJudged, useVerdictSignals } from "./tries.tsx";
 import {
   allowedLanguages,
   attemptLength,
@@ -79,14 +73,17 @@ import {
   OutputBlock,
   points,
   PROBLEM_KIND,
-  ProblemKindBadge,
   signals,
   topics,
   useContest,
-  VerdictBadge,
+  useGoTo,
+  useLiveContest,
   type Settings,
 } from "../shared.tsx";
 import { Separator } from "@bogey/ui/components/separator";
+import { Spinner } from "@bogey/ui/components/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 
 const MAX_SOURCE = 256 * 1024;
 const UPLOAD_TYPES = ".py,.js,.mjs,.cpp,.cc,.cxx,.c++,.h,.hpp,.java,.txt";
@@ -120,16 +117,19 @@ export function Workspace({
 }) {
   const [info, setInfo] = useState(false);
   const jury = useCan("challenges.jury");
+  useLiveContest(eventId);
   return (
     <Screen
-      title={problem.title}
+      title={`${problem.label}. ${problem.title}`}
       width="wide"
       description={
         <span className="inline-flex flex-wrap items-center gap-2">
-          <span className="font-mono font-medium text-fg">{problem.label}</span>
-          <ProblemKindBadge kind={problem.kind} />
-          <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
+          <span title={PROBLEM_KIND[problem.kind].description}>
+            {PROBLEM_KIND[problem.kind].label}
+          </span>
+          <span aria-hidden>·</span>
           {points(problem.points)}
+          <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
           <Button
             size="icon-xs"
             variant="ghost"
@@ -335,8 +335,19 @@ function Statement({ eventId, problem }: { eventId: string; problem: Problem }) 
           <div className="flex flex-col gap-3">
             {samples.data?.map((sample) => (
               <div key={sample.ordinal} className="grid gap-3 sm:grid-cols-2">
-                <OutputBlock title={`Input ${sample.ordinal}`} text={sample.input} />
-                <OutputBlock title="Expected output" text={sample.answer} />
+                <OutputBlock
+                  title={`Input ${sample.ordinal}`}
+                  text={sample.input}
+                  className="bg-muted/10"
+                  contentClassName="scroll-fade-100"
+                  emptyText="(no input)"
+                />
+                <OutputBlock
+                  title="Expected output"
+                  text={sample.answer}
+                  contentClassName="scroll-fade-100"
+                  emptyText="(no output)"
+                />
               </div>
             ))}
           </div>
@@ -387,24 +398,6 @@ interface RunOutcome {
   language: EditorLanguage;
 }
 
-function useVerdictSignals(
-  eventId: string,
-  attempts: Tuple<{ id: string; verdict: string | null }> | undefined,
-) {
-  const judged = useRef<Map<string, boolean> | null>(null);
-  useEffect(() => {
-    if (!attempts) return;
-    const before = judged.current;
-    judged.current = new Map(attempts.map((attempt) => [attempt.id, attempt.verdict !== null]));
-    if (!before) return;
-    for (const attempt of attempts) {
-      if (attempt.verdict === null || before.get(attempt.id) === true) continue;
-      if (attempt.verdict === "JE") continue;
-      signals.emit(attempt.verdict === "AC" ? "accepted" : "rejected", eventId);
-    }
-  }, [attempts, eventId]);
-}
-
 function Editor({
   eventId,
   settings,
@@ -415,6 +408,7 @@ function Editor({
   problem: Problem;
 }) {
   const queryClient = useQueryClient();
+  const goTo = useGoTo();
   const access = useEventAccess();
   const jury = useCan("challenges.jury");
   const competing = access?.role === "participant";
@@ -431,6 +425,7 @@ function Editor({
   const [run, setRun] = useState<RunOutcome | null>(null);
   const [all, setAll] = useState<Array<{ sample: Sample; passed: boolean }> | null>(null);
   const [running, setRunning] = useState(false);
+  const [panel, setPanel] = useState<"input" | "output">("input");
   const stopper = useRef<AbortController | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -441,12 +436,12 @@ function Editor({
   const tries = useQuery({
     ...myAttemptsQueryOptions(eventId, problem.id),
     enabled: competing,
-    refetchInterval: (query) =>
-      query.state.data?.some((attempt) => !attempt.verdict) ? 5_000 : false,
+    refetchInterval: (query) => untilJudged(query.state.data),
   });
   useVerdictSignals(eventId, tries.data);
   const used = tries.data?.length ?? 0;
   const outOfTries = settings.attemptLimit > 0 && used >= settings.attemptLimit;
+  const waiting = settings.waitForJudging && (tries.data ?? []).some(isJudging);
   const blocked = !competing
     ? jury
       ? "You're on the jury. Run code here, and test solutions on the Jury page."
@@ -455,16 +450,17 @@ function Editor({
       ? "The contest isn't running, so solutions can't be submitted."
       : outOfTries
         ? "You've used every try for this problem."
-        : null;
+        : waiting
+          ? "Your last solution is still being judged. You can send another once it has a verdict."
+          : null;
 
   const submit = useMutation({
     mutationFn: () =>
       submitSolution({ problemId: problem.id, language: language?.key ?? "", source }),
-    onSuccess: () => {
+    onSuccess: async (solution) => {
       signals.emit("submitted", eventId);
-      return queryClient.invalidateQueries({
-        queryKey: myAttemptsQueryOptions(eventId, problem.id).queryKey,
-      });
+      await queryClient.invalidateQueries({ queryKey: ["challenges", "attempts", eventId] });
+      await goTo("/submissions", { splat: solution });
     },
   });
 
@@ -481,6 +477,7 @@ function Editor({
     const controller = new AbortController();
     stopper.current = controller;
     setRunning(true);
+    setPanel("output");
     setAll(null);
     const result = await runClientPreview(editor, source, stdin, limit, controller.signal);
     stopper.current = null;
@@ -492,6 +489,7 @@ function Editor({
     const controller = new AbortController();
     stopper.current = controller;
     setRunning(true);
+    setPanel("output");
     setRun(null);
     const outcomes: Array<{ sample: Sample; passed: boolean }> = [];
     for (const sample of sampleList) {
@@ -575,13 +573,18 @@ function Editor({
               Run
             </Button>
           )}
-          <Button
-            disabled={!!blocked || !source.trim() || !language || submit.isPending}
-            title={blocked ?? undefined}
-            onClick={() => submit.mutate()}
-          >
-            {submit.isPending ? "Submitting..." : "Submit"}
-          </Button>
+          <Tooltip disabled={!blocked}>
+            <TooltipTrigger render={<span />}>
+              <Button
+                disabled={!!blocked || !source.trim() || !language || submit.isPending}
+                title={blocked ?? undefined}
+                onClick={() => submit.mutate()}
+              >
+                {submit.isPending ? "Submitting..." : "Submit"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{blocked}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -610,66 +613,95 @@ function Editor({
       <ErrorAlert error={uploadError} title="Couldn't load that file" />
       <ErrorAlert error={submit.error} title="Couldn't submit" />
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-border p-4">
+      <Tabs
+        value={panel}
+        onValueChange={(next: "input" | "output") => setPanel(next)}
+        className="gap-3 rounded-2xl border border-border p-4"
+      >
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium">Input</span>
-          <OptSelect
-            size="sm"
-            ariaLabel="Input to run on"
-            value={choice}
-            options={[
-              ...sampleList.map((sample) => ({
-                value: `sample-${sample.ordinal}` as InputChoice,
-                label: `Sample ${sample.ordinal}`,
-              })),
-              { value: "custom" as InputChoice, label: "Your own input" },
-            ]}
-            onChange={setChoice}
-          />
-          {sampleList.length > 1 && (
-            <Button
+          <TabsList variant="default">
+            <TabsTrigger value="input">Input</TabsTrigger>
+            <TabsTrigger value="output">
+              Output
+              {running && <Spinner className="size-3.5" />}
+            </TabsTrigger>
+          </TabsList>
+          <div className="ml-auto flex items-center gap-2">
+            <OptSelect
               size="sm"
-              variant="ghost"
-              className="ml-auto"
-              disabled={!previewable || running || !source.trim()}
-              onClick={() => void runAll()}
-            >
-              <IconPlayerPlayFilled />
-              Run all samples
-            </Button>
-          )}
+              ariaLabel="Input to run on"
+              value={choice}
+              options={[
+                ...sampleList.map((sample) => ({
+                  value: `sample-${sample.ordinal}` as InputChoice,
+                  label: `Sample ${sample.ordinal}`,
+                })),
+                { value: "custom" as InputChoice, label: "Your own input" },
+              ]}
+              onChange={(next) => {
+                setChoice(next);
+                setPanel("input");
+              }}
+            />
+            {sampleList.length > 1 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={!previewable || running || !source.trim()}
+                onClick={() => void runAll()}
+              >
+                <IconPlayerPlayFilled />
+                Run all samples
+              </Button>
+            )}
+          </div>
         </div>
-        <Textarea
-          aria-label="Standard input"
-          rows={3}
-          className="font-mono text-xs"
-          value={stdin}
-          readOnly={choice !== "custom"}
-          placeholder="Type the input your program reads."
-          onChange={(event) => setCustom(event.target.value)}
-        />
-        {!previewable && (
-          <p className="text-sm text-muted-fg">
-            {language?.name ?? "This language"} can't run in the browser. Submit it to be judged.
-          </p>
-        )}
-        {all && (
-          <ul className="flex flex-wrap gap-2">
-            {all.map(({ sample, passed }) => (
-              <li key={sample.ordinal}>
-                <Badge variant={passed ? "default" : "destructive"}>
-                  {passed ? <IconCheck /> : <IconX />}
-                  Sample {sample.ordinal}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        )}
-        {run && <RunOutput outcome={run} separate={settings.separateErrors} />}
-      </div>
+        <TabsContent value="input" className="flex flex-col gap-3">
+          <Textarea
+            aria-label="Standard input"
+            rows={4}
+            className="font-mono text-xs"
+            value={stdin}
+            readOnly={choice !== "custom"}
+            placeholder={
+              choice === "custom" ? "Type the input your program should read." : "(no input)"
+            }
+            onChange={(event) => setCustom(event.target.value)}
+          />
+          {!previewable && (
+            <p className="text-sm text-muted-fg">
+              {language?.name ?? "This language"} can't run in the browser. Submit it to be judged.
+            </p>
+          )}
+        </TabsContent>
+        <TabsContent value="output" className="flex min-h-24 flex-col gap-3">
+          {running && !all && (
+            <p className="flex items-center gap-2 text-sm text-muted-fg" aria-live="polite">
+              <Spinner className="size-4" />
+              Running...
+            </p>
+          )}
+          {all && (
+            <ul className="flex flex-wrap gap-2">
+              {all.map(({ sample, passed }) => (
+                <li key={sample.ordinal}>
+                  <Badge variant={passed ? "default" : "destructive"}>
+                    {passed ? <IconCheck /> : <IconX />}
+                    Sample {sample.ordinal}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          {run && !running && <RunOutput outcome={run} separate={settings.separateErrors} />}
+          {!run && !all && !running && (
+            <p className="text-sm text-muted-fg">Run your code to see its output.</p>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {competing && (
-        <Tries
+        <LatestTry
           eventId={eventId}
           problem={problem}
           settings={settings}
@@ -777,71 +809,5 @@ function GolfLength({
         </span>
       )}
     </p>
-  );
-}
-
-function Tries({
-  eventId,
-  problem,
-  settings,
-  attempts,
-  loading,
-}: {
-  eventId: string;
-  problem: Problem;
-  settings: Settings;
-  attempts: Tuple<Attempt>;
-  loading: boolean;
-}) {
-  if (loading) return <Skeleton className="h-16 w-full" />;
-  if (attempts.length === 0) return null;
-  return (
-    <Screen.Section title="Your tries">
-      <ul className="flex flex-col divide-y divide-border border-y border-border">
-        {attempts.map((attempt) => (
-          <li key={attempt.id}>
-            <Collapsible>
-              <CollapsibleTrigger className="flex w-full items-center gap-3 py-2.5 text-left text-sm">
-                <span className="text-muted-fg">
-                  <RelativeTime value={attempt.submittedAt} /> · {attempt.language}
-                  {attempt.timeMs !== null && ` · ${attempt.timeMs} ms`}
-                  {problem.kind === "shortest" &&
-                    ` · ${attemptLength(attempt, settings.golfMeasure)} ${MEASURE_NOUN[settings.golfMeasure]}`}
-                </span>
-                <span className="ml-auto">
-                  <VerdictBadge attempt={attempt} />
-                </span>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="flex flex-col gap-3 pb-4">
-                  {attempt.verdict === "CE" &&
-                    attempt.compileOutput &&
-                    (settings.showErrors ? (
-                      <OutputBlock
-                        title="Compiler output"
-                        text={attempt.compileOutput}
-                        variant="destructive"
-                      />
-                    ) : (
-                      <p className="text-sm text-muted-fg">
-                        It didn't compile. This contest doesn't show error messages.
-                      </p>
-                    ))}
-                  <TestResults solutionId={attempt.id} judged={attempt.verdict !== null} />
-                  <div>
-                    <AskAbout
-                      eventId={eventId}
-                      topic={topics.solution(attempt.id)}
-                      subject={`${problem.label}. ${problem.title}: a try`}
-                      label="Ask about this try..."
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </li>
-        ))}
-      </ul>
-    </Screen.Section>
   );
 }

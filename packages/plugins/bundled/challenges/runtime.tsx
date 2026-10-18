@@ -5,6 +5,7 @@ import { problemsQueryOptions } from "./db.ts";
 import { manifest } from "./manifest.ts";
 import { JuryPage, ProblemPage } from "./jury/problem-view.tsx";
 import { Problems } from "./contest/problems.tsx";
+import { Submissions } from "./contest/tries.tsx";
 import { ContestPanel, Scoreboard } from "./contest/scoreboard.tsx";
 import { problemSlug, useGoTo } from "./shared.tsx";
 import { ConversationTopic } from "./contest/topic.tsx";
@@ -12,6 +13,7 @@ import { ManageOverview } from "./contest/overview.tsx";
 import { LanguagesControl } from "./contest/languages-control.tsx";
 import { ChallengesPage, ScoreboardPage } from "./ctf/pages.tsx";
 import { CtfJuryPage } from "./ctf/jury.tsx";
+import { BankPage } from "./bank/bank.tsx";
 import { juryChallengesQueryOptions } from "./ctf/database.ts";
 import type { Settings } from "./shared.tsx";
 
@@ -73,6 +75,15 @@ function ToProblems({ splat }: PluginRouteContext<Settings>) {
   return null;
 }
 
+// Results was renamed Submissions; old links still land
+function ToSubmissions({ splat }: PluginRouteContext<Settings>) {
+  const goTo = useGoTo();
+  useEffect(() => {
+    void goTo("/submissions", { splat: problemSlug(splat), replace: true });
+  }, [goTo, splat]);
+  return null;
+}
+
 export default definePluginRuntime(manifest, {
   routes: {
     "": byFormat(ToProblems, ChallengesPage),
@@ -81,10 +92,13 @@ export default definePluginRuntime(manifest, {
       title: ({ queryClient, eventId, splat }) =>
         titleFrom(queryClient, eventId, splat, "Problems"),
     },
+    "/submissions": Submissions,
+    "/results": ToSubmissions,
     "/ctf": ChallengesPage,
     "/ctf/manage": ToJury,
     "/problem": ToProblems,
     "/scoreboard": byFormat(Scoreboard, ScoreboardPage),
+    "/bank": BankPage,
     "/jury": {
       component: byFormat(JuryPage, CtfJuryPage),
       title: ({ queryClient, eventId, splat, settings }) =>

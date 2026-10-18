@@ -8,14 +8,15 @@ import { LockedNotice } from "@bogey/ui/components/panel";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { Skeleton } from "@bogey/ui/components/skeleton";
+import { useNow } from "@bogey/ui/hooks/now";
 import { recentAttemptsQueryOptions } from "../db.ts";
 import {
   DifficultyBadge,
-  ProblemKindBadge,
   Link,
   MEASURE_NOUN,
   points,
   useContest,
+  useLiveContest,
   useProblems,
   type Settings,
 } from "../shared.tsx";
@@ -27,6 +28,10 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
   const problems = useProblems(eventId, settings.problemOrder);
   const tries = useQuery({ ...recentAttemptsQueryOptions(eventId), enabled: competing });
   const contest = useContest(eventId);
+  useLiveContest(eventId);
+  const now = useNow();
+  const closes = contest.window?.closes_at;
+  const over = !contest.running && !!closes && now !== null && new Date(closes).getTime() <= now;
 
   const solved = new Set(
     (tries.data ?? []).filter((each) => each.verdict === "AC").map((each) => each.problemId),
@@ -91,7 +96,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
               <Link
                 to="/problems"
                 splat={problem.slug}
-                className="group flex h-full flex-col gap-3 rounded-2xl p-5 no-underline transition-colors border border-border hocus:border-accent/30 hocus:bg-accent/60"
+                className="group flex h-full flex-col gap-3 rounded-2xl p-5 no-underline transition-colors border border-border hocus:border-accent/10 hocus:bg-accent/30"
               >
                 <span className="flex items-start justify-between gap-3">
                   <span className="flex size-10 items-center justify-center rounded-xl bg-muted font-mono text-lg font-semibold">
@@ -113,9 +118,8 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
                   {problem.title}
                 </span>
                 <span className="mt-auto flex flex-wrap items-center gap-2 text-sm text-muted-fg">
-                  <ProblemKindBadge kind={problem.kind} />
                   <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
-                  {problem.kind !== "shortest" && points(problem.points)}
+                  {points(problem.points)}
                   {jury && !problem.visible && <span>· Hidden</span>}
                 </span>
               </Link>
@@ -126,7 +130,9 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
         <p className="text-sm text-muted-fg">
           {jury
             ? "No problems yet. Add some on the Jury page."
-            : "No problems to show. They appear here when the contest opens."}
+            : over && !settings.problemsAfterContest
+              ? "The contest is over, and its problems are no longer shown."
+              : "No problems to show. They appear here when the contest opens."}
         </p>
       )}
     </Screen>

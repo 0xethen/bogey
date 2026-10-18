@@ -1,3 +1,4 @@
+import { useRef, type MouseEvent } from "react";
 import CodeMirror, { EditorView, keymap, type Extension } from "@uiw/react-codemirror";
 import { acceptCompletion } from "@codemirror/autocomplete";
 import { indentWithTab } from "@codemirror/commands";
@@ -57,13 +58,14 @@ const editorStyles = {
     color: "var(--fg)",
     backgroundColor: "transparent",
     fontSize: "0.8rem",
+    cursor: "text",
   },
   ".cm-content": {
-    caretColor: "var(--primary)",
+    caretColor: "var(--fg)",
     fontFamily: "var(--font-mono, ui-monospace, monospace)",
     padding: "0.75rem 0",
   },
-  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--primary)" },
+  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--fg)" },
   "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
     { backgroundColor: mix("--primary", 25) },
   ".cm-activeLine": { backgroundColor: mix("--fg", 4) },
@@ -95,6 +97,7 @@ const editorStyles = {
   ".cm-panels.cm-panels-bottom": { borderTop: "1px solid var(--border)" },
   ".cm-placeholder": { color: "var(--muted-fg)" },
   ".cm-tooltip": {
+    cursor: "default",
     backgroundColor: "var(--popover)",
     color: "var(--popover-fg)",
     border: "1px solid var(--border)",
@@ -176,11 +179,26 @@ export function CodeEditor({
   invalid?: boolean;
 }) {
   const dark = useIsDark();
+  const view = useRef<EditorView | null>(null);
+
+  // a click below the last line puts the caret at the end, wherever in the editor it lands
+  const toEnd = (event: MouseEvent<HTMLDivElement>) => {
+    const current = view.current;
+    if (!current || event.button !== 0 || event.shiftKey) return;
+    if (event.target instanceof Element && event.target.closest(".cm-tooltip, .cm-panels")) return;
+    const end = current.state.doc.length;
+    const last = current.coordsAtPos(end);
+    if (!last || event.clientY <= last.bottom) return;
+    event.preventDefault();
+    current.focus();
+    current.dispatch({ selection: { anchor: end }, scrollIntoView: true });
+  };
 
   return (
     <div
+      onMouseDownCapture={toEnd}
       className={cn(
-        "overflow-hidden rounded-2xl border border-transparent bg-input/50 transition-[color,box-shadow,background-color] focus-within:border-ring focus-within:focus-ring",
+        "cursor-text overflow-hidden rounded-2xl border border-transparent bg-input/50 transition-[color,box-shadow,background-color] focus-within:border-ring focus-within:focus-ring",
         invalid && "border-destructive",
         className,
       )}
@@ -194,7 +212,10 @@ export function CodeEditor({
         theme={[dark ? darkTheme : lightTheme, bogeyHighlight]}
         id={id}
         onBlur={onBlur}
-        onCreateEditor={(view) => onReady?.({ jumpToLine: (line) => revealLine(view, line) })}
+        onCreateEditor={(created) => {
+          view.current = created;
+          onReady?.({ jumpToLine: (line) => revealLine(created, line) });
+        }}
         indentWithTab={false}
         basicSetup={{
           foldGutter: true,
