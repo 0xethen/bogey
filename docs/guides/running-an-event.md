@@ -11,7 +11,7 @@ Most events go in this order. Each item points at the section below that explain
 
 - Start from last year's event, or a template: [Copy an event](#copy-an-event-or-start-from-a-template).
 - Set the dates, [Details](#2-details-and-visibility) and the schedule: [Agenda](#3-agenda).
-- Decide the prizes: **Manage → Prizes**. Write the [submission forms](#6-submissions) and judging criteria.
+- Decide the prizes: **Manage → Pages → Prizes**. Write the [submission forms](#6-submissions) and judging criteria.
 - Open [registration](#4-registration): questions, the participant limit, [minors and guardians](#minors-and-guardians), [email](#email).
 - Choose the format's settings and plugins: [Formats](formats.md).
 
@@ -113,10 +113,13 @@ in it:
 Click a session to edit it, and drag it by its handle to reorder it or move it
 to another slot. A session can have its own times inside the slot, a location,
 hosts (event members with a staff, judge or organizer role) and a **Presented
-by** name for hosts without an account. Turn on **Take attendance** and hosts
-and staff get a roster and a six-character check-in code to show in the room;
-participants enter it on their Agenda page from 30 minutes before the session
-until 30 minutes after it. The **Attendance** section shows who missed what and
+by** name for hosts without an account. **Page** gives the session a page of
+its own, linked from the agenda and listed under the Agenda tab: an intro, a
+slide deck link. Turn on **Take attendance** and the session always has a page;
+hosts and attendance takers get a roster, a six-character check-in code and a
+QR code to show in the room (at **Check-in → the session**), and participants
+enter the code, or scan the QR code, on the session's page from 30 minutes
+before it until 30 minutes after it. The **Attendance** section shows who missed what and
 exports a CSV.
 
 **Session types**, first on the page, group sessions that share a format, like
@@ -277,7 +280,7 @@ the board, so it works best when they've filled it in, but it doesn't need the b
 
 ## 6. Submissions
 
-**Manage → Prizes** lists what teams can win: a name, what it is for, what winners get, an
+**Manage → Pages → Prizes** lists what teams can win: a name, what it is for, what winners get, an
 optional sponsor and logo, how many winners, and whether teams enter it themselves or only
 organizers place entries (for a sponsor's pick, say). A prize can apply to one submission form.
 Teams choose prizes on their submission page while its form is open; **Most prizes a team can

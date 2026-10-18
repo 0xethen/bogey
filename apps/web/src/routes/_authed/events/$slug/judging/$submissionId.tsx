@@ -29,7 +29,7 @@ import { CriterionField } from "#/components/event/judging/criterion-field.tsx";
 import { DeliberationPanel, FlagButton } from "#/components/event/judging/deliberation.tsx";
 import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
 import { deliberationQueryOptions } from "@bogey/db/queries/deliberation";
-import { can } from "@bogey/db/permissions";
+import { useCan } from "@bogey/db/permissions";
 import { Screen } from "@bogey/ui/components/screen";
 import { IconArrowRight } from "@tabler/icons-react";
 import {
@@ -68,7 +68,7 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionI
 
 function RouteComponent() {
   const t = useT();
-  const { event, session, access } = Route.useRouteContext();
+  const { event, session } = Route.useRouteContext();
   const { submissionId } = Route.useParams();
   const { data: submission } = useSuspenseQuery(submissionDetailQueryOptions(submissionId));
   const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(event.id));
@@ -98,7 +98,7 @@ function RouteComponent() {
   const open = isWindowOpen(windowByKey(windows, round?.windowKey ?? "judging"));
   const index = queue.findIndex((item) => item.submissionId === submissionId);
   const next = queue.slice(index + 1).find((item) => item.status !== "done");
-  const manager = can(access, "event.manage");
+  const manager = useCan("event.manage");
   const flagging =
     (settings.judging.deliberation ?? "assigned") !== "off" &&
     !(deliberation && !deliberation.flag.resolvedAt);

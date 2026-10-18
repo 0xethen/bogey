@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(28);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha'), (tests.u('other'), 'beta', 'Beta');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max, starts_at)
@@ -11,11 +11,21 @@ insert into public.org_members (org_id, user_id, role) values (tests.u('org'), t
 insert into public.event_members (event_id, user_id, role) values
   (tests.u('ev'), tests.u('desk'), 'staff'), (tests.u('ev'), tests.u('pa'), 'participant'), (tests.u('ev'), tests.u('pb'), 'participant');
 
+select tests.as_user(tests.u('pb'));
+select lives_ok($$select public.my_badge(tests.u('ev'))$$, 'another participant has a badge too');
+reset role;
+select set_config('t.other', (select code from public.member_codes where event_id = tests.u('ev') and user_id = tests.u('pb')), true);
+
 select tests.as_user(tests.u('pa'));
 select ok((select length(code) = 8 from public.my_badge(tests.u('ev'))), 'a member has an eight character badge code');
 select is((select code from public.my_badge(tests.u('ev'))), (select code from public.my_badge(tests.u('ev'))), 'which stays the same');
 select is_empty($$select 1 from public.member_codes$$, 'and no one can list the codes');
 select throws_ok($$select public.check_in(tests.u('ev'), tests.u('pb'))$$, '42501', null, 'participants can''t check others in');
+select throws_ok($$select public.check_in(tests.u('ev'), null, current_setting('t.other'), 'qr')$$, '42501', null, 'or with someone''s badge code');
+select throws_ok($$select public.check_in(tests.u('ev'), null, current_setting('t.other'), 'self')$$, '42501', null, 'which isn''t a venue code either');
+select throws_ok($$select * from public.venue_code(tests.u('ev'))$$, '42501', null, 'or see the venue code');
+select throws_ok($$select public.undo_check_in(tests.u('ev'), tests.u('pb'))$$, '42501', null, 'or undo someone''s check-in');
+select throws_ok($$select public.check_out(tests.u('ev'), tests.u('pb'))$$, '42501', null, 'or check them out');
 select throws_ok($$select * from public.checkin_roster(tests.u('ev'))$$, '42501', null, 'or read the roster');
 reset role;
 

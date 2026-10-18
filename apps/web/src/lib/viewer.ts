@@ -34,11 +34,8 @@ export const hasSubmissionPage = (viewer: EventViewer) =>
   participates(viewer) && viewer.windows.some((window) => isSubmissionWindow(window.key));
 export const judgesOnly = (viewer: EventViewer) =>
   can(viewer.access, "judging.score") && !manages(viewer);
+/** The Check-in tab: only whoever checks people in (participants check in from Home and session pages). */
 export const atTheDesk = ({ access }: EventViewer) => can(access, "people.checkin");
-/** The Check-in tab: the desk for attendance takers, a participant's badge and session codes. */
-export const checksIn = (viewer: EventViewer) =>
-  atTheDesk(viewer) ||
-  (participates(viewer) && (!!windowByKey(viewer.windows, "checkin") || viewer.hasAgenda));
 export const hasAgenda = (viewer: EventViewer) => viewer.hasAgenda;
 export const hasResults = ({ windows }: EventViewer) => !!windowByKey(windows, "results");
 export const chats = ({ access, chat }: Pick<EventViewer, "access" | "chat">) =>

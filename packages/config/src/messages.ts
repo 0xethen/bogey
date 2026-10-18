@@ -457,6 +457,9 @@ export const en = {
   "notif.certificate.issued.help": "A certificate for you is ready.",
   "notif.session.reminder": "Session reminders",
   "notif.session.reminder.help": "A session you signed up for is about to start.",
+  "notif.window.reminder": "Schedule reminders",
+  "notif.window.reminder.help":
+    "Something on the event's schedule, like submissions or judging, is about to open.",
 
   "shortcuts.intro": "Change or disable (⌫) helpful keybinds.",
   "shortcuts.inEvents": "In events where it's on",
@@ -700,9 +703,9 @@ export const en = {
   "checkin.walkIn": "Walk-in",
   "checkin.walkInHelp":
     "Someone who isn't on the roster. They're registered, approved and checked in at once, with an account made for their email if they don't have one.",
-  "checkin.openKiosk": "Open the walk-in kiosk",
-  "checkin.kioskHelp":
-    "Open it on another device signed in as you, and walk-ins fill it out themselves: it asks the registration questions and checks them in.",
+  "checkin.walkInKiosk": "Walk-in kiosk",
+  "checkin.openKiosk": "Open kiosk",
+  "checkin.kioskHelp": "Walk-ins fill out the registration questions and check themselves in.",
   "checkin.registering": "Registering...",
   "checkin.registerAndCheckIn": "Register and check in",
   "checkin.walkInFailed": "Couldn't add the walk-in",
@@ -827,8 +830,12 @@ export const en = {
   "eventTab.results": "Results",
   "eventTab.manage": "Manage",
   "session.codeTitle": "Check-in code",
-  "session.codeHelp":
-    "Show it in the room. People enter it on their Agenda page from 30 minutes before the start until 30 minutes after the end.",
+  "session.codeHelp": "Enter it, or scan the QR code, on {checkin} from {from} to {to}.",
+  "session.linkCopy": "Copy link to check-in",
+  "session.copied": "Copied!",
+  "session.itsPage": "the session's page",
+  "session.qrLabel": "QR code that opens the session's page with the code filled in",
+  "session.qrExpand": "Show the QR code full screen",
   "session.replaceTitle": "Replace the code?",
   "session.replaceBody":
     "The current code stops working. Anyone already checked in stays checked in.",
@@ -848,8 +855,8 @@ export const en = {
   "agenda.pick": "Pick one session in each round. You can switch while sign-ups are open.",
   "agenda.checkIn": "Check in",
   "agenda.checkInHelp": "Enter the code shown in the room when a session starts.",
-  "agenda.checkInOnTab": "Checking in to a session? Enter the room's code on the {checkin} tab.",
-  "agenda.checkInTab": "Check-in",
+  "agenda.checkInOnPage":
+    "Checking in to a session? Open it here and enter the code shown in the room, or scan its QR code.",
   "agenda.empty": "Nothing is on the agenda yet.",
   "page.title": "Page",
   "page.plugin": "Plugin",
@@ -872,6 +879,7 @@ export const en = {
   "agenda.chooseOne": "Choose one",
   "agenda.pickFailed": "Couldn't change your pick",
   "agenda.takeAttendance": "Take attendance...",
+  "agenda.editSession": "Edit this session",
   "agenda.yourPick": "Your pick",
   "agenda.drop": "Drop",
   "agenda.switch": "Switch to this",
@@ -2831,6 +2839,9 @@ export const en = {
   "manageForms.deleteButton": "Delete form...",
 
   "agenda.takeAttendanceLabel": "Take attendance",
+  "manageAgenda.page": "Page",
+  "manageAgenda.pageHelp":
+    "Gives the session a page of its own, linked from the agenda: an intro, a slide deck link. Sessions that take attendance always have one, where people check in.",
   "tone.gray": "Gray",
   "tone.red": "Red",
   "tone.orange": "Orange",
@@ -2924,6 +2935,16 @@ export const en = {
   "manageAgenda.removeWindowTitle": "Remove {name}?",
   "manageAgenda.removeWindowBody": "Whatever it opens stays closed. You can add it back later.",
   "manageAgenda.removeWindow": "Remove window...",
+  "manageAgenda.removeShort": "Remove...",
+  "manageAgenda.setReminder": "Set reminder...",
+  "manageAgenda.reminderTitle": "Reminder",
+  "manageAgenda.reminderHelp": "Everyone in the event is notified before {name} opens.",
+  "manageAgenda.reminderDefault": "Event's default ({minutes} min before)",
+  "manageAgenda.reminderDefaultOff": "Event's default (none)",
+  "manageAgenda.reminderNone": "No reminder",
+  "manageAgenda.reminderCustom": "Custom",
+  "manageAgenda.reminderMinutes": "Minutes before it opens",
+  "manageAgenda.reminderDefaultLink": "Change the default",
   "manageAgenda.workshop": "Workshop",
   "manageAgenda.color": "Color",
   "manageAgenda.icon": "Icon",
@@ -3277,8 +3298,12 @@ export const en = {
   "setting.schedule.display.list": "What's open and next",
   "setting.schedule.display.timeline": "Full timeline",
   "setting.schedule.display.hidden": "Don't show",
+  "setting.agenda.tabMenu": "List session pages under the Agenda tab",
+  "setting.agenda.tabMenu.help":
+    "Sessions that take attendance or have page content get a page. With this on, they're listed when you hover Agenda in the tabs.",
   "setting.agenda.reminderMinutes": "Remind people (minutes before)",
-  "setting.agenda.reminderMinutes.help": "Sent for sessions people signed up for. 0 sends none.",
+  "setting.agenda.reminderMinutes.help":
+    "Sent for sessions people signed up for, and to everyone before a window opens unless the window sets its own. 0 sends none.",
   "setting.identity.enabled": "Identity setup",
   "setting.identity.enabled.help":
     "Welcome new participants with Initial Setup. The first time a participant opens the event, they confirm their name (it starts as the first part of their email address) and set up a team before anything else.",

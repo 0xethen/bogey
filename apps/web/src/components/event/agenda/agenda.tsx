@@ -13,6 +13,7 @@ import {
   type AgendaSlot,
 } from "@bogey/db/queries/sessions";
 import { requestFailure, unwrap } from "@bogey/db/errors";
+import { useCan } from "@bogey/db/permissions";
 import {
   dateParts,
   formatDate,
@@ -34,6 +35,7 @@ import { useMemo } from "react";
 import { milestoneLabel, type Milestone } from "#/lib/windows.ts";
 import { useLocale } from "@bogey/ui/lib/locale";
 import { KindBadge, shownKind } from "#/components/event/agenda/session-kind.tsx";
+import { useSession } from "#/lib/viewer.ts";
 import { useT, type T } from "#/lib/translate.tsx";
 
 export function sessionTimes(
@@ -44,6 +46,17 @@ export function sessionTimes(
     start: session.startsAt ?? slot.startsAt,
     end: session.endsAt ?? (session.startsAt ? null : slot.endsAt),
   };
+}
+
+/**
+ * Whether the viewer takes a session's attendance. The agenda's `canTakeAttendance` is the real
+ * role's answer; this narrows it to the role being viewed as, keeping sessions the viewer hosts.
+ */
+export function useTakesAttendance(): (session: AgendaSession) => boolean {
+  const attendance = useCan("sessions.attendance");
+  const me = useSession()?.user.id;
+  return (session) =>
+    session.canTakeAttendance && (attendance || session.hosts.some((host) => host.id === me));
 }
 
 function seatsLeft(session: AgendaSession): number | null {
@@ -79,12 +92,18 @@ export function SessionCard({
   kinds,
   actions,
   className,
+  slug,
+  named = true,
 }: {
   session: AgendaSession;
   slot: AgendaSlot;
   kinds: Tuple<SessionKind>;
   actions?: ReactNode;
   className?: string;
+  /** Links the name to the session's page, when it has one. */
+  slug?: string;
+  /** False on the session's own page, which has the name as its title. */
+  named?: boolean;
 }) {
   const t = useT();
   const time = useTimeFormat();
@@ -98,10 +117,22 @@ export function SessionCard({
     <div className={cn("flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4", className)}>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-medium">
-            {session.name}
-            {session.required && <RequiredMark />}
-          </h3>
+          {named && (
+            <h3 className="text-base font-medium">
+              {slug && session.hasPage ? (
+                <Link
+                  to="/events/$slug/agenda/$sessionId"
+                  params={{ slug, sessionId: session.id }}
+                  className="link"
+                >
+                  {session.name}
+                </Link>
+              ) : (
+                session.name
+              )}
+              {session.required && <RequiredMark />}
+            </h3>
+          )}
           {kind && <KindBadge kind={kind} />}
           {session.category && <Badge variant="secondary">{session.category}</Badge>}
           {session.visibility === "staff" && (
@@ -209,6 +240,7 @@ export function AgendaView({
   canPick: boolean;
 }) {
   const t = useT();
+  const takesAttendance = useTakesAttendance();
   const queryClient = useQueryClient();
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: agendaQueryOptions(eventId).queryKey });
@@ -263,16 +295,17 @@ export function AgendaView({
                             session={session}
                             slot={slot}
                             kinds={kinds}
+                            slug={slug}
                             actions={
                               <>
-                                {session.canTakeAttendance && (
+                                {takesAttendance(session) && (
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     nativeButton={false}
                                     render={
                                       <Link
-                                        to="/events/$slug/agenda/$sessionId"
+                                        to="/events/$slug/agenda/$sessionId/attendance"
                                         params={{ slug, sessionId: session.id }}
                                       />
                                     }
@@ -419,13 +452,13 @@ const checkInSchema = (t: T) =>
       .meta({ label: t("agenda.codeLabel"), placeholder: t("agenda.codePlaceholder") }),
   });
 
-export function CheckInForm({ eventId }: { eventId: string }) {
+export function CheckInForm({ eventId, code = "" }: { eventId: string; code?: string }) {
   const t = useT();
   const schema = useMemo(() => checkInSchema(t), [t]);
   const queryClient = useQueryClient();
   const [checkedIn, setCheckedIn] = useState<string | null>(null);
   const form = useAppForm({
-    defaultValues: { code: "" },
+    defaultValues: { code },
     errorVisibility,
     validators: [rewardEarlyPunishLate(schema)],
     onSubmit: async ({ value, formApi, createValidationError }) => {

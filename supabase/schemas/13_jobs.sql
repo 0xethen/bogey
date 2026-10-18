@@ -149,8 +149,65 @@ end;
 $$;
 revoke execute on function private.remind_sessions() from anon, authenticated;
 
+create function private.remind_windows()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_row record;
+  v_count integer := 0;
+begin
+  for v_row in
+    select x.event_id, x.key, x.opens_at, x.label, e.slug, e.timezone, x.subject
+    from (
+      select w.event_id, w.key, w.opens_at,
+        coalesce(w.reminder_minutes,
+          (private.event_setting(w.event_id, 'agenda') ->> 'reminderMinutes')::integer, 0) as mins,
+        case w.key
+          when 'registration' then 'Registration'
+          when 'checkin' then 'Check-in'
+          when 'teams' then 'Team changes'
+          when 'instructions' then 'Instructions'
+          when 'sessions' then 'Session sign-ups'
+          when 'submissions' then 'Submissions'
+          when 'judging' then 'Judging'
+          when 'voting' then 'Popular vote'
+          when 'results' then 'Results'
+          when 'gallery' then 'Project gallery'
+          else initcap(replace(replace(w.key, '-', ' '), '.', ' '))
+        end as label,
+        -- windows have no id of their own; this one is stable per event and key
+        md5(w.event_id::text || ':' || w.key)::uuid as subject
+      from public.event_windows w
+      where w.override is null and w.opens_at > now()
+    ) x
+    join public.events e on e.id = x.event_id
+    where x.mins > 0
+      and x.opens_at <= now() + make_interval(mins => x.mins)
+      and not exists (select 1 from private.reminders_sent r
+        where r.kind = 'window.reminder' and r.subject = x.subject and r.stamp = x.opens_at)
+  loop
+    insert into private.reminders_sent (kind, subject, stamp)
+    values ('window.reminder', v_row.subject, v_row.opens_at);
+    v_count := v_count + private.notify(
+      array(select user_id from public.event_members
+        where event_id = v_row.event_id and status = 'active'),
+      v_row.event_id, 'window.reminder', v_row.label || ' opens soon',
+      'Opens ' || to_char(v_row.opens_at at time zone v_row.timezone, 'FMDay FMHH12:MI AM') || '.',
+      '/events/' || v_row.slug,
+      jsonb_build_object('window', v_row.key,
+        'when', to_char(v_row.opens_at at time zone v_row.timezone, 'FMDay FMHH12:MI AM')));
+  end loop;
+  return v_count;
+end;
+$$;
+revoke execute on function private.remind_windows() from anon, authenticated;
+
 select cron.schedule('bogey-submission-reminders', '*/10 * * * *', 'select private.remind_submission_deadlines()');
 select cron.schedule('bogey-session-reminders', '* * * * *', 'select private.remind_sessions()');
+select cron.schedule('bogey-window-reminders', '* * * * *', 'select private.remind_windows()');
 select cron.schedule('bogey-announcement-notices', '* * * * *', 'select private.deliver_due_announcements()');
 select cron.schedule('bogey-settle-submissions', '* * * * *', 'select private.settle_submissions()');
 select cron.schedule('bogey-window-changes', '* * * * *', 'select private.announce_window_changes()');

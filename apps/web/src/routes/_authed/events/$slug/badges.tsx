@@ -3,7 +3,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { IconPrinter } from "@tabler/icons-react";
 import { badgeSheetQueryOptions } from "@bogey/db/queries/checkin";
-import { can } from "@bogey/db/permissions";
+import { can, useCan } from "@bogey/db/permissions";
+import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { Button } from "@bogey/ui/components/button";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Screen } from "@bogey/ui/components/screen";
@@ -26,6 +27,14 @@ export const Route = createFileRoute("/_authed/events/$slug/badges")({
 });
 
 function RouteComponent() {
+  return (
+    <PreviewGate allowed={useCan("people.checkin")}>
+      <Badges />
+    </PreviewGate>
+  );
+}
+
+function Badges() {
   const t = useT();
   const { event } = Route.useRouteContext();
   const { layout = "sheet", roles = "participant" } = Route.useSearch();

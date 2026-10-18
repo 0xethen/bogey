@@ -163,6 +163,15 @@ export const NOTIFICATION_KINDS = {
     transactional: false,
     emailKind: "session.reminder",
   },
+  "window.reminder": {
+    label: "Schedule reminders",
+    description:
+      "Something on the event's schedule, like submissions or judging, is about to open.",
+    group: "Event",
+    channels: { inApp: true, email: false },
+    transactional: false,
+    emailKind: "notification",
+  },
 } as const satisfies Record<string, NotificationKind>;
 
 export type NotificationKindKey = keyof typeof NOTIFICATION_KINDS;

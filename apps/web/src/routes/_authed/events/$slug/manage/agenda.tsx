@@ -3,7 +3,15 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { IconCheck, IconCircleX, IconPlus, IconTrash, IconDownload } from "@tabler/icons-react";
+import {
+  IconBell,
+  IconBellOff,
+  IconCheck,
+  IconCircleX,
+  IconDownload,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
 import {
   SESSION_KIND_ICONS,
   SESSION_KIND_TONES,
@@ -38,8 +46,17 @@ import {
   type EditableListPosition,
 } from "@bogey/ui/components/editable-list";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { Field, FieldLabel } from "@bogey/ui/components/field";
+import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
 import { OptSelect } from "@bogey/ui/components/opt-select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@bogey/ui/components/popover";
+import { RadioGroup, RadioGroupItem } from "@bogey/ui/components/radio-group";
 import { Screen } from "@bogey/ui/components/screen";
 import { Switch } from "@bogey/ui/components/switch";
 import { Timeline } from "#/components/event/agenda/timeline.tsx";
@@ -68,6 +85,7 @@ import {
 } from "#/components/settings/fields/setting-fields.tsx";
 import { useEventRefresh } from "#/lib/refresh.ts";
 import { useSettingsMutation } from "#/lib/settings.ts";
+import { SettingLink } from "#/components/settings/setting-link.tsx";
 import { CORE_WINDOWS, timelineItems, windowLabel } from "#/lib/windows.ts";
 
 const agendaSettings = (eventId: string) =>
@@ -79,12 +97,15 @@ import { msg, useT, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
+  // a session's page links here with its id to open it for editing
+  validateSearch: z.object({ session: z.string().optional() }),
   staticData: {
     title: msg("eventTab.agenda"),
     command: { keywords: ["schedule", "sessions", "windows", "attendance"] },
     settings: (t) => [
       searchSection(t("manageAgenda.reminders"), { id: "reminders" }),
       ...searchSettings("agenda", ["reminderMinutes"], t),
+      ...searchSettings("agenda", ["tabMenu"], t),
       searchSection(t("manageAgenda.types"), {
         keywords: ["levels", "beginner", "advanced", "talk", "workshop"],
         id: "session-types",
@@ -189,6 +210,11 @@ const sessionSchema = (t: T) =>
         .string()
         .max(20_000)
         .meta({ label: t("homeEditor.description") }),
+      page: z
+        .string()
+        .max(50_000)
+        .meta({ label: t("manageAgenda.page") })
+        .describe(t("manageAgenda.pageHelp")),
       location: z
         .string()
         .max(200, t("form.maxLength", { max: 200 }))
@@ -284,6 +310,7 @@ function blankSession(): SessionValues {
     kind: UNTYPED,
     name: "",
     description: "",
+    page: "",
     location: "",
     starts: "",
     ends: "",
@@ -323,6 +350,7 @@ function toValues(agenda: Agenda, kinds: Tuple<SessionKind>, timeZone: string): 
         kind: typeOf(kinds, session.kind),
         name: session.name,
         description: session.descriptionMd,
+        page: session.pageMd,
         location: session.location ?? "",
         starts: isoToWallTime(session.startsAt, timeZone),
         ends: isoToWallTime(session.endsAt, timeZone),
@@ -361,6 +389,8 @@ function previewOf(
       kind: session.kind,
       name: session.name.trim() || t("manageAgenda.untitledSession"),
       descriptionMd: session.description,
+      pageMd: session.page,
+      hasPage: session.takesAttendance || session.page.trim() !== "",
       location: session.location.trim() || null,
       startsAt: wallTimeToIso(session.starts, timeZone),
       endsAt: wallTimeToIso(session.ends, timeZone),
@@ -432,7 +462,8 @@ function SessionsEditor() {
   const kinds = sessionKindsWithPlugins(settings.agenda.kinds, plugins);
   const [removed, setRemoved] = useState<number | null>(null);
   const [activeSlot, setActiveSlot] = useState<string | null>(null);
-  const [active, setActive] = useState<string | null>(null);
+  // an existing session's uid is its id
+  const [active, setActive] = useState<string | null>(Route.useSearch().session ?? null);
 
   const hosts = people.members
     .filter((member) => member.role !== "participant")
@@ -470,6 +501,7 @@ function SessionsEditor() {
                 kind: session.kind,
                 name: session.name,
                 descriptionMd: session.description,
+                pageMd: session.page,
                 location: session.location,
                 startsAt: iso(session.starts),
                 endsAt: iso(session.ends),
@@ -586,6 +618,7 @@ function SessionsEditor() {
           <form.Field name={`${at}.required`}>{(field) => <field.SwitchField />}</form.Field>
         )}
         <form.Field name={`${at}.takesAttendance`}>{(field) => <field.SwitchField />}</form.Field>
+        <form.Field name={`${at}.page`}>{(field) => <field.MarkdownField rows={5} />}</form.Field>
       </div>
     );
   };
@@ -875,6 +908,13 @@ const windowSchema = (t: T) =>
       mode: z.enum(["scheduled", "open", "closed"]).meta({ label: t("manageAgenda.mode") }),
       opens: z.string().meta({ label: t("timeline.opens") }),
       closes: z.string().meta({ label: t("timeline.closes") }),
+      reminder: z.enum(["default", "none", "custom"]),
+      minutes: z
+        .number()
+        .int()
+        .min(1)
+        .max(1440)
+        .meta({ label: t("manageAgenda.reminderMinutes") }),
     })
     .superRefine((value, ctx) => {
       if (
@@ -899,6 +939,9 @@ function WindowEditor({
   const t = useT();
   const schema = useMemo(() => windowSchema(t), [t]);
   const refreshEvent = useEventRefresh(eventId);
+  const eventSlug = Route.useRouteContext().event.slug;
+  const { data: settings } = useSuspenseQuery(agendaSettings(eventId));
+  const fallback = settings.agenda.reminderMinutes;
   const remove = useMutation({
     mutationFn: async () => unwrap(await removeWindowFn({ data: { eventId, key: window.key } })),
     onSuccess: refreshEvent,
@@ -909,6 +952,8 @@ function WindowEditor({
         mode: window.override ?? "scheduled",
         opens: isoToWallTime(window.opens_at, timeZone),
         closes: isoToWallTime(window.closes_at, timeZone),
+        reminder: reminderOf(window.reminder_minutes),
+        minutes: window.reminder_minutes || fallback || 5,
       },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
@@ -919,6 +964,8 @@ function WindowEditor({
         opens_at: wallTimeToIso(value.opens, timeZone),
         closes_at: wallTimeToIso(value.closes, timeZone),
         override: value.mode === "scheduled" ? null : value.mode,
+        reminder_minutes:
+          value.reminder === "default" ? null : value.reminder === "none" ? 0 : value.minutes,
       };
       const result = await setWindowsFn({ data: { eventId, windows: [change] } }).catch(
         requestFailure,
@@ -952,11 +999,81 @@ function WindowEditor({
         </form.Subscribe>
         <form.FormAlert title={t("manageAgenda.windowSaveFailed")} />
         <ErrorAlert error={remove.error} title={t("manageAgenda.removeWindowFailed")} />
-        <div>
+        <div className="grid grid-cols-2 gap-2">
+          <Popover>
+            <form.Subscribe selector={(state) => state.values.reminder}>
+              {(reminder) => (
+                <PopoverTrigger render={<Button size="sm" variant="outline" />}>
+                  {reminder === "none" ? <IconBellOff /> : <IconBell />}
+                  {t("manageAgenda.setReminder")}
+                </PopoverTrigger>
+              )}
+            </form.Subscribe>
+            <PopoverContent align="start">
+              <PopoverHeader>
+                <PopoverTitle>{t("manageAgenda.reminderTitle")}</PopoverTitle>
+                <PopoverDescription>
+                  {t("manageAgenda.reminderHelp", { name: windowLabel(window, t) })}
+                </PopoverDescription>
+              </PopoverHeader>
+              <form.Field name="reminder">
+                {(field) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={(next) => {
+                      if (next === "default" || next === "none" || next === "custom") {
+                        field.handleChange(next);
+                      }
+                    }}
+                  >
+                    {(
+                      [
+                        [
+                          "default",
+                          fallback > 0
+                            ? t("manageAgenda.reminderDefault", { minutes: fallback })
+                            : t("manageAgenda.reminderDefaultOff"),
+                        ],
+                        ["none", t("manageAgenda.reminderNone")],
+                        ["custom", t("manageAgenda.reminderCustom")],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Field key={value} orientation="horizontal">
+                        <RadioGroupItem value={value} id={`${window.key}-reminder-${value}`} />
+                        <FieldLabel
+                          htmlFor={`${window.key}-reminder-${value}`}
+                          className="font-normal"
+                        >
+                          {label}
+                        </FieldLabel>
+                      </Field>
+                    ))}
+                  </RadioGroup>
+                )}
+              </form.Field>
+              <form.Subscribe selector={(state) => state.values.reminder === "custom"}>
+                {(custom) =>
+                  custom && (
+                    <form.Field name="minutes">
+                      {(field) => <field.NumberField min={1} max={1440} />}
+                    </form.Field>
+                  )
+                }
+              </form.Subscribe>
+              <FieldDescription>
+                <SettingLink
+                  to={`/events/${eventSlug}/manage/agenda`}
+                  hash="agenda.reminderMinutes"
+                >
+                  {t("manageAgenda.reminderDefaultLink")}
+                </SettingLink>
+              </FieldDescription>
+            </PopoverContent>
+          </Popover>
           <Button
             size="sm"
             variant="outline"
-            className="text-destructive w-full"
+            className="text-destructive"
             disabled={remove.isPending}
             confirm={{
               title: t("manageAgenda.removeWindowTitle", { name: windowLabel(window, t) }),
@@ -966,12 +1083,17 @@ function WindowEditor({
             onClick={() => remove.mutate()}
           >
             <IconCircleX />
-            {t("manageAgenda.removeWindow")}
+            <span className="sm:hidden">{t("manageAgenda.removeShort")}</span>
+            <span className="max-sm:hidden">{t("manageAgenda.removeWindow")}</span>
           </Button>
         </div>
       </form.Form>
     </form.AppForm>
   );
+}
+
+function reminderOf(minutes: number | null): "default" | "none" | "custom" {
+  return minutes === null ? "default" : minutes === 0 ? "none" : "custom";
 }
 
 const kindValuesSchema = (t: T) =>
@@ -1277,6 +1399,11 @@ function ParticipantView() {
         namespace="schedule"
         keys={["display", "showEventTimezone", "countdownLabel"]}
       />
+      <SettingFields
+        scope={{ scope: "event", eventId: event.id }}
+        namespace="agenda"
+        keys={["tabMenu"]}
+      />
       {current.display !== "hidden" && (
         <ul className="flex flex-col gap-2">
           {windows.map((window) => (
@@ -1390,7 +1517,7 @@ function Attendance() {
                   nativeButton={false}
                   render={
                     <Link
-                      to="/events/$slug/agenda/$sessionId"
+                      to="/events/$slug/agenda/$sessionId/attendance"
                       params={{ slug: event.slug, sessionId: session.id }}
                     />
                   }

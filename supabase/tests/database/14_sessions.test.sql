@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(25);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, visibility) values (tests.u('ev'), tests.u('org'), 'ev', 'Ev', 'public');
@@ -24,7 +24,8 @@ select is(public.save_agenda(tests.u('ev'), jsonb_build_object(
       'sessions', jsonb_build_array(
         jsonb_build_object('id', tests.u('git'), 'name', 'Git', 'kind', 'workshop', 'category', 'Beginner', 'capacity', 1,
           'takes_attendance', true, 'hosts', jsonb_build_array(tests.u('host'))),
-        jsonb_build_object('id', tests.u('ai'), 'name', 'AI', 'kind', 'workshop', 'category', 'Advanced', 'takes_attendance', true),
+        jsonb_build_object('id', tests.u('ai'), 'name', 'AI', 'kind', 'workshop', 'category', 'Advanced', 'takes_attendance', true,
+          'page_md', 'Slides: https://example.org/ai'),
         jsonb_build_object('id', tests.u('judging'), 'name', 'Judging', 'visibility', 'staff')))
   ))), 0, 'organizer saves the agenda');
 select is((select count(*)::integer from public.event_sessions where event_id = tests.u('ev')), 4, 'four sessions saved');
@@ -35,6 +36,8 @@ reset role;
 select tests.as_user(tests.u('p1'));
 select is((select count(*)::integer from public.event_sessions where event_id = tests.u('ev')), 3, 'participants don''t see staff sessions');
 select is(jsonb_array_length(public.event_agenda(tests.u('ev')) -> 'slots' -> 1 -> 'sessions'), 2, 'nor does their agenda');
+select is((select s ->> 'page_md' from jsonb_array_elements(public.event_agenda(tests.u('ev')) -> 'slots' -> 1 -> 'sessions') s
+  where s ->> 'name' = 'AI'), 'Slides: https://example.org/ai', 'a session''s page comes with the agenda');
 reset role;
 select tests.as_user(tests.u('staff'));
 select is((select count(*)::integer from public.event_sessions where event_id = tests.u('ev')), 4, 'staff see every session');

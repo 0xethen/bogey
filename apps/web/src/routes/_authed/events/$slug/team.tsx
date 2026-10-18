@@ -14,7 +14,7 @@ import {
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import { useLiveInvalidate } from "@bogey/db/realtime";
-import { can } from "@bogey/db/permissions";
+import { useCan } from "@bogey/db/permissions";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { mayStart } from "#/lib/messaging.ts";
 import { formatDateTime, formatRelative } from "@bogey/utils/time";
@@ -67,7 +67,8 @@ function useTeamMutation<T>(eventId: string, run: (input: T) => Promise<unknown>
 
 function RouteComponent() {
   const t = useT();
-  const { event, participant, access } = Route.useRouteContext();
+  const { event, participant } = Route.useRouteContext();
+  const manages = useCan("event.manage");
 
   if (!participant) {
     return (
@@ -83,7 +84,7 @@ function RouteComponent() {
           </>
         }
       >
-        {can(access, "event.manage") && (
+        {manages && (
           <Screen.Actions>
             <Button
               render={<Route.Link to="/events/$slug/manage/teams" params={{ slug: event.slug }} />}
@@ -361,7 +362,7 @@ function InviteCode({ code, eventId, renew }: { code: string; eventId: string; r
             variant="ghost"
             size="icon-sm"
             disabled={renewCode.isPending}
-            title={renewCode.error ? renewCode.error.message : `${t("team.newCode")}...`}
+            title={renewCode.error ? renewCode.error.message : t("team.newCode")}
             confirm={{
               title: t("team.newCodeTitle"),
               description: t("team.newCodeBody"),

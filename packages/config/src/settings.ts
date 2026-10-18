@@ -812,7 +812,7 @@ export const settingsRegistry = {
   agenda: namespace({
     label: "Agenda",
     scopes: ["instance", "org", "event"],
-    defaults: { kinds: [], reminderMinutes: 30 },
+    defaults: { kinds: [], reminderMinutes: 5, tabMenu: true },
     schema: z.object({
       kinds: z
         .array(sessionKindSchema)
@@ -826,14 +826,22 @@ export const settingsRegistry = {
         .max(1440)
         .optional()
         .describe(
-          "Remind people this many minutes before a session they signed up for; 0 sends none",
+          "Remind people this many minutes before a session they signed up for or a window opens (a window can set its own); 0 sends none",
         ),
+      tabMenu: z
+        .boolean()
+        .optional()
+        .describe("List the sessions that have a page of their own under the Agenda tab"),
     }),
     fields: {
+      tabMenu: {
+        label: say("setting.agenda.tabMenu"),
+        description: say("setting.agenda.tabMenu.help"),
+      },
       reminderMinutes: {
         label: say("setting.agenda.reminderMinutes"),
         description: say("setting.agenda.reminderMinutes.help"),
-        placeholder: "30",
+        placeholder: "5",
       },
     },
   }),

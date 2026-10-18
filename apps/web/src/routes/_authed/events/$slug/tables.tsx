@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { IconPrinter } from "@tabler/icons-react";
 import { tableListQueryOptions } from "@bogey/db/queries/expo";
-import { can } from "@bogey/db/permissions";
+import { can, useCan } from "@bogey/db/permissions";
+import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { Button } from "@bogey/ui/components/button";
 import { Screen } from "@bogey/ui/components/screen";
 import { msg, useT } from "#/lib/translate.tsx";
@@ -19,6 +20,14 @@ export const Route = createFileRoute("/_authed/events/$slug/tables")({
 });
 
 function RouteComponent() {
+  return (
+    <PreviewGate allowed={useCan("event.manage")}>
+      <Tables />
+    </PreviewGate>
+  );
+}
+
+function Tables() {
   const t = useT();
   const { event } = Route.useRouteContext();
   const { data: rows } = useSuspenseQuery(tableListQueryOptions(event.id));

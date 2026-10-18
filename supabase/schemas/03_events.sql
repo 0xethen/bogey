@@ -52,6 +52,8 @@ create table public.event_windows (
   opens_at timestamptz,
   closes_at timestamptz,
   override public.window_override,
+  -- minutes before it opens to remind the event's members; null uses agenda.reminderMinutes, 0 sends none
+  reminder_minutes smallint check (reminder_minutes between 0 and 1440),
   updated_by uuid references public.profiles on delete set null,
   updated_at timestamptz not null default now(),
   primary key (event_id, key),
@@ -332,8 +334,8 @@ begin
   returning * into v_new;
 
   if 'windows' = any (p_include) then
-    insert into public.event_windows (event_id, key, opens_at, closes_at, updated_by)
-    select v_new.id, key, opens_at + v_shift, closes_at + v_shift, (select auth.uid())
+    insert into public.event_windows (event_id, key, opens_at, closes_at, reminder_minutes, updated_by)
+    select v_new.id, key, opens_at + v_shift, closes_at + v_shift, reminder_minutes, (select auth.uid())
     from public.event_windows where event_id = p_source;
   end if;
 
@@ -399,9 +401,9 @@ begin
     end loop;
     for r in select * from public.event_sessions where event_id = p_source loop
       insert into public.event_sessions (event_id, slot_id, category_id, kind, name, description_md,
-        location, starts_at, ends_at, host_note, capacity, required, takes_attendance, visibility, sort)
+        page_md, location, starts_at, ends_at, host_note, capacity, required, takes_attendance, visibility, sort)
       values (v_new.id, (v_slots ->> r.slot_id::text)::uuid, (v_categories ->> r.category_id::text)::uuid,
-        r.kind, r.name, r.description_md, r.location, r.starts_at + v_shift, r.ends_at + v_shift,
+        r.kind, r.name, r.description_md, r.page_md, r.location, r.starts_at + v_shift, r.ends_at + v_shift,
         r.host_note, r.capacity, r.required, r.takes_attendance, r.visibility, r.sort)
       returning id into v_id;
       v_sessions := v_sessions || jsonb_build_object(r.id::text, v_id);
@@ -646,19 +648,22 @@ begin
   end if;
 
   for w in select * from jsonb_array_elements(p_windows) loop
-    insert into public.event_windows (event_id, key, opens_at, closes_at, override, updated_by)
+    insert into public.event_windows (event_id, key, opens_at, closes_at, override, reminder_minutes, updated_by)
     values (
       p_event,
       w ->> 'key',
       (w ->> 'opens_at')::timestamptz,
       (w ->> 'closes_at')::timestamptz,
       (w ->> 'override')::public.window_override,
+      (w ->> 'reminder_minutes')::smallint,
       (select auth.uid())
     )
     on conflict (event_id, key) do update set
       opens_at = case when w ? 'opens_at' then excluded.opens_at else public.event_windows.opens_at end,
       closes_at = case when w ? 'closes_at' then excluded.closes_at else public.event_windows.closes_at end,
       override = case when w ? 'override' then excluded.override else public.event_windows.override end,
+      reminder_minutes = case when w ? 'reminder_minutes' then excluded.reminder_minutes
+        else public.event_windows.reminder_minutes end,
       updated_by = excluded.updated_by;
   end loop;
 

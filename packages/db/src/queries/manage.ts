@@ -224,6 +224,8 @@ export type WindowChange = {
   opens_at: string | null;
   closes_at: string | null;
   override: Enums<"window_override"> | null;
+  /** Minutes before it opens to remind people; null uses the agenda's default, 0 sends none. Left out, it stays as it is. */
+  reminder_minutes?: number | null;
 };
 
 export const setWindowsFn = createServerFn({ method: "POST" })
@@ -242,6 +244,17 @@ export const setWindowsFn = createServerFn({ method: "POST" })
         opens_at: time(w.opens_at),
         closes_at: time(w.closes_at),
         override: w.override === "open" || w.override === "closed" ? w.override : null,
+        ...("reminder_minutes" in w
+          ? {
+              reminder_minutes:
+                typeof w.reminder_minutes === "number" &&
+                Number.isInteger(w.reminder_minutes) &&
+                w.reminder_minutes >= 0 &&
+                w.reminder_minutes <= 1440
+                  ? w.reminder_minutes
+                  : null,
+            }
+          : {}),
       };
     });
     return {

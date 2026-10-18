@@ -5,7 +5,8 @@ import { z } from "zod";
 import { IconCircleCheck, IconMaximize } from "@tabler/icons-react";
 import { checkinRosterQueryOptions, walkInFn, type WalkInResult } from "@bogey/db/queries/checkin";
 import { requestFailure } from "@bogey/db/errors";
-import { can } from "@bogey/db/permissions";
+import { can, useCan } from "@bogey/db/permissions";
+import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { myRegistrationQueryOptions } from "@bogey/db/queries/registration";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
@@ -60,6 +61,14 @@ const whoSchema = (t: T) =>
 type Who = z.infer<ReturnType<typeof whoSchema>>;
 
 function RouteComponent() {
+  return (
+    <PreviewGate allowed={useCan("people.checkin")}>
+      <Kiosk />
+    </PreviewGate>
+  );
+}
+
+function Kiosk() {
   const t = useT();
   const { event } = Route.useRouteContext();
   const { data: settings } = useSuspenseQuery(
@@ -128,10 +137,11 @@ function RouteComponent() {
       actions={
         <Button
           variant="outline"
+          size="icon"
           onClick={() => void document.documentElement.requestFullscreen?.().catch(() => undefined)}
+          title={t("kiosk.fullScreen")}
         >
           <IconMaximize />
-          {t("kiosk.fullScreen")}
         </Button>
       }
     >

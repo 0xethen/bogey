@@ -12,17 +12,22 @@ import {
   type RosterEntry,
 } from "@bogey/db/queries/sessions";
 import { requestFailure, unwrap } from "@bogey/db/errors";
-import { formatTimeRange } from "@bogey/utils/time";
+import { formatTime, formatTimeRange } from "@bogey/utils/time";
 import { Badge } from "@bogey/ui/components/badge";
 import { Checkbox } from "@bogey/ui/components/checkbox";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Input } from "@bogey/ui/components/input";
 import { Screen } from "@bogey/ui/components/screen";
-import { sessionTimes } from "#/components/event/agenda/agenda.tsx";
+import { sessionTimes, useTakesAttendance } from "#/components/event/agenda/agenda.tsx";
+import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
+import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 import { useT } from "#/lib/translate.tsx";
+import { useExternalValue } from "@bogey/ui/hooks/external";
+import { ExpandableQrCode } from "#/components/event/qr-code.tsx";
+import { IconCopy, IconCopyCheck, IconRefresh } from "@tabler/icons-react";
 
-export const Route = createFileRoute("/_authed/events/$slug/agenda/$sessionId")({
+export const Route = createFileRoute("/_authed/events/$slug/agenda/$sessionId/attendance")({
   loader: async ({ context, params }) => {
     const agenda = await context.query.ensureQueryData(agendaQueryOptions(context.event.id));
     const session = agenda.slots
@@ -43,10 +48,12 @@ function RouteComponent() {
   const { event, session: viewer } = Route.useRouteContext();
   const { sessionId } = Route.useParams();
   const { data: agenda } = useSuspenseQuery(agendaQueryOptions(event.id));
+  const takesAttendance = useTakesAttendance();
   const slot = agenda.slots.find((entry) => entry.sessions.some((s) => s.id === sessionId));
   const session = slot?.sessions.find((entry) => entry.id === sessionId);
   if (!slot || !session) return null;
   const { start, end } = sessionTimes(session, slot);
+  if (!takesAttendance(session)) return <PreviewGate>{null}</PreviewGate>;
 
   return (
     <Screen
@@ -72,44 +79,115 @@ function RouteComponent() {
           }}
         </PluginSlot>
       )}
-      <CheckInCode sessionId={sessionId} />
+      <CheckInCode
+        sessionId={sessionId}
+        startsAt={start}
+        endsAt={session.endsAt ?? slot.endsAt}
+        eventSlug={event.slug}
+      />
       <Roster sessionId={sessionId} forEveryone={slot.kind === "everyone"} />
     </Screen>
   );
 }
 
-function CheckInCode({ sessionId }: { sessionId: string }) {
+// check_in_session takes a code from 30 minutes before the start until 30 minutes after the end
+// (two hours after the start when there's no end)
+const CODE_GRACE_MS = 30 * 60_000;
+const DEFAULT_LENGTH_MS = 2 * 60 * 60_000;
+
+function CheckInCode({
+  sessionId,
+  startsAt,
+  endsAt,
+  eventSlug,
+}: {
+  sessionId: string;
+  startsAt: string;
+  endsAt: string | null;
+  eventSlug: string;
+}) {
   const t = useT();
+  const time = useTimeFormat();
+  const starts = new Date(startsAt).getTime();
+  const ends = endsAt ? new Date(endsAt).getTime() : starts + DEFAULT_LENGTH_MS;
   const queryClient = useQueryClient();
   const options = sessionCodeQueryOptions(sessionId);
   const { data: code } = useSuspenseQuery(options);
+  const origin = useExternalValue(
+    () => () => undefined,
+    () => location.origin,
+    "",
+  );
+  const page = `/events/${eventSlug}/agenda/${sessionId}`;
   const rotate = useMutation({
     mutationFn: async () =>
       unwrap(await sessionCodeFn({ data: { sessionId, rotate: true } }).catch(requestFailure)),
     onSuccess: (next) => queryClient.setQueryData(options.queryKey, next),
   });
 
+  const [copied, setCopied] = useState(false);
+
   return (
     <Screen.Section
       id="check-in-code"
       title={t("session.codeTitle")}
-      description={t("session.codeHelp")}
+      description={
+        <Linked
+          text={t("session.codeHelp", {
+            checkin: LINK,
+            from: formatTime(new Date(starts - CODE_GRACE_MS), time),
+            to: formatTime(new Date(ends + CODE_GRACE_MS), time),
+          })}
+          links={[
+            <SettingLink key="checkin" to={page}>
+              {t("session.itsPage")}
+            </SettingLink>,
+          ]}
+        />
+      }
     >
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border p-5">
-        <p className="font-mono text-5xl font-semibold tracking-[0.3em] tabular-nums">{code}</p>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={rotate.isPending}
-          confirm={{
-            title: t("session.replaceTitle"),
-            description: t("session.replaceBody"),
-            label: t("session.replaceLabel"),
-          }}
-          onClick={() => rotate.mutate()}
-        >
-          {t("session.newCode")}
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded border border-border p-5">
+        <div className="flex items-center gap-8">
+          {code && origin && (
+            <ExpandableQrCode
+              value={`${origin}${page}?code=${encodeURIComponent(code)}`}
+              label={t("session.qrLabel")}
+              expandLabel={t("session.qrExpand")}
+              caption={code}
+              className="rounded p-1"
+              size={100}
+            />
+          )}
+          <p className="font-mono text-5xl font-semibold tracking-[0.3em] tabular-nums">{code}</p>
+        </div>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => {
+              void navigator.clipboard
+                .writeText(`${origin}${page}?code=${encodeURIComponent(code)}`)
+                .then(() => setCopied(true));
+            }}
+            title={copied ? t("session.copied") : t("session.linkCopy")}
+          >
+            {copied ? <IconCopyCheck className="size-4" /> : <IconCopy className="size-4" />}
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            disabled={rotate.isPending}
+            confirm={{
+              title: t("session.replaceTitle"),
+              description: t("session.replaceBody"),
+              label: t("session.replaceLabel"),
+            }}
+            onClick={() => rotate.mutate()}
+            title={t("session.newCode")}
+          >
+            <IconRefresh />
+          </Button>
+        </div>
       </div>
       <ErrorAlert error={rotate.error} title={t("session.replaceFailed")} />
     </Screen.Section>

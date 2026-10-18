@@ -5,7 +5,7 @@ import { useHotkey } from "@tanstack/react-hotkeys";
 import { IconArrowLeft, IconArrowsMaximize } from "@tabler/icons-react";
 import { draftAwardsQueryOptions, type Award } from "@bogey/db/queries/awards";
 import { publishedResultsQueryOptions } from "@bogey/db/queries/judging";
-import { can } from "@bogey/db/permissions";
+import { useCan } from "@bogey/db/permissions";
 import { Button } from "@bogey/ui/components/button";
 import { Markdown } from "@bogey/ui/components/markdown";
 import { msg, useT } from "#/lib/translate.tsx";
@@ -48,9 +48,9 @@ function Slide({ award, step }: { award: Award | null; step: number }) {
 
 function RouteComponent() {
   const t = useT();
-  const { event, access } = Route.useRouteContext();
+  const { event } = Route.useRouteContext();
   const published = useQuery(publishedResultsQueryOptions(event.id));
-  const manages = can(access, "event.manage");
+  const manages = useCan("event.manage");
   const drafts = useQuery({
     ...draftAwardsQueryOptions(event.id),
     enabled: manages && published.isSuccess && !published.data,

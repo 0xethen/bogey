@@ -39,6 +39,8 @@ create table public.event_sessions (
     check (kind ~ '^[a-z][a-z0-9_-]{0,39}(\.[a-z][a-z0-9_-]{0,39})?$'),
   name text not null check (length(name) between 1 and 120),
   description_md text not null default '' check (length(description_md) <= 20000),
+  -- the session's own page; one that takes attendance has a page even when this is empty
+  page_md text not null default '' check (length(page_md) <= 50000),
   location text check (length(location) <= 200),
   starts_at timestamptz,
   ends_at timestamptz,
@@ -223,6 +225,7 @@ begin
         'sessions', coalesce((
           select jsonb_agg(jsonb_build_object(
             'id', s.id, 'kind', s.kind, 'name', s.name, 'description_md', s.description_md,
+            'page_md', s.page_md,
             'location', s.location, 'starts_at', s.starts_at, 'ends_at', s.ends_at,
             'host_note', s.host_note, 'capacity', s.capacity, 'required', s.required,
             'takes_attendance', s.takes_attendance, 'visibility', s.visibility,
@@ -354,13 +357,14 @@ begin
     loop
       v_session_id := coalesce((v_session ->> 'id')::uuid, gen_random_uuid());
       insert into public.event_sessions (id, event_id, slot_id, category_id, kind, name, description_md,
-        location, starts_at, ends_at, host_note, capacity, required, takes_attendance, visibility, sort)
+        page_md, location, starts_at, ends_at, host_note, capacity, required, takes_attendance, visibility, sort)
       values (v_session_id, p_event, v_slot_id,
         (select c.id from public.session_categories c
           where c.event_id = p_event and c.kind = coalesce(v_session ->> 'kind', 'session')
             and c.label = v_session ->> 'category'),
         coalesce(v_session ->> 'kind', 'session'), v_session ->> 'name',
-        coalesce(v_session ->> 'description_md', ''), nullif(v_session ->> 'location', ''),
+        coalesce(v_session ->> 'description_md', ''), coalesce(v_session ->> 'page_md', ''),
+        nullif(v_session ->> 'location', ''),
         (v_session ->> 'starts_at')::timestamptz, (v_session ->> 'ends_at')::timestamptz,
         nullif(v_session ->> 'host_note', ''), (v_session ->> 'capacity')::integer,
         coalesce((v_session ->> 'required')::boolean, false),
@@ -369,7 +373,8 @@ begin
         cardinality(v_keep_sessions)::smallint)
       on conflict (id) do update set
         slot_id = excluded.slot_id, category_id = excluded.category_id, kind = excluded.kind,
-        name = excluded.name, description_md = excluded.description_md, location = excluded.location,
+        name = excluded.name, description_md = excluded.description_md, page_md = excluded.page_md,
+        location = excluded.location,
         starts_at = excluded.starts_at, ends_at = excluded.ends_at, host_note = excluded.host_note,
         capacity = excluded.capacity, required = excluded.required,
         takes_attendance = excluded.takes_attendance, visibility = excluded.visibility, sort = excluded.sort
