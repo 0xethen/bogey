@@ -48,12 +48,13 @@ export function PrizePicker({
   );
   if (open.length === 0) return null;
   const max = settings.data?.submissions.maxTracks;
+  const prompt = settings.data?.submissions.prizePrompt || t("prizes.choose");
 
   return (
     <Screen.Section
       id="prizes"
       title={t("prizes.title")}
-      description={`${t("prizes.choose")}${max ? ` ${t("prizes.upTo", { max })}` : ""}`}
+      description={`${prompt}${max ? ` ${t("prizes.upTo", { max })}` : ""}`}
     >
       <CheckboxGroup
         value={current}
@@ -63,7 +64,7 @@ export function PrizePicker({
         {open.map((prize) => (
           <label key={prize.id} className="flex items-start gap-3">
             <Checkbox value={prize.id} disabled={!prize.optIn} className="mt-1" />
-            <PrizeCard prize={prize} />
+            <PrizeCard prize={prize} image={settings.data?.submissions.prizeImage} />
           </label>
         ))}
       </CheckboxGroup>

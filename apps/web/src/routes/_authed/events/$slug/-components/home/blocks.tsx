@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { eventPrizesQueryOptions } from "@bogey/db/queries/prizes";
 import { myRegistrationQueryOptions } from "@bogey/db/queries/registration";
-import { PrizeCard } from "#/components/event/judging/prize-card.tsx";
+import { PrizeCard, usePrizeImage } from "#/components/event/judging/prize-card.tsx";
 import {
   IconAlertTriangle,
   IconArrowUpRight,
@@ -388,13 +388,14 @@ function PrizesBlock({
 }) {
   const t = useT();
   const { data: prizes = [] } = useQuery(eventPrizesQueryOptions(eventId));
+  const image = usePrizeImage(eventId);
   if (prizes.length === 0) {
     return customizing ? (
       <Placeholder title={title}>
         <Linked
           text={t("home.prizesEmpty", { prizes: LINK })}
           links={[
-            <SettingLink key="prizes" to={`/events/${slug}/manage/prizes`}>
+            <SettingLink key="prizes" to={`/events/${slug}/manage/pages#prizes`}>
               {t("path.managePrizes")}
             </SettingLink>,
           ]}
@@ -419,7 +420,7 @@ function PrizesBlock({
       <ul className="flex flex-col gap-4">
         {prizes.slice(0, 4).map((prize) => (
           <li key={prize.id}>
-            <PrizeCard prize={prize} />
+            <PrizeCard prize={prize} image={image} />
           </li>
         ))}
       </ul>

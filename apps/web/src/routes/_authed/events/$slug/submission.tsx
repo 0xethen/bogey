@@ -60,7 +60,7 @@ import { useLocale } from "@bogey/ui/lib/locale";
 import { useHelperSay, useT } from "#/lib/translate.tsx";
 import type { createTranslator } from "@bogey/utils/messages";
 import type { en } from "@bogey/config/messages";
-import { can } from "@bogey/db/permissions";
+import { useCan } from "@bogey/db/permissions";
 import { hasSubmissionPage, inEvent } from "#/lib/viewer.ts";
 import { useUploadMb } from "#/lib/uploads.ts";
 
@@ -89,7 +89,8 @@ type Translate = ReturnType<typeof createTranslator<typeof en>>;
 
 function RouteComponent() {
   const t = useT();
-  const { event, participant, access } = Route.useRouteContext();
+  const { event, participant } = Route.useRouteContext();
+  const manages = useCan("event.manage");
   if (!participant) {
     return (
       <Screen.Fallback
@@ -104,7 +105,7 @@ function RouteComponent() {
           </>
         }
       >
-        {can(access, "event.manage") && (
+        {manages && (
           <Screen.Actions>
             <Button
               render={<Link to="/events/$slug/manage/submissions" params={{ slug: event.slug }} />}
@@ -408,6 +409,7 @@ function SubmissionEditor({
     settingsQueryOptions({ eventId: event.id }, ["submissions"]),
   );
   const publicLocked = submissionSettings.submissions.publicToggle === false;
+  const { submittedTitle, submittedBody } = submissionSettings.submissions;
 
   // useEffect(() => {
   //   console.log("Network status changed: ", network.ip);
@@ -426,12 +428,17 @@ function SubmissionEditor({
       {submitted && submission.submitted_at && (
         <Alert>
           <IconCircleCheck />
-          <AlertTitle>{t("sub.submittedTitle")}</AlertTitle>
+          <AlertTitle>{submittedTitle || t("sub.submittedTitle")}</AlertTitle>
           <AlertDescription>
-            {t("sub.submittedBody", {
-              when: formatRelative(submission.submitted_at, undefined, locale),
-              until: open ? t("sub.untilCloses") : "",
-            })}
+            {submittedBody
+              ? submittedBody.replaceAll(
+                  "{when}",
+                  formatRelative(submission.submitted_at, undefined, locale),
+                )
+              : t("sub.submittedBody", {
+                  when: formatRelative(submission.submitted_at, undefined, locale),
+                  until: open ? t("sub.untilCloses") : "",
+                })}
           </AlertDescription>
         </Alert>
       )}
@@ -523,13 +530,19 @@ function SubmissionEditor({
                   <Steps
                     title={t("sub.ready")}
                     steps={[
-                      { key: "title", title: t("sub.missingTitle"), done: !!values.title.trim() },
+                      {
+                        key: "title",
+                        title: t("sub.missingTitle"),
+                        done: !!values.title.trim(),
+                        target: "title",
+                      },
                       ...definition.items
                         .filter((item) => item.required)
                         .map((item) => ({
                           key: item.key,
                           title: item.label,
                           done: !missing.includes(item.label),
+                          target: item.kind === "file" ? `file-${item.key}` : `answers.${item.key}`,
                         })),
                       ...(event.team_size_min > 1
                         ? [

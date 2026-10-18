@@ -262,7 +262,7 @@ export const en = {
   "sub.disqualified": "Disqualified",
   "sub.disqualifiedBody":
     "Organizers disqualified this submission. Contact them if you think that's a mistake.",
-  "sub.submittedTitle": "Submitted",
+  "sub.submittedTitle": "Submitted. GG!",
   "sub.submittedBody": "{when}. Changes you save still count{until}.",
   "sub.untilCloses": " until it closes",
   "sub.notSubmitted": "Not submitted",
@@ -861,7 +861,7 @@ export const en = {
   "page.title": "Page",
   "page.plugin": "Plugin",
   "announcements.read": "Read",
-  "prizes.choose": "Choose the prizes you want to be considered for.",
+  "prizes.choose": "Select the prizes you would like to be considered for.",
   "prizes.upTo": "You can enter up to {max, plural, one {# prize} other {# prizes}}.",
   "prizes.saveFailed": "Couldn't save your prizes",
   "feedback.title": "From the judges",
@@ -1298,12 +1298,37 @@ export const en = {
   "homeEditor.countsDown": "Counts down",
 
   "homepageSetup.title": "Homepage",
-  "manageTabs.title": "Tabs",
-  "manageTabs.intro":
-    "The tabs across the top of the event. Drag them into order, rename them, hide them, or keep one to while a window is open. Each still shows only to the people it's for.",
-  "manageTabs.listTitle": "Event tabs",
+  "managePages.title": "Pages",
+  "managePages.intro":
+    "The tabs across the top of the event, pages of your own like rules or a FAQ, and the prizes teams can win. Each tab still shows only to the people it's for.",
+  "managePages.listTitle": "Custom pages",
+  "managePages.listHelp":
+    "Listed under Home in the tabs, and in the event home's Information block. Organizers always see a page kept to a window.",
+  "managePages.none": "No pages yet.",
+  "managePages.noun": "Page",
+  "managePages.untitled": "Untitled page",
+  "managePages.add": "Add a page",
+  "managePages.saveFailed": "Couldn't save the pages",
+  "managePages.removeBody": "Its address stops working. Links to it break.",
+  "managePages.nameIt": "Give the page a title",
+  "managePages.pageTitle": "Title",
+  "managePages.titlePlaceholder": "Rules",
+  "managePages.slug": "Address",
+  "managePages.slugPlaceholder": "rules",
+  "managePages.slugHelp":
+    "The end of its link, /pages/<address>. Left empty, it's made from the title.",
+  "managePages.badSlug": "Use lowercase letters, numbers and dashes",
+  "managePages.taken": "Another page has this address",
+  "managePages.atMost50": "An event can have up to 50 pages",
+  "managePages.audience": "Who can see it",
+  "managePages.audienceHelp": "Anyone works only while the event is public.",
+  "managePages.forMembers": "People in the event",
+  "managePages.forPublic": "Anyone",
+  "managePages.body": "Page",
+  "managePages.bodyPlaceholder": "What people should know. Markdown works.",
+  "manageTabs.listTitle": "Tabs",
   "manageTabs.listHelp":
-    "Organizers always see a tab kept to a window. A hidden page can still be opened from its address or the command menu.",
+    "Drag them into order; click one to rename it, hide it, or keep it to while a window is open. Organizers always see a tab kept to a window. A hidden page can still be opened from its address or the command menu.",
   "manageTabs.reset": "Reset to default",
   "manageTabs.name": "Name",
   "manageTabs.window": "When",
@@ -1318,7 +1343,8 @@ export const en = {
   "manageTabs.forAgenda": "Everyone, once there's an agenda",
   "manageTabs.forTeam": "Participants, when teams have more than one person",
   "manageTabs.forSubmission": "Participants, when there's a submission window",
-  "manageTabs.forCheckin": "Attendance takers, and participants checking in",
+  "manageTabs.forCheckin":
+    "Whoever checks people in (Who takes attendance (link to registration#checkin.takers))",
   "manageTabs.forJudging": "Judges",
   "manageTabs.forResults": "Everyone, once there's a results window",
   "homepageSetup.current": "Current setup",
@@ -3288,6 +3314,18 @@ export const en = {
   "setting.submissions.autoSubmit": "Submit complete drafts at close",
   "setting.submissions.autoSubmit.help":
     "Drafts with every required item filled in are submitted when the form closes.",
+  "setting.submissions.submittedTitle": "Submitted heading",
+  "setting.submissions.submittedBody": "Submitted message",
+  "setting.submissions.submittedBody.help":
+    'What teams read once they\'ve submitted. {when} becomes when they did, like "2 hours ago".',
+  "setting.submissions.prizePrompt": "Prize instructions",
+  "setting.submissions.prizePrompt.help":
+    "What teams read above the prizes on their submission, like how winners pick their prizes.",
+  "setting.submissions.prizeImage": "Prize images",
+  "setting.submissions.prizeImage.help":
+    "Each prize's image, from its sponsor logo. Prizes without one show an empty frame.",
+  "setting.submissions.prizeImage.icon": "Icon beside the prize",
+  "setting.submissions.prizeImage.banner": "Banner across the prize",
   "setting.schedule.countdownLabel": "Countdown label",
   "setting.schedule.countdownLabel.help":
     "Shown before the time left in the header while submissions are open, on tablets and computers. Phones show only the time.",

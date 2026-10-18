@@ -2,6 +2,7 @@ import { useUiText } from "./ui-text.ts";
 import {
   createContext,
   useContext,
+  useId,
   useLayoutEffect,
   useRef,
   type ComponentProps,
@@ -762,25 +763,45 @@ function Form({
   );
 }
 
+// which Submit started each form's submission, and on which attempt: only that button shows it's
+// working, while the form's other submit buttons just wait. A save from the unsaved bar or a
+// shortcut presses none of them. (Enter in a field clicks the form's first submit button.)
+const pressed = new WeakMap<object, { id: string; attempt: number }>();
+
 function Submit({
   children,
   pending,
+  onClick,
   ...props
 }: Omit<ComponentProps<typeof Button>, "type"> & { pending?: string }) {
   const form = useFormContext();
+  const id = useId();
   return (
-    <form.Subscribe selector={(state) => state.isSubmitting}>
-      {(isSubmitting) => (
-        <Button
-          type="submit"
-          form={form.formId}
-          {...props}
-          disabled={props.disabled || isSubmitting}
-        >
-          {isSubmitting && <Spinner />}
-          {isSubmitting && pending ? pending : children}
-        </Button>
-      )}
+    <form.Subscribe
+      selector={(state) => ({
+        isSubmitting: state.isSubmitting,
+        attempt: state.submissionAttempts,
+      })}
+    >
+      {({ isSubmitting, attempt }) => {
+        const press = pressed.get(form);
+        const working = isSubmitting && press?.id === id && press.attempt === attempt;
+        return (
+          <Button
+            type="submit"
+            form={form.formId}
+            {...props}
+            onClick={(event) => {
+              pressed.set(form, { id, attempt: form.state.submissionAttempts + 1 });
+              onClick?.(event);
+            }}
+            disabled={props.disabled || isSubmitting}
+          >
+            {working && <Spinner />}
+            {working && pending ? pending : children}
+          </Button>
+        );
+      }}
     </form.Subscribe>
   );
 }

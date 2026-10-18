@@ -20,7 +20,6 @@ const EVENT = [
   "/team",
   "/submission",
   "/certificates",
-  "/manage/prizes",
   "/manage/certificates",
   "/manage/webhooks",
 ];

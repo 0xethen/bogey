@@ -75,6 +75,9 @@ const TAB = cn(
   "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary after:scale-x-0 after:transition-transform after:duration-100 after:ease-out motion-reduce:after:transition-none",
 );
 
+const MENU_LINK =
+  "px-2.5 py-1.5 no-underline hover:bg-background focus:bg-background data-[active=true]:bg-background/50 data-[active=true]:hover:bg-background data-[active=true]:focus:bg-background";
+
 const ACTIVE_TAB = "font-medium text-fg after:scale-x-100 starting:after:scale-x-0";
 
 function TabLink({ tab }: { tab: RouteTab }) {
@@ -114,19 +117,19 @@ function TabMenu({ tab, links }: { tab: RouteTab; links: Tuple<RouteTabLink> }) 
           >
             {tab.label}
           </NavigationMenuTrigger>
-          <NavigationMenuContent>
+          <NavigationMenuContent className="p-1.5 pr-1.5">
             <ul className="flex w-56 flex-col">
               <li>
                 <NavigationMenuLink
                   render={<Link to={tab.to} activeOptions={{ exact: tab.exact ?? false }} />}
-                  className="py-2 font-medium no-underline"
+                  className={cn(MENU_LINK, "font-medium")}
                 >
                   {tab.label}
                 </NavigationMenuLink>
               </li>
               {links.map((link) => (
                 <li key={link.key}>
-                  <NavigationMenuLink render={<Link to={link.to} />} className="py-2 no-underline">
+                  <NavigationMenuLink render={<Link to={link.to} />} className={MENU_LINK}>
                     {link.label}
                   </NavigationMenuLink>
                 </li>

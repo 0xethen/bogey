@@ -9,7 +9,7 @@ description: Bogey (hackathon platform) organizer and admin UX — where Manage,
 
 - **Manage** (`/events/$slug/manage/*`): one event, for people with
   `event.manage`. A sidebar (`SettingsLayout`, see below) in
-  groups: Overview and Audit log; Event (Details, Homepage, Agenda, Security, Plugins);
+  groups: Overview and Audit log; Event (Details, Homepage, Pages, Agenda, Security, Plugins);
   People (Registration, People, Teams, Divisions); Competition (Submissions with
   Submission forms under it, Judging); Communication (Announcements, Messages: settings
   only; posting and answering happen on the event's Messages tab). Security holds publishing (draft, unlisted, public), who can join (invite-only and the rest), the network limits and any other security setting; plugins put

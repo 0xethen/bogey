@@ -357,3 +357,85 @@
       calc(100% - var(--spacing) * 6) 100%;
   }
 }
+
+/* scroll-fade-color: fade into a color instead of transparency. Pair it with
+   scroll-fade (or -y / -x / -t / -b / -s / -e), which drives the sizes
+   (--scroll-fade-t/b/s/e) as the container scrolls. The mask is replaced by
+   sticky overlays, so the container needs block or flex flow. */
+@utility scroll-fade-color {
+  --_scroll-fade-color: var(--scroll-fade-color, var(--background));
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+
+  &::before,
+  &::after {
+    content: "";
+    display: block;
+    position: sticky;
+    z-index: 1;
+    flex: none;
+    pointer-events: none;
+    --scroll-fade-t: inherit;
+    --scroll-fade-b: inherit;
+  }
+
+  &::before {
+    top: 0;
+    height: var(--scroll-fade-t);
+    margin-bottom: calc(-1 * var(--scroll-fade-t));
+    background-image: linear-gradient(to bottom, var(--_scroll-fade-color), transparent);
+  }
+
+  &::after {
+    bottom: 0;
+    height: var(--scroll-fade-b);
+    margin-top: calc(-1 * var(--scroll-fade-b));
+    background-image: linear-gradient(to top, var(--_scroll-fade-color), transparent);
+  }
+}
+
+@utility scroll-fade-color-x {
+  --_scroll-fade-color: var(--scroll-fade-color, var(--background));
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+
+  &::before,
+  &::after {
+    content: "";
+    display: block;
+    position: sticky;
+    z-index: 1;
+    flex: none;
+    align-self: stretch;
+    pointer-events: none;
+    --scroll-fade-s: inherit;
+    --scroll-fade-e: inherit;
+  }
+
+  &::before {
+    inset-inline-start: 0;
+    width: var(--scroll-fade-s);
+    margin-inline-end: calc(-1 * var(--scroll-fade-s));
+    background-image: linear-gradient(to right, var(--_scroll-fade-color), transparent);
+  }
+
+  &::after {
+    inset-inline-end: 0;
+    width: var(--scroll-fade-e);
+    margin-inline-start: calc(-1 * var(--scroll-fade-e));
+    background-image: linear-gradient(to left, var(--_scroll-fade-color), transparent);
+  }
+
+  &:where([dir="rtl"], [dir="rtl"] *) {
+    &::before {
+      background-image: linear-gradient(to left, var(--_scroll-fade-color), transparent);
+    }
+    &::after {
+      background-image: linear-gradient(to right, var(--_scroll-fade-color), transparent);
+    }
+  }
+}
+
+@utility scroll-fade-color-* {
+  --scroll-fade-color: --value(--color-*, [color]);
+}

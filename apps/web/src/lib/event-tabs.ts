@@ -1,12 +1,13 @@
 import type { EventTabSetting } from "@bogey/config/settings";
 import type { EventPage } from "@bogey/db/queries/pages";
+import type { AgendaSession } from "@bogey/db/queries/sessions";
 import { isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import type { PluginManifest } from "@bogey/plugins";
 import type { EventTab } from "#/components/navigation/header/TabRow.tsx";
 import { pluginTabs } from "#/lib/plugins.ts";
 import type { PlainKey, T } from "#/lib/translate.tsx";
 import {
-  checksIn,
+  atTheDesk,
   hasAgenda,
   hasResults,
   hasSubmissionPage,
@@ -31,11 +32,20 @@ export const CORE_TAB_AUDIENCE: Record<string, PlainKey> = {
 export const PINNED_TAB = "home";
 const MANAGE_TAB = "manage";
 
+/** What the Home and Agenda tabs list when hovered: the event's own pages, and its sessions' pages. */
+export interface TabMenus {
+  pages: Tuple<EventPage>;
+  prizes: boolean;
+  sessions: Tuple<Pick<AgendaSession, "id" | "name">>;
+}
+
+export const NO_MENUS: TabMenus = { pages: [], prizes: false, sessions: [] };
+
 export function eventTabs(
   slug: string,
   plugins: Tuple<PluginManifest>,
   pluginSettings: Record<string, Record<string, unknown>>,
-  pages: Tuple<EventPage>,
+  menus: TabMenus,
   t: T,
 ): EventTab[] {
   const base = `/events/${slug}`;
@@ -45,13 +55,28 @@ export function eventTabs(
       label: t("eventTab.home"),
       to: base,
       exact: true,
-      menu: pages.map((page) => ({
-        key: page.id,
-        label: page.title,
-        to: `${base}/pages/${page.slug}`,
+      menu: [
+        ...menus.pages.map((page) => ({
+          key: page.id,
+          label: page.title,
+          to: `${base}/pages/${page.slug}`,
+        })),
+        ...(menus.prizes
+          ? [{ key: "prizes", label: t("prizes.title"), to: `${base}/prizes` }]
+          : []),
+      ],
+    },
+    {
+      key: "agenda",
+      label: t("eventTab.agenda"),
+      to: `${base}/agenda`,
+      show: hasAgenda,
+      menu: menus.sessions.map((session) => ({
+        key: session.id,
+        label: session.name,
+        to: `${base}/agenda/${session.id}`,
       })),
     },
-    { key: "agenda", label: t("eventTab.agenda"), to: `${base}/agenda`, show: hasAgenda },
     { key: "team", label: t("eventTab.team"), to: `${base}/team`, show: hasTeamPage },
     {
       key: "submission",
@@ -60,7 +85,7 @@ export function eventTabs(
       show: hasSubmissionPage,
     },
     { key: "messages", label: t("eventTab.messages"), to: `${base}/messages` },
-    { key: "checkin", label: t("eventTab.checkin"), to: `${base}/checkin`, show: checksIn },
+    { key: "checkin", label: t("eventTab.checkin"), to: `${base}/checkin`, show: atTheDesk },
     { key: "judging", label: t("eventTab.judging"), to: `${base}/judging`, show: judgesOnly },
     { key: "results", label: t("eventTab.results"), to: `${base}/results`, show: hasResults },
     ...pluginTabs(slug, plugins, pluginSettings),

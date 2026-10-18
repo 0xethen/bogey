@@ -6,6 +6,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@bogey/ui/components/collapsible";
+import { jumpTo } from "#/lib/jump.ts";
 import { useT } from "#/lib/translate.tsx";
 
 export interface Step {
@@ -14,6 +15,8 @@ export interface Step {
   done: boolean;
   description?: ReactNode;
   actions?: ReactNode[];
+  /** The id of the control this step is about; clicking the step jumps to it. */
+  target?: string;
 }
 
 export function Steps({ title, steps }: { title: string; steps: Tuple<Step> }) {
@@ -53,7 +56,10 @@ export function Steps({ title, steps }: { title: string; steps: Tuple<Step> }) {
         {steps.map((step, index) => (
           <li key={step.key}>
             <Collapsible defaultOpen={step.key === current}>
-              <CollapsibleTrigger className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hocus:bg-muted/40">
+              <CollapsibleTrigger
+                onClick={() => step.target && jumpTo(step.target)}
+                className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hocus:bg-muted/40"
+              >
                 <StepMark done={step.done} current={step.key === current} index={index + 1} />
                 <span
                   className={cn(

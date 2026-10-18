@@ -15,22 +15,36 @@ export function useJumpHighlight() {
       const target = document.getElementById(decodeURIComponent(hash));
       if (!target) return;
       target.scrollIntoView({ block: "start" });
-      const style = getComputedStyle(target);
-      const accent = style.getPropertyValue("--color-primary").trim() || "currentColor";
-      const wash = `color-mix(in oklch, ${accent} 12%, transparent)`;
-      const pad = `calc(${style.getPropertyValue("--spacing").trim() || "0.25rem"} * 2)`;
-      animation = target.animate(
-        [
-          { backgroundColor: wash, boxShadow: `0 0 0 ${pad} ${wash}`, offset: 0 },
-          { backgroundColor: wash, boxShadow: `0 0 0 ${pad} ${wash}`, offset: 0.4 },
-          { backgroundColor: "transparent", boxShadow: `0 0 0 ${pad} transparent` },
-        ],
-        { duration: FLASH_MS, easing: "ease-out" },
-      );
+      animation = flash(target);
     });
     return () => {
       cancelAnimationFrame(frame);
       animation?.cancel();
     };
   }, [hash]);
+}
+
+/** Scrolls to the field holding the control `id`, focuses the control and washes the field. */
+export function jumpTo(id: string): void {
+  const control = document.getElementById(id);
+  if (!control) return;
+  const target = control.closest<HTMLElement>('[data-slot="field"]') ?? control;
+  control.focus({ preventScroll: true });
+  target.scrollIntoView({ block: "center", behavior: "smooth" });
+  flash(target);
+}
+
+function flash(target: HTMLElement): Animation {
+  const style = getComputedStyle(target);
+  const accent = style.getPropertyValue("--color-primary").trim() || "currentColor";
+  const wash = `color-mix(in oklch, ${accent} 12%, transparent)`;
+  const pad = `calc(${style.getPropertyValue("--spacing").trim() || "0.25rem"} * 2)`;
+  return target.animate(
+    [
+      { backgroundColor: wash, boxShadow: `0 0 0 ${pad} ${wash}`, offset: 0 },
+      { backgroundColor: wash, boxShadow: `0 0 0 ${pad} ${wash}`, offset: 0.4 },
+      { backgroundColor: "transparent", boxShadow: `0 0 0 ${pad} transparent` },
+    ],
+    { duration: FLASH_MS, easing: "ease-out" },
+  );
 }

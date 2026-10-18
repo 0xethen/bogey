@@ -55,7 +55,11 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/forms")({
     title: msg("manageNav.forms"),
     settings: (t) => [
       searchSection(t("manageForms.submitting"), { id: "submitting-and-deleting" }),
-      ...searchSettings("submissions", ["autoSubmit", "deletion"], t),
+      ...searchSettings(
+        "submissions",
+        ["autoSubmit", "deletion", "submittedTitle", "submittedBody"],
+        t,
+      ),
     ],
   },
   loader: ({ context }) =>
@@ -131,7 +135,7 @@ function RouteComponent() {
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}
           namespace="submissions"
-          keys={["autoSubmit", "deletion"]}
+          keys={["autoSubmit", "deletion", "submittedTitle", "submittedBody"]}
         />
       </Screen.Section>
     </Screen>

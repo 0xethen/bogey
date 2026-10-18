@@ -713,8 +713,52 @@ export const settingsRegistry = {
         .enum(["none", "request", "allow"])
         .optional()
         .describe("Whether teams can delete their submissions, or ask organizers to"),
+      submittedTitle: z
+        .string()
+        .trim()
+        .max(80, "Keep it under 80 characters")
+        .optional()
+        .describe("The heading teams see once their project is submitted"),
+      submittedBody: z
+        .string()
+        .trim()
+        .max(300, "Keep it under 300 characters")
+        .optional()
+        .describe("The line under it; {when} becomes when they submitted"),
+      prizePrompt: z
+        .string()
+        .trim()
+        .max(300, "Keep it under 300 characters")
+        .optional()
+        .describe("What teams read above the prizes they can enter"),
+      prizeImage: z
+        .enum(["icon", "banner"])
+        .optional()
+        .describe("Whether a prize's image is a small icon beside it or a banner across it"),
     }),
     fields: {
+      submittedTitle: {
+        label: say("setting.submissions.submittedTitle"),
+        placeholder: say("sub.submittedTitle"),
+      },
+      submittedBody: {
+        label: say("setting.submissions.submittedBody"),
+        description: say("setting.submissions.submittedBody.help"),
+        placeholder: "Submitted {when}. Changes you save still count.",
+      },
+      prizePrompt: {
+        label: say("setting.submissions.prizePrompt"),
+        description: say("setting.submissions.prizePrompt.help"),
+        placeholder: say("prizes.choose"),
+      },
+      prizeImage: {
+        label: say("setting.submissions.prizeImage"),
+        description: say("setting.submissions.prizeImage.help"),
+        options: [
+          { value: "icon", label: say("setting.submissions.prizeImage.icon") },
+          { value: "banner", label: say("setting.submissions.prizeImage.banner") },
+        ],
+      },
       reminderHours: {
         label: say("setting.submissions.reminderHours"),
         description: say("setting.submissions.reminderHours.help"),

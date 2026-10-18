@@ -20,7 +20,6 @@ import {
   IconPuzzle,
   IconShieldLock,
   IconSpeakerphone,
-  IconTrophy,
   IconUsers,
   IconUsersGroup,
   IconWebhook,
@@ -92,7 +91,12 @@ function RouteComponent() {
           icon: IconHome,
           to: `${base}/homepage`,
         },
-        { key: "tabs", label: t("manageTabs.title"), icon: IconLayoutNavbar, to: `${base}/tabs` },
+        {
+          key: "pages",
+          label: t("managePages.title"),
+          icon: IconLayoutNavbar,
+          to: `${base}/pages`,
+        },
         {
           key: "agenda",
           label: t("eventTab.agenda"),
@@ -152,7 +156,6 @@ function RouteComponent() {
             { key: "forms", label: t("manageNav.forms"), icon: IconForms, to: `${base}/forms` },
           ],
         },
-        { key: "prizes", label: t("prizes.title"), icon: IconTrophy, to: `${base}/prizes` },
         {
           key: "certificates",
           label: t("certificates.title"),
