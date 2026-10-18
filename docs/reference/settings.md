@@ -310,6 +310,7 @@ Set at: instance, org, event.
 | `flagGap` | whole number (0 to 100) | `0` | Flag a project when its judges' totals are further apart than this (0 is off) |
 | `holdFlagged` | on / off | `true` | Results can't be published while a project is flagged |
 | `judgeExport` | `off` · `projects` · `results` | `off` | What judges can download in the projects spreadsheet |
+| `demoJudges` | on / off | — | Show teams which judges sit on the panel they present their demo to |
 | `assignment` | group | `{"perProject":1,"rules":[],"exclude":[]}` | How Assign judges picks: judges per project, rules asking for judges with a tag, and tags kept out |
 
 ## Tags (`tags`)

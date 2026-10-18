@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(20);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'formats-org', 'Formats');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max)
@@ -68,6 +68,15 @@ reset role;
 select tests.as_user(tests.u('pc'));
 select is((select (public.my_demo_slots(tests.u('ev')) -> 0 ->> 'ahead')::integer), 0,
   'a team sees it''s up now');
+reset role;
+select tests.as_user(tests.u('pc'));
+select is(public.my_demo_slots(tests.u('ev')) -> 0 -> 'judges', '[]'::jsonb, 'but not its judges by default');
+reset role;
+insert into public.settings (scope, event_id, namespace, value)
+  values ('event', tests.u('ev'), 'judging', '{"demoJudges": true}');
+select tests.as_user(tests.u('pc'));
+select is(jsonb_array_length(public.my_demo_slots(tests.u('ev')) -> 0 -> 'judges'), 1,
+  'until the event shows them');
 reset role;
 
 -- offline: organizers type the scores in and they rank

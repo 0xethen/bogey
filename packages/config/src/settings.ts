@@ -1454,6 +1454,10 @@ export const settingsRegistry = {
         .enum(["off", "projects", "results"])
         .optional()
         .describe("What judges can download in the projects spreadsheet"),
+      demoJudges: z
+        .boolean()
+        .optional()
+        .describe("Show teams which judges sit on the panel they present their demo to"),
       assignment: judgingAssignmentSchema
         .optional()
         .describe(
@@ -1543,6 +1547,10 @@ export const settingsRegistry = {
       holdFlagged: {
         label: say("setting.judging.holdFlagged"),
         description: say("setting.judging.holdFlagged.help"),
+      },
+      demoJudges: {
+        label: say("setting.judging.demoJudges"),
+        description: say("setting.judging.demoJudges.help"),
       },
       judgeExport: {
         label: say("setting.judging.judgeExport"),

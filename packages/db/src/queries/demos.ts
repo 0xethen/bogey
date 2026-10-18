@@ -230,6 +230,8 @@ const mySlot = z.object({
   startsAt: z.string().nullable(),
   /** Teams presenting before this one; null until the panel starts. */
   ahead: z.number().nullable(),
+  /** The panel's judges, when the event shows them (judging.demoJudges). */
+  judges: z.array(z.string()).catch([]),
 });
 
 export type MyDemoSlot = z.infer<typeof mySlot>;

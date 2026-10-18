@@ -3714,6 +3714,10 @@ export const en = {
     "Points out of 100 judges' totals for one project may differ by before it's flagged on its own. 0 turns it off.",
   "setting.judging.holdFlagged": "Hold results while flagged",
   "setting.judging.holdFlagged.help": "Publishing waits until every flagged project is resolved.",
+  "setting.judging.demoJudges": "Show teams their demo judges",
+  "setting.judging.demoJudges.help":
+    "With this on, a team sees who's on the panel it presents to beside its demo time. Off, it sees only when and where.",
+  "demoNotice.judges": "Judges: {names}",
   "setting.judging.judgeExport": "What judges can download",
   "setting.judging.judgeExport.help":
     "Judges get a projects spreadsheet on their judging page. Members, emails, awards and votes stay with organizers.",

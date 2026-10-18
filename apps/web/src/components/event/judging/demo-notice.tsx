@@ -30,6 +30,11 @@ export function DemoNotice({ event }: { event: { id: string; timezone: string } 
             : slot.ahead === 0
               ? t("demoNotice.now")
               : t("demoNotice.ahead", { count: slot.ahead })}
+          {slot.judges.length > 0 && (
+            <span className="block">
+              {t("demoNotice.judges", { names: slot.judges.join(", ") })}
+            </span>
+          )}
         </AlertDescription>
       </Alert>
     );

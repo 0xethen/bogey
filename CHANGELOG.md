@@ -12,6 +12,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 - Manage → Judging → "Manual assignments" holds both pins and conflicts. Pinning a judge to a team ("Always") assigns them to the team's projects already in judging, and auto-assign places pinned judges first, ahead of the even share and the excluded tags. A conflict ("Never") keeps them off the team and their scores for it don't count. A judge with a conflict with the team can't be pinned to it, and declaring a conflict removes the pin. Unpinning keeps the assignments the pin made.
 - Each judging round has a format (Manage → Judging → Rounds → "Judged"). Online is how judging worked before: judges review their assigned projects on their own. With Live demos, teams present one after another to panels of judges: Manage → Judging → Demos sets up the panels (where, when the first demo starts, minutes per team, which judges), places every team on the panel with no conflicting judge and with any pinned judge, and shows each panel's order with times. Panel judges are assigned their panel's teams automatically, and they move "Next team" along from their judging page while organizers watch live. Teams see when and where they present, and how many teams are ahead of them, on the event home and their submission. Use one panel to have one group judge everyone. Offline rounds are judged outside Bogey: organizers enter each project's score under Manage → Judging → Results → "Offline scores", and results rank them like any other round.
+- Manage → Judging → Demos → "Show teams their demo judges" (judging.demoJudges, off by default) adds the panel's judges to what a team sees about its demo slot.
 - Manage → Judging is split in three: Judging (progress, rounds, manual assignments, criteria, deliberation), Demos (live demo panels and expo tables) and Results (offline scores, publishing, popular vote, awards, results).
 - "Who takes attendance" (checkin.takers) accepts tags as well as roles, so anyone holding a tag like Volunteer can work the check-in desk and take session attendance whatever their role.
 - The registration questions moved from Manage → Registration to their own page, Manage → Registration → Registration form.
@@ -21,7 +22,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - Manage → People stays responsive with hundreds of people: ticking a checkbox or opening a registration redraws only that row instead of the whole table.
 - On extra-wide screens, the Manage pages use the full width of the window.
 
-**Upgrade notes:** run `bogey db migrate` (migrations `20261018150000_judge_pins` and `20261018170000_judging_formats`).
+**Upgrade notes:** run `bogey db migrate` (migrations `20261018150000_judge_pins`, `20261018170000_judging_formats` and `20261018200000_demo_judges`).
 
 ## 2.3.0-beta.0 (2026-10-18)
 

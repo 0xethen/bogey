@@ -1398,7 +1398,8 @@ begin
 end;
 $$;
 
--- When and where the caller's team presents, for each demo round its entries are slotted in.
+-- When and where the caller's team presents, for each demo round its entries are slotted in; the
+-- panel's judges too when judging.demoJudges is on.
 create function public.my_demo_slots(p_event uuid)
 returns jsonb
 language sql
@@ -1410,7 +1411,14 @@ as $$
       'submissionId', sl.submission_id, 'title', s.title, 'roundName', r.name,
       'panelName', p.name, 'location', p.location, 'position', sl.position,
       'startsAt', p.starts_at + make_interval(mins => sl.position * p.slot_minutes),
-      'ahead', case when p.now_position is null then null else greatest(sl.position - p.now_position, 0) end
+      'ahead', case when p.now_position is null then null else greatest(sl.position - p.now_position, 0) end,
+      'judges', case
+        when coalesce((private.event_setting(p_event, 'judging') ->> 'demoJudges')::boolean, false) then (
+          select coalesce(jsonb_agg(pr.display_name order by pr.display_name), '[]')
+          from public.panel_judges pj join public.profiles pr on pr.id = pj.judge_id
+          where pj.panel_id = p.id)
+        else '[]'::jsonb
+      end
     ) order by r.ordinal, sl.position), '[]')
   from public.panel_slots sl
   join public.submissions s on s.id = sl.submission_id

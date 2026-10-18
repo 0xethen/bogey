@@ -37,7 +37,11 @@ import {
   rewardEarlyPunishLate,
   useAppForm,
 } from "@bogey/ui/lib/form";
-import { searchSection } from "#/components/settings/layout/search-entries.ts";
+import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
+import {
+  prefetchSettingFields,
+  SettingFields,
+} from "#/components/settings/fields/setting-fields.tsx";
 import { useViewerTimeFormat } from "#/lib/time.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { Tables } from "./-components/tables.tsx";
@@ -50,6 +54,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/demos")({
         keywords: ["live demos", "presentations", "pitch", "rooms", "judge groups", "schedule"],
         id: "panels",
       }),
+      searchSection(t("demos.teamsSee"), { id: "what-teams-see" }),
+      ...searchSettings("judging", ["demoJudges"], t),
       searchSection(t("tablesEditor.title"), { keywords: ["tables", "booths"], id: "expo-tables" }),
     ],
   },
@@ -61,6 +67,9 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/demos")({
       context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
       context.query.ensureQueryData(eventSubmissionsQueryOptions(context.event.id)),
       context.query.ensureQueryData(tableListQueryOptions(context.event.id)),
+      prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
+        "judging",
+      ]),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
@@ -93,6 +102,15 @@ function RouteComponent() {
         </Screen.Section>
       ) : (
         demoRounds.map((round) => <DemoRound key={round.id} round={round} title={label(round)} />)
+      )}
+      {demoRounds.length > 0 && (
+        <Screen.Section id="what-teams-see" title={t("demos.teamsSee")}>
+          <SettingFields
+            scope={{ scope: "event", eventId: event.id }}
+            namespace="judging"
+            keys={["demoJudges"]}
+          />
+        </Screen.Section>
       )}
       <Tables eventId={event.id} slug={event.slug} />
     </Screen>
