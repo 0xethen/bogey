@@ -139,7 +139,7 @@ Short flags: -y --yes, -n --dry-run, -d --db-url, -c --check
 
 ```
 bogey docs [--check]
-bogey docs wiki --out <dir> [--repo <owner/name>]
+bogey docs wiki --out <dir> [--repo <owner/name>]  (default: repository in bogey.config.ts)
 
 Regenerates the references in docs/reference: settings.md from the settings registry, cli.md from
 these commands, notifications.md, windows.md and permissions.md. --check fails when any is stale.

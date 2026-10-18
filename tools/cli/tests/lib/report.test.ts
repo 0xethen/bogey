@@ -1,6 +1,7 @@
 import { expect, test } from "vite-plus/test";
 import { present, reportable } from "../../src/lib/present.ts";
-import { ISSUES_URL, offerReport } from "../../src/lib/report.ts";
+import { offerReport } from "../../src/lib/report.ts";
+import { ISSUES_URL } from "../../src/lib/repository.ts";
 import { scripted } from "../support/prompter.ts";
 
 const tests =

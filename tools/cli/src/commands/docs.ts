@@ -7,12 +7,13 @@ import { isCoreNamespace, operatorKeys, settingsRegistry } from "@bogey/config/s
 import { CORE_WINDOW_INFO } from "@bogey/config/windows";
 import { WHERE } from "../lib/image.ts";
 import { findRepoRoot } from "../lib/repo-root.ts";
+import { REPOSITORY_SLUG } from "../lib/repository.ts";
 import { withShortFlags } from "../lib/short-flags.ts";
 import type { CliResult } from "../cli.ts";
 import type { Command } from "../commands.ts";
 
 export const USAGE = `bogey docs [--check]
-bogey docs wiki --out <dir> [--repo <owner/name>]
+bogey docs wiki --out <dir> [--repo <owner/name>]  (default: repository in bogey.config.ts)
 
 Regenerates the references in docs/reference: settings.md from the settings registry, cli.md from
 these commands, notifications.md, windows.md and permissions.md. --check fails when any is stale.
@@ -280,7 +281,7 @@ export async function runDocs(cwd: string, args: string[]): Promise<CliResult> {
     const out = args[args.indexOf("--out") + 1];
     if (!args.includes("--out") || !out) return { exitCode: 1, output: USAGE };
     const repoAt = args.indexOf("--repo");
-    const repo = (repoAt !== -1 && args[repoAt + 1]) || "0xethen/bogey";
+    const repo = (repoAt !== -1 && args[repoAt + 1]) || REPOSITORY_SLUG;
     return writeWiki(root, out, repo);
   }
   if (args.length && !args.includes("--check")) return { exitCode: 1, output: USAGE };

@@ -12,6 +12,7 @@ import { runDoctor } from "./doctor.ts";
 import { runEmail } from "./email.ts";
 import { runThemes } from "./themes.ts";
 import { parseRepository } from "@bogey/plugins/api";
+import { UPSTREAM_URL } from "../lib/repository.ts";
 import { upstream } from "@bogey/config";
 import { verifyRelease } from "../lib/attestation.ts";
 import { latestTag } from "../lib/release-status.ts";
@@ -119,7 +120,7 @@ export async function runUpgrade(
         if (fetched.status !== 0) {
           return {
             ok: false,
-            output: `${fetched.stderr.trim()}\nAdd the remote first: git remote add ${remote} https://github.com/0xethen/bogey.git`,
+            output: `${fetched.stderr.trim()}\nAdd the remote first: git remote add ${remote} ${UPSTREAM_URL}.git`,
           };
         }
         let ref = `${remote}/${branch}`;

@@ -1,8 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { stripVTControlCharacters } from "node:util";
 import type { Prompter } from "./prompt.ts";
-
-export const ISSUES_URL = "https://github.com/0xethen/bogey/issues";
+import { ISSUES_URL } from "./repository.ts";
 
 export function openInBrowser(url: string): void {
   const command =
