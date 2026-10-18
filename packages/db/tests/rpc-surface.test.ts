@@ -125,6 +125,10 @@ const SIGNED_IN = {
   log_export: "records an export after checking the caller manages the event",
   log_event: "writes the audit log after checking the caller's event",
   preview_results: "organizers read scores across judges",
+  project_export_access:
+    "says what the projects spreadsheet may include: everything for organizers, judging.judgeExport for judges",
+  project_export_results:
+    "each project's latest rank and per-criterion averages for the spreadsheet, without team names, for whoever may export results",
   publish_results: "snapshots results, which nobody writes directly",
   record_blocked_access: "audits a network refusal after the refused write rolled back",
   register_for_event: "creates the registration with the server-side status",
