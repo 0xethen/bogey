@@ -46,9 +46,16 @@ export const CORE_AUDIT_ACTIONS = [
   "judging.criteria_saved",
   "judging.flag_resolved",
   "judging.flagged",
+  "judging.demo_moved",
+  "judging.demos_scheduled",
   "judging.method_set",
   "judging.rubric_set",
+  "judging.format_set",
   "judging.skipped",
+  "judging.offline_scores",
+  "judging.panels_saved",
+  "judging.pin_added",
+  "judging.pin_removed",
   "judging.tables_assigned",
   "member.removed",
   "member.restored",
@@ -151,6 +158,9 @@ export const COLUMN_VALUES = {
   },
   profiles: {
     visibility: ["org", "public"],
+  },
+  judging_rounds: {
+    format: ["online", "demos", "offline"],
   },
   tags: {
     tone: ["gray", "red", "orange", "amber", "green", "teal", "blue", "violet", "pink"],

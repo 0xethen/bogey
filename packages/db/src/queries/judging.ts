@@ -3,9 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Enums, Json, Tables } from "../types.ts";
-import { optionalId, requireId, requireNumber, requireText } from "./validate.ts";
+import { optionalId, requireId, requireNumber, requireOneOf, requireText } from "./validate.ts";
 import { activeRound, type RoundEntry, type RoundInfo } from "@bogey/utils/rounds";
 import { parseAwards, type Award } from "./awards.ts";
+import { profileNames } from "./profile-names.ts";
+import { slotStart } from "./demos.ts";
 
 export type Criterion = Tables<"criteria">;
 export type Rubric = Tables<"rubrics">;
@@ -103,9 +105,18 @@ export const setSubmissionRubricFn = createServerFn({ method: "POST" })
     return ok(null);
   });
 
+export const ROUND_FORMATS = ["online", "demos", "offline"] as const;
+/** How judges meet a round's entries; see judging_rounds.format. */
+export type RoundFormat = (typeof ROUND_FORMATS)[number];
+
+export function roundFormat(value: string): RoundFormat {
+  return ROUND_FORMATS.find((known) => known === value) ?? "online";
+}
+
 export interface JudgingRound extends RoundInfo {
   windowKey: string | null;
   method: string;
+  format: RoundFormat;
 }
 
 export interface JudgingRounds {
@@ -120,7 +131,7 @@ export const judgingRoundsFn = createServerFn({ method: "GET" })
     const [rounds, entries] = await Promise.all([
       supabase
         .from("judging_rounds")
-        .select("id, form_id, ordinal, name, window_key, method")
+        .select("id, form_id, ordinal, name, window_key, method, format")
         .eq("event_id", eventId)
         .order("ordinal"),
       supabase.from("round_entries").select("round_id, submission_id").eq("event_id", eventId),
@@ -135,6 +146,7 @@ export const judgingRoundsFn = createServerFn({ method: "GET" })
         name: row.name,
         windowKey: row.window_key,
         method: row.method,
+        format: roundFormat(row.format),
       })),
       entries: (entries.data ?? []).map((row) => ({
         roundId: row.round_id,
@@ -179,6 +191,7 @@ export const saveRoundFn = createServerFn({ method: "POST" })
       name?: unknown;
       windowKey?: unknown;
       method?: unknown;
+      format?: unknown;
     };
     const method = raw.method === undefined ? "rubric" : raw.method;
     if (typeof method !== "string" || !(method === "rubric" || PLUGIN_METHOD.test(method))) {
@@ -189,13 +202,20 @@ export const saveRoundFn = createServerFn({ method: "POST" })
       name: requireText(raw.name, "Round name", 60),
       windowKey: typeof raw.windowKey === "string" && raw.windowKey ? raw.windowKey : null,
       method,
+      format:
+        raw.format === undefined ? undefined : requireOneOf(raw.format, ROUND_FORMATS, "Format"),
     };
   })
   .handler(async ({ data }): Promise<DbResult<null>> => {
     const supabase = createServerClient();
     const { error } = await supabase
       .from("judging_rounds")
-      .update({ name: data.name, window_key: data.windowKey, method: data.method })
+      .update({
+        name: data.name,
+        window_key: data.windowKey,
+        method: data.method,
+        ...(data.format ? { format: data.format } : {}),
+      })
       .eq("id", data.roundId);
     if (error?.code === "22023") return fail("invalid", error.message);
     if (error) return toFailure(error, "saving the round");
@@ -218,7 +238,7 @@ async function currentRound(
   const [rounds, entries] = await Promise.all([
     supabase
       .from("judging_rounds")
-      .select("id, form_id, ordinal, name, window_key, method")
+      .select("id, form_id, ordinal, name, window_key, method, format")
       .eq("form_id", submission.data.form_id),
     supabase
       .from("round_entries")
@@ -235,6 +255,7 @@ async function currentRound(
       name: row.name,
       windowKey: row.window_key,
       method: row.method,
+      format: roundFormat(row.format),
     })),
     (entries.data ?? []).map((row) => ({ roundId: row.round_id, submissionId: row.submission_id })),
     { id: submission.data.id, formId: submission.data.form_id },
@@ -256,6 +277,16 @@ export interface JudgeQueueItem {
   status: AssignmentStatus | null;
   scored: number;
   flagged: boolean;
+  /** Its slot when the round is judged by live demos and it's on a panel. */
+  demo: {
+    panelId: string;
+    panelName: string;
+    location: string;
+    position: number;
+    startsAt: string | null;
+    /** The panel's presenter now; null before the first. */
+    nowPosition: number | null;
+  } | null;
 }
 
 export const judgeQueueFn = createServerFn({ method: "GET" })
@@ -266,43 +297,58 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
     const userId = userData.user?.id;
     if (!userId) return fail("forbidden", "Sign in first.");
 
-    const [submissions, assignments, scores, roundData, conflicts, flags] = await Promise.all([
-      supabase
-        .from("submissions")
-        .select(
-          "id, title, form_id, team_id, table_label, teams(name), submission_forms!inner(title, judged), submission_tracks(track_id)",
-        )
-        .eq("event_id", eventId)
-        .eq("status", "submitted")
-        .eq("submission_forms.judged", true),
-      supabase
-        .from("judge_assignments")
-        .select("submission_id, round_id, status")
-        .eq("event_id", eventId)
-        .eq("judge_id", userId),
-      supabase
-        .from("scores")
-        .select("submission_id, round_id")
-        .eq("event_id", eventId)
-        .eq("judge_id", userId),
-      judgingRoundsFn({ data: eventId }),
-      supabase
-        .from("judge_conflicts")
-        .select("team_id")
-        .eq("event_id", eventId)
-        .eq("judge_id", userId),
-      supabase
-        .from("judging_flags")
-        .select("submission_id")
-        .eq("event_id", eventId)
-        .is("resolved_at", null),
-    ]);
+    const [submissions, assignments, scores, roundData, conflicts, flags, slots] =
+      await Promise.all([
+        supabase
+          .from("submissions")
+          .select(
+            "id, title, form_id, team_id, table_label, teams(name), submission_forms!inner(title, judged), submission_tracks(track_id)",
+          )
+          .eq("event_id", eventId)
+          .eq("status", "submitted")
+          .eq("submission_forms.judged", true),
+        supabase
+          .from("judge_assignments")
+          .select("submission_id, round_id, status")
+          .eq("event_id", eventId)
+          .eq("judge_id", userId),
+        supabase
+          .from("scores")
+          .select("submission_id, round_id")
+          .eq("event_id", eventId)
+          .eq("judge_id", userId),
+        judgingRoundsFn({ data: eventId }),
+        supabase
+          .from("judge_conflicts")
+          .select("team_id")
+          .eq("event_id", eventId)
+          .eq("judge_id", userId),
+        supabase
+          .from("judging_flags")
+          .select("submission_id")
+          .eq("event_id", eventId)
+          .is("resolved_at", null),
+        supabase
+          .from("panel_slots")
+          .select(
+            "round_id, submission_id, position, judging_panels(id, name, location, starts_at, slot_minutes, now_position)",
+          )
+          .eq("event_id", eventId),
+      ]);
     if (!roundData.ok) return roundData;
     const error =
-      submissions.error ?? assignments.error ?? scores.error ?? conflicts.error ?? flags.error;
+      submissions.error ??
+      assignments.error ??
+      scores.error ??
+      conflicts.error ??
+      flags.error ??
+      slots.error;
     if (error) return toFailure(error, "loading your judging queue");
     const barred = new Set((conflicts.data ?? []).map((row) => row.team_id));
     const flagged = new Set((flags.data ?? []).map((row) => row.submission_id));
+    const slotAt = new Map(
+      (slots.data ?? []).map((row) => [`${row.submission_id}:${row.round_id}`, row]),
+    );
 
     const rounds = roundData.data;
     const status = new Map(
@@ -321,8 +367,11 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
             id: row.id,
             formId: row.form_id,
           });
-          if (!round) return [];
+          // an offline round is judged outside Bogey
+          if (!round || round.format === "offline") return [];
           const key = `${row.id}:${round.id}`;
+          const slot = slotAt.get(key);
+          const panel = slot?.judging_panels;
           return [
             {
               submissionId: row.id,
@@ -338,6 +387,20 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
               status: status.get(key) ?? null,
               scored: scored.get(key) ?? 0,
               flagged: flagged.has(row.id),
+              demo:
+                slot && panel
+                  ? {
+                      panelId: panel.id,
+                      panelName: panel.name,
+                      location: panel.location,
+                      position: slot.position,
+                      startsAt: slotStart(
+                        { startsAt: panel.starts_at, slotMinutes: panel.slot_minutes },
+                        slot.position,
+                      ),
+                      nowPosition: panel.now_position,
+                    }
+                  : null,
             },
           ];
         })
@@ -345,6 +408,11 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
           (a, b) =>
             Number(b.assigned) - Number(a.assigned) ||
             Number(a.status === "skipped") - Number(b.status === "skipped") ||
+            // a panel's demos in the order they're presented
+            (a.demo && b.demo
+              ? a.demo.panelName.localeCompare(b.demo.panelName) ||
+                a.demo.position - b.demo.position
+              : Number(!a.demo) - Number(!b.demo)) ||
             (a.table ?? "~").localeCompare(b.table ?? "~", undefined, { numeric: true }) ||
             a.title.localeCompare(b.title),
         ),
@@ -707,10 +775,7 @@ export const judgingProgressFn = createServerFn({ method: "GET" })
     const currentScores = (scores.data ?? []).filter(inCurrent);
 
     const ids = (judges.data ?? []).map((row) => row.user_id);
-    const { data: profiles } = ids.length
-      ? await supabase.from("profiles").select("id, display_name").in("id", ids)
-      : { data: [] };
-    const names = new Map((profiles ?? []).map((row) => [row.id, row.display_name]));
+    const { names } = await profileNames(supabase, ids);
     const scoredBy = new Map<string, Set<string>>();
     for (const row of currentScores) {
       const set = scoredBy.get(row.judge_id) ?? new Set<string>();

@@ -24,6 +24,7 @@ import type { Event } from "@bogey/db/queries/events";
 import { answerProblem } from "@bogey/utils/answers";
 import { TeamFeedback } from "#/routes/_authed/events/$slug/-components/team-feedback.tsx";
 import { TableNotice } from "#/components/event/judging/table-notice.tsx";
+import { DemoNotice } from "#/components/event/judging/demo-notice.tsx";
 import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
 import {
   criteriaQueryOptions,
@@ -422,6 +423,7 @@ function SubmissionEditor({
       )}
       <TableNotice tables={[submission.table_label]} />
       <TeamFeedback submissionId={submission.id} />
+      <DemoNotice event={event} />
       {submission.status === "disqualified" && (
         <ErrorAlert title={t("sub.disqualified")} error={t("sub.disqualifiedBody")} />
       )}

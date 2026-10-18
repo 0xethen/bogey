@@ -55,6 +55,16 @@ const SIGNED_IN = {
   team_scores: "teams read the averages judges gave them once results are published and shared",
   venue_code: "staff read the rotating self check-in code, made from a secret in Vault",
   my_badge: "the caller reads their own badge code, made on first use, which nobody can list",
+  pin_judge: "organizers put a judge on a team's projects; assigns them now and audits it",
+  unpin_judge: "organizers remove a pin and audit it",
+  save_panels:
+    "organizers set a demo round's panels and their judges; syncs assignments and audits it",
+  schedule_demos:
+    "organizers put a demo round's entries into panel order; syncs assignments and audits it",
+  move_demo: "organizers move an entry in the demo schedule; syncs assignments and audits it",
+  set_panel_now: "a panel's judges or organizers mark which team is presenting",
+  my_demo_slots: "a team reads when and where it presents",
+  save_offline_scores: "organizers enter an offline round's scores and audit it",
   check_in: "staff look up a code they can't read; a person checks themself in with the venue code",
   undo_check_in: "staff undo a check-in and it is audited",
   check_out: "staff mark someone as left and it is audited",

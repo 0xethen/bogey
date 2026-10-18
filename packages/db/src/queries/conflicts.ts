@@ -4,6 +4,7 @@ import { createServerClient } from "../server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Json } from "../types.ts";
 import { optionalId, requireId } from "./validate.ts";
+import { profileNames } from "./profile-names.ts";
 
 export interface Conflict {
   judgeId: string;
@@ -23,10 +24,7 @@ export const eventConflictsFn = createServerFn({ method: "GET" })
       .eq("event_id", eventId);
     if (error) return toFailure(error, "loading conflicts");
     const judgeIds = [...new Set(data.map((row) => row.judge_id))];
-    const { data: profiles } = judgeIds.length
-      ? await supabase.from("profiles").select("id, display_name").in("id", judgeIds)
-      : { data: [] };
-    const names = new Map((profiles ?? []).map((row) => [row.id, row.display_name]));
+    const { names } = await profileNames(supabase, judgeIds);
     return ok(
       data
         .map((row) => ({
@@ -137,6 +135,84 @@ export const removeConflictFn = createServerFn({ method: "POST" })
       p_team: data.teamId,
     });
     if (error) return toFailure(error, "lifting the conflict");
+    return ok(null);
+  });
+
+export interface JudgePin {
+  judgeId: string;
+  judgeName: string;
+  teamId: string;
+  teamName: string;
+}
+
+export const eventPinsFn = createServerFn({ method: "GET" })
+  .validator((eventId: unknown) => requireId(eventId, "eventId"))
+  .handler(async ({ data: eventId }): Promise<DbResult<JudgePin[]>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("judge_pins")
+      .select("judge_id, team_id, teams(name)")
+      .eq("event_id", eventId);
+    if (error) return toFailure(error, "loading pinned judges");
+    const { names, error: profileError } = await profileNames(
+      supabase,
+      data.map((row) => row.judge_id),
+    );
+    if (profileError) return toFailure(profileError, "loading pinned judges");
+    return ok(
+      data
+        .map((row) => ({
+          judgeId: row.judge_id,
+          judgeName: names.get(row.judge_id) ?? "Judge",
+          teamId: row.team_id,
+          teamName: row.teams?.name ?? "A team",
+        }))
+        .sort(
+          (a, b) => a.judgeName.localeCompare(b.judgeName) || a.teamName.localeCompare(b.teamName),
+        ),
+    );
+  });
+
+export const eventPinsQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["judge-pins", eventId] as const,
+    queryFn: async () => unwrap(await eventPinsFn({ data: eventId })),
+    retry: retryPolicy,
+  });
+
+const pinInput = (input: unknown) => {
+  const raw = (input ?? {}) as { eventId?: unknown; judgeId?: unknown; teamId?: unknown };
+  return {
+    eventId: requireId(raw.eventId, "eventId"),
+    judgeId: requireId(raw.judgeId, "judgeId"),
+    teamId: requireId(raw.teamId, "teamId"),
+  };
+};
+
+/** Resolves to how many of the team's projects the judge was assigned now. */
+export const pinJudgeFn = createServerFn({ method: "POST" })
+  .validator(pinInput)
+  .handler(async ({ data }): Promise<DbResult<number>> => {
+    const supabase = createServerClient();
+    const { data: assigned, error } = await supabase.rpc("pin_judge", {
+      p_event: data.eventId,
+      p_judge: data.judgeId,
+      p_team: data.teamId,
+    });
+    if (error) return toFailure(error, "pinning the judge");
+    return ok(assigned);
+  });
+
+export const unpinJudgeFn = createServerFn({ method: "POST" })
+  .validator(pinInput)
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const supabase = createServerClient();
+    const { error } = await supabase.rpc("unpin_judge", {
+      p_event: data.eventId,
+      p_judge: data.judgeId,
+      p_team: data.teamId,
+    });
+    if (error) return toFailure(error, "unpinning the judge");
     return ok(null);
   });
 

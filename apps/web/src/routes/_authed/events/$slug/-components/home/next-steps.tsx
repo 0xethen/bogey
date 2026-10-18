@@ -1,3 +1,4 @@
+import { DemoNotice } from "#/components/event/judging/demo-notice.tsx";
 import { TableNotice } from "#/components/event/judging/table-notice.tsx";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -253,6 +254,7 @@ export function NextSteps({
       <TableNotice
         tables={(submissions.data?.forms ?? []).map((item) => item.submission?.table_label)}
       />
+      {member && <DemoNotice event={event} />}
       <Steps title={title ?? t("steps.title")} steps={steps} />
       {member && division.divisions.length > 0 && (
         <DivisionDialog

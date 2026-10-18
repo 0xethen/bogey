@@ -44,7 +44,13 @@ function Tables() {
             size="sm"
             variant="ghost"
             nativeButton={false}
-            render={<Link to="/events/$slug/manage/judging" params={{ slug: event.slug }} />}
+            render={
+              <Link
+                to="/events/$slug/manage/demos"
+                hash="expo-tables"
+                params={{ slug: event.slug }}
+              />
+            }
           >
             {t("common.back")}
           </Button>

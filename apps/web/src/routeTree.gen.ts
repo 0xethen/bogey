@@ -114,6 +114,7 @@ import { Route as AuthedEventsSlugManageAnnouncementsRouteImport } from './route
 import { Route as AuthedEventsSlugManageAuditRouteImport } from './routes/_authed/events/$slug/manage/audit'
 import { Route as AuthedEventsSlugManageCertificatesRouteImport } from './routes/_authed/events/$slug/manage/certificates'
 import { Route as AuthedEventsSlugManageDangerRouteImport } from './routes/_authed/events/$slug/manage/danger'
+import { Route as AuthedEventsSlugManageDemosRouteImport } from './routes/_authed/events/$slug/manage/demos'
 import { Route as AuthedEventsSlugManageDetailsRouteImport } from './routes/_authed/events/$slug/manage/details'
 import { Route as AuthedEventsSlugManageDivisionsRouteImport } from './routes/_authed/events/$slug/manage/divisions'
 import { Route as AuthedEventsSlugManageEmailRouteImport } from './routes/_authed/events/$slug/manage/email'
@@ -126,6 +127,8 @@ import { Route as AuthedEventsSlugManagePeopleRouteImport } from './routes/_auth
 import { Route as AuthedEventsSlugManagePluginsRouteImport } from './routes/_authed/events/$slug/manage/plugins'
 import { Route as AuthedEventsSlugManagePrizesRouteImport } from './routes/_authed/events/$slug/manage/prizes'
 import { Route as AuthedEventsSlugManageRegistrationRouteImport } from './routes/_authed/events/$slug/manage/registration'
+import { Route as AuthedEventsSlugManageRegistrationFormRouteImport } from './routes/_authed/events/$slug/manage/registration-form'
+import { Route as AuthedEventsSlugManageResultsRouteImport } from './routes/_authed/events/$slug/manage/results'
 import { Route as AuthedEventsSlugManageSecurityRouteImport } from './routes/_authed/events/$slug/manage/security'
 import { Route as AuthedEventsSlugManageSubmissionsRouteImport } from './routes/_authed/events/$slug/manage/submissions'
 import { Route as AuthedEventsSlugManageTeamsRouteImport } from './routes/_authed/events/$slug/manage/teams'
@@ -711,6 +714,12 @@ const AuthedEventsSlugManageDangerRoute =
     path: '/danger',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
+const AuthedEventsSlugManageDemosRoute =
+  AuthedEventsSlugManageDemosRouteImport.update({
+    id: '/demos',
+    path: '/demos',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
 const AuthedEventsSlugManageDetailsRoute =
   AuthedEventsSlugManageDetailsRouteImport.update({
     id: '/details',
@@ -781,6 +790,18 @@ const AuthedEventsSlugManageRegistrationRoute =
   AuthedEventsSlugManageRegistrationRouteImport.update({
     id: '/registration',
     path: '/registration',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageRegistrationFormRoute =
+  AuthedEventsSlugManageRegistrationFormRouteImport.update({
+    id: '/registration-form',
+    path: '/registration-form',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageResultsRoute =
+  AuthedEventsSlugManageResultsRouteImport.update({
+    id: '/results',
+    path: '/results',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
 const AuthedEventsSlugManageSecurityRoute =
@@ -1015,6 +1036,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
   '/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
+  '/events/$slug/manage/demos': typeof AuthedEventsSlugManageDemosRoute
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
@@ -1027,6 +1049,8 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/plugins': typeof AuthedEventsSlugManagePluginsRoute
   '/events/$slug/manage/prizes': typeof AuthedEventsSlugManagePrizesRoute
   '/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
+  '/events/$slug/manage/registration-form': typeof AuthedEventsSlugManageRegistrationFormRoute
+  '/events/$slug/manage/results': typeof AuthedEventsSlugManageResultsRoute
   '/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
   '/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
@@ -1141,6 +1165,7 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
   '/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
+  '/events/$slug/manage/demos': typeof AuthedEventsSlugManageDemosRoute
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
@@ -1153,6 +1178,8 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/plugins': typeof AuthedEventsSlugManagePluginsRoute
   '/events/$slug/manage/prizes': typeof AuthedEventsSlugManagePrizesRoute
   '/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
+  '/events/$slug/manage/registration-form': typeof AuthedEventsSlugManageRegistrationFormRoute
+  '/events/$slug/manage/results': typeof AuthedEventsSlugManageResultsRoute
   '/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
   '/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
@@ -1284,6 +1311,7 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/_authed/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
   '/_authed/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
+  '/_authed/events/$slug/manage/demos': typeof AuthedEventsSlugManageDemosRoute
   '/_authed/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/_authed/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/_authed/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
@@ -1296,6 +1324,8 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/plugins': typeof AuthedEventsSlugManagePluginsRoute
   '/_authed/events/$slug/manage/prizes': typeof AuthedEventsSlugManagePrizesRoute
   '/_authed/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
+  '/_authed/events/$slug/manage/registration-form': typeof AuthedEventsSlugManageRegistrationFormRoute
+  '/_authed/events/$slug/manage/results': typeof AuthedEventsSlugManageResultsRoute
   '/_authed/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/_authed/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
   '/_authed/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
@@ -1426,6 +1456,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/audit'
     | '/events/$slug/manage/certificates'
     | '/events/$slug/manage/danger'
+    | '/events/$slug/manage/demos'
     | '/events/$slug/manage/details'
     | '/events/$slug/manage/divisions'
     | '/events/$slug/manage/email'
@@ -1438,6 +1469,8 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/plugins'
     | '/events/$slug/manage/prizes'
     | '/events/$slug/manage/registration'
+    | '/events/$slug/manage/registration-form'
+    | '/events/$slug/manage/results'
     | '/events/$slug/manage/security'
     | '/events/$slug/manage/submissions'
     | '/events/$slug/manage/teams'
@@ -1552,6 +1585,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/audit'
     | '/events/$slug/manage/certificates'
     | '/events/$slug/manage/danger'
+    | '/events/$slug/manage/demos'
     | '/events/$slug/manage/details'
     | '/events/$slug/manage/divisions'
     | '/events/$slug/manage/email'
@@ -1564,6 +1598,8 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/plugins'
     | '/events/$slug/manage/prizes'
     | '/events/$slug/manage/registration'
+    | '/events/$slug/manage/registration-form'
+    | '/events/$slug/manage/results'
     | '/events/$slug/manage/security'
     | '/events/$slug/manage/submissions'
     | '/events/$slug/manage/teams'
@@ -1694,6 +1730,7 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/audit'
     | '/_authed/events/$slug/manage/certificates'
     | '/_authed/events/$slug/manage/danger'
+    | '/_authed/events/$slug/manage/demos'
     | '/_authed/events/$slug/manage/details'
     | '/_authed/events/$slug/manage/divisions'
     | '/_authed/events/$slug/manage/email'
@@ -1706,6 +1743,8 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/plugins'
     | '/_authed/events/$slug/manage/prizes'
     | '/_authed/events/$slug/manage/registration'
+    | '/_authed/events/$slug/manage/registration-form'
+    | '/_authed/events/$slug/manage/results'
     | '/_authed/events/$slug/manage/security'
     | '/_authed/events/$slug/manage/submissions'
     | '/_authed/events/$slug/manage/teams'
@@ -2506,6 +2545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManageDangerRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
+    '/_authed/events/$slug/manage/demos': {
+      id: '/_authed/events/$slug/manage/demos'
+      path: '/demos'
+      fullPath: '/events/$slug/manage/demos'
+      preLoaderRoute: typeof AuthedEventsSlugManageDemosRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
     '/_authed/events/$slug/manage/details': {
       id: '/_authed/events/$slug/manage/details'
       path: '/details'
@@ -2588,6 +2634,20 @@ declare module '@tanstack/react-router' {
       path: '/registration'
       fullPath: '/events/$slug/manage/registration'
       preLoaderRoute: typeof AuthedEventsSlugManageRegistrationRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/registration-form': {
+      id: '/_authed/events/$slug/manage/registration-form'
+      path: '/registration-form'
+      fullPath: '/events/$slug/manage/registration-form'
+      preLoaderRoute: typeof AuthedEventsSlugManageRegistrationFormRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/results': {
+      id: '/_authed/events/$slug/manage/results'
+      path: '/results'
+      fullPath: '/events/$slug/manage/results'
+      preLoaderRoute: typeof AuthedEventsSlugManageResultsRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
     '/_authed/events/$slug/manage/security': {
@@ -2908,6 +2968,7 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageAuditRoute: typeof AuthedEventsSlugManageAuditRoute
   AuthedEventsSlugManageCertificatesRoute: typeof AuthedEventsSlugManageCertificatesRoute
   AuthedEventsSlugManageDangerRoute: typeof AuthedEventsSlugManageDangerRoute
+  AuthedEventsSlugManageDemosRoute: typeof AuthedEventsSlugManageDemosRoute
   AuthedEventsSlugManageDetailsRoute: typeof AuthedEventsSlugManageDetailsRoute
   AuthedEventsSlugManageDivisionsRoute: typeof AuthedEventsSlugManageDivisionsRoute
   AuthedEventsSlugManageEmailRoute: typeof AuthedEventsSlugManageEmailRoute
@@ -2920,6 +2981,8 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManagePluginsRoute: typeof AuthedEventsSlugManagePluginsRoute
   AuthedEventsSlugManagePrizesRoute: typeof AuthedEventsSlugManagePrizesRoute
   AuthedEventsSlugManageRegistrationRoute: typeof AuthedEventsSlugManageRegistrationRoute
+  AuthedEventsSlugManageRegistrationFormRoute: typeof AuthedEventsSlugManageRegistrationFormRoute
+  AuthedEventsSlugManageResultsRoute: typeof AuthedEventsSlugManageResultsRoute
   AuthedEventsSlugManageSecurityRoute: typeof AuthedEventsSlugManageSecurityRoute
   AuthedEventsSlugManageSubmissionsRoute: typeof AuthedEventsSlugManageSubmissionsRoute
   AuthedEventsSlugManageTeamsRoute: typeof AuthedEventsSlugManageTeamsRoute
@@ -2937,6 +3000,7 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageCertificatesRoute:
       AuthedEventsSlugManageCertificatesRoute,
     AuthedEventsSlugManageDangerRoute: AuthedEventsSlugManageDangerRoute,
+    AuthedEventsSlugManageDemosRoute: AuthedEventsSlugManageDemosRoute,
     AuthedEventsSlugManageDetailsRoute: AuthedEventsSlugManageDetailsRoute,
     AuthedEventsSlugManageDivisionsRoute: AuthedEventsSlugManageDivisionsRoute,
     AuthedEventsSlugManageEmailRoute: AuthedEventsSlugManageEmailRoute,
@@ -2950,6 +3014,9 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManagePrizesRoute: AuthedEventsSlugManagePrizesRoute,
     AuthedEventsSlugManageRegistrationRoute:
       AuthedEventsSlugManageRegistrationRoute,
+    AuthedEventsSlugManageRegistrationFormRoute:
+      AuthedEventsSlugManageRegistrationFormRoute,
+    AuthedEventsSlugManageResultsRoute: AuthedEventsSlugManageResultsRoute,
     AuthedEventsSlugManageSecurityRoute: AuthedEventsSlugManageSecurityRoute,
     AuthedEventsSlugManageSubmissionsRoute:
       AuthedEventsSlugManageSubmissionsRoute,

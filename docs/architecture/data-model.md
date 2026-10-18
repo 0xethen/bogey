@@ -462,6 +462,23 @@ ones.
   judge) and `set_conflicts` (organizers); scores from a judge for that team are left out of
   `private.rank_submissions`, which also evens out each judge's scores per
   `judging.normalize` and reports `raw_score` beside `score`.
+- **`judge_pins`**: `(judge_id, team_id)`, the opposite of a conflict. Written by `pin_judge`
+  (organizers; refused while a conflict exists, and it assigns the judge to the team's projects
+  already in judging) and `unpin_judge`. `assign_round_robin` places pinned judges first, past
+  the even share and the excluded tags; declaring a conflict removes the pin.
+- **`judging_rounds.format`**: how judges meet a round's entries. `online` (the default): each
+  judge reviews their assignments on their own. `demos`: teams present in turn to panels of
+  judges. `offline`: judging happens outside Bogey and organizers enter each entry's score with
+  `save_offline_scores`, kept in `ranking_inputs` under the provider `offline`.
+  `assign_round_robin` and `pin_judge` only hand out online rounds.
+- **`judging_panels`** (`round_id`, `name`, `location`, `starts_at?`, `slot_minutes`,
+  `now_position?`), **`panel_judges`** (one panel a judge a round) and **`panel_slots`**
+  (`panel_id`, `submission_id`, `position`; an entry presents once a round): a demo round's run of
+  show. Slots run back to back from `starts_at`. `save_panels`, `schedule_demos` and `move_demo`
+  (organizers) keep `judge_assignments` in line with the panels: every panel judge without a
+  conflict gets the panel's entries, and leaves the ones they haven't scored when they move.
+  `set_panel_now` (the panel's judges, organizers) marks who's presenting; teams read their slot
+  with `my_demo_slots`.
 - **`judging_rounds`**: `event_id`, `form_id`, `ordinal`, `name`, `window_key?`. Round 1 is
   created with the form and holds every submitted entry. **`round_entries`**
   (`round_id`, `submission_id`) lists the entries advanced into later rounds, written by

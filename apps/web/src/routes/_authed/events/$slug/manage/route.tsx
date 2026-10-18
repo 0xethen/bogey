@@ -17,9 +17,11 @@ import {
   IconMail,
   IconMessages,
   IconPlug,
+  IconPresentation,
   IconPuzzle,
   IconShieldLock,
   IconSpeakerphone,
+  IconTrophy,
   IconUsers,
   IconUsersGroup,
   IconWebhook,
@@ -64,6 +66,9 @@ function RouteComponent() {
   const summary = useQuery(manageSummaryQueryOptions(event.id));
   const conversations = useQuery(eventConversationsQueryOptions(event.id));
   const openQuestions = conversations.data?.filter((thread) => thread.status === "open").length;
+  const activeConversations = conversations.data?.filter(
+    (thread) => thread.status !== "closed",
+  ).length;
   const base = `/events/${event.slug}/manage`;
 
   const groups: Tuple<SettingsGroup> = [
@@ -125,6 +130,14 @@ function RouteComponent() {
           label: t("manageNav.registration"),
           icon: IconClipboardList,
           to: `${base}/registration`,
+          sub: [
+            {
+              key: "registration-form",
+              label: t("manageNav.registrationForm"),
+              icon: IconForms,
+              to: `${base}/registration-form`,
+            },
+          ],
         },
         {
           key: "people",
@@ -162,7 +175,26 @@ function RouteComponent() {
           icon: IconCertificate,
           to: `${base}/certificates`,
         },
-        { key: "judging", label: t("judging.title"), icon: IconGavel, to: `${base}/judging` },
+        {
+          key: "judging",
+          label: t("judging.title"),
+          icon: IconGavel,
+          to: `${base}/judging`,
+          sub: [
+            {
+              key: "demos",
+              label: t("manageNav.demos"),
+              icon: IconPresentation,
+              to: `${base}/demos`,
+            },
+            {
+              key: "results",
+              label: t("manageNav.results"),
+              icon: IconTrophy,
+              to: `${base}/results`,
+            },
+          ],
+        },
       ],
     },
     {
@@ -181,7 +213,9 @@ function RouteComponent() {
           label: t("eventTab.messages"),
           icon: IconMessages,
           to: `${base}/messages`,
-          badge: openQuestions,
+          // unanswered ones stand out; otherwise it counts the ones not closed yet
+          badge: openQuestions || activeConversations,
+          badgeVariant: openQuestions ? "default" : "text",
         },
       ],
     },
@@ -250,6 +284,8 @@ function RouteComponent() {
     <PreviewGate allowed={viewer ? manages(viewer) : false}>
       <SettingsLayout
         label={t("manageNav.label")}
+        // organizers' tables want the room; other settings layouts keep the cap
+        className="xl:max-w-none"
         header={<EventSwitcher event={event} orgAdmin={orgAdmin} />}
         groups={allGroups}
       >

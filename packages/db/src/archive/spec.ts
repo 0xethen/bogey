@@ -40,6 +40,10 @@ type TableName =
   | "scores"
   | "feedback"
   | "judge_conflicts"
+  | "judge_pins"
+  | "judging_panels"
+  | "panel_judges"
+  | "panel_slots"
   | "awards"
   | "result_publications"
   | "checkins"
@@ -223,6 +227,23 @@ export const ARCHIVE_TABLES: readonly TableSpec[] = [
   table("judge_conflicts", {
     refs: { judge_id: "user", team_id: "teams", declared_by: "user" },
     people: true,
+  }),
+  table("judge_pins", {
+    refs: { judge_id: "user", team_id: "teams", created_by: "user" },
+    people: true,
+  }),
+  table("judging_panels", {
+    id: "id",
+    refs: { round_id: "judging_rounds" },
+    dates: ["starts_at"],
+    clear: ["now_position"],
+  }),
+  table("panel_judges", {
+    refs: { round_id: "judging_rounds", panel_id: "judging_panels", judge_id: "user" },
+    people: true,
+  }),
+  table("panel_slots", {
+    refs: { round_id: "judging_rounds", panel_id: "judging_panels", submission_id: "submissions" },
   }),
   table("submission_rubrics", {
     refs: { submission_id: "submissions", rubric_id: "rubrics", set_by: "user" },

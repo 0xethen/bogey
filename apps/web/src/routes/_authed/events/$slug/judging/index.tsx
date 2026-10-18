@@ -22,6 +22,12 @@ import { Screen } from "@bogey/ui/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import { msg, useT } from "#/lib/translate.tsx";
+import { setPanelNowFn } from "@bogey/db/queries/demos";
+import { useLiveInvalidate } from "@bogey/db/realtime";
+import { formatTime } from "@bogey/utils/time";
+import { Badge } from "@bogey/ui/components/badge";
+import { IconPlayerPlay } from "@tabler/icons-react";
+import { useViewerTimeFormat } from "#/lib/time.ts";
 
 const ALL = "all";
 
@@ -39,6 +45,11 @@ function RouteComponent() {
   const t = useT();
   const { event } = Route.useRouteContext();
   const { data: queue } = useSuspenseQuery(judgeQueueQueryOptions(event.id));
+  // a demo panel's presenter moves along live
+  useLiveInvalidate("judging_panels", judgeQueueQueryOptions(event.id).queryKey, {
+    filter: `event_id=eq.${event.id}`,
+  });
+  const time = useViewerTimeFormat();
   const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
   const { data: roundData } = useSuspenseQuery(judgingRoundsQueryOptions(event.id));
   const windowOf = (item: JudgeQueueItem) =>
@@ -67,9 +78,32 @@ function RouteComponent() {
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey }),
   });
+  const presenting = (item: JudgeQueueItem) =>
+    item.demo !== null && item.demo.nowPosition === item.demo.position;
   const next =
+    assigned.find((item) => presenting(item) && item.status !== "done") ??
     assigned.find((item) => item.status !== "done" && item.status !== "skipped") ??
     others.find((item) => item.scored === 0);
+  // the panels this judge sits on, for the run of show
+  const panels = [
+    ...new Map(
+      assigned.flatMap((item) => (item.demo ? [[item.demo.panelId, item.demo] as const] : [])),
+    ).values(),
+  ];
+  // one past the last slot this judge hears; a team they conflict with may sit in between
+  const panelSize = (panelId: string) =>
+    Math.max(
+      0,
+      ...assigned.flatMap((item) =>
+        item.demo?.panelId === panelId ? [item.demo.position + 1] : [],
+      ),
+    );
+  const advance = useMutation({
+    mutationFn: async (input: { panelId: string; position: number }) =>
+      unwrap(await setPanelNowFn({ data: input })),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey }),
+  });
 
   const row = (item: JudgeQueueItem) => (
     <div key={item.submissionId} className="flex items-center gap-2">
@@ -93,8 +127,16 @@ function RouteComponent() {
               }
             />
           }
-          title={item.title}
+          title={
+            <>
+              {item.title}
+              {presenting(item) && <Badge className="ml-2">{t("demos.presenting")}</Badge>}
+            </>
+          }
           meta={[
+            ...(item.demo?.startsAt
+              ? [formatTime(item.demo.startsAt, { ...time, timeZone: event.timezone })]
+              : []),
             ...(item.table ? [t("judging.table", { table: item.table })] : []),
             item.teamName,
             item.formTitle,
@@ -161,7 +203,32 @@ function RouteComponent() {
           </Button>
         </div>
       )}
-      <ErrorAlert error={skip.error} title={t("judging.updateFailed")} />
+      {panels.map((panel) => (
+        <div
+          key={panel.panelId}
+          className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-muted/50 p-3"
+        >
+          <span className="text-sm">
+            <span className="font-medium">{panel.panelName}</span>
+            {panel.location && <span className="text-muted-fg"> · {panel.location}</span>}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={advance.isPending || (panel.nowPosition ?? -1) >= panelSize(panel.panelId)}
+            onClick={() =>
+              advance.mutate({
+                panelId: panel.panelId,
+                position: panel.nowPosition === null ? 0 : panel.nowPosition + 1,
+              })
+            }
+          >
+            <IconPlayerPlay />
+            {panel.nowPosition === null ? t("demos.start") : t("demos.next")}
+          </Button>
+        </div>
+      ))}
+      <ErrorAlert error={skip.error ?? advance.error} title={t("judging.updateFailed")} />
       {prizes.length > 0 && queue.length > 0 && (
         <OptSelect
           id="track-filter"
