@@ -294,6 +294,7 @@ declare
   v_division uuid;
   v_sessions uuid[];
   v_answers jsonb;
+  v_fields jsonb := coalesce((select f.fields from public.onboarding_forms f where f.event_id = p_event), '[]');
 begin
   if not private.can_manage(p_event) then
     raise exception 'only organizers can import people' using errcode = '42501';
@@ -329,6 +330,19 @@ begin
     if length(v_answers::text) > 20000 then
       raise exception 'answers for % are too long', v_email using errcode = '22023';
     end if;
+    -- a column named like a registration question ("School", "Why did you join") is filed under
+    -- that question's key, so it lines up with what people answer themselves or at the kiosk
+    v_answers := (
+      select coalesce(jsonb_object_agg(coalesce(q.key, a.key), a.value), '{}')
+      from jsonb_each(v_answers) a
+      left join lateral (
+        select field ->> 'key' as key from jsonb_array_elements(v_fields) field
+        where regexp_replace(lower(a.key), '[^a-z0-9]+', '', 'g') in (
+          regexp_replace(lower(field ->> 'key'), '[^a-z0-9]+', '', 'g'),
+          regexp_replace(lower(field ->> 'label'), '[^a-z0-9]+', '', 'g'))
+        limit 1
+      ) q on true
+    );
     insert into public.registrations (
       event_id, email, full_name, source, role, team_hint, team_options, division_id,
       session_picks, answers, status

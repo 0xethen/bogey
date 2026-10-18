@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(15);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max) values
@@ -16,6 +16,13 @@ select is(public.import_roster(tests.u('ev'), '[{"email":"A@t.test","name":"Ada 
   '{"added":3,"updated":0,"linked":1,"asked":0}'::jsonb, 'import reports added and linked people');
 select is(public.import_roster(tests.u('ev'), '[{"email":"a@t.test"}]') ->> 'updated', '1', 'importing again updates instead of duplicating');
 reset role;
+insert into public.onboarding_forms (event_id, fields) values (tests.u('ev'),
+  '[{"key":"why","label":"Why did you join?","kind":"longtext"}]');
+select tests.as_user(tests.u('o1'));
+select public.import_roster(tests.u('ev'), '[{"email":"a@t.test","answers":{"Why did you join":"Fun","Shirt":"M"}}]');
+reset role;
+select is((select answers from public.registrations where event_id = tests.u('ev') and email = 'a@t.test'),
+  '{"why":"Fun","Shirt":"M"}'::jsonb, 'a column named like a question is filed under its key');
 select is((select role::text from public.event_members where event_id = tests.u('ev') and user_id = tests.u('a')), 'participant', 'an existing account becomes a member');
 select is((select t.name from public.team_members tm join public.teams t on t.id = tm.team_id where tm.user_id = tests.u('a') and tm.event_id = tests.u('ev')), 'Rockets', 'and joins the team from the import');
 select is((select role::text from public.team_members where user_id = tests.u('a') and event_id = tests.u('ev')), 'captain', 'the first member captains');

@@ -221,8 +221,9 @@ begin
   from public.submission_forms f where f.event_id = v_hack and f.key = 'project';
 
   insert into public.onboarding_forms (event_id, fields) values (v_hack,
-    '[{"key":"school","label":"School","kind":"text","required":true},
-      {"key":"shirt","label":"T-shirt size","kind":"select","required":false,"options":["S","M","L","XL"]}]');
+    '[{"key":"grade","label":"Grade","kind":"text","required":false},
+      {"key":"school","label":"School","kind":"text","required":false},
+      {"key":"why","label":"Why did you join?","kind":"longtext","required":false}]');
 
   perform private.seed_demo_agenda(v_hack, v_day);
 
