@@ -13,12 +13,12 @@ export function GalleryLink({ event }: { event: Event }) {
   return (
     <Button
       size="sm"
-      variant="outline"
+      variant="secondary"
       nativeButton={false}
       render={<Link to="/gallery/$slug" params={{ slug: String(event.slug) }} />}
     >
       <IconLayoutGrid />
-      Project gallery
+      Gallery
     </Button>
   );
 }

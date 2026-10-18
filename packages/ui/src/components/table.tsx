@@ -68,7 +68,12 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
-      className={cn("p-3 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0", className)}
+      className={cn(
+        // a small button is 12px taller than a line of text, so its cell gives that back and the
+        // row stays as tall as one without
+        "p-3 align-middle whitespace-nowrap has-data-[slot=button]:py-1.5 [&:has([role=checkbox])]:pr-0",
+        className,
+      )}
       {...props}
     />
   );

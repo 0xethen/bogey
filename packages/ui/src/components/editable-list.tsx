@@ -20,6 +20,7 @@ export interface EditableListPosition {
 }
 
 const InGroup = createContext(false);
+const Horizontal = createContext(false);
 const ListId = createContext<string | undefined>(undefined);
 
 const ITEM = "editable-list-item";
@@ -133,8 +134,8 @@ export function EditableListSource({
       onBlur={onPreview && (() => onPreview(false))}
       data-dragging={isDragging || undefined}
       className={cn(
-        "cursor-grab rounded-2xl border border-border bg-background text-left transition-[background-color,border-color,box-shadow] hocus:border-primary/30 hocus:bg-primary/5 active:cursor-grabbing",
-        isDragging && "opacity-60 shadow-lg ring-2 ring-primary/30",
+        "cursor-grab rounded-2xl border border-border bg-background text-left transition-[background-color,border-color,box-shadow] hocus:border-accent/30 hocus:bg-accent/60 active:cursor-grabbing",
+        isDragging && "border-accent/30 bg-accent/60 opacity-60 shadow-lg",
         className,
       )}
     >
@@ -147,11 +148,14 @@ export function EditableList({
   id,
   onMove,
   empty,
+  orientation = "vertical",
   children,
 }: {
   id?: string;
   onMove?: (from: number, to: number) => void;
   empty?: ReactNode;
+  /** `horizontal` lays the items out in a wrapping row, like tabs. */
+  orientation?: "vertical" | "horizontal";
   children: ReactNode;
 }) {
   const grouped = useContext(InGroup);
@@ -173,7 +177,16 @@ export function EditableList({
 
   return (
     <DragDropProvider sensors={sensors} onDragEnd={end}>
-      <ol className="flex flex-col gap-3">{children}</ol>
+      <Horizontal value={orientation === "horizontal"}>
+        <ol
+          className={cn(
+            "flex gap-3",
+            orientation === "horizontal" ? "flex-row flex-wrap gap-2" : "flex-col",
+          )}
+        >
+          {children}
+        </ol>
+      </Horizontal>
     </DragDropProvider>
   );
 }
@@ -313,6 +326,7 @@ export function EditableListItem({
   footer,
   preview,
   editing = true,
+  selected = false,
   onEdit,
   onDone,
   numbered = true,
@@ -333,12 +347,15 @@ export function EditableListItem({
   footer?: ReactNode;
   preview?: ReactNode;
   editing?: boolean;
+  /** Marked as the one being edited elsewhere, like a tab whose settings show below the row. */
+  selected?: boolean;
   onEdit?: () => void;
   onDone?: () => void;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const t = useUiText();
   const group = useContext(ListId);
+  const horizontal = useContext(Horizontal);
   const dropsBefore = useContext(DropBefore) === id;
   const { ref, handleRef, isDragging } = useSortable({
     id,
@@ -441,10 +458,12 @@ export function EditableListItem({
       }}
       className="min-w-0 flex-1 outline-none after:absolute after:inset-0 after:rounded-[inherit]"
     >
-      <div inert>{preview}</div>
+      <div inert className={cn(!horizontal && "py-1.5")}>
+        {preview}
+      </div>
     </div>
   ) : previewing ? (
-    <div inert className="min-w-0 flex-1">
+    <div inert className="min-w-0 flex-1 py-1.5">
       {preview}
     </div>
   ) : (
@@ -456,18 +475,21 @@ export function EditableListItem({
       ref={ref}
       data-dragging={isDragging || undefined}
       className={cn(
-        "relative flex flex-col gap-3 rounded-2xl border border-border bg-background p-4 transition-[background-color,border-color,box-shadow]",
+        "relative flex flex-col gap-3 rounded-2xl border border-border bg-background transition-[background-color,border-color,box-shadow]",
+        horizontal ? "px-3 py-1.5" : "p-3",
         cardClicks &&
-          "has-[[data-slot=editable-preview]:hover]:border-primary/20 has-[[data-slot=editable-preview]:hover]:bg-primary/5 has-[[data-slot=editable-preview]:focus-visible]:focus-ring",
-        !handle && previewing && "cursor-grab hover:border-primary/20 active:cursor-grabbing",
-        preview !== undefined && editing && "border-primary/10 bg-primary/5 ring-1 ring-primary/20",
-        isDragging && "bg-primary/10 shadow-lg ring-2 ring-primary/30 backdrop-blur-xs",
+          "has-[[data-slot=editable-preview]:hover]:border-accent/30 has-[[data-slot=editable-preview]:hover]:bg-accent/60 has-[[data-slot=editable-preview]:focus-visible]:focus-ring",
+        !handle &&
+          previewing &&
+          "cursor-grab hover:border-accent/30 hover:bg-accent/60 active:cursor-grabbing",
+        ((preview !== undefined && editing) || selected) && "border-accent/30 bg-accent/60",
+        isDragging && "border-accent/30 bg-accent/60 shadow-lg backdrop-blur-xs",
       )}
     >
       {dropsBefore && <DropLine className="-top-2" />}
       {title !== undefined ? (
         <>
-          <header className="-mx-4 -mt-1 flex items-center gap-2 border-b border-border px-4 pb-3">
+          <header className="-mx-3 flex items-center gap-2 border-b border-border px-3 pb-3">
             {grip}
             <div className="min-w-0 flex-1 truncate text-xs font-medium tracking-wide text-muted-fg uppercase">
               {title}
@@ -477,10 +499,10 @@ export function EditableListItem({
           {content}
         </>
       ) : (
-        <div className="flex items-start gap-2">
-          {grip && <div className="mt-1.5">{grip}</div>}
+        <div className={cn("flex items-start", !horizontal && "gap-2")}>
+          {grip && <div className="flex h-8 shrink-0 items-center">{grip}</div>}
           {numbered && (
-            <span className="mt-2 w-5 shrink-0 text-sm text-muted-fg tabular-nums">
+            <span className="flex h-8 w-5 shrink-0 items-center text-sm text-muted-fg tabular-nums">
               {index + 1}.
             </span>
           )}
@@ -488,7 +510,17 @@ export function EditableListItem({
           {actions}
         </div>
       )}
-      {footer && <div className="pl-12 text-xs text-muted-fg">{footer}</div>}
+      {footer && (
+        <div
+          className={cn(
+            "text-xs text-muted-fg",
+            title === undefined && (handle || numbered) && "pl-7",
+            title === undefined && handle && numbered && "pl-14",
+          )}
+        >
+          {footer}
+        </div>
+      )}
     </li>
   );
 }

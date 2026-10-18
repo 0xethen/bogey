@@ -15,7 +15,7 @@ The **Format** setting (in-person, online, hybrid) under Manage → Details star
 - **Teams**: size 2 to 4, with divisions for school level if you want separate awards.
 - **Judging**: rubric with blind judging off; for a big expo add **Expo tables** and judge by table. Normalize with **min-max** if
   judges vary in how they score. Add a **popular vote**.
-- **Prizes**: sponsors' prizes under Manage → Prizes; teams pick the prizes they enter on their submission.
+- **Prizes**: sponsors' prizes under Manage → Pages → Prizes; teams pick the prizes they enter on their submission.
 - **After**: results, [certificates](running-an-event.md#certificates), the gallery.
 
 ## Online hackathon

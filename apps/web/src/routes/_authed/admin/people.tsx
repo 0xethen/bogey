@@ -207,7 +207,7 @@ function peopleColumns(options: {
         const you = person.id === options.you;
         if (person.admin && options.lastAdmin) return null;
         return (
-          <div className="-my-1.5 flex justify-end">
+          <div className="flex justify-end">
             {person.admin ? (
               <Button
                 size="sm"
@@ -258,8 +258,7 @@ function PasswordLogin({ person }: { person: InstancePerson }) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["instance"] }),
   });
   return (
-    <div className="-my-1.5 flex flex-col gap-1">
-      {/* TODO: fix spacing with+without button */}
+    <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <span className="whitespace-nowrap text-muted-fg">
           {person.admin

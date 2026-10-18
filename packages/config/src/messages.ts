@@ -181,7 +181,7 @@ export const en = {
     "You've left a team as many times as this event allows. If you're on the wrong team, ask an organizer.",
   "team.leavesLeft":
     "{count, plural, =0 {After this you can't leave another team.} one {After this, you can leave a team # more time.} other {After this, you can leave a team # more times.}}",
-  "team.newCode": "Make a new code",
+  "team.newCode": "Make a new code...",
   "team.newCodeTitle": "Make a new invite code?",
   "team.newCodeBody":
     "The old code stops working, so people who left or got it from someone else can't join with it. Share the new one with whoever you're still waiting for.",
@@ -812,7 +812,7 @@ export const en = {
   "path.agenda": "Agenda",
   "path.security": "Security",
   "path.registration": "Registration",
-  "path.about": "Details, under About",
+  "path.about": "Details settings",
   "path.autoPromote": "Registration > Move people up the waitlist",
   "path.judgingNormalize": "Judging settings",
   "path.walkIns": "Registration > Accept walk-ins",
@@ -1690,7 +1690,7 @@ export const en = {
   "logout.failed": "Couldn't sign you out",
   "logout.signingOut": "Signing out...",
   "logout.stay": "Stay signed in",
-  "otp.title": "Enter your code",
+  "otp.title": "Enter your one-time code",
   "otp.needEmail": "Enter your email address",
   "otp.sixDigits": "Sign-in codes are six digits",
   "otp.code": "Code",
