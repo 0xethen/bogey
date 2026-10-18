@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { AuthenticatorAssuranceLevels, Factor } from "@supabase/supabase-js";
 import { IconDeviceMobile, IconFingerprint, IconShieldCheck } from "@tabler/icons-react";
@@ -14,6 +14,8 @@ import { OTPField, OTPFieldGroup, OTPFieldInput } from "@bogey/ui/components/otp
 import { Screen } from "@bogey/ui/components/screen";
 import { Spinner } from "@bogey/ui/components/spinner";
 import { useSessionRefresh } from "#/lib/refresh.ts";
+import { useTimeFormat } from "@bogey/ui/lib/time-format";
+import { formatDate } from "@bogey/utils/time";
 import { Link } from "@tanstack/react-router";
 import { useT } from "#/lib/translate.tsx";
 
@@ -114,6 +116,7 @@ interface Enrolment {
 
 export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
   const t = useT();
+  const time = useTimeFormat();
   const refreshSession = useSessionRefresh();
   const state = useQuery({ queryKey: mfaKey, queryFn: loadState, retry: false });
   const [enrolment, setEnrolment] = useState<Enrolment | null>(null);
@@ -161,8 +164,12 @@ export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
           await mfa.unenroll({ factorId: factor.id });
         }
       }
+      // "Passkey 1", "Passkey 2"...: the first one free, since GoTrue refuses two of one name
+      const taken = new Set((all.data?.webauthn ?? []).map((factor) => factor.friendly_name));
+      let n = 1;
+      while (taken.has(t("twoFactor.passkeyName", { n }))) n++;
       const result = await mfa.webauthn.register({
-        friendlyName: `${t("twoFactor.passkey")} ${new Date().toLocaleString()}`,
+        friendlyName: t("twoFactor.passkeyName", { n }),
         webauthn: webauthnFor(host),
       });
       if (result.error) throw result.error;
@@ -189,6 +196,17 @@ export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
     },
     onSuccess: finish,
     onError: () => setCode(""),
+  });
+
+  const rename = useMutation({
+    mutationFn: async ({ factorId, name }: { factorId: string; name: string }) => {
+      const result = await browserClient().rpc("rename_passkey", {
+        p_factor: factorId,
+        p_name: name,
+      });
+      if (result.error) throw result.error;
+    },
+    onSettled: () => state.refetch(),
   });
 
   const remove = useMutation({
@@ -370,8 +388,15 @@ export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
               {passkeys.map((passkey) => (
                 <FactorRow
                   key={passkey.id}
-                  name={passkey.friendly_name || t("twoFactor.passkey")}
-                  status={t("twoFactor.passkeyAdded")}
+                  name={
+                    <PasskeyName
+                      name={passkey.friendly_name || t("twoFactor.passkey")}
+                      onRename={(name) => rename.mutate({ factorId: passkey.id, name })}
+                    />
+                  }
+                  status={t("twoFactor.passkeyAdded", {
+                    date: formatDate(passkey.created_at, time),
+                  })}
                 >
                   <RemoveButton
                     pending={remove.isPending}
@@ -392,6 +417,10 @@ export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
             title={t("common.wentWrong")}
           />
           <ErrorAlert
+            error={rename.error ? t("twoFactor.renameFailed") : null}
+            title={t("common.wentWrong")}
+          />
+          <ErrorAlert
             error={remove.error ? t("twoFactor.removeFailed") : null}
             title={t("common.wentWrong")}
           />
@@ -408,7 +437,7 @@ function FactorRow({
   children,
 }: {
   icon?: ReactNode;
-  name: string;
+  name: ReactNode;
   status: string;
   children: ReactNode;
 }) {
@@ -416,11 +445,51 @@ function FactorRow({
     <div className="flex flex-wrap items-center gap-3">
       {icon && <span className="text-muted-fg [&_svg]:size-5">{icon}</span>}
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-medium">{name}</span>
+        {typeof name === "string" ? (
+          <span className="truncate text-sm font-medium">{name}</span>
+        ) : (
+          name
+        )}
         <span className="text-xs text-muted-fg">{status}</span>
       </div>
       {children}
     </div>
+  );
+}
+
+// the name as text until clicked; Enter or leaving it saves, Escape puts it back
+function PasskeyName({ name, onRename }: { name: string; onRename: (name: string) => void }) {
+  const t = useT();
+  const [draft, setDraft] = useState(name);
+  const [editing, setEditing] = useState(false);
+  const cancelled = useRef(false);
+  const shown = editing ? draft : name;
+  const save = () => {
+    setEditing(false);
+    const next = draft.trim();
+    if (!cancelled.current && next && next !== name) onRename(next);
+    cancelled.current = false;
+  };
+  return (
+    <input
+      aria-label={t("twoFactor.renamePasskey")}
+      value={shown}
+      maxLength={64}
+      onFocus={() => {
+        setDraft(name);
+        setEditing(true);
+      }}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={save}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Escape") {
+          cancelled.current = true;
+          event.currentTarget.blur();
+        }
+      }}
+      className="field-sizing-content -mx-1 max-w-full min-w-8 cursor-text truncate rounded-md bg-transparent px-1 text-sm font-medium outline-none transition-colors hover:bg-muted focus-visible:bg-input/50 focus-visible:ring-2 focus-visible:ring-ring"
+    />
   );
 }
 

@@ -557,9 +557,14 @@ export const en = {
   "twoFactor.passkey": "Passkey",
   "twoFactor.passkeys": "Passkeys",
   "twoFactor.passkeyCount": "{count} of {max} added",
-  "twoFactor.passkeyAdded": "Passkey on this or another device",
+  "twoFactor.passkeyAdded": "Added {date}",
+  "twoFactor.passkeyName": "Passkey {n}",
+  "twoFactor.renamePasskey": "Passkey name",
+  "twoFactor.renameFailed":
+    "Couldn't rename the passkey. A name is up to 64 characters, and no two of your passkeys can share one.",
   "twoFactor.addPasskey": "Add a passkey",
   "twoFactor.addAnotherPasskey": "Add another",
+  "twoFactor.passkeyAddInsecure": "Insecure connection (HTTP)",
   "twoFactor.passkeyAddFailed":
     "Couldn't add the passkey. It may have been cancelled, or passkeys may be off for this instance.",
   "twoFactor.usePasskey": "Use a passkey",
