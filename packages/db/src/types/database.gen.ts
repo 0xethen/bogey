@@ -1727,6 +1727,53 @@ export type Database = {
           },
         ];
       };
+      judge_pins: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          event_id: string;
+          judge_id: string;
+          team_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          event_id: string;
+          judge_id: string;
+          team_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          event_id?: string;
+          judge_id?: string;
+          team_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "judge_pins_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "judge_pins_event_id_judge_id_fkey";
+            columns: ["event_id", "judge_id"];
+            isOneToOne: false;
+            referencedRelation: "event_members";
+            referencedColumns: ["event_id", "user_id"];
+          },
+          {
+            foreignKeyName: "judge_pins_event_id_team_id_fkey";
+            columns: ["event_id", "team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
       judging_flags: {
         Row: {
           created_at: string;
@@ -1799,61 +1846,63 @@ export type Database = {
           },
         ];
       };
+      judging_panels: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          id: string;
+          location: string;
+          name: string;
+          now_position: number | null;
+          round_id: string;
+          slot_minutes: number;
+          sort: number;
+          starts_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          location?: string;
+          name: string;
+          now_position?: number | null;
+          round_id: string;
+          slot_minutes?: number;
+          sort?: number;
+          starts_at?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          location?: string;
+          name?: string;
+          now_position?: number | null;
+          round_id?: string;
+          slot_minutes?: number;
+          sort?: number;
+          starts_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "judging_panels_event_id_round_id_fkey";
+            columns: ["event_id", "round_id"];
+            isOneToOne: false;
+            referencedRelation: "judging_rounds";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
       judging_rounds: {
         Row: {
           created_at: string;
           event_id: string;
           form_id: string;
+          format: string;
           id: string;
           method: string;
           name: string;
-      judge_pins: {
-        Row: {
-          created_at: string;
-          created_by: string | null;
-          event_id: string;
-          judge_id: string;
-          team_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          created_by?: string | null;
-          event_id: string;
-          judge_id: string;
-          team_id: string;
-        };
-        Update: {
-          created_at?: string;
-          created_by?: string | null;
-          event_id?: string;
-          judge_id?: string;
-          team_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "judge_pins_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "judge_pins_event_id_judge_id_fkey";
-            columns: ["event_id", "judge_id"];
-            isOneToOne: false;
-            referencedRelation: "event_members";
-            referencedColumns: ["event_id", "user_id"];
-          },
-          {
-            foreignKeyName: "judge_pins_event_id_team_id_fkey";
-            columns: ["event_id", "team_id"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["event_id", "id"];
-          },
-        ];
-      };
           ordinal: number;
           window_key: string | null;
         };
@@ -1862,6 +1911,7 @@ export type Database = {
           created_at?: string;
           event_id: string;
           form_id: string;
+          format?: string;
           id?: string;
           method?: string;
           name: string;
@@ -1872,6 +1922,7 @@ export type Database = {
           created_at?: string;
           event_id?: string;
           form_id?: string;
+          format?: string;
           id?: string;
           method?: string;
           name?: string;
@@ -1926,60 +1977,11 @@ export type Database = {
         Row: {
           body_md: string;
           created_at: string;
-      judging_panels: {
-        Row: {
-          created_at: string;
-          event_id: string;
-          id: string;
-          location: string;
-          name: string;
-          now_position: number | null;
-          round_id: string;
-          slot_minutes: number;
-          sort: number;
-          starts_at: string | null;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          event_id: string;
-          id?: string;
-          location?: string;
-          name: string;
-          now_position?: number | null;
-          round_id: string;
-          slot_minutes?: number;
-          sort?: number;
-          starts_at?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          event_id?: string;
-          id?: string;
-          location?: string;
-          name?: string;
-          now_position?: number | null;
-          round_id?: string;
-          slot_minutes?: number;
-          sort?: number;
-          starts_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "judging_panels_event_id_round_id_fkey";
-            columns: ["event_id", "round_id"];
-            isOneToOne: false;
-            referencedRelation: "judging_rounds";
-            referencedColumns: ["event_id", "id"];
-          },
-        ];
-      };
           event_id: string | null;
           id: string;
           kind: string;
           link: string | null;
           org_id: string;
-          format: string;
           read_at: string | null;
           title: string;
           user_id: string;
@@ -1991,7 +1993,6 @@ export type Database = {
           event_id?: string | null;
           id?: string;
           kind: string;
-          format?: string;
           link?: string | null;
           org_id: string;
           read_at?: string | null;
@@ -2002,7 +2003,6 @@ export type Database = {
           body_md?: string;
           created_at?: string;
           event_id?: string | null;
-          format?: string;
           id?: string;
           kind?: string;
           link?: string | null;
@@ -2275,6 +2275,83 @@ export type Database = {
           },
         ];
       };
+      panel_judges: {
+        Row: {
+          event_id: string;
+          judge_id: string;
+          panel_id: string;
+          round_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          event_id: string;
+          judge_id: string;
+          panel_id: string;
+          round_id: string;
+        };
+        Update: {
+          event_id?: string;
+          judge_id?: string;
+          panel_id?: string;
+          round_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "panel_judges_event_id_judge_id_fkey";
+            columns: ["event_id", "judge_id"];
+            isOneToOne: false;
+            referencedRelation: "event_members";
+            referencedColumns: ["event_id", "user_id"];
+          },
+          {
+            foreignKeyName: "panel_judges_round_id_panel_id_fkey";
+            columns: ["round_id", "panel_id"];
+            isOneToOne: false;
+            referencedRelation: "judging_panels";
+            referencedColumns: ["round_id", "id"];
+          },
+        ];
+      };
+      panel_slots: {
+        Row: {
+          event_id: string;
+          panel_id: string;
+          position: number;
+          round_id: string;
+          submission_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          event_id: string;
+          panel_id: string;
+          position: number;
+          round_id: string;
+          submission_id: string;
+        };
+        Update: {
+          event_id?: string;
+          panel_id?: string;
+          position?: number;
+          round_id?: string;
+          submission_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "panel_slots_event_id_submission_id_fkey";
+            columns: ["event_id", "submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "panel_slots_round_id_panel_id_fkey";
+            columns: ["round_id", "panel_id"];
+            isOneToOne: false;
+            referencedRelation: "judging_panels";
+            referencedColumns: ["round_id", "id"];
+          },
+        ];
+      };
       password_logins: {
         Row: {
           created_at: string;
@@ -2355,83 +2432,6 @@ export type Database = {
           locale: string | null;
           pronouns: string | null;
           theme: Database["public"]["Enums"]["theme_pref"];
-      panel_judges: {
-        Row: {
-          event_id: string;
-          judge_id: string;
-          panel_id: string;
-          round_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          event_id: string;
-          judge_id: string;
-          panel_id: string;
-          round_id: string;
-        };
-        Update: {
-          event_id?: string;
-          judge_id?: string;
-          panel_id?: string;
-          round_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "panel_judges_event_id_judge_id_fkey";
-            columns: ["event_id", "judge_id"];
-            isOneToOne: false;
-            referencedRelation: "event_members";
-            referencedColumns: ["event_id", "user_id"];
-          },
-          {
-            foreignKeyName: "panel_judges_round_id_panel_id_fkey";
-            columns: ["round_id", "panel_id"];
-            isOneToOne: false;
-            referencedRelation: "judging_panels";
-            referencedColumns: ["round_id", "id"];
-          },
-        ];
-      };
-      panel_slots: {
-        Row: {
-          event_id: string;
-          panel_id: string;
-          position: number;
-          round_id: string;
-          submission_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          event_id: string;
-          panel_id: string;
-          position: number;
-          round_id: string;
-          submission_id: string;
-        };
-        Update: {
-          event_id?: string;
-          panel_id?: string;
-          position?: number;
-          round_id?: string;
-          submission_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "panel_slots_event_id_submission_id_fkey";
-            columns: ["event_id", "submission_id"];
-            isOneToOne: false;
-            referencedRelation: "submissions";
-            referencedColumns: ["event_id", "id"];
-          },
-          {
-            foreignKeyName: "panel_slots_round_id_panel_id_fkey";
-            columns: ["round_id", "panel_id"];
-            isOneToOne: false;
-            referencedRelation: "judging_panels";
-            referencedColumns: ["round_id", "id"];
-          },
-        ];
-      };
           timezone: string | null;
           updated_at: string;
           visibility: string;
@@ -4569,6 +4569,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      move_demo: {
+        Args: { p_panel: string; p_position?: number; p_round: string; p_submission: string };
+        Returns: undefined;
+      };
       my_badge: {
         Args: { p_event: string };
         Returns: {
@@ -4587,6 +4591,7 @@ export type Database = {
           label: string;
         }[];
       };
+      my_demo_slots: { Args: { p_event: string }; Returns: Json };
       my_sessions: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -4654,6 +4659,7 @@ export type Database = {
         }[];
       };
       org_limits: { Args: { p_org: string; p_plugin_limits?: string[] }; Returns: Json };
+      pin_judge: { Args: { p_event: string; p_judge: string; p_team: string }; Returns: number };
       portfolios_enabled: { Args: Record<PropertyKey, never>; Returns: boolean };
       post_announcement: {
         Args: {
@@ -4674,10 +4680,6 @@ export type Database = {
         Returns: string;
       };
       preview_results: { Args: { p_event: string }; Returns: Json };
-      move_demo: {
-        Args: { p_panel: string; p_position?: number; p_round: string; p_submission: string };
-        Returns: undefined;
-      };
       project_export_access: { Args: { p_event: string }; Returns: string };
       project_export_results: { Args: { p_event: string }; Returns: Json };
       prune_participants: {
@@ -4696,7 +4698,6 @@ export type Database = {
         Returns: {
           body_md: string;
           id: string;
-      my_demo_slots: { Args: { p_event: string }; Returns: Json };
           published_at: string;
           severity: Database["public"]["Enums"]["announcement_severity"];
           title: string;
@@ -4764,7 +4765,6 @@ export type Database = {
       };
       request_to_join_team: {
         Args: { p_event: string; p_message: string; p_team: string };
-      pin_judge: { Args: { p_event: string; p_judge: string; p_team: string }; Returns: number };
         Returns: string;
       };
       resend_webhook_delivery: { Args: { p_id: string }; Returns: undefined };
@@ -4811,6 +4811,8 @@ export type Database = {
         Args: { p_event: string; p_items: Json; p_rubrics?: Json };
         Returns: number;
       };
+      save_offline_scores: { Args: { p_items: Json; p_round: string }; Returns: number };
+      save_panels: { Args: { p_items: Json; p_round: string }; Returns: number };
       save_prizes: { Args: { p_event: string; p_items: Json }; Returns: number };
       save_session_levels: { Args: { p_event: string; p_levels: Json }; Returns: undefined };
       save_submission_form: {
@@ -4847,6 +4849,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      schedule_demos: { Args: { p_reset?: boolean; p_round: string }; Returns: number };
       session_code: { Args: { p_rotate?: boolean; p_session: string }; Returns: string };
       session_roster: {
         Args: { p_session: string };
@@ -4882,6 +4885,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      set_panel_now: { Args: { p_panel: string; p_position?: number }; Returns: undefined };
       set_password_login: { Args: { p_enabled: boolean; p_user: string }; Returns: undefined };
       set_person_tags: {
         Args: { p_event?: string; p_org?: string; p_tags: string[]; p_user: string };
@@ -4917,8 +4921,6 @@ export type Database = {
       };
       set_windows: {
         Args: { p_event: string; p_label?: string; p_windows: Json };
-      save_offline_scores: { Args: { p_items: Json; p_round: string }; Returns: number };
-      save_panels: { Args: { p_items: Json; p_round: string }; Returns: number };
         Returns: undefined;
       };
       settings_for: {
@@ -4955,7 +4957,6 @@ export type Database = {
       };
       suspended_org_for_host: {
         Args: { p_host: string };
-      schedule_demos: { Args: { p_reset?: boolean; p_round: string }; Returns: number };
         Returns: {
           name: string;
           reason: string;
@@ -4996,7 +4997,6 @@ export type Database = {
           created_at: string;
           decide: boolean;
           direction: string;
-      set_panel_now: { Args: { p_panel: string; p_position?: number }; Returns: undefined };
           id: string;
           message: string;
           sent: boolean;
@@ -5021,6 +5021,10 @@ export type Database = {
       };
       unblock_from_chat: { Args: { p_block: string }; Returns: undefined };
       undo_check_in: { Args: { p_event: string; p_user: string }; Returns: undefined };
+      unpin_judge: {
+        Args: { p_event: string; p_judge: string; p_team: string };
+        Returns: undefined;
+      };
       update_webhook: {
         Args: { p_disabled: boolean; p_events: string[]; p_id: string; p_url: string };
         Returns: undefined;
@@ -5133,10 +5137,6 @@ export type TablesUpdate<
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
-      unpin_judge: {
-        Args: { p_event: string; p_judge: string; p_team: string };
-        Returns: undefined;
-      };
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }

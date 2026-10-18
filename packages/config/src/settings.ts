@@ -1708,6 +1708,7 @@ export type SettingControl =
       description?: string;
       options: Tuple<SettingOption<string>>;
       always: Tuple<string>;
+      withTags: boolean;
     }
   | {
       kind: "number";
@@ -1736,6 +1737,7 @@ export function settingControl<N extends CoreNamespace>(
       description,
       options: field.choices,
       always: field.always ?? [],
+      withTags: field.withTags ?? false,
     };
   }
   if (field.options) {
@@ -1762,5 +1764,3 @@ export function settingControl<N extends CoreNamespace>(
   if (inner instanceof z.ZodBoolean) return { kind: "switch", label: field.label, description };
   return null;
 }
-      withTags: boolean;
-      withTags: field.withTags ?? false,

@@ -23,8 +23,8 @@ import { requestFailure, unwrap } from "@bogey/db/errors";
 import type { Event } from "@bogey/db/queries/events";
 import { answerProblem } from "@bogey/utils/answers";
 import { TeamFeedback } from "#/routes/_authed/events/$slug/-components/team-feedback.tsx";
-import { TableNotice } from "#/components/event/judging/table-notice.tsx";
 import { DemoNotice } from "#/components/event/judging/demo-notice.tsx";
+import { TableNotice } from "#/components/event/judging/table-notice.tsx";
 import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
 import {
   criteriaQueryOptions,
@@ -422,8 +422,8 @@ function SubmissionEditor({
         <ErrorAlert title={t("sub.networkTitle")} error={t("sub.networkBody")} />
       )}
       <TableNotice tables={[submission.table_label]} />
-      <TeamFeedback submissionId={submission.id} />
       <DemoNotice event={event} />
+      <TeamFeedback submissionId={submission.id} />
       {submission.status === "disqualified" && (
         <ErrorAlert title={t("sub.disqualified")} error={t("sub.disqualifiedBody")} />
       )}

@@ -44,18 +44,18 @@ export const CORE_AUDIT_ACTIONS = [
   "judging.conflict_declared",
   "judging.conflict_removed",
   "judging.criteria_saved",
-  "judging.flag_resolved",
-  "judging.flagged",
   "judging.demo_moved",
   "judging.demos_scheduled",
-  "judging.method_set",
-  "judging.rubric_set",
+  "judging.flag_resolved",
+  "judging.flagged",
   "judging.format_set",
-  "judging.skipped",
+  "judging.method_set",
   "judging.offline_scores",
   "judging.panels_saved",
   "judging.pin_added",
   "judging.pin_removed",
+  "judging.rubric_set",
+  "judging.skipped",
   "judging.tables_assigned",
   "member.removed",
   "member.restored",
@@ -156,11 +156,11 @@ export const COLUMN_VALUES = {
   email_outbox: {
     status: ["queued", "sending", "sent", "failed", "skipped"],
   },
-  profiles: {
-    visibility: ["org", "public"],
-  },
   judging_rounds: {
     format: ["online", "demos", "offline"],
+  },
+  profiles: {
+    visibility: ["org", "public"],
   },
   tags: {
     tone: ["gray", "red", "orange", "amber", "green", "teal", "blue", "violet", "pink"],
