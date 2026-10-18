@@ -236,6 +236,7 @@ function defaultTitle(block: HomeBlock, t: T): string {
 }
 
 const CALLOUT_STYLE: Record<CalloutTone, { icon: Icon; box: string; mark: string }> = {
+  default: { icon: IconSpeakerphone, box: "border-border bg-accent", mark: "text-accent-fg" },
   info: { icon: IconInfoCircle, box: "border-primary/30 bg-primary/5", mark: "text-primary-text" },
   success: {
     icon: IconChecks,

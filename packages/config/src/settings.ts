@@ -145,7 +145,7 @@ export const HOME_CUSTOM_BLOCKS = [
   "divider",
 ] as const;
 
-export const CALLOUT_TONES = ["info", "success", "warning"] as const;
+export const CALLOUT_TONES = ["default", "info", "success", "warning"] as const;
 export type CalloutTone = (typeof CALLOUT_TONES)[number];
 
 const blockId = z.string().regex(/^[a-z0-9-]{1,40}$/);

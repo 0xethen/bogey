@@ -94,7 +94,7 @@ function blank(type: BlockType): HomeBlock {
     case "text":
       return { id, type, title: "", body: "" };
     case "callout":
-      return { id, type, title: "", tone: "info", body: "" };
+      return { id, type, title: "", tone: "default", body: "" };
     case "faq":
       return { id, type, title: "", questions: [] };
     case "image":
@@ -352,6 +352,7 @@ function issueAt(block: HomeBlock, path: Tuple<string | number>): string | undef
 }
 
 const TONE_LABEL = {
+  default: "homeEditor.toneDefault",
   info: "homeEditor.toneInfo",
   success: "homeEditor.toneSuccess",
   warning: "homeEditor.toneWarning",
