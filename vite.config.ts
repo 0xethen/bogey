@@ -7,6 +7,7 @@ const GENERATED = [
   "/apps/web/src/routeTree.gen.ts",
   "/apps/console/src/routeTree.gen.ts",
   "/packages/db/src/types/database.gen.ts",
+  "/packages/db/src/types/schema.gen.ts",
   "/packages/config/src/themes.gen.ts",
   "/docs/reference/settings.md",
   "/docs/reference/cli.md",

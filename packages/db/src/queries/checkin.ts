@@ -3,10 +3,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { createAdminClient } from "../admin.ts";
 import { createServerClient } from "../server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
-import type { Enums } from "../types.ts";
+import type { ColumnValue, Enums } from "../types.ts";
 import { answersToJson, readAnswers, requireId, requireOneOf } from "./validate.ts";
 
-export const CHECK_IN_METHODS = ["desk", "qr", "self"] as const;
+// the ways a person can check in; the schema also allows "import", which only a roster import writes
+export const CHECK_IN_METHODS = ["desk", "qr", "self"] as const satisfies Tuple<
+  ColumnValue<"checkins", "method">
+>;
 export type CheckInMethod = (typeof CHECK_IN_METHODS)[number];
 
 export interface Badge {

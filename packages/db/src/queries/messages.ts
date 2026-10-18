@@ -3,17 +3,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
-import type { Enums, Tables } from "../types.ts";
+import { COLUMN_VALUES, type ColumnValue, type Enums, type Tables } from "../types.ts";
 import { optionalId, requireId, requireOneOf, requireText } from "./validate.ts";
 
 export type ConversationStatus = Enums<"clarification_status">;
 export type ConversationVisibility = Enums<"clarification_visibility">;
 
-export const AUDIENCES = ["organizers", "judges", "staff"] as const;
-export type ConversationAudience = (typeof AUDIENCES)[number];
+export const AUDIENCES = COLUMN_VALUES.clarifications.audience;
+export type ConversationAudience = ColumnValue<"clarifications", "audience">;
 
-export const AUTHOR_ROLES = ["participant", "organizer", "judge"] as const;
-export type AuthorRole = (typeof AUTHOR_ROLES)[number];
+export const AUTHOR_ROLES = COLUMN_VALUES.clarification_messages.author_role;
+export type AuthorRole = ColumnValue<"clarification_messages", "author_role">;
 
 export interface MessageAttachment {
   path: string;

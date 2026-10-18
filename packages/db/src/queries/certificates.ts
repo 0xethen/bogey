@@ -8,7 +8,7 @@ import {
 } from "@bogey/utils/certificate";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
-import type { Tables } from "../types.ts";
+import { COLUMN_VALUES, type Tables } from "../types.ts";
 import { requireId, requireOneOf, requireText } from "./validate.ts";
 
 const certificateSchema = z.object({
@@ -24,7 +24,7 @@ const certificateSchema = z.object({
   endsAt: z.string().nullable(),
   org: z.string(),
   body: z.string().nullable(),
-  orientation: z.enum(["landscape", "portrait"]),
+  orientation: z.enum(COLUMN_VALUES.certificate_templates.orientation),
   background: z.string().nullable(),
 });
 
@@ -177,7 +177,11 @@ export const saveCertificateTemplateFn = createServerFn({ method: "POST" })
       eventId: requireId(raw.eventId, "eventId"),
       kind: requireOneOf(raw.kind, CERTIFICATE_KINDS, "kind"),
       body: typeof raw.body === "string" ? raw.body.slice(0, 2000) : "",
-      orientation: requireOneOf(raw.orientation, ["landscape", "portrait"] as const, "orientation"),
+      orientation: requireOneOf(
+        raw.orientation,
+        COLUMN_VALUES.certificate_templates.orientation,
+        "orientation",
+      ),
       background,
     };
   })

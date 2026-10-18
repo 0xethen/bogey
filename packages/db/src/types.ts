@@ -1,4 +1,13 @@
 export type { Database, Json } from "./types/database.gen.ts";
+export {
+  COLUMN_VALUES,
+  CORE_AUDIT_ACTIONS,
+  CORE_PERMISSIONS,
+  type CheckedTable,
+  type ColumnValue,
+  type CoreAuditAction,
+  type CorePermission,
+} from "./types/schema.gen.ts";
 import type { Database, Json } from "./types/database.gen.ts";
 
 export type JsonRecord = { [key: string]: Json | undefined };

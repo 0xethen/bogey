@@ -621,8 +621,9 @@ Plugin-owned; present when the plugin is installed.
   renames, locks and deletes, `submission_forms` deletes and `org_members`.
   They log only writes made with a session, so org init and demo seeding
   stay quiet.
-- `CORE_ACTIONS` in `packages/db/src/audit.ts` lists every core action with a
-  label; a test checks it against the schema.
+- `CORE_ACTIONS` in `packages/db/src/audit.ts` lists every core action, generated
+  from the schema's `private.audit()` calls (`bogey types --schema`); `ACTION_LABELS`
+  must label each one or type checking fails.
 - Client-side signals, such as lockdown or `ac.*` events, go through
   `log_event()`. It checks that the caller is a member of the event it
   names, and that the action is either core or belongs to a plugin enabled

@@ -76,6 +76,15 @@ hand. Pick whichever database you can reach:
 - **Docker on your machine:** `supabase start`, then `bogey types --local` (also what
   plain `bogey types` does when `.env` has no `DATABASE_URL`). This is what CI does.
 
+`packages/db/src/types/schema.gen.ts` needs no database: `bogey types --schema` reads
+`supabase/schemas` for what `supabase gen types` leaves as plain strings, so the TypeScript
+lists can't drift from it. It holds `CORE_PERMISSIONS` (every permission the schema checks or
+grants), `CORE_AUDIT_ACTIONS` (every action it writes to the audit log; `'<prefix>.' || x.<column>::text`
+stands for each value of the `<prefix>_<column>` enum) and `COLUMN_VALUES` (what each
+`check (column in (...))` allows). Every `bogey types` writes it, `bogey watch --schema`
+keeps it current while you edit the schema, and a test fails when the committed file is stale.
+A new audit action fails type checking in `packages/db/src/audit.ts` until it has a label.
+
 ## Everyday commands
 
 ## Everyday commands
@@ -153,6 +162,7 @@ Don't edit these by hand; `bogey watch` (run by `pnpm dev`) keeps them current.
 | `packages/config/src/themes.gen.ts`, `packages/ui/src/styles/themes.css` | `packages/ui/src/styles/themes/` | `bogey themes`      |
 | `docs/reference/settings.md`, `docs/reference/cli.md`                    | the registry and CLI             | `bogey docs`        |
 | `packages/db/src/types/database.gen.ts`                                  | the database                     | `bogey types`       |
+| `packages/db/src/types/schema.gen.ts`                                    | `supabase/schemas/`              | `bogey types`       |
 | `apps/web/src/routeTree.gen.ts`                                          | `apps/web/src/routes/`           | the router plugin   |
 
 ## Docs

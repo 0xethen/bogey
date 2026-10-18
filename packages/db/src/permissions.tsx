@@ -5,20 +5,13 @@ import { useRouteContext } from "@tanstack/react-router";
 import { createServerClient } from "./server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "./errors.ts";
 import { requireId } from "./queries/validate.ts";
-import type { Enums } from "./types.ts";
+import type { CorePermission, Enums } from "./types.ts";
 import { resolveSettings } from "@bogey/config/settings";
 
 export type EventRole = Enums<"event_role">;
 
-export type CorePermission =
-  | "event.view"
-  | "event.compete"
-  | "event.manage"
-  | "people.view"
-  | "people.checkin"
-  | "judging.score"
-  | "sessions.attendance"
-  | "clarifications.answer";
+// the core's permissions are read from supabase/schemas (`bogey types --schema`)
+export { CORE_PERMISSIONS, type CorePermission } from "./types.ts";
 
 export type Permission = CorePermission | (string & {});
 
@@ -46,7 +39,7 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData.user?.id;
 
-    const [event, member, roleGrants, matrix, orgRoles, checkin] = await Promise.all([
+    const [event, member, roleGrants, matrix, orgRoles, checkin, tagGrants] = await Promise.all([
       supabase.from("events").select("org_id").eq("id", eventId).maybeSingle(),
       userId
         ? supabase
@@ -67,7 +60,14 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
       userId
         ? supabase.from("org_members").select("org_id, role").eq("user_id", userId)
         : Promise.resolve({ data: [], error: null }),
-      supabase.rpc("settings_for", { p_namespaces: ["checkin"], p_event: eventId }),
+      supabase.rpc("settings_for", { p_namespaces: ["checkin", "tags"], p_event: eventId }),
+      userId
+        ? supabase
+            .from("tag_holders")
+            .select("org_id, event_id, tags(permissions)")
+            .eq("user_id", userId)
+            .or(`event_id.is.null,event_id.eq.${eventId}`)
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
     const error = event.error ?? member.error ?? roleGrants.error ?? matrix.error;
@@ -81,16 +81,25 @@ export const getEventAccessFn = createServerFn({ method: "GET" })
     const byRole: Record<string, string[]> = {};
     for (const row of matrix.data ?? []) (byRole[row.role_key] ??= []).push(row.permission);
     // who takes attendance is the event's checkin.takers, as private.holds_permission reads it
-    const checkinValue: unknown =
+    const settings =
       checkin.data && typeof checkin.data === "object" && !Array.isArray(checkin.data)
-        ? checkin.data.checkin
-        : undefined;
+        ? checkin.data
+        : {};
+    const checkinValue: unknown = settings.checkin;
     for (const taker of resolveSettings("checkin", checkinValue).takers ?? []) {
       (byRole[taker] ??= []).push(...ATTENDANCE);
     }
 
     const held = new Set<string>(role ? (byRole[role] ?? []) : []);
     for (const key of roleKeys) for (const permission of byRole[key] ?? []) held.add(permission);
+    // tags add permissions on top of a role, as private.tags_grant does; event tags only while allowed
+    const eventTags = resolveSettings("tags", settings.tags).eventTags;
+    if (role) {
+      for (const row of tagGrants.data ?? []) {
+        if (row.org_id !== event.data?.org_id || (row.event_id && !eventTags)) continue;
+        for (const permission of row.tags?.permissions ?? []) held.add(permission);
+      }
+    }
 
     return ok({ eventId, role, orgAdmin, grants: [...held], roleKeys, matrix: byRole });
   });

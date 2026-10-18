@@ -4,7 +4,7 @@ import { z } from "zod";
 import { parseLabels, type Group } from "@bogey/utils/team-matcher";
 import { createServerClient } from "../server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
-import type { Database } from "../types.ts";
+import { COLUMN_VALUES, type ColumnValue, type Database } from "../types.ts";
 import { optionalText, requireId, requireOneOf } from "./validate.ts";
 
 type Functions = Database["public"]["Functions"];
@@ -15,12 +15,12 @@ export type TeamRequest = Omit<
   Functions["team_requests_inbox"]["Returns"][number],
   "direction" | "status"
 > & {
-  direction: "request" | "invite";
-  status: "pending" | "accepted" | "declined" | "withdrawn";
+  direction: ColumnValue<"team_requests", "direction">;
+  status: ColumnValue<"team_requests", "status">;
 };
 
-const DIRECTIONS = ["request", "invite"] as const;
-const STATUSES = ["pending", "accepted", "declined", "withdrawn"] as const;
+const DIRECTIONS = COLUMN_VALUES.team_requests.direction;
+const STATUSES = COLUMN_VALUES.team_requests.status;
 
 function labels(value: unknown, field: string): string[] {
   if (Array.isArray(value))

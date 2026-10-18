@@ -3,7 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
-import type { Tables } from "../types.ts";
+import { COLUMN_VALUES, type Tables } from "../types.ts";
 import { linksFromJson, profileLinksProblem, type ProfileLink } from "@bogey/utils/profile-links";
 import { optionalText, requireOneOf, requireText } from "./validate.ts";
 
@@ -56,7 +56,11 @@ export const updateProfileFn = createServerFn({ method: "POST" })
       out.links = links.map((link) => ({ kind: link.kind, url: link.url.trim() }));
     }
     if (raw.visibility !== undefined) {
-      out.visibility = requireOneOf(raw.visibility, ["org", "public"] as const, "visibility");
+      out.visibility = requireOneOf(
+        raw.visibility,
+        COLUMN_VALUES.profiles.visibility,
+        "visibility",
+      );
     }
     if (raw.displayName !== undefined) out.displayName = requireText(raw.displayName, "Name", 80);
     if (raw.timezone !== undefined) {

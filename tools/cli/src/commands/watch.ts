@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { findRepoRoot } from "../lib/repo-root.ts";
 import type { CliResult } from "../cli.ts";
 import { generateThemes, watchThemes } from "./themes.ts";
+import { generateSchemaTypes, watchSchemaTypes } from "../lib/schema-types.ts";
 
 interface Watcher {
   flag: string;
@@ -35,6 +36,15 @@ const WATCHERS: Tuple<Watcher> = [
     start: (root, log) => {
       log(generateThemes(root).output);
       return watchThemes(root, log);
+    },
+  },
+  {
+    flag: "--schema",
+    description:
+      "supabase/schemas → packages/db/src/types/schema.gen.ts (permissions, audit actions, checks)",
+    start: (root, log) => {
+      log(generateSchemaTypes(root).output);
+      return watchSchemaTypes(root, log);
     },
   },
   {

@@ -24,8 +24,10 @@ description: Bogey (hackathon platform) database and packages/db conventions —
   org_members) are audited by triggers in `11_audit.sql`, only when there's a
   session. Never put values that may be long or secret in `meta`; it's capped at
   4 KB.
-- `CORE_ACTIONS` and `ACTION_LABELS` in `packages/db/src/audit.ts` list every core
-  action; a test checks them against the schema. Plugins log `<key>.<action>`.
+- Core audit actions, permissions and `check (column in (...))` values are generated
+  from `supabase/schemas` into `packages/db/src/types/schema.gen.ts` (`bogey types
+  --schema`, or `bogey watch --schema`). A new action needs a label in `ACTION_LABELS`
+  (`packages/db/src/audit.ts`) or type checking fails. Plugins log `<key>.<action>`.
 
 ## Schema workflow
 
