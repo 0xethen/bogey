@@ -1,7 +1,7 @@
 import { useRoleLabel } from "#/lib/roles.ts";
 import { IconDownload } from "@tabler/icons-react";
 import { exportHref } from "#/lib/exports.ts";
-import { useState, type ReactNode } from "react";
+import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { eventInviteLinksQueryOptions } from "@bogey/db/queries/invites";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -38,6 +38,7 @@ import { OptSelect } from "@bogey/ui/components/opt-select";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
+import { PageControls, usePaged } from "@bogey/ui/components/page-controls";
 import { checkInFn } from "@bogey/db/queries/checkin";
 import { Facts, type Fact } from "@bogey/ui/components/facts";
 import { NameAvatar } from "@bogey/ui/components/avatar";
@@ -146,11 +147,15 @@ function RouteComponent() {
     async (input: { userId: string; roles: string[] }) =>
       unwrap(await setExtraRolesFn({ data: { eventId: event.id, ...input } })),
   );
-  const pluginRoleOptions: SearchSelectOption[] = pluginRoles(plugins).map((role) => ({
-    value: role.key,
-    label: role.label,
-    group: plugins.find((plugin) => plugin.key === role.source)?.name ?? role.source,
-  }));
+  const pluginRoleOptions = useMemo(
+    (): SearchSelectOption[] =>
+      pluginRoles(plugins).map((role) => ({
+        value: role.key,
+        label: role.label,
+        group: plugins.find((plugin) => plugin.key === role.source)?.name ?? role.source,
+      })),
+    [plugins],
+  );
   const remove = usePeopleMutation(event.id, async (userId: string) =>
     unwrap(await removeMemberFn({ data: { eventId: event.id, userId } })),
   );
@@ -166,9 +171,18 @@ function RouteComponent() {
     settingsQueryOptions({ eventId: event.id }, ["tags"]),
   );
   const eventTags = tagSettings.tags.eventTags;
-  const usableTags = tags.filter((tag) => !tag.event_id || eventTags);
+  const usableTags = useMemo(
+    () => tags.filter((tag) => !tag.event_id || eventTags),
+    [tags, eventTags],
+  );
+  const heldBy = useMemo(() => {
+    const byUser = new Map<string, string[]>();
+    for (const each of holders)
+      byUser.set(each.userId, [...(byUser.get(each.userId) ?? []), each.tagId]);
+    return byUser;
+  }, [holders]);
   const { data: roster } = useSuspenseQuery(checkinRosterQueryOptions(event.id));
-  const arrival = new Map(roster.map((entry) => [entry.userId, entry]));
+  const arrival = useMemo(() => new Map(roster.map((entry) => [entry.userId, entry])), [roster]);
   const [filter, setFilter] = useState<"everyone" | "absent" | "here">("everyone");
   const shown = people.members.filter((member) => {
     const here = arrival.get(member.userId);
@@ -187,76 +201,87 @@ function RouteComponent() {
     .filter((row) => row.status === "waitlisted")
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const toggle = (id: string) =>
-    setSelected((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
+  const toggle = useCallback(
+    (id: string) =>
+      setSelected((current) => {
+        const next = new Set(current);
+        if (!next.delete(id)) next.add(id);
+        return next;
+      }),
+    [],
+  );
   const chosen = [...selected].filter((id) =>
     people.registrations.some(
       (row) => row.id === id && ["pending", "waitlisted"].includes(row.status),
     ),
   );
   const waiting = people.registrations.filter((row) => row.status === "approved" && !row.user_id);
+  const pendingPage = usePaged(pending);
+  const waitlistPage = usePaged(waitlist);
   const error = review.error ?? setRole.error ?? remove.error ?? place.error;
 
-  const reviewRow = (row: EventPeople["registrations"][number], index: number, queued: boolean) => {
-    const answers = answerFacts(row.answers, t);
-    return (
-      <DisclosureRow
-        key={row.id}
-        leading={
-          <span className="flex items-center gap-3">
-            <Checkbox
-              checked={selected.has(row.id)}
-              onCheckedChange={() => toggle(row.id)}
-              aria-label={t("managePeople.select", { name: row.full_name ?? String(row.email) })}
-            />
-            <NameAvatar name={row.full_name ?? String(row.email)} />
-          </span>
-        }
-        title={row.full_name ?? String(row.email)}
-        meta={
-          <>
-            {queued ? `#${index + 1}, ` : ""}
-            {row.full_name ? `${String(row.email)}, ` : ""}
-            {t("managePeople.registered")} <RelativeTime value={row.created_at} />
-          </>
-        }
-        actions={
-          <>
-            <Button
-              size="sm"
-              disabled={review.isPending}
-              onClick={() => review.mutate({ id: row.id, decision: "approved" })}
-            >
-              {queued ? t("managePeople.approveAnyway") : t("managePeople.approve")}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={review.isPending}
-              confirm={{
-                title: t("managePeople.declineTitle", { name: row.full_name ?? String(row.email) }),
-                description: t("managePeople.declineBody"),
-                label: t("deletions.decline"),
-              }}
-              onClick={() => review.mutate({ id: row.id, decision: "rejected" })}
-            >
-              {t("managePeople.declineButton")}
-            </Button>
-          </>
-        }
-      >
-        {answers.length > 0 ? (
-          <Facts facts={answers} className="pl-11" />
-        ) : (
-          <p className="pl-11 text-sm text-muted-fg">{t("managePeople.noAnswers")}</p>
-        )}
-      </DisclosureRow>
-    );
-  };
+  // the mutation objects are new every render; their mutate functions and flags aren't
+  const { mutate: changeRole, isPending: changingRole } = setRole;
+  const { mutate: placeIn, isPending: placing } = place;
+  const { mutate: changeExtraRoles } = setExtraRoles;
+  const { mutate: removeMember, isPending: removing } = remove;
+  const columns = useMemo(
+    () =>
+      memberColumns({
+        t,
+        roleLabel,
+        you: session.user.id,
+        divisions,
+        pluginRoleOptions,
+        arrival,
+        pending: changingRole || placing || removing,
+        onRole: (userId, role) => changeRole({ userId, role }),
+        onDivision: (userId, divisionId) => placeIn({ userId, divisionId }),
+        onExtraRoles: (userId, roles) => changeExtraRoles({ userId, roles }),
+        tags: {
+          orgId: event.org_id,
+          eventId: event.id,
+          all: usableTags,
+          held: (userId) => heldBy.get(userId) ?? NO_TAGS,
+          orgAdmin: isOrgAdmin(session),
+          eventTags,
+        },
+        onRemove: (userId) => removeMember(userId),
+      }),
+    [
+      t,
+      roleLabel,
+      session,
+      divisions,
+      pluginRoleOptions,
+      arrival,
+      changingRole,
+      placing,
+      removing,
+      changeRole,
+      placeIn,
+      changeExtraRoles,
+      removeMember,
+      event.org_id,
+      event.id,
+      usableTags,
+      heldBy,
+      eventTags,
+    ],
+  );
+  const onReview = review.mutate;
+  const reviewRow = (row: EventPeople["registrations"][number], index: number, queued: boolean) => (
+    <ReviewRow
+      key={row.id}
+      row={row}
+      index={index}
+      queued={queued}
+      checked={selected.has(row.id)}
+      busy={review.isPending}
+      onToggle={toggle}
+      onReview={onReview}
+    />
+  );
 
   return (
     <Screen
@@ -289,8 +314,11 @@ function RouteComponent() {
           }
         >
           <DisclosureList>
-            {pending.map((row, index) => reviewRow(row, index, false))}
+            {pendingPage.shown.map((row, index) =>
+              reviewRow(row, pendingPage.paging.page * pendingPage.paging.pageSize + index, false),
+            )}
           </DisclosureList>
+          <PageControls paging={pendingPage.paging} />
         </Screen.Section>
       )}
 
@@ -317,8 +345,11 @@ function RouteComponent() {
           }
         >
           <DisclosureList>
-            {waitlist.map((row, index) => reviewRow(row, index, true))}
+            {waitlistPage.shown.map((row, index) =>
+              reviewRow(row, waitlistPage.paging.page * waitlistPage.paging.pageSize + index, true),
+            )}
           </DisclosureList>
+          <PageControls paging={waitlistPage.paging} />
         </Screen.Section>
       )}
 
@@ -374,28 +405,7 @@ function RouteComponent() {
             )}
             <div className="overflow-x-auto">
               <DataTable
-                columns={memberColumns({
-                  t,
-                  roleLabel,
-                  you: session.user.id,
-                  divisions,
-                  pluginRoleOptions,
-                  arrival,
-                  pending: setRole.isPending || place.isPending || remove.isPending,
-                  onRole: (userId, role) => setRole.mutate({ userId, role }),
-                  onDivision: (userId, divisionId) => place.mutate({ userId, divisionId }),
-                  onExtraRoles: (userId, roles) => setExtraRoles.mutate({ userId, roles }),
-                  tags: {
-                    orgId: event.org_id,
-                    eventId: event.id,
-                    all: usableTags,
-                    held: (userId) =>
-                      holders.filter((each) => each.userId === userId).map((each) => each.tagId),
-                    orgAdmin: isOrgAdmin(session),
-                    eventTags,
-                  },
-                  onRemove: (userId) => remove.mutate(userId),
-                })}
+                columns={columns}
                 data={shown}
                 getRowId={(member) => member.userId}
                 selection={{
@@ -404,6 +414,7 @@ function RouteComponent() {
                   label: (member) => member.name,
                 }}
                 empty={t("managePeople.noneShown")}
+                pageSize={50}
               />
             </div>
           </div>
@@ -459,6 +470,85 @@ function RouteComponent() {
     </Screen>
   );
 }
+
+type Registration = EventPeople["registrations"][number];
+
+// memoized so ticking one box or opening one row doesn't redraw every other row
+const ReviewRow = memo(function ReviewRow({
+  row,
+  index,
+  queued,
+  checked,
+  busy,
+  onToggle,
+  onReview,
+}: {
+  row: Registration;
+  index: number;
+  queued: boolean;
+  checked: boolean;
+  busy: boolean;
+  onToggle: (id: string) => void;
+  onReview: (input: { id: string; decision: "approved" | "rejected" }) => void;
+}) {
+  const t = useT();
+  const name = row.full_name ?? String(row.email);
+  const answers = answerFacts(row.answers, t);
+  return (
+    <DisclosureRow
+      leading={
+        <span className="flex items-center gap-3">
+          <Checkbox
+            checked={checked}
+            onCheckedChange={() => onToggle(row.id)}
+            aria-label={t("managePeople.select", { name })}
+          />
+          <NameAvatar name={name} />
+        </span>
+      }
+      title={name}
+      meta={
+        <>
+          {queued ? `#${index + 1}, ` : ""}
+          {row.full_name ? `${String(row.email)}, ` : ""}
+          {t("managePeople.registered")} <RelativeTime value={row.created_at} />
+        </>
+      }
+      actions={
+        <>
+          <Button
+            size="sm"
+            disabled={busy}
+            onClick={() => onReview({ id: row.id, decision: "approved" })}
+          >
+            {queued ? t("managePeople.approveAnyway") : t("managePeople.approve")}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            confirm={{
+              title: t("managePeople.declineTitle", { name }),
+              description: t("managePeople.declineBody"),
+              label: t("deletions.decline"),
+            }}
+            onClick={() => onReview({ id: row.id, decision: "rejected" })}
+          >
+            {t("managePeople.declineButton")}
+          </Button>
+        </>
+      }
+    >
+      {answers.length > 0 ? (
+        <Facts facts={answers} className="pl-11" />
+      ) : (
+        <p className="pl-11 text-sm text-muted-fg">{t("managePeople.noAnswers")}</p>
+      )}
+    </DisclosureRow>
+  );
+});
+
+const NO_TAGS: string[] = [];
 
 type Member = EventPeople["members"][number];
 type Division = { id: string; name: string };

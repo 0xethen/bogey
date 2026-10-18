@@ -20,6 +20,7 @@ import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-r
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { StatusDot } from "@bogey/ui/components/status-dot";
+import { PageControls, usePaged } from "@bogey/ui/components/page-controls";
 import { Screen } from "@bogey/ui/components/screen";
 import { IconDownload, IconLock, IconPlus, IconUsersGroup } from "@tabler/icons-react";
 import {
@@ -102,6 +103,8 @@ function RouteComponent() {
     onSettled: refresh,
   });
   const error = move.error ?? update.error ?? disband.error;
+  const unassigned = usePaged(data.unassigned);
+  const teams = usePaged(data.teams);
 
   const destinations = (current: string | null) => [
     { value: NO_TEAM, label: t("manageTeams.noTeam") },
@@ -174,7 +177,7 @@ function RouteComponent() {
         >
           {matching && <TeamMatcher eventId={event.id} onDone={() => setMatching(false)} />}
           <DisclosureList>
-            {data.unassigned.map((person) => (
+            {unassigned.shown.map((person) => (
               <DisclosureRow
                 key={person.userId}
                 leading={<NameAvatar name={person.name} />}
@@ -183,6 +186,7 @@ function RouteComponent() {
               />
             ))}
           </DisclosureList>
+          <PageControls paging={unassigned.paging} />
         </Screen.Section>
       )}
 
@@ -191,7 +195,7 @@ function RouteComponent() {
       ) : (
         <Screen.Section id="teams" title={t("manageTeams.teamCount", { count: data.teams.length })}>
           <DisclosureList>
-            {data.teams.map((team) => (
+            {teams.shown.map((team) => (
               <DisclosureRow
                 key={team.id}
                 leading={
@@ -227,6 +231,7 @@ function RouteComponent() {
               </DisclosureRow>
             ))}
           </DisclosureList>
+          <PageControls paging={teams.paging} />
         </Screen.Section>
       )}
 
