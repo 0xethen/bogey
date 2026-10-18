@@ -1,6 +1,6 @@
 {
   "name": "bogey",
-  "version": "2.2.0",
+  "version": "2.3.0-beta.0",
   "private": true,
   "description": "modern, extensible, self-hostable competition platform",
   "homepage": "https://github.com/0xethen/bogey#readme",
