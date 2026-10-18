@@ -62,7 +62,8 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not private.can_manage(p_event) then
+  if not (private.can_manage(p_event)
+    or (p_kind = 'submissions' and private.project_export_access(p_event) <> 'off')) then
     raise exception 'not allowed' using errcode = '42501';
   end if;
   if p_kind !~ '^[a-z][a-z-]{0,39}$' then

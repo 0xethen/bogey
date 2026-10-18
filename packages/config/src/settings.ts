@@ -108,6 +108,21 @@ export const sessionKindSchema = z.object({
 });
 export type SessionKind = z.infer<typeof sessionKindSchema>;
 
+export const assignmentRuleSchema = z.object({
+  tag: z.uuid("Pick a tag"),
+  count: z.number().int().min(1).max(10),
+  strict: z.boolean(),
+  division: z.uuid().nullable().optional(),
+});
+export type AssignmentRule = z.infer<typeof assignmentRuleSchema>;
+
+export const judgingAssignmentSchema = z.object({
+  perProject: z.number().int().min(1).max(20),
+  rules: z.array(assignmentRuleSchema).max(10),
+  exclude: z.array(z.uuid()).max(20),
+});
+export type JudgingAssignment = z.infer<typeof judgingAssignmentSchema>;
+
 export const HOME_BUILT_IN_BLOCKS = [
   "next-steps",
   "agenda",

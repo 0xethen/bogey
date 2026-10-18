@@ -15,11 +15,30 @@ import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-r
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Screen } from "@bogey/ui/components/screen";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import { tagHoldersQueryOptions, tagsQueryOptions } from "@bogey/db/queries/tags";
 import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
+import { TagPicker, TagsEditor } from "#/components/tags/tags.tsx";
+import {
+  prefetchSettingFields,
+  SettingFields,
+} from "#/components/settings/fields/setting-fields.tsx";
+import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
 
 export const Route = createFileRoute("/_authed/org/members")({
-  staticData: { title: msg("orgTab.members") },
-  loader: ({ context }) => context.query.ensureQueryData(orgMembersQueryOptions(context.org.id)),
+  staticData: {
+    title: msg("orgTab.members"),
+    settings: (t) => [
+      searchSection(t("tags.title"), { keywords: ["labels", "judge types"], id: "tags" }),
+      ...searchSettings("tags", ["eventTags"], t),
+    ],
+  },
+  loader: ({ context }) =>
+    Promise.all([
+      context.query.ensureQueryData(orgMembersQueryOptions(context.org.id)),
+      context.query.ensureQueryData(tagsQueryOptions({ orgId: context.org.id })),
+      context.query.ensureQueryData(tagHoldersQueryOptions({ orgId: context.org.id })),
+      prefetchSettingFields(context.query, { scope: "org", orgId: context.org.id }, ["tags"]),
+    ]),
   component: RouteComponent,
 });
 
@@ -35,6 +54,8 @@ function RouteComponent() {
   const time = useTimeFormat();
   const queryClient = useQueryClient();
   const { data: members } = useSuspenseQuery(orgMembersQueryOptions(org.id));
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions({ orgId: org.id }));
+  const { data: holders } = useSuspenseQuery(tagHoldersQueryOptions({ orgId: org.id }));
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: orgMembersQueryOptions(org.id).queryKey });
 
@@ -93,7 +114,19 @@ function RouteComponent() {
                 />
               }
             >
-              <div className="pl-11">
+              <div className="flex flex-col items-start gap-3 pl-11">
+                {tags.length > 0 && (
+                  <TagPicker
+                    orgId={org.id}
+                    userId={member.userId}
+                    name={member.name}
+                    tags={tags}
+                    held={holders
+                      .filter((each) => each.userId === member.userId)
+                      .map((each) => each.tagId)}
+                    editableScopes={{ org: true, event: false }}
+                  />
+                )}
                 <Button
                   variant="destructive"
                   size="sm"
@@ -116,6 +149,14 @@ function RouteComponent() {
           );
         })}
       </DisclosureList>
+      <Screen.Section id="tags" title={t("tags.title")} description={t("tags.orgIntro")}>
+        <TagsEditor scope={{ orgId: org.id }} />
+        <SettingFields
+          scope={{ scope: "org", orgId: org.id }}
+          namespace="tags"
+          keys={["eventTags"]}
+        />
+      </Screen.Section>
     </Screen>
   );
 }

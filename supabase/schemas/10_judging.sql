@@ -473,6 +473,84 @@ begin
 end;
 $$;
 
+-- what the projects spreadsheet may include for the caller: 'all' for organizers, and for judges what
+-- judging.judgeExport allows ('off', 'projects' or 'results')
+create function private.project_export_access(p_event uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select case
+    when private.can_manage(p_event) then 'all'
+    when private.has_permission(p_event, 'judging.score')
+      then coalesce(private.event_setting(p_event, 'judging') ->> 'judgeExport', 'off')
+    else 'off'
+  end;
+$$;
+grant execute on function private.project_export_access(uuid) to authenticated;
+
+create function public.project_export_access(p_event uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.project_export_access(p_event);
+$$;
+
+-- each project's latest round for the spreadsheet: rank, score and its average per criterion, without
+-- team names (blind judging still hides those from judges)
+create function public.project_export_results(p_event uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if private.project_export_access(p_event) not in ('results', 'all') then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  return (
+    with latest as (
+      select distinct on (r ->> 'submission_id') r
+      from jsonb_array_elements(private.rank_submissions(p_event)) r
+      order by r ->> 'submission_id', (r ->> 'round_ordinal')::int desc
+    ),
+    means as (
+      select sc.submission_id, sc.round_id,
+        jsonb_object_agg(sc.criterion_id, sc.mean) as criteria
+      from (
+        select s.submission_id, s.round_id, s.criterion_id, round(avg(s.value), 2) as mean
+        from public.scores s
+        join public.submissions sub on sub.id = s.submission_id
+        where s.event_id = p_event
+          and not exists (select 1 from public.judge_conflicts jc
+                          where jc.judge_id = s.judge_id and jc.team_id = sub.team_id)
+        group by s.submission_id, s.round_id, s.criterion_id
+      ) sc
+      group by sc.submission_id, sc.round_id
+    )
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'submission_id', l.r ->> 'submission_id',
+      'round_name', l.r ->> 'round_name',
+      'rank', l.r -> 'rank',
+      'division_rank', l.r -> 'division_rank',
+      'score', l.r -> 'score',
+      'raw_score', l.r -> 'raw_score',
+      'judges', l.r -> 'judges',
+      'criteria', coalesce(m.criteria, '{}')
+    )), '[]')
+    from latest l
+    left join means m on m.submission_id = (l.r ->> 'submission_id')::uuid
+      and m.round_id = (l.r ->> 'round_id')::uuid
+  );
+end;
+$$;
+
 create function private.submission_blurb(p_submission uuid)
 returns text
 language sql
@@ -608,6 +686,11 @@ begin
 end;
 $$;
 
+-- Tops every entry up to p_per_submission judges, least-loaded first. The event's
+-- judging.assignment rules come first: each asks for judges holding a tag (one Adult Judge, one
+-- Student Judge), optionally only in one division. A rule that isn't strict stops at an even share
+-- of the work and lets anyone take the slot; a strict one doubles judges up instead, and fails if
+-- no one with the tag can take an entry. Judges holding an excluded tag are left out.
 create function public.assign_round_robin(
   p_event uuid, p_per_submission integer default 3, p_round uuid default null
 )
@@ -617,13 +700,18 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_judges uuid[];
+  v_config jsonb := coalesce(private.event_setting(p_event, 'judging') -> 'assignment', '{}');
+  v_exclude uuid[];
+  v_pool integer;
+  v_per integer;
+  v_cap integer;
   v_count integer := 0;
-  v_i integer := 0;
   v_sub record;
-  v_k integer;
-  v_try integer;
+  v_rule record;
+  v_have uuid[];
+  v_need integer;
   v_judge uuid;
+  v_short jsonb := '{}';
   v_assigned uuid[] := '{}';
 begin
   if not private.can_manage(p_event) then
@@ -634,39 +722,120 @@ begin
   ) then
     raise exception 'unknown round' using errcode = '22023';
   end if;
+  select coalesce(array_agg(x::uuid), '{}') into v_exclude
+  from jsonb_array_elements_text(coalesce(v_config -> 'exclude', '[]')) x;
 
-  select array_agg(user_id order by random()) into v_judges
-  from public.event_members where event_id = p_event and role = 'judge' and status = 'active';
-  if coalesce(cardinality(v_judges), 0) = 0 then
+  if to_regclass('pg_temp.assign_pool') is not null then
+    drop table pg_temp.assign_pool;
+  end if;
+  create temp table assign_pool (
+    id uuid primary key, tags uuid[] not null, load integer not null, tiebreak float8 not null
+  ) on commit drop;
+  insert into pg_temp.assign_pool
+  select m.user_id, h.tags,
+    (select count(*) from public.judge_assignments a
+     where a.event_id = p_event and a.judge_id = m.user_id and (p_round is null or a.round_id = p_round)),
+    random()
+  from public.event_members m
+  cross join lateral (select private.held_tags(p_event, m.user_id) as tags) h
+  where m.event_id = p_event and m.status = 'active'
+    and (m.role = 'judge'
+      or (m.role in ('staff', 'organizer') and private.tags_grant(p_event, m.user_id, 'judging.score')))
+    and not (h.tags && v_exclude);
+  select count(*) into v_pool from pg_temp.assign_pool;
+  if v_pool = 0 then
     raise exception 'add judges first' using errcode = 'P0001';
   end if;
+  v_per := least(p_per_submission, v_pool);
 
-  for v_sub in
-    select s.id, s.team_id from public.submissions s
-    join public.submission_forms f on f.id = s.form_id and f.judged
-    where s.event_id = p_event and s.status = 'submitted'
-      and (p_round is null or p_round = private.active_round(s.id))
-    order by random()
-  loop
-    for v_k in 1 .. least(p_per_submission, cardinality(v_judges)) loop
-      for v_try in 0 .. cardinality(v_judges) - 1 loop
-        v_judge := v_judges[((v_i + v_try) % cardinality(v_judges)) + 1];
-        continue when exists (
-          select 1 from public.judge_conflicts c where c.judge_id = v_judge and c.team_id = v_sub.team_id);
-        insert into public.judge_assignments (event_id, judge_id, submission_id)
-        values (p_event, v_judge, v_sub.id)
-        on conflict do nothing;
-        if found then
-          v_count := v_count + 1;
-          v_assigned := v_assigned || v_judge;
-          v_i := v_i + v_try + 1;
+  if to_regclass('pg_temp.assign_entries') is not null then
+    drop table pg_temp.assign_entries;
+  end if;
+  create temp table assign_entries (
+    id uuid primary key, team_id uuid not null, division_id uuid, judges uuid[] not null, tiebreak float8 not null
+  ) on commit drop;
+  insert into pg_temp.assign_entries
+  select s.id, s.team_id, t.division_id,
+    array(select a.judge_id from public.judge_assignments a
+          where a.submission_id = s.id and a.round_id = private.active_round(s.id)),
+    random()
+  from public.submissions s
+  join public.submission_forms f on f.id = s.form_id and f.judged
+  join public.teams t on t.id = s.team_id
+  where s.event_id = p_event and s.status = 'submitted'
+    and (p_round is null or p_round = private.active_round(s.id));
+
+  -- an even share of every slot, existing ones included; one judge may go one over
+  select ceil((
+    (select coalesce(sum(load), 0) from pg_temp.assign_pool)
+    + (select coalesce(sum(greatest(v_per - cardinality(judges), 0)), 0) from pg_temp.assign_entries)
+  )::numeric / v_pool)::integer into v_cap;
+
+  for v_sub in select * from pg_temp.assign_entries order by tiebreak loop
+    v_have := v_sub.judges;
+    for v_rule in
+      select (r ->> 'tag')::uuid as tag, greatest(coalesce((r ->> 'count')::integer, 1), 1) as want,
+        coalesce((r ->> 'strict')::boolean, false) as must, nullif(r ->> 'division', '')::uuid as division
+      from jsonb_array_elements(coalesce(v_config -> 'rules', '[]')) r
+      where r ->> 'tag' is not null
+    loop
+      continue when v_rule.division is not null and v_rule.division is distinct from v_sub.division_id;
+      select v_rule.want - count(*) into v_need
+      from pg_temp.assign_pool p where p.id = any(v_have) and v_rule.tag = any(p.tags);
+      while v_need > 0 loop
+        select p.id into v_judge from pg_temp.assign_pool p
+        where v_rule.tag = any(p.tags) and p.id <> all(v_have)
+          and (v_rule.must or p.load < v_cap)
+          and not exists (
+            select 1 from public.judge_conflicts c where c.judge_id = p.id and c.team_id = v_sub.team_id)
+        order by p.load, p.tiebreak
+        limit 1;
+        if v_judge is null then
+          if v_rule.must then
+            v_short := jsonb_set(v_short, array[v_rule.tag::text],
+              to_jsonb(coalesce((v_short ->> v_rule.tag::text)::integer, 0) + 1));
+          end if;
           exit;
         end if;
+        insert into public.judge_assignments (event_id, judge_id, submission_id)
+        values (p_event, v_judge, v_sub.id);
+        update pg_temp.assign_pool set load = load + 1 where id = v_judge;
+        v_have := v_have || v_judge;
+        v_assigned := v_assigned || v_judge;
+        v_count := v_count + 1;
+        v_need := v_need - 1;
       end loop;
     end loop;
+
+    while cardinality(v_have) < v_per loop
+      select p.id into v_judge from pg_temp.assign_pool p
+      where p.id <> all(v_have)
+        and not exists (
+          select 1 from public.judge_conflicts c where c.judge_id = p.id and c.team_id = v_sub.team_id)
+      order by p.load >= v_cap, p.load, p.tiebreak
+      limit 1;
+      exit when v_judge is null;
+      insert into public.judge_assignments (event_id, judge_id, submission_id)
+      values (p_event, v_judge, v_sub.id);
+      update pg_temp.assign_pool set load = load + 1 where id = v_judge;
+      v_have := v_have || v_judge;
+      v_assigned := v_assigned || v_judge;
+      v_count := v_count + 1;
+    end loop;
   end loop;
+
+  if v_short <> '{}' then
+    raise exception '%', (
+      select string_agg(format('%s %s no one tagged "%s"', n.value, case when n.value::integer = 1
+        then 'project has' else 'projects have' end, coalesce(t.name, n.key)), '; ')
+      from jsonb_each_text(v_short) n left join public.tags t on t.id = n.key::uuid
+    ) || '. A strict rule needs someone with that tag who has no conflict with the team; nothing was assigned.'
+      using errcode = 'P0001';
+  end if;
+
   perform private.audit(p_event, 'judging.assigned', 'event', p_event,
-    jsonb_build_object('per_submission', p_per_submission, 'assignments', v_count, 'round', p_round));
+    jsonb_build_object('per_submission', p_per_submission, 'assignments', v_count, 'round', p_round,
+      'rules', jsonb_array_length(coalesce(v_config -> 'rules', '[]'))));
   for v_judge in select distinct j from unnest(v_assigned) j loop
     perform private.notify(array[v_judge], p_event, 'judging.assigned',
       (select count(*) from unnest(v_assigned) j where j = v_judge) || ' projects to judge', null,
@@ -1342,6 +1511,8 @@ $$;
 
 grant execute on function
   public.preview_results(uuid),
+  public.project_export_access(uuid),
+  public.project_export_results(uuid),
   public.publish_results(uuid),
   public.assign_round_robin(uuid, integer, uuid),
   public.advance_submissions(uuid, uuid[], integer),

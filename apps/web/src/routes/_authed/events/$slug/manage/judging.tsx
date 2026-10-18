@@ -1,4 +1,5 @@
 import { exportHref } from "#/lib/exports.ts";
+import { ProjectExport } from "#/components/event/project-export.tsx";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -64,6 +65,7 @@ import {
 } from "#/components/settings/fields/setting-fields.tsx";
 import { Tables } from "./-components/tables.tsx";
 import { Calibration, Conflicts } from "./-components/fairness.tsx";
+import { AssignmentRules, assignmentQueries } from "./-components/assignment-rules.tsx";
 import { Rounds } from "./-components/rounds.tsx";
 import { pluginRankingMethods } from "@bogey/plugins";
 import { AwardsEditor } from "./-components/awards-editor.tsx";
@@ -76,7 +78,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging")({
     title: msg("judging.title"),
     settings: (t) => [
       searchSection(t("manageJudging.see"), { id: "what-judges-see" }),
-      ...searchSettings("judging", ["blind"], t),
+      ...searchSettings("judging", ["blind", "judgeExport"], t),
       searchSection(t("manageJudging.rounds"), { id: "rounds" }),
       searchSection(t("tablesEditor.title"), { keywords: ["tables", "booths"], id: "expo-tables" }),
       searchSection(t("manageJudging.publishing"), { id: "publishing" }),
@@ -86,7 +88,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging")({
         id: "popular-vote",
       }),
       ...searchSettings("voting", ["enabled", "who", "votesPerPerson", "ownTeam", "showCounts"], t),
-      searchSection(t("manageJudging.progress"), { keywords: ["assign judges"], id: "progress" }),
+      searchSection(t("manageJudging.progress"), {
+        keywords: ["assign judges", "judging rules", "tags", "adult judge", "student judge"],
+        id: "progress",
+      }),
       searchSection(t("manageJudging.criteria"), {
         keywords: ["rubric", "rubrics", "themes", "scores", "weights"],
         id: "criteria",
@@ -127,6 +132,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging")({
       context.query.ensureQueryData(eventPrizesQueryOptions(context.event.id)),
       context.query.ensureQueryData(eventEntriesQueryOptions(context.event.id)),
       context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
+      context.query.ensureQueryData(assignmentQueries(context.event).settings),
+      context.query.ensureQueryData(assignmentQueries(context.event).tags),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "judging",
         "voting",
@@ -147,7 +154,7 @@ function RouteComponent() {
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}
           namespace="judging"
-          keys={["blind"]}
+          keys={["blind", "judgeExport"]}
         />
       </Screen.Section>
       <Rounds eventId={event.id} plugins={plugins} />
@@ -192,40 +199,21 @@ function RouteComponent() {
   );
 }
 
-const assignSchema = (t: T) =>
-  z.object({
-    per: z
-      .number(t("orgLimit.enterNumber"))
-      .int(t("eventForm.whole"))
-      .min(1, t("eventForm.atLeast", { min: 1 }))
-      .max(20, t("eventForm.atMost", { max: 20 }))
-      .meta({ label: t("manageJudging.perProject") }),
-  });
-
 function Progress() {
   const t = useT();
-  const schema = useMemo(() => assignSchema(t), [t]);
   const { event } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const { data: progress } = useSuspenseQuery(judgingProgressQueryOptions(event.id));
-  const [assigned, setAssigned] = useState<number | null>(null);
-  const assignForm = useAppForm({
-    ...appFormOptions.strictSchema({
-      defaultValues: { per: 1 },
-      errorVisibility,
-      validators: [rewardEarlyPunishLate(schema)],
-    }),
-    onSubmit: async ({ value, createValidationError }) => {
-      const result = await assignJudgesFn({
-        data: { eventId: event.id, perSubmission: value.per },
-      }).catch(requestFailure);
-      if (!result.ok) return createValidationError(result.error.message);
-      setAssigned(result.data);
-      await queryClient.invalidateQueries({
-        queryKey: judgingProgressQueryOptions(event.id).queryKey,
-      });
-      return undefined;
-    },
+  const { data: settings } = useSuspenseQuery(assignmentQueries(event).settings);
+  const assign = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await assignJudgesFn({
+          data: { eventId: event.id, perSubmission: settings.judging.assignment.perProject },
+        }),
+      ),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: judgingProgressQueryOptions(event.id).queryKey }),
   });
   const done = progress.judges.reduce((sum, judge) => sum + judge.done, 0);
   const total = progress.judges.reduce((sum, judge) => sum + judge.assigned, 0);
@@ -238,38 +226,26 @@ function Progress() {
         <Stat icon={IconHourglass} label={t("manageJudging.noScores")} value={progress.unscored} />
       </StatGroup>
 
-      <assignForm.AppForm>
-        <assignForm.Form className="flex flex-wrap items-center gap-3">
-          <assignForm.Field name="per">
-            {(field) => (
-              <field.Field orientation="inline">
-                <field.Label />
-                <field.NumberInput min={1} max={20} />
-                <field.Error />
-              </field.Field>
-            )}
-          </assignForm.Field>
-          <assignForm.Submit
-            size="sm"
-            variant="outline"
-            pending={t("manageJudging.assigning")}
-            disabled={progress.submissions === 0}
-          >
-            {t("manageJudging.assign")}
-          </assignForm.Submit>
-          {assigned !== null && (
-            <span className="text-sm text-muted-fg" role="status">
-              {t("manageJudging.newAssignments", { count: assigned })}
-            </span>
-          )}
-        </assignForm.Form>
-      </assignForm.AppForm>
+      <AssignmentRules event={event} />
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={progress.submissions === 0 || assign.isPending}
+          onClick={() => assign.mutate()}
+        >
+          {assign.isPending ? t("manageJudging.assigning") : t("manageJudging.assign")}
+        </Button>
+        {assign.isSuccess && (
+          <span className="text-sm text-muted-fg" role="status">
+            {t("manageJudging.newAssignments", { count: assign.data })}
+          </span>
+        )}
+      </div>
       <p className="text-sm text-muted-fg">
         {t("manageJudging.spreads", { count: progress.submissions })}
       </p>
-      <assignForm.AppForm>
-        <assignForm.FormAlert title={t("manageJudging.assignFailed")} />
-      </assignForm.AppForm>
+      <ErrorAlert error={assign.error} title={t("manageJudging.assignFailed")} />
 
       {progress.judges.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("manageJudging.noJudges")}</p>
@@ -784,6 +760,15 @@ function Results() {
       description={t("manageJudging.resultsHelp")}
       actions={
         <>
+          <ProjectExport
+            event={event}
+            trigger={
+              <Button size="sm" variant="outline">
+                <IconDownload />
+                {t("projectExport.button")}
+              </Button>
+            }
+          />
           <Button
             size="sm"
             variant="outline"

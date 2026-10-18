@@ -112,7 +112,7 @@ begin
           where g.event_id = p_event and g.user_id = v_uid
         )
       )
-  );
+  ) or private.tags_grant(p_event, v_uid, p_permission);
 end;
 $$;
 

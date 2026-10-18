@@ -79,6 +79,9 @@ name in the code disagrees with this file, one of them is wrong; fix it.
   some answers to an earlier question.
 - **Entrant**: another word for a team when it is being scored, for example
   on a scoreboard.
+- **Tag**: a label on a person, such as "Adult Judge" or "Mentor". An org tag applies in every
+  event of the org; an event tag only in its event, when the org allows event tags. A tag can grant
+  permissions on top of the person's role, and judging rules ask for judges by tag.
 - **Permission**: a named capability, such as `event.manage` or
   `judging.score`. Roles grant permissions, and plugins can add roles that
   grant plugin permissions. The database checks permissions; the UI only

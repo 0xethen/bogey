@@ -47,6 +47,10 @@ import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
+import { settingsQueryOptions } from "@bogey/db/queries/settings";
+import { tagHoldersQueryOptions, tagsQueryOptions, type Tag } from "@bogey/db/queries/tags";
+import { TagBadge, TagPicker, TagsEditor } from "#/components/tags/tags.tsx";
+import { isOrgAdmin } from "@bogey/db/auth";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/people")({
   staticData: {
@@ -62,6 +66,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/people")({
         keywords: ["import", "csv", "spreadsheet"],
         id: "add-people-from-a-roster",
       }),
+      searchSection(t("tags.title"), { keywords: ["labels", "judge types"], id: "tags" }),
     ],
   },
   validateSearch: z.object({ link: z.uuid().optional().catch(undefined) }),
@@ -72,12 +77,20 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/people")({
       context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
       context.query.ensureQueryData(rosterOverlapsQueryOptions(context.event.id)),
       context.query.ensureQueryData(checkinRosterQueryOptions(context.event.id)),
+      context.query.ensureQueryData(tagScopeQueries(context.event).tags),
+      context.query.ensureQueryData(tagScopeQueries(context.event).holders),
+      context.query.ensureQueryData(settingsQueryOptions({ eventId: context.event.id }, ["tags"])),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
 });
 
 const NO_DIVISION = "none";
+
+function tagScopeQueries(event: { id: string; org_id: string }) {
+  const scope = { orgId: event.org_id, eventId: event.id };
+  return { tags: tagsQueryOptions(scope), holders: tagHoldersQueryOptions(scope) };
+}
 
 const ROLES: Tuple<EventRole> = ["participant", "judge", "staff", "organizer"];
 
@@ -147,6 +160,13 @@ function RouteComponent() {
     async (input: { userId: string; divisionId: string | undefined }) =>
       unwrap(await setDivisionFn({ data: { eventId: event.id, ...input } })),
   );
+  const { data: tags } = useSuspenseQuery(tagScopeQueries(event).tags);
+  const { data: holders } = useSuspenseQuery(tagScopeQueries(event).holders);
+  const { data: tagSettings } = useSuspenseQuery(
+    settingsQueryOptions({ eventId: event.id }, ["tags"]),
+  );
+  const eventTags = tagSettings.tags.eventTags;
+  const usableTags = tags.filter((tag) => !tag.event_id || eventTags);
   const { data: roster } = useSuspenseQuery(checkinRosterQueryOptions(event.id));
   const arrival = new Map(roster.map((entry) => [entry.userId, entry]));
   const [filter, setFilter] = useState<"everyone" | "absent" | "here">("everyone");
@@ -365,6 +385,15 @@ function RouteComponent() {
                   onRole: (userId, role) => setRole.mutate({ userId, role }),
                   onDivision: (userId, divisionId) => place.mutate({ userId, divisionId }),
                   onExtraRoles: (userId, roles) => setExtraRoles.mutate({ userId, roles }),
+                  tags: {
+                    orgId: event.org_id,
+                    eventId: event.id,
+                    all: usableTags,
+                    held: (userId) =>
+                      holders.filter((each) => each.userId === userId).map((each) => each.tagId),
+                    orgAdmin: isOrgAdmin(session),
+                    eventTags,
+                  },
                   onRemove: (userId) => remove.mutate(userId),
                 })}
                 data={shown}
@@ -405,6 +434,26 @@ function RouteComponent() {
         </Screen.Section>
       )}
 
+      <Screen.Section
+        id="tags"
+        title={t("tags.title")}
+        description={eventTags ? t("tags.eventIntro") : t("tags.eventsOff")}
+      >
+        {tags.some((tag) => !tag.event_id) && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm text-muted-fg">{t("tags.fromOrg")}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {tags
+                .filter((tag) => !tag.event_id)
+                .map((tag) => (
+                  <TagBadge key={tag.id} tag={tag} />
+                ))}
+            </div>
+          </div>
+        )}
+        {eventTags && <TagsEditor scope={{ orgId: event.org_id, eventId: event.id }} />}
+      </Screen.Section>
+
       <Overlaps eventId={event.id} />
       <PluginSettingSections page="people" />
     </Screen>
@@ -428,6 +477,14 @@ function memberColumns(options: {
   onDivision: (userId: string, divisionId: string | undefined) => void;
   onExtraRoles: (userId: string, roles: string[]) => void;
   onRemove: (userId: string) => void;
+  tags: {
+    orgId: string;
+    eventId: string;
+    all: Tuple<Tag>;
+    held: (userId: string) => string[];
+    orgAdmin: boolean;
+    eventTags: boolean;
+  };
 }) {
   const { t } = options;
   return memberColumn.columns([
@@ -485,6 +542,32 @@ function memberColumns(options: {
         );
       },
     }),
+    ...(options.tags.all.length > 0
+      ? [
+          memberColumn.display({
+            id: "tags",
+            header: t("tags.column"),
+            cell: (info) => {
+              const member = info.row.original;
+              return (
+                <TagPicker
+                  orgId={options.tags.orgId}
+                  eventId={options.tags.eventId}
+                  userId={member.userId}
+                  name={member.name}
+                  tags={options.tags.all}
+                  held={options.tags.held(member.userId)}
+                  editableScopes={{
+                    // org tags go on org members, which participants aren't
+                    org: options.tags.orgAdmin && member.role !== "participant",
+                    event: options.tags.eventTags,
+                  }}
+                />
+              );
+            },
+          }),
+        ]
+      : []),
     memberColumn.accessor((member) => member.team ?? "", {
       id: "team",
       header: t("managePeople.teamColumn"),
@@ -534,7 +617,7 @@ function memberColumns(options: {
         const member = info.row.original;
         const you = member.userId === options.you;
         return (
-          <div className="-my-1.5 flex justify-end">
+          <div className="flex justify-end">
             <Button
               variant="ghost"
               size="sm"
