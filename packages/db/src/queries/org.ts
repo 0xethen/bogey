@@ -4,6 +4,7 @@ import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import { jsonRecord, type Enums, type Tables } from "../types.ts";
 import { requireId, requireOneOf, requireSlug, requireText } from "./validate.ts";
+import { profileNames } from "./profile-names.ts";
 
 export type OrgRole = Enums<"org_role">;
 export type Event = Tables<"events">;
@@ -26,15 +27,11 @@ export const orgMembersFn = createServerFn({ method: "GET" })
       .order("created_at");
     if (error) return toFailure(error, "loading members");
 
-    const { data: profiles, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, display_name")
-      .in(
-        "id",
-        (members ?? []).map((member) => member.user_id),
-      );
+    const { names, error: profileError } = await profileNames(
+      supabase,
+      (members ?? []).map((member) => member.user_id),
+    );
     if (profileError) return toFailure(profileError, "loading members");
-    const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.display_name]));
 
     return ok(
       (members ?? []).map((member) => ({

@@ -4,6 +4,7 @@ import { createServerClient } from "../server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import { jsonRecord, type JsonRecord } from "../types.ts";
 import { requireId } from "./validate.ts";
+import { profileNames } from "./profile-names.ts";
 
 export interface AuditEntry {
   id: number;
@@ -83,15 +84,8 @@ export const auditLogFn = createServerFn({ method: "GET" })
         rows.flatMap((row) => (row.target_type === "user" && row.target_id ? [row.target_id] : [])),
       ),
     ];
-    const targets = new Map<string, string>();
-    if (people.length) {
-      const { data: found, error: peopleError } = await supabase
-        .from("profiles")
-        .select("id, display_name")
-        .in("id", people);
-      if (peopleError) return toFailure(peopleError, "loading the audit log");
-      for (const person of found) targets.set(person.id, person.display_name);
-    }
+    const { names: targets, error: peopleError } = await profileNames(supabase, people);
+    if (peopleError) return toFailure(peopleError, "loading the audit log");
 
     return ok({
       more: rows.length > PAGE,

@@ -5,6 +5,7 @@ import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import { COLUMN_VALUES, type ColumnValue, type Enums, type Tables } from "../types.ts";
 import { optionalId, requireId, requireOneOf, requireText } from "./validate.ts";
+import { inChunks, profileNames } from "./profile-names.ts";
 
 export type ConversationStatus = Enums<"clarification_status">;
 export type ConversationVisibility = Enums<"clarification_visibility">;
@@ -106,22 +107,27 @@ export const eventConversationsFn = createServerFn({ method: "GET" })
     const ids = rows.map((thread) => thread.id);
     const [{ data: messages, error: messageError }, { data: archives, error: archiveError }] =
       await Promise.all([
-        ids.length
-          ? supabase
-              .from("clarification_messages")
-              .select(
-                "id, clarification_id, author_id, author_role, body_md, attachments, created_at",
-              )
-              .in("clarification_id", ids)
-              .is("deleted_at", null)
-              .order("created_at")
-          : Promise.resolve({ data: [], error: null }),
-        ids.length && userId
-          ? supabase
-              .from("clarification_archives")
-              .select("clarification_id, archived_at")
-              .eq("user_id", userId)
-              .in("clarification_id", ids)
+        inChunks(ids, (chunk) =>
+          supabase
+            .from("clarification_messages")
+            .select(
+              "id, clarification_id, author_id, author_role, body_md, attachments, created_at",
+            )
+            .in("clarification_id", chunk)
+            .is("deleted_at", null)
+            .order("created_at"),
+        ).then((result) => ({
+          ...result,
+          data: result.data.sort((a, b) => a.created_at.localeCompare(b.created_at)),
+        })),
+        userId
+          ? inChunks(ids, (chunk) =>
+              supabase
+                .from("clarification_archives")
+                .select("clarification_id, archived_at")
+                .eq("user_id", userId)
+                .in("clarification_id", chunk),
+            )
           : Promise.resolve({ data: [], error: null }),
       ]);
     if (messageError ?? archiveError) {
@@ -137,11 +143,8 @@ export const eventConversationsFn = createServerFn({ method: "GET" })
         ...messages.flatMap((message) => (message.author_id ? [message.author_id] : [])),
       ]),
     ];
-    const { data: profiles, error: profileError } = people.length
-      ? await supabase.from("profiles").select("id, display_name").in("id", people)
-      : { data: [], error: null };
+    const { names, error: profileError } = await profileNames(supabase, people);
     if (profileError) return toFailure(profileError, "loading messages");
-    const names = new Map(profiles.map((profile) => [profile.id, profile.display_name]));
     const myTeam = team.data?.team_id ?? null;
 
     return ok(
@@ -209,10 +212,7 @@ export const chatBlocksFn = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) return toFailure(error, "loading blocks");
     const users = data.flatMap((row) => (row.user_id ? [row.user_id] : []));
-    const { data: profiles } = users.length
-      ? await supabase.from("profiles").select("id, display_name").in("id", users)
-      : { data: [] };
-    const names = new Map((profiles ?? []).map((row) => [row.id, row.display_name]));
+    const { names } = await profileNames(supabase, users);
     return ok(
       data.map((row) => ({
         id: row.id,

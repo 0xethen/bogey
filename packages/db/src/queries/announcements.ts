@@ -5,6 +5,7 @@ import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../erro
 import type { Enums, Tables } from "../types.ts";
 import { attachmentsSchema, type MessageAttachment } from "./messages.ts";
 import { requireId, requireOneOf, requireText } from "./validate.ts";
+import { inChunks, profileNames } from "./profile-names.ts";
 
 export type AnnouncementSeverity = Enums<"announcement_severity">;
 type EventRole = Enums<"event_role">;
@@ -60,22 +61,22 @@ export const eventAnnouncementsFn = createServerFn({ method: "GET" })
     const ids = rows.map((row) => row.id);
     const authorIds = [...new Set(rows.flatMap((row) => (row.author_id ? [row.author_id] : [])))];
     const [reads, authors] = await Promise.all([
-      userId && ids.length
-        ? supabase
-            .from("announcement_reads")
-            .select("announcement_id")
-            .eq("user_id", userId)
-            .in("announcement_id", ids)
+      userId
+        ? inChunks(ids, (chunk) =>
+            supabase
+              .from("announcement_reads")
+              .select("announcement_id")
+              .eq("user_id", userId)
+              .in("announcement_id", chunk),
+          )
         : Promise.resolve({ data: [], error: null }),
-      authorIds.length
-        ? supabase.from("profiles").select("id, display_name").in("id", authorIds)
-        : Promise.resolve({ data: [], error: null }),
+      profileNames(supabase, authorIds),
     ]);
     const failure = reads.error ?? authors.error;
     if (failure) return toFailure(failure, "loading announcements");
 
     const seen = new Set((reads.data ?? []).map((row) => row.announcement_id));
-    const names = new Map((authors.data ?? []).map((row) => [row.id, row.display_name]));
+    const { names } = authors;
     const now = Date.now();
     return ok(
       rows.map(({ announcement_audiences: targets, ...row }) => ({

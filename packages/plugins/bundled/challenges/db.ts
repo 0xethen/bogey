@@ -3,6 +3,10 @@ import { z } from "zod";
 import { browserClient, browserClientFor } from "@bogey/db/browser";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "@bogey/db/errors";
 import type { Json } from "@bogey/db/types";
+import { inChunks } from "@bogey/db/queries/profile-names";
+
+const newestFirst = (a: { queued_at: string }, b: { queued_at: string }) =>
+  b.queued_at.localeCompare(a.queued_at);
 
 export type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | "OLE" | "JE";
 export type RejudgingStatus = "pending" | "applied" | "cancelled";
@@ -609,13 +613,15 @@ async function attempts(
   if (solutions.error) return toFailure(solutions.error, "loading solutions");
   const ids = (solutions.data ?? []).map((solution) => solution.id);
   if (ids.length === 0) return ok([]);
-  const judgings = await client()
-    .from("challenges_judgings")
-    .select(
-      "solution_id, status, verdict, score, max_time_ms, compile_output, queued_at, valid, verified_at",
-    )
-    .in("solution_id", ids)
-    .order("queued_at", { ascending: false });
+  // a big contest's ids don't fit one URL
+  const judgings = await inChunks(ids, (chunk) =>
+    client()
+      .from("challenges_judgings")
+      .select(
+        "solution_id, status, verdict, score, max_time_ms, compile_output, queued_at, valid, verified_at",
+      )
+      .in("solution_id", chunk),
+  ).then((result) => ({ ...result, data: result.data.sort(newestFirst) }));
   if (judgings.error) return toFailure(judgings.error, "loading verdicts");
   return ok(
     (solutions.data ?? []).map((solution) => {
@@ -915,11 +921,12 @@ export const jurySolutionsQueryOptions = (eventId: string, problemId: string) =>
       const judgings =
         ids.length === 0
           ? { data: [], error: null }
-          : await client()
-              .from("challenges_judgings")
-              .select("solution_id, status, verdict, queued_at")
-              .in("solution_id", ids)
-              .order("queued_at", { ascending: false });
+          : await inChunks(ids, (chunk) =>
+              client()
+                .from("challenges_judgings")
+                .select("solution_id, status, verdict, queued_at")
+                .in("solution_id", chunk),
+            ).then((result) => ({ ...result, data: result.data.sort(newestFirst) }));
       if (judgings.error) return unwrap(toFailure(judgings.error, "loading jury solutions"));
       return (solutions.data ?? []).flatMap((row) => {
         if (!row.expected_verdict) return [];
@@ -1212,14 +1219,18 @@ export const bankQueryOptions = (orgId: string) =>
       const ids = (problems.data ?? []).map((row) => row.id);
       if (ids.length === 0) return [];
       const [tests, solutions] = await Promise.all([
-        client()
-          .from("challenges_bank_testcases")
-          .select("bank_problem_id")
-          .in("bank_problem_id", ids),
-        client()
-          .from("challenges_bank_solutions")
-          .select("bank_problem_id")
-          .in("bank_problem_id", ids),
+        inChunks(ids, (chunk) =>
+          client()
+            .from("challenges_bank_testcases")
+            .select("bank_problem_id")
+            .in("bank_problem_id", chunk),
+        ),
+        inChunks(ids, (chunk) =>
+          client()
+            .from("challenges_bank_solutions")
+            .select("bank_problem_id")
+            .in("bank_problem_id", chunk),
+        ),
       ]);
       const failed = tests.error ?? solutions.error;
       if (failed) return unwrap(toFailure(failed, "loading the problem bank"));

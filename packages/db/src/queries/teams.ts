@@ -5,6 +5,7 @@ import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Enums, Tables } from "../types.ts";
 import { requireId, requireText } from "./validate.ts";
+import { profileNames } from "./profile-names.ts";
 
 export type Team = Tables<"teams">;
 
@@ -57,12 +58,8 @@ export const myTeamFn = createServerFn({ method: "GET" })
     if (!team.data) return ok(null);
 
     const ids = (members.data ?? []).map((row) => row.user_id);
-    const { data: profiles, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, display_name")
-      .in("id", ids);
+    const { names, error: profileError } = await profileNames(supabase, ids);
     if (profileError) return toFailure(profileError, "loading your teammates");
-    const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.display_name]));
 
     return ok({
       team: team.data,

@@ -4,6 +4,7 @@ import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import { jsonRecord, type Enums, type Json } from "../types.ts";
 import { requireId, requireOneOf, requireSlug, requireText } from "./validate.ts";
+import { profileNames } from "./profile-names.ts";
 
 export type OrgStatus = Enums<"org_status">;
 
@@ -181,10 +182,7 @@ export const instanceAuditFn = createServerFn({ method: "GET" }).handler(
     const ids = [
       ...new Set(data.flatMap((row) => [row.actor_id, row.target_id]).filter((id) => id !== null)),
     ];
-    const { data: profiles } = ids.length
-      ? await supabase.from("profiles").select("id, display_name").in("id", ids)
-      : { data: [] };
-    const names = new Map((profiles ?? []).map((row) => [row.id, row.display_name]));
+    const { names } = await profileNames(supabase, ids);
     return ok(
       data.map((row) => ({
         id: row.id,

@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createServerClient } from "../server.ts";
 import { ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import { requireId, requireText } from "./validate.ts";
+import { profileNames } from "./profile-names.ts";
 
 export interface JudgingFlag {
   id: string;
@@ -23,11 +24,7 @@ export interface JudgingFlag {
 type Client = ReturnType<typeof createServerClient>;
 
 async function names(supabase: Client, ids: Tuple<string | null>) {
-  const wanted = [...new Set(ids.filter((id): id is string => !!id))];
-  const { data } = wanted.length
-    ? await supabase.from("profiles").select("id, display_name").in("id", wanted)
-    : { data: [] };
-  return new Map((data ?? []).map((row) => [row.id, row.display_name]));
+  return (await profileNames(supabase, ids)).names;
 }
 
 const FLAG_COLUMNS =

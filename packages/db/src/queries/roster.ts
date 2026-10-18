@@ -6,6 +6,7 @@ import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Json, Tables } from "../types.ts";
 import { requireId, requireText } from "./validate.ts";
+import { profileNames } from "./profile-names.ts";
 
 const ROLES: Tuple<RosterRole> = ["participant", "judge", "staff", "organizer"];
 
@@ -48,11 +49,8 @@ export const eventTeamsFn = createServerFn({ method: "GET" })
     if (error) return toFailure(error, "loading teams");
 
     const ids = (participants.data ?? []).map((row) => row.user_id);
-    const { data: profiles, error: profileError } = ids.length
-      ? await supabase.from("profiles").select("id, display_name").in("id", ids)
-      : { data: [], error: null };
+    const { names, error: profileError } = await profileNames(supabase, ids);
     if (profileError) return toFailure(profileError, "loading teams");
-    const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.display_name]));
     const onTeam = new Set((members.data ?? []).map((row) => row.user_id));
 
     return ok({
