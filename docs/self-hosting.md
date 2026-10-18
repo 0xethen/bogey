@@ -33,6 +33,8 @@ And, optionally:
 
 - **[Network limits](self-hosting/network.md):** limit an event to a venue's
   Wi-Fi, and tell the database where visitors' IPs come from.
+- **[Event day](self-hosting/event-day.md):** size Auth and Realtime for the
+  headcount (`bogey preflight`), monitor `/api/ready`, and the freeze.
 - **[Themes](self-hosting/themes.md):** your own colors, fonts and radius.
 - **[Plugins](plugins.md):** install and write plugins.
 

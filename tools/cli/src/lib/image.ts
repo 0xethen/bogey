@@ -17,6 +17,7 @@ export const WHERE: Readonly<Record<string, string>> = {
   mfa: "checkout, container",
   org: "checkout, container",
   plugins: "checkout; container: `list`, `info`, `outdated`, `status`, `migrate`, `sql`",
+  preflight: "checkout, container",
   queues: "checkout, container",
   restart: "checkout, host",
   stop: "checkout, host",

@@ -74,6 +74,12 @@ services:
       GOTRUE_SMTP_USER: ${SMTP_USER:-}
       GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
       GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-Bogey}
+      # Sized for an event of about 250 people (docs/self-hosting/event-day.md); bogey preflight
+      # checks them. The email limit is per hour for the whole instance, the rest per 5 minutes.
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: ${AUTH_RATE_LIMIT_EMAIL_SENT:-500}
+      GOTRUE_RATE_LIMIT_OTP: ${AUTH_RATE_LIMIT_OTP:-500}
+      GOTRUE_RATE_LIMIT_VERIFY: ${AUTH_RATE_LIMIT_VERIFY:-500}
+      GOTRUE_RATE_LIMIT_TOKEN_REFRESH: ${AUTH_RATE_LIMIT_TOKEN_REFRESH:-1000}
       GOTRUE_HOOK_BEFORE_USER_CREATED_ENABLED: "true"
       GOTRUE_HOOK_BEFORE_USER_CREATED_URI: pg-functions://postgres/private/before_user_created
       GOTRUE_HOOK_SEND_EMAIL_ENABLED: "true"
@@ -177,6 +183,10 @@ services:
       SEED_SELF_HOST: "true"
       RUN_JANITOR: "true"
       DISABLE_HEALTHCHECK_LOGGING: "true"
+      # Used when the tenant is first seeded; for an existing one, bogey preflight prints the update.
+      TENANT_MAX_CONCURRENT_USERS: ${REALTIME_MAX_CONNECTIONS:-500}
+      TENANT_MAX_JOINS_PER_SECOND: ${REALTIME_MAX_JOINS_PER_SECOND:-250}
+      TENANT_MAX_EVENTS_PER_SECOND: ${REALTIME_MAX_EVENTS_PER_SECOND:-500}
 
   storage:
     image: supabase/storage-api:v1.74.0

@@ -8,12 +8,30 @@ import { browserClient } from "./browser.ts";
 type CoreTable = keyof Database["public"]["Tables"];
 
 const LIVE_WAIT_MS = 1_000;
+// Every open page hears a change at the same moment; spreading their refetches over this
+// window keeps a few hundred viewers from hitting the database in the same instant.
+const LIVE_SPREAD_MS = 1_500;
 
 function throttledInvalidate(queryClient: QueryClient, key: string) {
-  return new Throttler(
-    () => void queryClient.invalidateQueries({ queryKey: JSON.parse(key) as QueryKey }),
+  const timers = new Set<ReturnType<typeof setTimeout>>();
+  const throttler = new Throttler(
+    () => {
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        void queryClient.invalidateQueries({ queryKey: JSON.parse(key) as QueryKey });
+      }, Math.random() * LIVE_SPREAD_MS);
+      timers.add(timer);
+    },
     { wait: LIVE_WAIT_MS, leading: true, trailing: true },
   );
+  return {
+    maybeExecute: () => throttler.maybeExecute(),
+    cancel: () => {
+      throttler.cancel();
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    },
+  };
 }
 
 export function useLiveInvalidate(

@@ -97,6 +97,10 @@ Plain `bogey` at a terminal opens a menu over the same commands.
 `HEALTHCHECK` uses it. A page that fails while health passes usually means
 the app can't reach Supabase: check `docker compose logs web`.
 
+`/api/ready` checks what people need: the database, Auth, Realtime and that mail
+isn't stuck. It answers 503 when one fails; point uptime monitors at it
+([Event day](event-day.md)).
+
 ## Organizations and hostnames
 
 ```sh

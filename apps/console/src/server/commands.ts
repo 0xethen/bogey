@@ -198,6 +198,28 @@ export const COMMANDS: Tuple<ConsoleCommand> = [
     autorun: true,
   },
   {
+    id: "preflight",
+    group: "status",
+    label: "Ready for an event?",
+    description:
+      "bogey preflight: auth rate limits, Realtime connections, background jobs, mail and backups, sized for a headcount.",
+    kind: "read",
+    cli: ["preflight"],
+    params: [
+      {
+        kind: "text",
+        name: "people",
+        label: "People",
+        description: "Participants, judges and staff together. Leave empty to count the event's.",
+        flag: "--people",
+        optional: true,
+        pattern: /^[1-9]\d{0,5}$/,
+        placeholder: "250",
+      },
+      { ...eventName, flag: "--event", optional: true },
+    ],
+  },
+  {
     id: "plugins-list",
     group: "status",
     label: "Installed plugins",

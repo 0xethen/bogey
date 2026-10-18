@@ -17,6 +17,7 @@ import {
   SUBCOMMANDS as pluginSubcommands,
   USAGE as plugins,
 } from "./commands/plugins.ts";
+import { runPreflight, USAGE as preflight } from "./commands/preflight.ts";
 import { runQueues, USAGE as queues } from "./commands/queues.ts";
 import { runRelease, USAGE as release } from "./commands/release.ts";
 import { runRepair, USAGE as repair } from "./commands/repair.ts";
@@ -158,6 +159,12 @@ export const COMMANDS: Tuple<Command> = [
         say: prompter.say,
       });
     },
+  },
+  {
+    name: "preflight",
+    summary: "Check the instance can take an event of N people, and what to raise if not",
+    usage: preflight,
+    run: (cwd, args) => runPreflight(cwd, args),
   },
   {
     name: "restart",
