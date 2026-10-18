@@ -362,7 +362,7 @@ failure of each. Reads the tables with the service key.
 ## release
 
 ```
-bogey release [patch | minor | major | pre | <version>] [--pre <id>]
+bogey release [patch | minor | major | alpha | beta | rc | pre | <version>] [--pre <id>]
               [--push] [--skip-checks] [--no-freeze] [--dry-run]
 bogey release check <tag>
 bogey release sync <tag> [--yes]
@@ -385,9 +385,17 @@ Run again while the last release is committed and tagged but not pushed, it offe
 or undo it instead of starting another (--push pushes it). `bogey release undo` deletes that
 tag and the release commit, keeping any uncommitted changes; it refuses once the tag is on origin.
 
-patch, minor and major bump package.json's version; --pre beta makes it a
-prerelease (minor --pre beta: 0.1.0 → 0.2.0-beta.0), and pre bumps the
-prerelease number (0.2.0-beta.0 → 0.2.0-beta.1). Without a version it asks.
+patch, minor and major bump package.json's version; --pre makes it a prerelease
+(minor --pre beta: 2.2.0 → 2.3.0-beta.0). From a prerelease, alpha, beta and rc
+move on to that stage (2.3.0-alpha.2 → 2.3.0-beta.0), pre counts up the one it's in
+(2.3.0-beta.0 → 2.3.0-beta.1), and the bump that started it releases it (minor:
+2.3.0). A version always has to come after the current one. The stable release
+takes its prereleases' CHANGELOG.md sections into its own, so its notes cover
+everything since the last stable release.
+
+Without a version it asks: patch, minor, major, a prerelease (which version, then
+which stage), or another version; from a prerelease, the next one, the later stages
+or the release.
 
 `bogey release check <tag>` checks a tag is releasable: its package.json
 version and CHANGELOG.md section match (with Upgrade notes where the rule above asks). The pre-push hook and the release

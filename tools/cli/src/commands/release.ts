@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { compareSemver } from "@bogey/utils/versions";
 import { findRepoRoot } from "../lib/repo-root.ts";
 import {
   releasedPath,
@@ -8,11 +9,11 @@ import {
   type ProcessResult,
   type Runner,
 } from "../lib/migrations.ts";
-import type { Prompter } from "../lib/prompt.ts";
+import type { Choice, Prompter } from "../lib/prompt.ts";
 import { parseFlags } from "../lib/flags.ts";
 import type { CliResult } from "../cli.ts";
 
-export const USAGE = `bogey release [patch | minor | major | pre | <version>] [--pre <id>]
+export const USAGE = `bogey release [patch | minor | major | alpha | beta | rc | pre | <version>] [--pre <id>]
               [--push] [--skip-checks] [--no-freeze] [--dry-run]
 bogey release check <tag>
 bogey release sync <tag> [--yes]
@@ -35,9 +36,17 @@ Run again while the last release is committed and tagged but not pushed, it offe
 or undo it instead of starting another (--push pushes it). \`bogey release undo\` deletes that
 tag and the release commit, keeping any uncommitted changes; it refuses once the tag is on origin.
 
-patch, minor and major bump package.json's version; --pre beta makes it a
-prerelease (minor --pre beta: 0.1.0 → 0.2.0-beta.0), and pre bumps the
-prerelease number (0.2.0-beta.0 → 0.2.0-beta.1). Without a version it asks.
+patch, minor and major bump package.json's version; --pre makes it a prerelease
+(minor --pre beta: 2.2.0 → 2.3.0-beta.0). From a prerelease, alpha, beta and rc
+move on to that stage (2.3.0-alpha.2 → 2.3.0-beta.0), pre counts up the one it's in
+(2.3.0-beta.0 → 2.3.0-beta.1), and the bump that started it releases it (minor:
+2.3.0). A version always has to come after the current one. The stable release
+takes its prereleases' CHANGELOG.md sections into its own, so its notes cover
+everything since the last stable release.
+
+Without a version it asks: patch, minor, major, a prerelease (which version, then
+which stage), or another version; from a prerelease, the next one, the later stages
+or the release.
 
 \`bogey release check <tag>\` checks a tag is releasable: its package.json
 version and CHANGELOG.md section match (with Upgrade notes where the rule above asks). The pre-push hook and the release
@@ -50,32 +59,65 @@ It needs the gh CLI, signed in.`;
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/;
 
-export function nextVersion(current: string, bump: string, pre: string | null): string | null {
-  if (SEMVER.test(bump)) return bump;
+/** Prerelease stages, in the order a version goes through them. */
+export const STAGES = ["alpha", "beta", "rc"] as const;
+type Stage = (typeof STAGES)[number];
+
+const STAGE_HINTS: Record<Stage, string> = {
+  alpha: "early: still changing, for trying out",
+  beta: "feature-complete, being tested",
+  rc: "release candidate: ships as is unless something breaks",
+};
+
+function isStage(value: string): value is Stage {
+  return STAGES.some((stage) => stage === value);
+}
+
+/** A prerelease's identifier without its number: "beta" for 2.3.0-beta.1. */
+function prereleaseId(prerelease: string): string {
+  const parts = prerelease.split(".");
+  return /^\d+$/.test(parts.at(-1) ?? "") ? parts.slice(0, -1).join(".") : prerelease;
+}
+
+function bumped(current: string, bump: string, pre: string | null): string | null {
   const match = SEMVER.exec(current);
   if (!match) return null;
   const [major, minor, patch] = [Number(match[1]), Number(match[2]), Number(match[3])];
   const prerelease = match[4];
-  if (bump === "pre") {
+  const id = isStage(bump) ? bump : pre;
+  if (bump === "pre" || isStage(bump)) {
     if (!prerelease) return null;
+    const core = `${major}.${minor}.${patch}`;
+    if (id && id !== prereleaseId(prerelease)) return `${core}-${id}.0`;
     const parts = prerelease.split(".");
     const last = parts.at(-1) ?? "";
     if (/^\d+$/.test(last)) parts[parts.length - 1] = String(Number(last) + 1);
     else parts.push("0");
-    return `${major}.${minor}.${patch}-${parts.join(".")}`;
+    return `${core}-${parts.join(".")}`;
   }
+  // from a prerelease, a bump its version already makes finishes it (2.3.0-beta.1, minor: 2.3.0)
   const core =
     bump === "major"
-      ? `${major + 1}.0.0`
+      ? prerelease && minor === 0 && patch === 0
+        ? `${major}.0.0`
+        : `${major + 1}.0.0`
       : bump === "minor"
-        ? `${major}.${minor + 1}.0`
+        ? prerelease && patch === 0
+          ? `${major}.${minor}.0`
+          : `${major}.${minor + 1}.0`
         : bump === "patch"
           ? prerelease
             ? `${major}.${minor}.${patch}`
             : `${major}.${minor}.${patch + 1}`
           : null;
   if (!core) return null;
-  return pre ? `${core}-${pre}.0` : core;
+  return id ? `${core}-${id}.0` : core;
+}
+
+/** The version a bump makes from `current`, or null when it can't or wouldn't come after it. */
+export function nextVersion(current: string, bump: string, pre: string | null): string | null {
+  const version = SEMVER.test(bump) ? bump : bumped(current, bump, pre);
+  return version && compareSemver(version, current) > 0 ? version : null;
 }
 
 const UNRELEASED = /^## Unreleased[ \t]*\n([\s\S]*?)(?=^## |(?![\s\S]))/m;
@@ -84,17 +126,61 @@ export function unreleasedNotes(changelog: string): string {
   return UNRELEASED.exec(changelog)?.[1]?.trim() ?? "";
 }
 
-export function stampChangelog(changelog: string, version: string, date: string): string {
-  return changelog.replace(/^## Unreleased[ \t]*$/m, `## Unreleased\n\n## ${version} (${date})`);
+function section(version: string): RegExp {
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^## ${escaped}( [^\\n]*)?\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m");
 }
 
 export function changelogSection(changelog: string, version: string): string {
-  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(
-    `^## ${escaped}( [^\\n]*)?\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`,
-    "m",
-  ).exec(changelog);
-  return match?.[2]?.trim() ?? "";
+  return section(version).exec(changelog)?.[2]?.trim() ?? "";
+}
+
+/** The prereleases of `version` CHANGELOG.md has sections for, newest (topmost) first. */
+export function prereleaseSections(changelog: string, version: string): string[] {
+  return [...changelog.matchAll(/^## (\d+\.\d+\.\d+-[0-9A-Za-z.-]+)/gm)]
+    .map((match) => match[1] ?? "")
+    .filter((found) => found.startsWith(`${version}-`));
+}
+
+/** Notes put together into one, each `### ` heading (Upgrade notes, Security) once. */
+export function foldNotes(bodies: Tuple<string>): string {
+  const sections = new Map<string, string[]>([["", []]]);
+  for (const body of bodies) {
+    let heading = "";
+    const chunks = new Map<string, string[]>();
+    for (const line of body.split("\n")) {
+      if (line.startsWith("### ")) heading = line.trim();
+      else chunks.set(heading, [...(chunks.get(heading) ?? []), line]);
+    }
+    for (const [name, lines] of chunks) {
+      const text = lines.join("\n").trim();
+      if (text) sections.set(name, [...(sections.get(name) ?? []), text]);
+    }
+  }
+  return [...sections]
+    .filter(([, chunks]) => chunks.length > 0)
+    .map(([name, chunks]) => (name ? `${name}\n\n${chunks.join("\n")}` : chunks.join("\n")))
+    .join("\n\n");
+}
+
+/**
+ * Turns Unreleased into "## <version> (<date>)" under a fresh Unreleased. A stable version
+ * also takes in its prereleases' sections (2.3.0 gets 2.3.0-beta.1's and 2.3.0-alpha.0's
+ * entries), so its notes say everything since the last stable release.
+ */
+export function stampChangelog(changelog: string, version: string, date: string): string {
+  const folded = version.includes("-") ? [] : prereleaseSections(changelog, version);
+  if (folded.length === 0) {
+    return changelog.replace(/^## Unreleased[ \t]*$/m, `## Unreleased\n\n## ${version} (${date})`);
+  }
+  const notes = foldNotes([
+    unreleasedNotes(changelog),
+    ...folded.map((found) => changelogSection(changelog, found)),
+  ]);
+  const rest = folded.reduce((text, found) => text.replace(section(found), ""), changelog);
+  return rest
+    .replace(UNRELEASED, `## Unreleased\n\n## ${version} (${date})\n\n${notes}\n\n`)
+    .replace(/\n+$/, "\n");
 }
 
 function normalizeNotes(text: string): string {
@@ -255,6 +341,86 @@ export function pendingRelease(git: (...args: string[]) => ProcessResult): strin
   return remote.status === 0 && remote.stdout.trim() ? null : tag;
 }
 
+const KINDS = [
+  ["patch", "fixes only, minor enhancements"],
+  ["minor", "new features"],
+  ["major", "breaking changes"],
+] as const;
+
+/** Asks which version to release: a few choices at a time, not every combination at once. */
+export async function chooseVersion(
+  current: string,
+  pre: string | null,
+  prompter: Prompter,
+): Promise<string> {
+  const message = `Release which version? (now ${current})`;
+  const other = async () =>
+    prompter.text({
+      message: "Which version?",
+      placeholder: "2.3.0-beta.0",
+      validate: (value) =>
+        !SEMVER.test(value)
+          ? "Write it as <major>.<minor>.<patch>, optionally with -<prerelease>."
+          : compareSemver(value, current) <= 0
+            ? `It has to come after ${current}.`
+            : null,
+    });
+  const choices = (entries: Tuple<readonly [string, string]>): Array<Choice<string>> => {
+    const found = new Map<string, Choice<string>>();
+    for (const [bump, hint] of entries) {
+      const version = nextVersion(current, bump, pre);
+      if (version && !found.has(version))
+        found.set(version, { value: version, label: `v${version}`, hint });
+    }
+    return [...found.values()];
+  };
+  const otherChoice: Choice<string> = { value: "other", label: "Another version..." };
+
+  const prerelease = SEMVER.exec(current)?.[4];
+  if (pre || prerelease) {
+    // the next prerelease, the stages after this one (earlier ones aren't after it), the release
+    const id = pre ?? prereleaseId(prerelease ?? "");
+    const picked = await prompter.select({
+      message,
+      options: [
+        ...choices([
+          ["pre", `next ${id}`],
+          ...STAGES.map((stage) => [stage, `move on to ${stage}: ${STAGE_HINTS[stage]}`] as const),
+          ...(pre ? KINDS : [["patch", "the release itself"] as const]),
+        ]),
+        otherChoice,
+      ],
+    });
+    return picked === "other" ? other() : picked;
+  }
+
+  const picked = await prompter.select({
+    message,
+    options: [
+      ...choices(KINDS),
+      { value: "pre", label: "A prerelease...", hint: "alpha, beta, or rc" },
+      otherChoice,
+    ],
+  });
+  if (picked === "other") return other();
+  if (picked !== "pre") return picked;
+  const kind = await prompter.select({
+    message: "A prerelease of which version?",
+    options: KINDS.flatMap(([bump, hint]) => {
+      const version = nextVersion(current, bump, null);
+      return version ? [{ value: bump, label: `v${version}`, hint }] : [];
+    }),
+    initial: "minor",
+  });
+  return prompter.select({
+    message: "Which stage?",
+    options: STAGES.flatMap((stage) => {
+      const version = nextVersion(current, kind, stage);
+      return version ? [{ value: version, label: `v${version}`, hint: STAGE_HINTS[stage] }] : [];
+    }),
+  });
+}
+
 type Outcome = { ok: true; output: string } | { ok: false; output: string };
 
 function step(result: { status: number | null; stdout: string; stderr: string }): Outcome {
@@ -359,28 +525,24 @@ export async function runRelease(
   if (!current) return { exitCode: 1, output: "bogey release: package.json has no version." };
 
   const pre = typeof flags.pre === "string" ? flags.pre : null;
-  let bump = positional[0];
-  if (!bump && prompter) {
-    const options = (["patch", "minor", "major", "pre"] as const)
-      .map((kind) => ({ kind, version: nextVersion(current, kind, pre) }))
-      .filter(
-        (option): option is { kind: (typeof option)["kind"]; version: string } =>
-          option.version !== null,
-      )
-      .map(({ kind, version }) => ({ value: kind, label: `v${version}`, hint: kind }));
-    bump = await prompter.select({ message: `Release which version? (now ${current})`, options });
-  }
+  const bump = positional[0] ?? (prompter ? await chooseVersion(current, pre, prompter) : null);
   if (!bump) return { exitCode: 1, output: USAGE };
   const version = nextVersion(current, bump, pre);
   if (!version) {
     return {
       exitCode: 1,
-      output: `bogey release: can't ${bump} from ${current}. Pass patch, minor, major, pre or a version.`,
+      output: SEMVER.test(bump)
+        ? `bogey release: ${bump} doesn't come after ${current}.`
+        : isStage(bump) && !current.includes("-")
+          ? `bogey release: ${current} isn't a prerelease. Start one with minor --pre ${bump} (or patch or major).`
+          : `bogey release: can't ${bump} from ${current}. Pass patch, minor, major, alpha, beta, rc, pre or a version.`,
     };
   }
   const tag = `v${version}`;
   const freeze = !version.includes("-") && !releasedVersion(root) && !flags["no-freeze"];
-  const notes = unreleasedNotes(changelog);
+  const stamped = stampChangelog(changelog, version, now().toISOString().slice(0, 10));
+  const folded = version.includes("-") ? [] : prereleaseSections(changelog, version);
+  const notes = changelogSection(stamped, version);
 
   const checks: Array<[string, string[]]> = flags["skip-checks"]
     ? []
@@ -399,7 +561,7 @@ export async function runRelease(
         `  1. check the tree is clean, on main, and up to date with origin`,
         `  2. check Unreleased has notes${notes ? "" : " (it's empty: this would stop)"}`,
         `  3. run ${checks.length ? checks.map(([command, rest]) => [command, ...rest.slice(command === "node" ? 1 : 0)].join(" ")).join(", ") : "no checks (--skip-checks)"}`,
-        `  4. set package.json to ${version}, stamp CHANGELOG.md${freeze ? `, freeze the baseline at ${tag}` : ""}`,
+        `  4. set package.json to ${version}, stamp CHANGELOG.md${folded.length ? ` (taking in ${folded.join(", ")})` : ""}${freeze ? `, freeze the baseline at ${tag}` : ""}`,
         `  5. commit "[release] Bogey ${tag}" and tag ${tag}`,
         `  6. ${flags.push ? "push" : "ask before pushing"} main and ${tag} to origin`,
       ].join("\n"),
@@ -429,7 +591,9 @@ export async function runRelease(
   }
   const upgrade = upgradeNotesProblem(root, "HEAD", "HEAD", notes, run);
   if (upgrade) return stop(`CHANGELOG.md: ${upgrade}`);
-  log.push(`✓ ${tag} from main, with notes`);
+  log.push(
+    `✓ ${tag} from main, with notes${folded.length ? ` (taking in ${folded.join(", ")})` : ""}`,
+  );
 
   for (const [command, rest] of checks) {
     const label = [
@@ -442,10 +606,7 @@ export async function runRelease(
   }
 
   writeFileSync(packagePath, packageJson.replace(/("version"\s*:\s*")[^"]+(")/, `$1${version}$2`));
-  writeFileSync(
-    changelogPath,
-    stampChangelog(changelog, version, now().toISOString().slice(0, 10)),
-  );
+  writeFileSync(changelogPath, stamped);
   const files = ["package.json", "CHANGELOG.md"];
   if (freeze) {
     writeFileSync(releasedPath(root), `${tag}\n`);

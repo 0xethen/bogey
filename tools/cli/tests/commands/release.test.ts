@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { beforeEach, expect, test } from "vite-plus/test";
 import {
   changelogSection,
+  chooseVersion,
+  foldNotes,
   nextVersion,
   notesDrift,
   runRelease,
@@ -68,6 +70,98 @@ test("versions bump by kind, and prereleases count up", () => {
   expect(nextVersion("0.1.0", "sideways", null)).toBeNull();
 });
 
+test("prereleases move through alpha, beta and rc, and are finished by the bump that made them", () => {
+  expect(nextVersion("2.3.0-alpha.2", "beta", null)).toBe("2.3.0-beta.0");
+  expect(nextVersion("2.3.0-alpha.2", "alpha", null)).toBe("2.3.0-alpha.3");
+  expect(nextVersion("2.3.0-alpha.2", "pre", "rc")).toBe("2.3.0-rc.0");
+  expect(nextVersion("2.3.0-beta.1", "alpha", null)).toBeNull();
+  expect(nextVersion("2.2.0", "beta", null)).toBeNull();
+  expect(nextVersion("2.3.0-beta.1", "minor", null)).toBe("2.3.0");
+  expect(nextVersion("2.3.0-beta.1", "minor", "rc")).toBe("2.3.0-rc.0");
+  expect(nextVersion("2.3.1-beta.1", "minor", null)).toBe("2.4.0");
+  expect(nextVersion("3.0.0-rc.0", "major", null)).toBe("3.0.0");
+  expect(nextVersion("2.2.0", "2.1.9", null)).toBeNull();
+});
+
+test("a stable release takes in its prereleases' sections", () => {
+  const changelog = `# Changelog
+
+## Unreleased
+
+- Fix.
+
+## 0.2.0-beta.0 (2026-10-02)
+
+- Beta.
+
+### Upgrade notes
+
+- Run the migration.
+
+## 0.2.0-alpha.0 (2026-10-01)
+
+- Alpha.
+
+## 0.1.0 (2026-09-01)
+
+- First.
+`;
+  const stamped = stampChangelog(changelog, "0.2.0", "2026-10-08");
+  expect(changelogSection(stamped, "0.2.0")).toBe(
+    "- Fix.\n- Beta.\n- Alpha.\n\n### Upgrade notes\n\n- Run the migration.",
+  );
+  expect(stamped).not.toContain("0.2.0-");
+  expect(changelogSection(stamped, "0.1.0")).toBe("- First.");
+  expect(unreleasedNotes(stamped)).toBe("");
+  expect(stampChangelog(changelog, "0.2.0-beta.1", "2026-10-08")).toContain("## 0.2.0-beta.0");
+  expect(foldNotes(["### Security\n\n- A.", "- B.\n\n### Security\n\n- C."])).toBe(
+    "- B.\n\n### Security\n\n- A.\n- C.",
+  );
+});
+
+test("a stable release after a beta needs no new entries", async () => {
+  writeFileSync(join(root, "package.json"), `{\n  "version": "0.2.0-beta.0"\n}\n`);
+  writeFileSync(
+    join(root, "CHANGELOG.md"),
+    "# Changelog\n\n## Unreleased\n\n## 0.2.0-beta.0 (2026-10-02)\n\n- Beta.\n",
+  );
+  const result = await runRelease(root, ["minor", "--skip-checks"], null, fake().run, at);
+  expect(result.exitCode).toBe(0);
+  expect(result.output).toContain("taking in 0.2.0-beta.0");
+  expect(readFileSync(join(root, "CHANGELOG.md"), "utf-8")).toBe(
+    "# Changelog\n\n## Unreleased\n\n## 0.2.0 (2026-10-08)\n\n- Beta.\n",
+  );
+});
+
+test("asking for a version: a bump, or a prerelease in two short steps", async () => {
+  const plain = scripted(["v2.3.0"]);
+  expect(await chooseVersion("2.2.0", null, plain.prompter)).toBe("2.3.0");
+  const pre = scripted(["pre", "minor", "v2.3.0-beta.0"]);
+  expect(await chooseVersion("2.2.0", null, pre.prompter)).toBe("2.3.0-beta.0");
+  expect(pre.asked).toEqual([
+    "Release which version? (now 2.2.0)",
+    "A prerelease of which version?",
+    "Which stage?",
+  ]);
+  const other = scripted(["other", "4.0.0"]);
+  expect(await chooseVersion("2.2.0", null, other.prompter)).toBe("4.0.0");
+  const flagged = scripted(["v2.3.0-rc.0"]);
+  expect(await chooseVersion("2.2.0", "rc", flagged.prompter)).toBe("2.3.0-rc.0");
+});
+
+test("asking from a prerelease offers the next one, the later stages and the release", async () => {
+  const labels: string[] = [];
+  const { prompter } = scripted([]);
+  prompter.select = async (question) => {
+    labels.push(...question.options.map((option) => option.label));
+    const first = question.options[0];
+    if (!first) throw new Error("no options");
+    return first.value;
+  };
+  expect(await chooseVersion("2.3.0-beta.1", null, prompter)).toBe("2.3.0-beta.2");
+  expect(labels).toEqual(["v2.3.0-beta.2", "v2.3.0-rc.0", "v2.3.0", "Another version..."]);
+});
+
 test("the changelog's Unreleased section becomes the release's", () => {
   expect(unreleasedNotes(CHANGELOG)).toBe("- Repair.");
   const stamped = stampChangelog(CHANGELOG, "0.2.0", "2026-10-08");
@@ -114,6 +208,7 @@ test("it asks for the version and before pushing", async () => {
   const result = await runRelease(root, ["--skip-checks"], prompter, run, at);
   expect(result.exitCode).toBe(0);
   expect(asked).toEqual(["Release which version? (now 0.1.0)", "Push main and v0.1.1 to origin?"]);
+  expect(calls).toContain("git commit -m [release] Bogey v0.1.1");
   expect(calls.some((call) => call.startsWith("git push"))).toBe(false);
 });
 

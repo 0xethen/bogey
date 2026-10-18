@@ -177,10 +177,20 @@ Write `CHANGELOG.md`'s Unreleased entries as you go, with upgrade notes. Then, o
 up-to-date `main`:
 
 ```sh
-vpr bogey release            # asks: patch, minor, major or the next prerelease
-vpr bogey release 2.0.0-rc.1 # or name it; --pre rc makes a bump a prerelease
+vpr bogey release                  # asks: patch, minor, major, a prerelease or another version
+vpr bogey release minor --pre beta # 2.2.0 → 2.3.0-beta.0
+vpr bogey release beta             # in a prerelease: the next beta, or alpha → beta.0
+vpr bogey release minor            # 2.3.0-rc.1 → 2.3.0
+vpr bogey release 2.3.0-rc.0       # or name it
 vpr bogey release minor --dry-run
 ```
+
+Prereleases go alpha (still changing), beta (feature-complete, being tested), rc (ships as
+is unless something breaks). Each gets its own changelog section, GitHub prerelease and
+image tag, but not `latest`, the `<major>.<minor>` tag or the bogey-instance default, and
+`bogey upgrade` moves to it only with `--pre` (or `--to v<version>`). The
+stable release takes its prereleases' sections into its own, so its notes cover everything
+since the last stable release; it needs no new Unreleased entries.
 
 It checks the tree, runs `vp check`, the tests and the generated-file checks, sets
 `package.json`'s version, turns Unreleased into `## <version> (<date>)`, freezes the
