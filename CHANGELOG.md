@@ -10,6 +10,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Announcements no longer all pop up at once when you open an event after they went out (or are let in mid-day): only urgent ones do. Others pop up only if they're posted while you have the event open. Announcement pop-ups are a little wider.
 - Manage → Pages → Prizes → "Prize instructions" (submissions.prizePrompt) replaces "Select the prizes you would like to be considered for." above the prizes on a team's submission, for instructions like "Higher places on the podium get first pick, then special awards!".
 - Manage → Forms → "Submitted heading" and "Submitted message" (submissions.submittedTitle, submissions.submittedBody) replace "Submitted. GG!" and the line under it once a team submits. `{when}` in the message becomes when they did, like "2 hours ago".
 - Manage → Pages → Prizes → "Prize images" (submissions.prizeImage) shows every prize's image as an icon beside it (the default) or as a banner across it. A prize without an image shows an empty dashed frame, so prizes line up.

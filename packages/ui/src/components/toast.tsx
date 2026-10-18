@@ -32,15 +32,15 @@ type ToastPosition =
   | "bottom-center"
   | "bottom-right";
 
-type ToastData = { position?: ToastPosition };
+type ToastData = { position?: ToastPosition; wide?: boolean };
 
 const toastprimitive = ToastPrimitive.createToastManager<ToastData>();
 
 // add position to toast.add data
 const toast = {
   ...toastprimitive,
-  add: ({ position, ...options }: ToastManagerAddOptions<ToastData> & ToastData) =>
-    toastprimitive.add({ ...options, data: { ...options.data, position } }),
+  add: ({ position, wide, ...options }: ToastManagerAddOptions<ToastData> & ToastData) =>
+    toastprimitive.add({ ...options, data: { ...options.data, position, wide } }),
 };
 
 const swipeDirections = {
@@ -339,6 +339,7 @@ function ToastList({
         toast={toastItem}
         position={layout?.position ?? position}
         style={layout?.style}
+        className={toastItem.data?.wide ? "max-w-md" : undefined}
       >
         <ToastContent>
           <ToastIcon type={toastItem.type} />
