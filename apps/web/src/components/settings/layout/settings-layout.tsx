@@ -36,6 +36,8 @@ export interface SettingsPage {
   search?: Record<string, string>;
   exact?: boolean;
   badge?: number;
+  /** "default" stands out for something waiting on you; plain text counts otherwise. */
+  badgeVariant?: "default" | "text";
   sub?: Tuple<Omit<SettingsPage, "sub">>;
   finds?: Tuple<SettingsSearchEntry>;
 }
@@ -148,7 +150,9 @@ function NavItem({ page }: { page: SettingsPage }) {
         <Icon />
         <span>{page.label}</span>
       </SidebarMenuButton>
-      {page.badge ? <SidebarMenuBadge>{page.badge}</SidebarMenuBadge> : null}
+      {page.badge ? (
+        <SidebarMenuBadge variant={page.badgeVariant ?? "text"}>{page.badge}</SidebarMenuBadge>
+      ) : null}
       {page.sub && subOpen && (
         <SidebarMenuSub>
           {page.sub.map((sub) => (

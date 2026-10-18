@@ -196,6 +196,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
         "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-0.5 hover:after:bg-sidebar-border lg:flex",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
+        "border-r border-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0", // from bogey
         className,
       )}
       {...props}
@@ -442,13 +443,18 @@ function SidebarMenuAction({
   });
 }
 
-function SidebarMenuBadge({ className, ...props }: React.ComponentProps<"div">) {
+function SidebarMenuBadge({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<"div"> & { variant?: "default" | "text" }) {
   return (
     <div
       data-slot="sidebar-menu-badge"
       data-sidebar="menu-badge"
       className={cn(
-        "pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-pill bg-primary px-1.5 text-xs font-medium text-primary-fg tabular-nums select-none group-data-[collapsible=icon]:hidden peer-data-[size=default]/menu-button:top-2 peer-data-[size=lg]/menu-button:top-4.5 peer-data-[size=sm]/menu-button:top-1.5",
+        "pointer-events-none absolute right-2 flex h-5 min-w-5 items-center justify-center rounded-pill bg-primary px-1.5 text-xs font-medium text-primary-fg tabular-nums select-none group-data-[collapsible=icon]:hidden peer-data-[size=default]/menu-button:top-2 peer-data-[size=lg]/menu-button:top-4.5 peer-data-[size=sm]/menu-button:top-1.5",
+        variant === "text" && "bg-transparent text-muted-fg right-1",
         className,
       )}
       {...props}
