@@ -1,8 +1,8 @@
 import { unknownSubcommand } from "../lib/suggest.ts";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { findRepoRoot } from "../lib/repo-root.ts";
+import { openInBrowser } from "../lib/report.ts";
 import { databaseUrl, NO_DATABASE_URL } from "../lib/credentials.ts";
 import { BASELINE_NAME, buildBaseline } from "../lib/schema.ts";
 import {
@@ -82,12 +82,6 @@ function readPorts(root: string): LocalPorts {
     studio: readPort(toml, "studio", DEFAULTS.studio),
     smtp: readPort(toml, "local_smtp", DEFAULTS.smtp),
   };
-}
-
-function openInBrowser(url: string): void {
-  const command =
-    process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
-  spawn(command, [url], { stdio: "ignore", detached: true }).unref();
 }
 
 function dbUrl(cwd: string, args: string[]): string | null {

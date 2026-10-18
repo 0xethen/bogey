@@ -217,6 +217,7 @@ test("a failing check stops it before anything changes", async () => {
   const result = await runRelease(root, ["patch"], null, run, at);
   expect(result.exitCode).toBe(1);
   expect(result.output).toContain("✗ vp check");
+  expect(result.hints).toBe(false);
   expect(readFileSync(join(root, "package.json"), "utf-8")).toContain('"version": "0.1.0"');
   expect(calls.some((call) => call.startsWith("git commit"))).toBe(false);
 });

@@ -601,7 +601,9 @@ export async function runRelease(
       ...rest.slice(command === "node" ? 1 : 0),
     ].join(" ");
     const outcome = step(run(command, rest));
-    if (!outcome.ok) return stop(`✗ ${label}\n${outcome.output.replace(/^/gm, "    ")}`);
+    if (!outcome.ok) {
+      return { ...stop(`✗ ${label}\n${outcome.output.replace(/^/gm, "    ")}`), hints: false };
+    }
     log.push(`✓ ${label}`);
   }
 

@@ -11,11 +11,11 @@ export function present(
   command?: string,
 ): string {
   const failed = result.exitCode !== 0;
-  const hints = failed ? explain(result.output) : [];
+  const hints = failed && result.hints !== false ? explain(result.output) : [];
   const lines = result.output.split("\n");
   const ending = [
     ...(hints.length ? ["", ...hints.map((hint) => `hint: ${hint}`)] : []),
-    ...(failed && command && lines.length > 4 ? ["", `✗ bogey ${command} failed.`] : []),
+    ...(reportable(result, command) ? ["", `✗ bogey ${command} failed.`] : []),
   ];
   const names = commands.map((entry) => entry.name).join("|");
   const text = withInvocation([...lines, ...ending].join("\n"), prefix, commands);
@@ -58,6 +58,11 @@ export function present(
       return heading ? bold(marked) : marked;
     })
     .join("\n");
+}
+
+// a failure long enough to end with "✗ bogey <command> failed.", which bin.ts offers to report
+export function reportable(result: CliResult, command?: string): boolean {
+  return result.exitCode !== 0 && !!command && result.output.split("\n").length > 4;
 }
 
 function escape(text: string): string {

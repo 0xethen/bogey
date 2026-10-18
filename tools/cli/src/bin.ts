@@ -4,8 +4,9 @@ import { COMMANDS } from "./commands.ts";
 import { enableActivity, stopActivity } from "./lib/activity.ts";
 import { explain } from "./lib/explain.ts";
 import { invocation } from "./lib/invocation.ts";
-import { present } from "./lib/present.ts";
+import { present, reportable } from "./lib/present.ts";
 import { Cancelled, terminalPrompter } from "./lib/prompt.ts";
+import { ISSUES_URL, offerReport } from "./lib/report.ts";
 import { bad, bold, colorEnabled, dim, warn } from "./lib/style.ts";
 import { runMenu } from "./menu.ts";
 import { hasOrg } from "./commands/org.ts";
@@ -22,16 +23,27 @@ if (process.stderr.isTTY) {
     () => process.stderr.columns || 80,
   );
 }
-const show = ({ exitCode, output }: CliResult, command?: string) => {
-  let text = output;
+const show = (result: CliResult, command?: string): string => {
+  let text = result.output;
   try {
-    text = present({ exitCode, output }, prefix, COMMANDS, command);
+    text = present(result, prefix, COMMANDS, command);
   } catch {}
-  if (exitCode === 0) console.log(text);
+  if (result.exitCode === 0) console.log(text);
   else console.error(text);
+  return text;
 };
 
-function crash(error: unknown): void {
+const report = async (text: string) => {
+  if (!prompter) return;
+  console.error();
+  try {
+    await offerReport(prompter, `$ ${[prefix || "bogey", ...argv].join(" ")}\n${text}`);
+  } catch (error) {
+    if (!(error instanceof Cancelled)) throw error;
+  }
+};
+
+async function crash(error: unknown): Promise<void> {
   stopActivity();
   const command =
     [prefix, names.includes(argv[0] ?? "") ? argv[0] : ""].filter(Boolean).join(" ") || "bogey";
@@ -44,10 +56,11 @@ function crash(error: unknown): void {
       (hint) => `${warn("hint:")} ${hint}`,
     ),
     "",
-    dim("Report a bug at https://github.com/0xethen/bogey/issues with the following details:"),
+    dim(`Report a bug at ${ISSUES_URL} with the following details:`),
     dim(error instanceof Error ? (error.stack ?? message) : message),
   ];
   console.error(lines.join("\n"));
+  await report(lines.join("\n"));
 }
 
 try {
@@ -65,15 +78,17 @@ try {
     process.exit(0);
   }
   const result = await run(argv, process.cwd(), prompter);
-  show(result, names.includes(argv[0] ?? "") ? argv[0] : undefined);
+  const command = names.includes(argv[0] ?? "") ? argv[0] : undefined;
+  const text = show(result, command);
   process.exitCode = result.exitCode;
+  if (reportable(result, command)) await report(text);
 } catch (error) {
   if (error instanceof Cancelled) {
     stopActivity();
     console.error(dim("Cancelled."));
     process.exitCode = 130;
   } else {
-    crash(error);
     process.exitCode = 1;
+    await crash(error);
   }
 }

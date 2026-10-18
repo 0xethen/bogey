@@ -11,6 +11,8 @@ import { runUpgrade } from "./commands/upgrade.ts";
 export interface CliResult {
   exitCode: number;
   output: string;
+  // false when the output is another program's (vp check, the tests), which bogey's hints don't read
+  hints?: boolean;
 }
 
 function usage(): string {

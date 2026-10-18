@@ -37,7 +37,7 @@ const HINTS: Tuple<{ pattern: RegExp; hint: string }> = [
   },
   {
     pattern:
-      /^(?![\s\S]*(?:does not support SSL|SSL is not enabled))[\s\S]*(?:SSL|sslmode|certificate)/i,
+      /^(?![\s\S]*(?:does not support SSL|SSL is not enabled))[\s\S]*(?:\bSSL\b|\bTLS\b|sslmode|certificate (?:verify|has expired|is not)|self[- ]signed certificate|unable to (?:get|verify) (?:local issuer |the first )?certificate)/i,
     hint: "The connection's encryption didn't work out. Try adding ?sslmode=require to the database URL.",
   },
   {
