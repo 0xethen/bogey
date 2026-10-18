@@ -14,11 +14,12 @@ import {
 import { jsonRecord, type JsonRecord } from "@bogey/db/types";
 import type { OwnScope } from "@bogey/db/queries/settings";
 import { ownScope, readOwnSettings } from "@bogey/db/queries/settings-row";
-import type { ResolvedValue, SessionKind } from "@bogey/config/settings";
+import { resolveSettings, type ResolvedValue, type SessionKind } from "@bogey/config/settings";
 import { can } from "@bogey/db/permissions";
 import {
   findPlugin,
   installedPlugins,
+  loadPluginRuntime,
   pluginLimitsNamespace,
   pluginPageUrl,
   pluginRoutes,
@@ -202,6 +203,46 @@ export const pluginSettingsAtQueryOptions = (scope: PluginSettingsScope, key: st
   queryOptions({
     queryKey: ["settings", "plugin", scope.orgId ?? null, scope.eventId ?? null, key] as const,
     queryFn: async () => unwrap(await pluginSettingsFn({ data: { ...scope, key } })),
+    retry: retryPolicy,
+  });
+
+/** For each event, the settings of each plugin it has on that shows an icon in the events list. */
+export type EventListIcons = Record<string, Record<string, JsonRecord>>;
+
+export const eventListIconsFn = createServerFn({ method: "GET" })
+  .validator(z.object({ eventIds: z.array(z.uuid()).max(200) }))
+  .handler(async ({ data }): Promise<DbResult<EventListIcons>> => {
+    const loaded = await Promise.all(
+      installedPlugins().map(async (manifest) =>
+        (await loadPluginRuntime(manifest.key))?.slots.eventListIcon ? [manifest] : [],
+      ),
+    );
+    const withIcons = loaded.flat();
+    if (withIcons.length === 0 || data.eventIds.length === 0) return ok({});
+    const { data: resolved, error } = await createServerClient().rpc("settings_for_events", {
+      p_namespaces: ["plugins", ...withIcons.map(pluginNamespace)],
+      p_events: data.eventIds,
+    });
+    if (error) return toFailure(error, "loading the events' plugins");
+    const icons: EventListIcons = {};
+    for (const [eventId, raw] of Object.entries(jsonRecord(resolved))) {
+      const values = jsonRecord(raw);
+      const enabled = enabledPlugins(resolveSettings("plugins", values.plugins));
+      const own = Object.fromEntries(
+        withIcons
+          .filter((manifest) => enabled.some((each) => each.key === manifest.key))
+          .map((manifest) => [manifest.key, jsonRecord(values[pluginNamespace(manifest)])]),
+      );
+      if (Object.keys(own).length > 0) icons[eventId] = own;
+    }
+    return ok(icons);
+  });
+
+// keyed under the org's events, so refreshing those refreshes these
+export const eventListIconsQueryOptions = (orgId: string, eventIds: Tuple<string>) =>
+  queryOptions({
+    queryKey: ["events", orgId, "plugin-icons", eventIds.length] as const,
+    queryFn: async () => unwrap(await eventListIconsFn({ data: { eventIds: [...eventIds] } })),
     retry: retryPolicy,
   });
 

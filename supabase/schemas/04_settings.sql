@@ -53,6 +53,30 @@ $$;
 create trigger settings_operator_keys before insert or update or delete on public.settings
   for each row execute function private.guard_operator_keys();
 
+-- An event's settings changing reaches its open pages at once (lockdown turned on, Safe Exam
+-- Browser required), as 'changed' on the public topic settings:<event>. The message is empty: pages
+-- read the settings again, through RLS.
+create function private.settings_changed()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_event uuid := case when tg_op = 'DELETE' then old.event_id else new.event_id end;
+begin
+  if v_event is not null then
+    perform realtime.send('{}'::jsonb, 'changed', 'settings:' || v_event::text, false);
+  end if;
+  return null;
+exception when others then
+  return null;
+end;
+$$;
+
+create trigger settings_broadcast after insert or update or delete on public.settings
+  for each row execute function private.settings_changed();
+
 create function private.is_public_namespace(p_namespace text)
 returns boolean
 language sql
@@ -218,6 +242,19 @@ begin
 end;
 $$;
 grant execute on function public.settings_for(text[], uuid, uuid) to anon, authenticated;
+
+-- settings_for for each of a list of events, keyed by event id: the events list reads what its
+-- plugins show beside each name in one call. Each event gets only what its own check lets through.
+create function public.settings_for_events(p_namespaces text[], p_events uuid[])
+returns jsonb
+language sql
+stable
+set search_path = ''
+as $$
+  select coalesce(jsonb_object_agg(e.id, public.settings_for(p_namespaces, null, e.id)), '{}')
+  from (select distinct unnest(p_events[1:200]) as id) e;
+$$;
+grant execute on function public.settings_for_events(text[], uuid[]) to anon, authenticated;
 
 create table public.secrets (
   id uuid primary key default gen_random_uuid(),

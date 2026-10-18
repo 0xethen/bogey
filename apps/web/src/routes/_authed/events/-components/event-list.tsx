@@ -1,5 +1,5 @@
 import { useRoleLabel } from "#/lib/roles.ts";
-import { useState } from "react";
+import { Suspense, use, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { EventSummary } from "@bogey/db/queries/events";
 import { useT } from "#/lib/translate.tsx";
@@ -10,13 +10,18 @@ import { cn } from "@bogey/ui/lib/utils";
 import { IconChevronRight } from "@tabler/icons-react";
 import { Item } from "@bogey/ui/components/item";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
+import { findPlugin, loadPluginRuntime, readPluginSettings } from "@bogey/plugins";
+import type { JsonRecord } from "@bogey/db/types";
+import type { EventListIcons } from "#/lib/plugins.ts";
 
 export function EventList({
   events,
+  icons = {},
   to,
   showRole = false,
 }: {
   events: Tuple<EventSummary>;
+  icons?: EventListIcons;
   to: "home" | "manage";
   showRole?: boolean;
 }) {
@@ -50,6 +55,11 @@ export function EventList({
               <Item.Content>
                 <Item.Title className="max-w-full">
                   <span className="truncate">{event.name}</span>
+                  {Object.entries(icons[event.id] ?? {}).map(([key, settings]) => (
+                    <Suspense key={key}>
+                      <PluginListIcon pluginKey={key} eventId={event.id} stored={settings} />
+                    </Suspense>
+                  ))}
                   {event.visibility !== "public" && (
                     <Badge variant="outline">
                       {event.visibility === "draft" ? t("events.draft") : t("events.unlisted")}
@@ -89,6 +99,23 @@ export function EventList({
       })}
     </ul>
   );
+}
+
+/** What a plugin shows beside an event's name, like Lockdown's padlock. */
+function PluginListIcon({
+  pluginKey,
+  eventId,
+  stored,
+}: {
+  pluginKey: string;
+  eventId: string;
+  stored: JsonRecord;
+}) {
+  const manifest = findPlugin(pluginKey);
+  const Icon = use(loadPluginRuntime(pluginKey))?.slots.eventListIcon;
+  return manifest && Icon ? (
+    <Icon eventId={eventId} settings={readPluginSettings(manifest, stored)} />
+  ) : null;
 }
 
 function DateBlock({ value, className }: { value: string | null; className?: string }) {

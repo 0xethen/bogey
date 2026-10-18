@@ -92,6 +92,7 @@ export type {
   PluginServerContext,
   PluginServerHandler,
   PluginSessionPanelContext,
+  PluginEventListIconContext,
   PluginSlots,
 } from "./runtime.tsx";
 

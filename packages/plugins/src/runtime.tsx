@@ -185,6 +185,13 @@ export interface PluginSlots<TSettings = Record<string, unknown>> {
   sessionPanel?: ComponentType<PluginSessionPanelContext<TSettings>>;
   /** Keyed by setting name. */
   settingControls?: Record<string, ComponentType<PluginSettingControlProps>>;
+  /** A small icon beside the event's name in the events list, for events that have the plugin on. */
+  eventListIcon?: ComponentType<PluginEventListIconContext<TSettings>>;
+}
+
+export interface PluginEventListIconContext<TSettings = Record<string, unknown>> {
+  eventId: string;
+  settings: TSettings;
 }
 
 export interface PluginServerContext {

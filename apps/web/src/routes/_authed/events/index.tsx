@@ -7,6 +7,7 @@ import { Button } from "@bogey/ui/components/button";
 import { IconPlus } from "@tabler/icons-react";
 import { BogeyRequestError } from "@bogey/db/errors";
 import { useT } from "#/lib/translate.tsx";
+import { eventListIconsQueryOptions } from "#/lib/plugins.ts";
 import { EventList } from "./-components/event-list.tsx";
 import { useViewerSession } from "#/lib/viewer.ts";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@bogey/ui/components/empty";
@@ -22,7 +23,15 @@ export const Route = createFileRoute("/_authed/events/")({
       });
     return { org: context.session.org };
   },
-  loader: ({ context }) => context.query.ensureQueryData(eventsQueryOptions(context.org.id)),
+  loader: async ({ context }) => {
+    const events = await context.query.ensureQueryData(eventsQueryOptions(context.org.id));
+    await context.query.ensureQueryData(
+      eventListIconsQueryOptions(
+        context.org.id,
+        events.map((event) => event.id),
+      ),
+    );
+  },
   component: RouteComponent,
 });
 
@@ -35,6 +44,12 @@ function RouteComponent() {
   const { org } = Route.useRouteContext();
   const session = useViewerSession();
   const { data: loaded } = useSuspenseQuery(eventsQueryOptions(org.id));
+  const { data: icons } = useSuspenseQuery(
+    eventListIconsQueryOptions(
+      org.id,
+      loaded.map((event) => event.id),
+    ),
+  );
   const admin = isOrgAdmin(session);
   const events = admin
     ? loaded.map((event) => ({ ...event, myRole: event.myRole ?? ("organizer" as const) }))
@@ -81,19 +96,19 @@ function RouteComponent() {
         <>
           {yours.length > 0 && (
             <Screen.Section title={t("events.yours")}>
-              <EventList events={yours} to="home" showRole />
+              <EventList events={yours} icons={icons} to="home" showRole />
             </Screen.Section>
           )}
           {open.length > 0 && (
             <Screen.Section
               title={yours.length > 0 ? t("events.alsoHappening") : t("events.happening")}
             >
-              <EventList events={open} to="home" showRole />
+              <EventList events={open} icons={icons} to="home" showRole />
             </Screen.Section>
           )}
           {past.length > 0 && (
             <Screen.Section title={t("events.past")}>
-              <EventList events={past} to="home" showRole />
+              <EventList events={past} icons={icons} to="home" showRole />
             </Screen.Section>
           )}
         </>

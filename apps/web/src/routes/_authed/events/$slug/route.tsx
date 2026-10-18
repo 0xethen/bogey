@@ -13,10 +13,12 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { eventQueryOptions } from "@bogey/db/queries/events";
 import { eventPagesQueryOptions } from "@bogey/db/queries/pages";
+import { eventPrizesQueryOptions } from "@bogey/db/queries/prizes";
 import { identitySetupPendingQueryOptions, isPending } from "@bogey/db/queries/identity-setup";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { agendaQueryOptions } from "@bogey/db/queries/sessions";
 import { eventAccessQueryOptions, eventGateQueryOptions } from "@bogey/db/permissions";
+import { useLiveBroadcast, useLiveInvalidate } from "@bogey/db/realtime";
 import { RouteTabs } from "#/components/navigation/header/TabRow.tsx";
 import { arrangeTabs, eventTabs, visibleTabs } from "#/lib/event-tabs.ts";
 import { orNotFound } from "#/lib/routing.ts";
@@ -121,8 +123,9 @@ function useEventGate(): string | null {
   const { data } = useQuery({
     ...eventGateQueryOptions(viewer?.event.id ?? ""),
     enabled: viewer?.access.role === "participant",
-    // a gate can close with no one on the page doing anything (a heartbeat going stale)
-    refetchInterval: 60_000,
+    // a gate can close with no one on the page doing anything (a heartbeat going stale, a window
+    // opening on time)
+    refetchInterval: 30_000,
   });
   return data ?? null;
 }
@@ -134,6 +137,18 @@ function GateWatch({ slug }: { slug: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
+  const viewer = useEventViewer();
+  const eventId = viewer?.event.id ?? "";
+  const participant = viewer?.access.role === "participant";
+  // turning lockdown (or anything else) on reaches open pages at once, not on the next minute
+  useLiveBroadcast(`settings:${eventId}`, ["settings"], { enabled: !!eventId });
+  useLiveBroadcast(`settings:${eventId}`, eventGateQueryOptions(eventId).queryKey, {
+    enabled: participant,
+  });
+  useLiveInvalidate("event_windows", eventGateQueryOptions(eventId).queryKey, {
+    filter: `event_id=eq.${eventId}`,
+    enabled: participant,
+  });
   const last = useRef(gate);
   useEffect(() => {
     if (last.current === gate) return;
@@ -215,6 +230,21 @@ function EventTabs() {
     ...eventPagesQueryOptions(viewer?.event.id ?? ""),
     enabled: !!viewer,
   });
+  const prizes = useQuery({
+    ...eventPrizesQueryOptions(viewer?.event.id ?? ""),
+    enabled: !!viewer,
+  });
+  const agenda = useQuery({ ...agendaQueryOptions(viewer?.event.id ?? ""), enabled: !!viewer });
+  const agendaSettings = useQuery({
+    ...settingsQueryOptions({ eventId: viewer?.event.id ?? "" }, ["agenda"]),
+    enabled: !!viewer,
+  });
+  const sessions =
+    agendaSettings.data?.agenda.tabMenu === false
+      ? []
+      : (agenda.data?.slots ?? []).flatMap((slot) =>
+          slot.sessions.filter((session) => session.hasPage),
+        );
   // live, so a tab kept to a window comes and goes as it opens and closes
   const windows = useQuery({
     ...eventWindowsQueryOptions(viewer?.event.id ?? ""),
@@ -226,7 +256,7 @@ function EventTabs() {
     viewer.event.slug,
     viewer.plugins,
     viewer.pluginSettings,
-    pages.data ?? [],
+    { pages: pages.data ?? [], prizes: (prizes.data?.length ?? 0) > 0, sessions },
     t,
   );
   return (
