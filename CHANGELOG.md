@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.3.0 (2026-10-22)
+
 - The gallery is a **Gallery** tab on the event's tab row (with an external-link icon, opening in a new browser tab) for whoever can open it, instead of a button on Home and Results. Organizers can hide, rename or time it under Manage → Pages → Tabs like any other tab.
 - The gallery has a layout switch (an even grid, or lanes that pack cards tightly), banner images on cards, winner markers once results are published, a sort menu (newest, oldest, title, team, winners, most liked, most votes, most discussed, shuffled) and optional likes and comments for signed-in visitors. Manage → Submissions → "Public gallery" (the `gallery` settings) sets what's on; likes and comments are off by default, winners and banners on. Teams choose their banner from their project's images, and their card size when organizers allow it, from "Gallery card" on their Submission page.
 - The slideshow is an icon beside the sort menu. It opens minimal, with auto-hiding controls (previous, play and pause, next, full screen) and a cog that opens a settings drawer for seconds per project, order, looping, autoplay and what each slide shows. It no longer loops by default.
@@ -30,8 +32,6 @@ advisory (see docs/contributing.md#security-releases). -->
 - On extra-wide screens, the Manage pages use the full width of the window.
 
 **Upgrade notes:** run `bogey db migrate` (migrations `20261018150000_judge_pins`, `20261018170000_judging_formats`, `20261018190000_gallery` and `20261018200000_demo_judges`).
-
-## 2.3.0-beta.0 (2026-10-18)
 
 - Announcements no longer all pop up at once when you open an event after they went out (or are let in mid-day): only urgent ones do. Others pop up only if they're posted while you have the event open. Announcement pop-ups are a little wider.
 - Manage → Pages → Prizes → "Prize instructions" (submissions.prizePrompt) replaces "Select the prizes you would like to be considered for." above the prizes on a team's submission, for instructions like "Higher places on the podium get first pick, then special awards!".
