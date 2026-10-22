@@ -15,6 +15,7 @@ Set at: instance, org, event.
 | `name` | text | `brand.name` in bogey.config.ts | Name shown in the header and emails |
 | `shortName` | text | — | Shorter name for tight spaces |
 | `accent` | text | — | Accent color |
+| `fallbackMessage` | text | — | Markdown shown on the not-found and error pages |
 
 ## Registration (`registration`)
 
@@ -25,7 +26,7 @@ Set at: instance, org, event.
 | `signup` | `open` · `invite` · `closed` | `invite` | Who can create an account |
 | `capacity` | whole number (0 to 100000) | `0` | How many participants an event takes; later registrations join the waitlist. 0 has no limit |
 | `autoPromote` | on / off | `true` | Move the next person on the waitlist in when a place opens |
-| `mode` | `open` · `review` · `invite` | `review` | How event registrations are handled: approved at once, reviewed, or invite links only |
+| `mode` | `open` · `review` · `invite` | `invite` | How event registrations are handled: approved at once, reviewed, or invite links only |
 
 ## Email (`email`)
 

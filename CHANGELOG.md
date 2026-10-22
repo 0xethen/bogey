@@ -28,6 +28,10 @@ advisory (see docs/contributing.md#security-releases). -->
 - **New form** on Manage → Submissions → Forms opens its own page (`/manage/forms/new`) instead of a panel above the list, and shows the unsaved-changes bar with Save and Reset while you write it.
 
 **Upgrade notes:** run `bogey db migrate` (migration `20261022110000_form_divisions`).
+- New events are invite-only by default (`registration.mode`), so organizers choose to open registration instead of closing it. Events that never chose keep "Organizers approve"; an upgrade stores that for them.
+- Organizers can add a message to the not-found and error pages: Manage → Details → "Error pages" for an event, Organization settings → "Error pages" for an organization, and Instance settings for the whole instance (`branding.fallbackMessage`, Markdown). The most specific one shows under the page's own text.
+
+**Upgrade notes:** run `bogey db migrate` (migration `20261022130000_access_default`).
 
 ## 2.3.0 (2026-10-22)
 

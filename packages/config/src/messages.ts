@@ -2215,6 +2215,8 @@ export const en = {
   "details.location": "Location",
   "details.website": "Website",
   "details.needHttp": "Use a full http(s) address",
+  "errorPages.section": "Error pages",
+  "errorPages.help": "A message for people who land on a missing page or an error.",
   "details.venue": "Format and venue",
   "details.venueHelp":
     "Whether people come to a venue, join online, or both. The event home shows it with the location above.",
@@ -3647,6 +3649,9 @@ export const en = {
   "setting.branding.name": "Name",
   "setting.branding.shortName": "Short name",
   "setting.branding.shortName.help": "Used where space is tight, like breadcrumbs.",
+  "setting.branding.fallbackMessage": "Message on error pages",
+  "setting.branding.fallbackMessage.help":
+    "Shown under the text on the not-found and error pages, for example where to get help. Markdown works.",
   "setting.registration.capacity": "Participant limit",
   "setting.registration.capacity.help":
     "Once this many participants are approved, new registrations join the waitlist. 0 has no limit.",

@@ -317,9 +317,19 @@ export const settingsRegistry = {
         .optional()
         .describe("Shorter name for tight spaces"),
       accent: hex.optional().describe("Accent color"),
+      fallbackMessage: z
+        .string()
+        .trim()
+        .max(500)
+        .optional()
+        .describe("Markdown shown on the not-found and error pages"),
     }),
     fields: {
       name: { label: say("setting.branding.name") },
+      fallbackMessage: {
+        label: say("setting.branding.fallbackMessage"),
+        description: say("setting.branding.fallbackMessage.help"),
+      },
       shortName: {
         label: say("setting.branding.shortName"),
         description: say("setting.branding.shortName.help"),
@@ -329,7 +339,7 @@ export const settingsRegistry = {
   registration: namespace({
     label: "Registration",
     scopes: ["instance", "org", "event"],
-    defaults: { signup: "invite", mode: "review", capacity: 0, autoPromote: true },
+    defaults: { signup: "invite", mode: "invite", capacity: 0, autoPromote: true },
     schema: z.object({
       signup: z.enum(["open", "invite", "closed"]).optional(),
       capacity: z

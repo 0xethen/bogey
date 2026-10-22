@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authed/admin/settings/")({
     title: msg("orgSettings.general"),
     settings: (t) => [
       searchSection(t("adminSettings.identity"), { keywords: ["brand", "name"], id: "identity" }),
-      ...searchSettings("branding", ["name", "shortName"], t),
+      ...searchSettings("branding", ["name", "shortName", "fallbackMessage"], t),
       searchSection(t("adminSettings.defaultOrg"), {
         keywords: ["hostname", "localhost", "domain"],
         id: "default-organization",
@@ -59,7 +59,7 @@ function RouteComponent() {
         <SettingFields
           scope={INSTANCE}
           namespace="branding"
-          keys={["name", "shortName"]}
+          keys={["name", "shortName", "fallbackMessage"]}
           placeholders={{ name: brand.name, shortName: brand.shortName ?? brand.name }}
         />
       </Screen.Section>

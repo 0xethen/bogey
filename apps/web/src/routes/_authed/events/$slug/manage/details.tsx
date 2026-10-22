@@ -64,12 +64,15 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/details")({
       ...searchFields(detailsSchema(t), "details"),
       searchSection(t("details.venue"), { id: "venue" }),
       ...searchSettings("venue", ["format", "mapUrl", "onlineUrl", "onlineLabel"], t),
+      searchSection(t("errorPages.section"), { keywords: ["404", "error"], id: "error-pages" }),
+      ...searchSettings("branding", ["fallbackMessage"], t),
     ],
   },
   loader: ({ context }) =>
     Promise.all([
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "venue",
+        "branding",
       ]),
       context.query.ensureQueryData(
         ownSettingsQueryOptions({ scope: "event", eventId: context.event.id }, "about"),
@@ -265,6 +268,17 @@ function RouteComponent() {
           scope={{ scope: "event", eventId: event.id }}
           namespace="venue"
           keys={["format", "mapUrl", "onlineUrl", "onlineLabel"]}
+        />
+      </Screen.Section>
+      <Screen.Section
+        id="error-pages"
+        title={t("errorPages.section")}
+        description={t("errorPages.help")}
+      >
+        <SettingFields
+          scope={{ scope: "event", eventId: event.id }}
+          namespace="branding"
+          keys={["fallbackMessage"]}
         />
       </Screen.Section>
       <PluginSettingSections page="details" />
