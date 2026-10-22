@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@bogey/ui/components/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 
 //   "before:transition-colors before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-white/20 hover:before:via-white/40 before:to-transparent";
 
@@ -76,29 +77,34 @@ function Button({
   variant = "default",
   size = "default",
   confirm,
+  tooltip,
   onClick,
   ...props
 }: ButtonPrimitive.Props &
   VariantProps<typeof buttonVariants> & {
     confirm?: ButtonConfirm;
+    /** Shown on hover and focus, and on hover while the button is disabled. */
+    tooltip?: ReactNode;
   }) {
   const t = useUiText();
   const [open, setOpen] = useState(false);
   const classes = cn("relative", buttonVariants({ variant, size, className }));
-  if (!confirm) {
-    return (
-      <ButtonPrimitive data-slot="button" className={classes} onClick={onClick} {...props}>
-        {children}
-      </ButtonPrimitive>
-    );
-  }
+  const button = confirm ? (
+    <AlertDialogTrigger
+      render={<ButtonPrimitive data-slot="button" type="button" className={classes} {...props} />}
+    >
+      {children}
+    </AlertDialogTrigger>
+  ) : (
+    <ButtonPrimitive data-slot="button" className={classes} onClick={onClick} {...props}>
+      {children}
+    </ButtonPrimitive>
+  );
+  const shown = tooltip ? <WithTooltip tooltip={tooltip}>{button}</WithTooltip> : button;
+  if (!confirm) return shown;
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger
-        render={<ButtonPrimitive data-slot="button" type="button" className={classes} {...props} />}
-      >
-        {children}
-      </AlertDialogTrigger>
+      {shown}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{confirm.title}</AlertDialogTitle>
@@ -119,6 +125,16 @@ function Button({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+// a disabled button gets no pointer events, so the tooltip hangs off a span around it
+function WithTooltip({ tooltip, children }: { tooltip: ReactNode; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className="inline-flex" />}>{children}</TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
   );
 }
 

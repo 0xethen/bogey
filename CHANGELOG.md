@@ -10,6 +10,12 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Manage → People's table has a search box (name, email or team), a "Show" select for everyone, checked in or not checked in, and Role and Division comboboxes that pick any number of roles (plugin roles included) and divisions, each showing how many people have it. "Reset" clears them. These replace the Filter popover.
+- Manage → People can group its rows by team, role or division ("Group rows" in the table's toolbar). Each group has an arrow to collapse it, a count, and a checkbox that selects everyone in it; sorting and pagination work inside groups. The choice stays in the page's address.
+- Manage → People has a "Columns" menu to hide and show columns, and every column with values sorts from its header.
+- Manage → People stays fast with hundreds of people: a check-in, tag change or save in progress redraws only the rows it affects.
+- Manage → People → Review's tables (waiting for review, waitlist) have a search box for name or email.
+
 ## 2.3.0 (2026-10-22)
 
 - The gallery is a **Gallery** tab on the event's tab row (with an external-link icon, opening in a new browser tab) for whoever can open it, instead of a button on Home and Results. Organizers can hide, rename or time it under Manage → Pages → Tabs like any other tab.

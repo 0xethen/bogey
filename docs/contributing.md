@@ -115,6 +115,10 @@ queries.
   browser can check, server results for the rest. Submit buttons are never
   disabled for field errors, only while pending. Required fields show `*`.
 - **Destructive actions sit behind a confirmation** (`<Button confirm={{ ... }}>`).
+- **Buttons explain themselves with `tooltip`** (`<Button tooltip="...">`), which also shows while the button is
+  disabled, for saying why. Don't wrap a `Button` in `Tooltip` by hand.
+- **Lists of records are `DataTable`s**, with search, filters and pages as needed; see
+  [Tables](architecture/tables.md).
 - **Settings go through the registry.** Declare the key, its default and its
   field hint in `packages/config/src/settings.ts`; never write a fallback for a
   setting in SQL or TypeScript.
