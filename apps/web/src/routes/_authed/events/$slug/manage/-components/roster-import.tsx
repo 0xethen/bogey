@@ -320,7 +320,6 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
               <OptSelect
                 size="sm"
                 ariaLabel={t("rosterImport.guessing")}
-                className="w-40"
                 value={guess}
                 options={guessOptions(t)}
                 onChange={(next) => {
