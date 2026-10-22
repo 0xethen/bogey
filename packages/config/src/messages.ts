@@ -3362,6 +3362,16 @@ export const en = {
   "rosterImport.pasteHelp":
     "One person per line, or columns copied from a spreadsheet with their header row.\nDefault columns (w/o header): email, name, team, role, then teammates.",
   "rosterImport.addAs": "Add as",
+  "rosterImport.guessing": "Guessing",
+  "rosterImport.guess.none": "None",
+  "rosterImport.guess.noneHelp":
+    "Only exact column names and exact division, session and team names are used. You set everything else by hand.",
+  "rosterImport.guess.some": "Some",
+  "rosterImport.guess.someHelp":
+    "Recognizes common column names and names that differ by a typo or contain each other, but won't match on a few shared words.",
+  "rosterImport.guess.max": "As much as possible",
+  "rosterImport.guess.maxHelp":
+    "Also guesses columns from their contents, matches on shared words and merges similarly named teams. Check the corrections it lists.",
   "rosterImport.notify": "Email an invitation",
   "rosterImport.notifyHelp":
     "To people who weren't on the list yet. Leave it off to add them quietly and announce later.",

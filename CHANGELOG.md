@@ -15,6 +15,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - Manage → People has a "Columns" menu to hide and show columns, and every column with values sorts from its header.
 - Manage → People stays fast with hundreds of people: a check-in, tag change or save in progress redraws only the rows it affects.
 - Manage → People → Review's tables (waiting for review, waitlist) have a search box for name or email.
+- Manage → People → roster import has a **Guessing** choice (none, some, or as much as possible; the default, as before) that applies to that import. It sets how freely Bogey guesses column meanings, matches divisions, sessions and teams by similar names, and merges similarly named teams.
 
 ## 2.3.0 (2026-10-22)
 

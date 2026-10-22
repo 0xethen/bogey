@@ -248,6 +248,11 @@ or someone listed on two teams (pick one, or skip them). The roster also shows
 when someone's email is in other events, so duplicates are visible rather than
 merged.
 
+The import's **Guessing** setting (none, some, or as much as possible, the default) is
+per import. None uses only exact column and division, session and team names; some
+adds common headers and near matches; as much as possible also guesses from
+contents and shared words and merges similar team names.
+
 **Manage → People → Teams**: rename, lock, move people between teams, or add
 people straight to a team.
 

@@ -139,15 +139,43 @@ function teammateNumber(header: string): number | undefined {
   return match ? Number(match[1]) : undefined;
 }
 
-function guessColumn(header: string, values: Tuple<string>): ColumnKind {
+// How much Bogey guesses while reading a roster: none only trusts exact
+// headers and names, some adds keywords and near matches, max adds everything.
+export type GuessLevel = "none" | "some" | "max";
+export const GUESS_LEVELS: Tuple<GuessLevel> = ["none", "some", "max"];
+
+const PLAIN_HEADERS: Readonly<Record<string, ColumnKind>> = {
+  email: "email",
+  "email address": "email",
+  name: "name",
+  "full name": "name",
+  "first name": "firstName",
+  "last name": "lastName",
+  "preferred name": "preferredName",
+  team: "team",
+  "team name": "team",
+  role: "role",
+  school: "school",
+  division: "division",
+  session: "session",
+};
+
+function guessColumn(header: string, values: Tuple<string>, guess: GuessLevel): ColumnKind {
   const h = fold(header);
   const filled = values.filter(Boolean);
   if (!filled.length) return "ignore";
+  if (guess === "none") {
+    const plain = PLAIN_HEADERS[words(header)];
+    if (plain) return plain;
+    return filled.every(isEmail) ? "email" : "answer";
+  }
   const allEmails = filled.filter(isEmail).length >= filled.length * 0.6;
   if (/time ?stamp|submitted at|submission time|^date$|start time|completion time/.test(h)) {
     return "ignore";
   }
-  if (filled.every((value) => TIMESTAMP.test(value)) && !/birth|dob/.test(h)) return "ignore";
+  if (guess === "max" && filled.every((value) => TIMESTAMP.test(value)) && !/birth|dob/.test(h)) {
+    return "ignore";
+  }
   if (/team ?mate|team member|partner|groupmate|group member/.test(h)) {
     if (/school|college|universit/.test(h)) return "teammateSchool";
     return "teammate";
@@ -189,6 +217,7 @@ const POSITIONAL: Tuple<ColumnKind> = ["email", "name", "team", "role"];
 export function readRoster(
   text: string,
   kinds: Readonly<Record<number, ColumnKind>> = {},
+  guess: GuessLevel = "max",
 ): RosterTable {
   const all = parseTable(text);
   const first = all[0]?.cells ?? [];
@@ -199,8 +228,12 @@ export function readRoster(
     const values = rows.map((row) => row.cells[index] ?? "");
     const header = hasHeader ? (first[index] ?? `Column ${index + 1}`) : `Column ${index + 1}`;
     const guessed = hasHeader
-      ? guessColumn(header, values)
-      : (POSITIONAL[index] ?? (values.some(Boolean) ? "teammate" : "ignore"));
+      ? guessColumn(header, values, guess)
+      : guess === "none"
+        ? values.filter(Boolean).every(isEmail) && values.some(Boolean)
+          ? "email"
+          : "answer"
+        : (POSITIONAL[index] ?? (values.some(Boolean) ? "teammate" : "ignore"));
     return {
       index,
       header,
@@ -250,22 +283,24 @@ export function teamKey(name: string): string {
     .replace(/ /g, "");
 }
 
-function similarTeams(a: string, b: string): boolean {
+function similarTeams(a: string, b: string, guess: GuessLevel = "max"): boolean {
   const [x, y] = [teamKey(a), teamKey(b)];
   if (!x || !y || x === y) return x === y;
+  if (guess === "none") return false;
   const shorter = Math.min(x.length, y.length);
   if (shorter >= 5 && distance(x, y, 2) <= (shorter >= 9 ? 2 : 1)) return true;
-  return shorter >= 3 && (x.startsWith(y) || y.startsWith(x));
+  return guess === "max" && shorter >= 3 && (x.startsWith(y) || y.startsWith(x));
 }
 
 export function matchName<T extends { name: string }>(
   value: string,
   catalog: Tuple<T>,
+  guess: GuessLevel = "max",
 ): T | undefined {
   const v = words(value);
   if (!v) return undefined;
   const exact = catalog.find((item) => words(item.name) === v);
-  if (exact) return exact;
+  if (exact || guess === "none") return exact;
   const contained = catalog.filter((item) => {
     const n = words(item.name);
     return n.length >= 3 && (v.includes(n) || n.includes(v));
@@ -274,6 +309,7 @@ export function matchName<T extends { name: string }>(
   if (contained.length > 1) {
     return contained.toSorted((a, b) => words(b.name).length - words(a.name).length)[0];
   }
+  if (guess !== "max") return undefined;
   const tokens = new Set(v.split(" "));
   let best: { item: T; score: number } | undefined;
   for (const item of catalog) {
@@ -288,8 +324,9 @@ export function matchName<T extends { name: string }>(
 export function matchDivision<T extends { name: string }>(
   value: string,
   divisions: Tuple<T>,
+  guess: GuessLevel = "max",
 ): T | undefined {
-  return matchName(value, divisions);
+  return matchName(value, divisions, guess);
 }
 
 export type TeamMode = "team" | "solo" | "placed" | "unsaid";
@@ -613,6 +650,7 @@ export interface PlanOptions {
   resolutions?: RosterResolutions;
   catalog?: RosterCatalog;
   maxTeamSize?: number;
+  guess?: GuessLevel;
   say?: Say;
   locale?: string;
 }
@@ -663,7 +701,8 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
   const resolutions = options.resolutions ?? {};
   const say = options.say ?? sayEnglish;
   const list = listIn(options.locale);
-  const table = readRoster(text, options.kinds);
+  const guess = options.guess ?? "max";
+  const table = readRoster(text, options.kinds, guess);
   const read = peopleOf(table, say);
   const notes = [...read.notes];
   const conflicts: RosterConflict[] = [];
@@ -678,9 +717,10 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
       if (!ruleMatches(rule, person.cells)) continue;
       const action = rule.then;
       if (action.kind === "skip") return [];
-      if (action.kind === "division") division = matchName(action.target, catalog.divisions)?.id;
+      if (action.kind === "division")
+        division = matchName(action.target, catalog.divisions, guess)?.id;
       if (action.kind === "session") {
-        const session = matchName(action.target, catalog.sessions)?.id;
+        const session = matchName(action.target, catalog.sessions, guess)?.id;
         if (session) sessions.push(session);
       }
       if (action.kind === "role") role = action.target;
@@ -1031,7 +1071,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
       team.name = already;
       continue;
     }
-    const near = existing.find((name) => similarTeams(name, team.name));
+    const near = existing.find((name) => similarTeams(name, team.name, guess));
     if (near) {
       const key = `similar:${teamKey(team.name)}|${teamKey(near)}`;
       conflicts.push({
@@ -1071,7 +1111,8 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
     }
     for (let j = i + 1; j < named.length; j++) {
       const other = named[j];
-      if (!other || other.members.length === 0 || !similarTeams(team.name, other.name)) continue;
+      if (!other || other.members.length === 0 || !similarTeams(team.name, other.name, guess))
+        continue;
       const unnumbered = (name: string) => name.replace(/ \(\d+\)$/, "");
       if (unnumbered(team.name) === unnumbered(other.name)) continue;
       const key = `similar:${[teamKey(team.name), teamKey(other.name)].toSorted().join("|")}`;
@@ -1152,7 +1193,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
       );
     const ownDivision =
       person.division && !mapped("division", person.division)
-        ? matchDivision(person.division, catalog.divisions)?.id
+        ? matchDivision(person.division, catalog.divisions, guess)?.id
         : undefined;
     const division = person.ruledDivision ?? ownDivision;
     if (
@@ -1166,7 +1207,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
     const sessions = [
       ...person.sessions.flatMap((value) => {
         if (mapped("session", value)) return [];
-        const match = matchName(value, catalog.sessions);
+        const match = matchName(value, catalog.sessions, guess);
         if (!match && catalog.sessions.length) unmatchedSessions.add(value);
         return match ? [match.id] : [];
       }),
@@ -1262,7 +1303,11 @@ export interface ValueToMap {
   matched?: string;
 }
 
-export function valuesToMap(table: RosterTable, catalog: RosterCatalog): ValueToMap[] {
+export function valuesToMap(
+  table: RosterTable,
+  catalog: RosterCatalog,
+  guess: GuessLevel = "max",
+): ValueToMap[] {
   const out: ValueToMap[] = [];
   for (const column of table.columns) {
     if (column.kind !== "division" && column.kind !== "session") continue;
@@ -1274,8 +1319,8 @@ export function valuesToMap(table: RosterTable, catalog: RosterCatalog): ValueTo
     for (const [value, count] of counts) {
       const matched =
         column.kind === "division"
-          ? matchDivision(value, catalog.divisions)?.name
-          : matchName(value, catalog.sessions)?.name;
+          ? matchDivision(value, catalog.divisions, guess)?.name
+          : matchName(value, catalog.sessions, guess)?.name;
       out.push({
         column: column.header,
         kind: column.kind,
