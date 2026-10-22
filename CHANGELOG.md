@@ -20,20 +20,16 @@ advisory (see docs/contributing.md#security-releases). -->
 - Each criterion can say what its scores mean: "Guidance by score" takes bands like "1-3: slides only" and "7-10: works end to end", added one at a time or split evenly ("Split into 3"). Judges see the band their score falls in under the criterion as they score, and every band with "Show guidance".
 - Criteria → "Import from a file" reads a rubric spreadsheet (CSV or Excel), with a column per score band ("Criterion, 1-3, 4-6, 7-10") or a row per band ("Criterion, From, To, Guidance"). Criteria with the same name take its guidance and new ones are added, for you to review before saving. "Download as CSV" exports the current guidance in the same shape.
 - Rubrics can be assigned to divisions, from a rubric's "Divisions" on the Criteria page or a division's "Rubrics" on Manage → Divisions. A division with one rubric judges its projects on it without a pick; with several, its projects pick among them. A rubric with no divisions stays open to every project, and rubrics meant for other divisions aren't offered.
-
-**Upgrade notes:** run `bogey db migrate` (migration `20261022100000_criteria_guidance`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria.
 - Submitting is a stepper on the Submission tab: **Project** (the form), **Prizes** (when the team has prizes to enter, or a rubric to pick) and **Review**. **Next** saves the draft as you go, and the steps at the top move between them. Review shows what judges see first (the title, a tagline, the team, its division, the form and how much is answered, without the whole form), what's still missing with a link back to it, the gallery visibility switch, and **Submit**.
 - On Review, teams in an event that lets them pick their division can move their whole team to another division. Divisions only organizers place people in, or that can't be left, stay as they are.
 - Manage → Submissions → Forms → "Who submits this" sends a form to every team (the default) or only to teams in chosen divisions. Teams only see the forms for their division, and a team that moves out of a form's divisions keeps the draft it started but can't submit it.
 - **New form** on Manage → Submissions → Forms opens its own page (`/manage/forms/new`) instead of a panel above the list, and shows the unsaved-changes bar with Save and Reset while you write it.
-
-**Upgrade notes:** run `bogey db migrate` (migration `20261022110000_form_divisions`).
 - New events are invite-only by default (`registration.mode`), so organizers choose to open registration instead of closing it. Events that never chose keep "Organizers approve"; an upgrade stores that for them.
 - Organizers can add a message to the not-found and error pages: Manage → Details → "Error pages" for an event, Organization settings → "Error pages" for an organization, and Instance settings for the whole instance (`branding.fallbackMessage`, Markdown). The most specific one shows under the page's own text.
-
-**Upgrade notes:** run `bogey db migrate` (migration `20261022130000_access_default`).
 - A session's attendance page works on a phone: the check-in code shows with its QR code, and "Copy link to check-in" and "New code..." are labelled buttons sharing the full width. The code on the full-screen QR is larger. The roster only renders the rows on screen, so long rosters stay quick.
 - The check-in kiosk's full screen button turns into "Exit full screen" (with its own icon) while in full screen, including when you leave with Esc.
+
+**Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions` and `20261022130000_access_default`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only.
 
 ## 2.3.0 (2026-10-22)
 

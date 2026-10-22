@@ -803,7 +803,7 @@ export type Database = {
         Row: {
           description_md: string;
           event_id: string;
-          guidance: Json;
+          guidance: NonNullable<Json>;
           id: string;
           label: string;
           max_score: number;
@@ -817,7 +817,7 @@ export type Database = {
         Insert: {
           description_md?: string;
           event_id: string;
-          guidance?: Json;
+          guidance?: NonNullable<Json>;
           id?: string;
           label: string;
           max_score?: number;
@@ -830,7 +830,7 @@ export type Database = {
         Update: {
           description_md?: string;
           event_id?: string;
-          guidance?: Json;
+          guidance?: NonNullable<Json>;
           id?: string;
           label?: string;
           max_score?: number;
@@ -3356,6 +3356,40 @@ export type Database = {
           },
         ];
       };
+      submission_form_divisions: {
+        Row: {
+          division_id: string;
+          event_id: string;
+          form_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          division_id: string;
+          event_id: string;
+          form_id: string;
+        };
+        Update: {
+          division_id?: string;
+          event_id?: string;
+          form_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "submission_form_divisions_event_id_division_id_fkey";
+            columns: ["event_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "submission_form_divisions_event_id_form_id_fkey";
+            columns: ["event_id", "form_id"];
+            isOneToOne: false;
+            referencedRelation: "submission_forms";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
       submission_forms: {
         Row: {
           description_md: string;
@@ -3395,40 +3429,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "events";
             referencedColumns: ["id"];
-          },
-        ];
-      };
-      submission_form_divisions: {
-        Row: {
-          division_id: string;
-          event_id: string;
-          form_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          division_id: string;
-          event_id: string;
-          form_id: string;
-        };
-        Update: {
-          division_id?: string;
-          event_id?: string;
-          form_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "submission_form_divisions_event_id_division_id_fkey";
-            columns: ["event_id", "division_id"];
-            isOneToOne: false;
-            referencedRelation: "divisions";
-            referencedColumns: ["event_id", "id"];
-          },
-          {
-            foreignKeyName: "submission_form_divisions_event_id_form_id_fkey";
-            columns: ["event_id", "form_id"];
-            isOneToOne: false;
-            referencedRelation: "submission_forms";
-            referencedColumns: ["event_id", "id"];
           },
         ];
       };
@@ -5055,10 +5055,7 @@ export type Database = {
         Args: { p_division?: string; p_event: string; p_user: string };
         Returns: undefined;
       };
-      set_division_rubrics: {
-        Args: { p_event: string; p_items: Json };
-        Returns: undefined;
-      };
+      set_division_rubrics: { Args: { p_event: string; p_items: Json }; Returns: undefined };
       set_gallery_like: { Args: { p_like: boolean; p_submission: string }; Returns: undefined };
       set_gallery_look: {
         Args: { p_banner?: string; p_size: string; p_submission: string };
