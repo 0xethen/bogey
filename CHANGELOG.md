@@ -10,6 +10,11 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- New events are invite-only by default (`registration.mode`), so organizers choose to open registration instead of closing it. Events that never chose keep "Organizers approve"; an upgrade stores that for them.
+- Organizers can add a message to the not-found and error pages: Manage → Details → "Error pages" for an event, Organization settings → "Error pages" for an organization, and Instance settings for the whole instance (`branding.fallbackMessage`, Markdown). The most specific one shows under the page's own text.
+
+**Upgrade notes:** run `bogey db migrate` (migration `20261022130000_access_default`).
+
 ## 2.3.0 (2026-10-22)
 
 - The gallery is a **Gallery** tab on the event's tab row (with an external-link icon, opening in a new browser tab) for whoever can open it, instead of a button on Home and Results. Organizers can hide, rename or time it under Manage → Pages → Tabs like any other tab.

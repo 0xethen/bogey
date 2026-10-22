@@ -19,6 +19,7 @@ import {
 } from "@bogey/ui/components/code-block";
 import { Screen } from "@bogey/ui/components/screen";
 import { useT, type PlainKey } from "#/lib/translate.tsx";
+import { FallbackMessage } from "./FallbackMessage.tsx";
 
 type WebErrorCode = "offline" | "outdated";
 type Kind = BogeyErrorCode | WebErrorCode;
@@ -127,6 +128,7 @@ export function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
   return (
     <Screen.Fallback icon={copy.icon} title={t(copy.title)} description={message}>
+      <FallbackMessage />
       <Screen.Actions>
         <Button onClick={retry} disabled={retrying}>
           {kind === "outdated"

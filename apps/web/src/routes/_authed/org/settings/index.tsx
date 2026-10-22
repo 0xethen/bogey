@@ -37,6 +37,8 @@ export const Route = createFileRoute("/_authed/org/settings/")({
       ...searchFields(orgNameSchema(t), "org", t("orgSettings.name")),
       searchSection(t("accounts.section"), { id: "accounts" }),
       ...searchSettings("registration", ["signup"], t),
+      searchSection(t("errorPages.section"), { keywords: ["404", "error"], id: "error-pages" }),
+      ...searchSettings("branding", ["fallbackMessage"], t),
       searchSection(t("orgTab.audit"), { id: "audit-log" }),
       ...searchSettings("audit", ["retentionDays"], t),
     ],
@@ -44,6 +46,7 @@ export const Route = createFileRoute("/_authed/org/settings/")({
   loader: ({ context }) =>
     prefetchSettingFields(context.query, { scope: "org", orgId: context.org.id }, [
       "registration",
+      "branding",
       "audit",
     ]),
   component: RouteComponent,
@@ -63,6 +66,13 @@ function RouteComponent() {
       <OrgName />
       <Screen.Section id="accounts" title={t("accounts.section")}>
         <SettingFields scope={scope} namespace="registration" keys={["signup"]} />
+      </Screen.Section>
+      <Screen.Section
+        id="error-pages"
+        title={t("errorPages.section")}
+        description={t("errorPages.help")}
+      >
+        <SettingFields scope={scope} namespace="branding" keys={["fallbackMessage"]} />
       </Screen.Section>
       <Screen.Section id="audit-log" title={t("orgTab.audit")}>
         <SettingFields scope={scope} namespace="audit" keys={["retentionDays"]} />

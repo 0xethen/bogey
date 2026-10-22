@@ -14,7 +14,7 @@ select is(private.before_user_created('{"user":{"email":"new@y.test","user_metad
 insert into public.registrations (event_id, email, source, status) values (tests.u('e1'), 'imported@y.test', 'import', 'approved');
 select is(private.before_user_created('{"user":{"email":"imported@y.test","user_metadata":{"org":"alpha"},"app_metadata":{}}}'), '{}'::jsonb, 'an imported email may sign up');
 select is(private.before_user_created('{"user":{"email":"z@y.test","user_metadata":{"org":"nope"},"app_metadata":{}}}') -> 'error' ->> 'http_code', '403', 'unknown org is rejected');
-insert into public.settings (scope, org_id, namespace, value) values ('org', tests.u('a'), 'registration', '{"signup":"open"}');
+insert into public.settings (scope, org_id, namespace, value) values ('org', tests.u('a'), 'registration', '{"signup":"open","mode":"review"}');
 select is(private.before_user_created('{"user":{"email":"x@y.test","user_metadata":{"org":"alpha"},"app_metadata":{}}}'), '{}'::jsonb, 'open org accepts anyone');
 
 select tests.create_user(tests.u('p1'), 'imported@y.test', '{"org":"alpha","full_name":"Imp Orted"}');

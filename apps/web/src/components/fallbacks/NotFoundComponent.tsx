@@ -2,6 +2,7 @@ import { useCanGoBack, useRouter } from "@tanstack/react-router";
 import { Button } from "@bogey/ui/components/button";
 import { Screen } from "@bogey/ui/components/screen";
 import { useT } from "#/lib/translate.tsx";
+import { FallbackMessage } from "./FallbackMessage.tsx";
 
 export function NotFoundComponent() {
   const t = useT();
@@ -31,6 +32,7 @@ export function NotFoundComponent() {
       title={t("notFound.title")}
       description={t("notFound.body")}
     >
+      <FallbackMessage />
       <Screen.Actions>
         <Button nativeButton={false} render={<a href="/" />}>
           {t("notFound.home")}

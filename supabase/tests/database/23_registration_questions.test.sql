@@ -2,7 +2,7 @@ begin;
 select plan(26);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha'), (tests.u('other'), 'beta', 'Beta');
-insert into public.settings (scope, org_id, namespace, value) values ('org', tests.u('org'), 'registration', '{"signup":"open"}');
+insert into public.settings (scope, org_id, namespace, value) values ('org', tests.u('org'), 'registration', '{"signup":"open","mode":"review"}');
 insert into public.events (id, org_id, slug, name, visibility, starts_at, timezone)
 values (tests.u('ev'), tests.u('org'), 'ev', 'Ev', 'public', '2026-10-10 09:00+00', 'UTC');
 insert into public.event_windows (event_id, key, override) values (tests.u('ev'), 'registration', 'open');
