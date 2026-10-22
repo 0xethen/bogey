@@ -6,10 +6,13 @@ export function Stepper({
   steps,
   current,
   className,
+  onSelect,
 }: {
   steps: Tuple<{ key: string; title: string }>;
   current: number;
   className?: string;
+  /** Makes each step a button that moves to it. */
+  onSelect?: (index: number) => void;
 }) {
   const t = useT();
   return (
@@ -17,12 +20,8 @@ export function Stepper({
       {steps.map((step, index) => {
         const done = index < current;
         const active = index === current;
-        return (
-          <li
-            key={step.key}
-            aria-current={active ? "step" : undefined}
-            className="flex min-w-0 flex-1 items-center gap-2"
-          >
+        const mark = (
+          <>
             <span
               className={cn(
                 "flex size-6 shrink-0 items-center justify-center rounded-pill text-xs font-medium tabular-nums",
@@ -42,6 +41,25 @@ export function Stepper({
             >
               {step.title}
             </span>
+          </>
+        );
+        return (
+          <li
+            key={step.key}
+            aria-current={active ? "step" : undefined}
+            className="flex min-w-0 flex-1 items-center gap-2"
+          >
+            {onSelect ? (
+              <button
+                type="button"
+                onClick={() => onSelect(index)}
+                className="flex min-w-0 items-center gap-2 rounded-lg hocus:text-fg"
+              >
+                {mark}
+              </button>
+            ) : (
+              mark
+            )}
             {index < steps.length - 1 && (
               <span
                 aria-hidden

@@ -19,7 +19,16 @@ export interface Step {
   target?: string;
 }
 
-export function Steps({ title, steps }: { title: string; steps: Tuple<Step> }) {
+export function Steps({
+  title,
+  steps,
+  onJump = jumpTo,
+}: {
+  title: string;
+  steps: Tuple<Step>;
+  /** Moves to a step's `target`; scrolls to it on this page by default. */
+  onJump?: (target: string) => void;
+}) {
   const t = useT();
   const done = steps.filter((step) => step.done).length;
   const current = steps.find((step) => !step.done)?.key;
@@ -57,7 +66,7 @@ export function Steps({ title, steps }: { title: string; steps: Tuple<Step> }) {
           <li key={step.key}>
             <Collapsible defaultOpen={step.key === current}>
               <CollapsibleTrigger
-                onClick={() => step.target && jumpTo(step.target)}
+                onClick={() => step.target && onJump(step.target)}
                 className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hocus:bg-muted/40"
               >
                 <StepMark done={step.done} current={step.key === current} index={index + 1} />

@@ -34,6 +34,11 @@ import {
   NO_PROJECT_RUBRIC,
 } from "@bogey/db/queries/judging";
 import { PrizePicker } from "#/routes/_authed/events/$slug/-components/prize-picker.tsx";
+import { eventPrizesQueryOptions } from "@bogey/db/queries/prizes";
+import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
+import { ReviewStep } from "#/components/event/submission/review-step.tsx";
+import { Stepper } from "#/components/event/submission/stepper.tsx";
+import { jumpTo } from "#/lib/jump.ts";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
@@ -50,7 +55,13 @@ import { StatusDot } from "@bogey/ui/components/status-dot";
 import { Steps } from "#/components/event/submission/steps.tsx";
 import { Screen } from "@bogey/ui/components/screen";
 import { cn } from "@bogey/ui/lib/utils";
-import { IconCircleCheck, IconEyeOff, IconUserQuestion } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconCircleCheck,
+  IconEyeOff,
+  IconUserQuestion,
+} from "@tabler/icons-react";
 import {
   appFormOptions,
   errorVisibility,
@@ -67,9 +78,14 @@ import { useCan } from "@bogey/db/permissions";
 import { hasSubmissionPage, inEvent } from "#/lib/viewer.ts";
 import { useUploadMb } from "#/lib/uploads.ts";
 
+const stepSchema = z.enum(["prizes", "review"]);
+
 export const Route = createFileRoute("/_authed/events/$slug/submission")({
   staticData: { title: "Submission", command: { when: inEvent(hasSubmissionPage) } },
-  validateSearch: z.object({ form: z.string().optional().catch(undefined) }),
+  validateSearch: z.object({
+    form: z.string().optional().catch(undefined),
+    step: stepSchema.optional().catch(undefined),
+  }),
   beforeLoad: ({ context }) => ({ participant: context.access.role === "participant" }),
   loader: async ({ context }) => {
     if (!context.participant) return;
@@ -82,6 +98,9 @@ export const Route = createFileRoute("/_authed/events/$slug/submission")({
         settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
       ),
       context.query.ensureQueryData(networkStatusQueryOptions(context.event.id)),
+      context.query.ensureQueryData(eventPrizesQueryOptions(context.event.id)),
+      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
+      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
     ]);
   },
   component: RouteComponent,
@@ -303,6 +322,8 @@ function initialAnswers(form: SubmissionForm, saved: Submission["answers"]) {
   return answers;
 }
 
+type StepKey = "project" | z.infer<typeof stepSchema>;
+
 function SubmissionEditor({
   event,
   entry,
@@ -320,7 +341,9 @@ function SubmissionEditor({
   const say = useHelperSay();
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const intent = useRef<"save" | "submit">("save");
+  const navigate = Route.useNavigate();
+  const { step: stepParam } = Route.useSearch();
+  const intent = useRef<"save" | "submit" | "next">("save");
   const { form: definition, files } = entry;
 
   const schema = z.object({
@@ -350,6 +373,31 @@ function SubmissionEditor({
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: mySubmissionsQueryOptions(event.id).queryKey });
 
+  const { data: settings } = useSuspenseQuery(
+    settingsQueryOptions({ eventId: event.id }, ["judging"]),
+  );
+  const { data: prizes } = useSuspenseQuery(eventPrizesQueryOptions(event.id));
+  const { data: rubrics } = useSuspenseQuery(rubricsQueryOptions(event.id));
+  const hasPrizes = prizes.some(
+    (prize) => prize.optIn && (prize.formId === null || prize.formId === submission.form_id),
+  );
+  const hasRubric = definition.judged && settings.judging.teamRubric === true && rubrics.length > 0;
+  const steps: Tuple<{ key: StepKey; title: string }> = [
+    { key: "project", title: t("sub.stepProject") },
+    ...(hasPrizes || hasRubric
+      ? [{ key: "prizes" as const, title: hasPrizes ? t("sub.stepPrizes") : t("sub.stepRubric") }]
+      : []),
+    { key: "review", title: t("sub.stepReview") },
+  ];
+  const index = Math.max(
+    0,
+    steps.findIndex((each) => each.key === stepParam),
+  );
+  const step = steps[index]?.key ?? "project";
+  const goTo = (key: StepKey) =>
+    navigate({ search: (prev) => ({ ...prev, step: key === "project" ? undefined : key }) });
+  const nextStep = steps[index + 1]?.key;
+
   const form = useAppForm({
     ...appFormOptions.strictSchema({
       defaultValues: {
@@ -360,6 +408,9 @@ function SubmissionEditor({
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
     }),
+    onSubmitInvalid: () => {
+      if (step !== "project") void goTo("project");
+    },
     onSubmit: async ({ value, formApi, createValidationError }) => {
       const saving = await saveSubmissionFn({
         data: {
@@ -389,6 +440,7 @@ function SubmissionEditor({
         );
         if (!submitting.ok) return createValidationError(submitting.error.message);
       }
+      if (intent.current === "next" && nextStep) await goTo(nextStep);
       await refresh();
       return undefined;
     },
@@ -404,19 +456,16 @@ function SubmissionEditor({
   const { data: network } = useSuspenseQuery(networkStatusQueryOptions(event.id));
   const offNetwork = network.restricted && !network.allowed;
   const editable = open && submission.status !== "disqualified" && !offNetwork;
-  const { data: settings } = useSuspenseQuery(
-    settingsQueryOptions({ eventId: event.id }, ["judging"]),
-  );
   const blind = settings.judging.blind === true && definition.judged;
   const { data: submissionSettings } = useSuspenseQuery(
     settingsQueryOptions({ eventId: event.id }, ["submissions"]),
   );
   const publicLocked = submissionSettings.submissions.publicToggle === false;
   const { submittedTitle, submittedBody } = submissionSettings.submissions;
-
-  // useEffect(() => {
-  //   console.log("Network status changed: ", network.ip);
-  // }, [offNetwork, network.ip]);
+  const jump = (target: string) => {
+    if (step === "project") return jumpTo(target);
+    void goTo("project").then(() => requestAnimationFrame(() => jumpTo(target)));
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -450,74 +499,164 @@ function SubmissionEditor({
         <ErrorAlert title={t("sub.notSubmitted")} error={t("sub.closedDraft")} />
       )}
 
+      <Stepper
+        steps={steps}
+        current={index}
+        className="max-w-2xl"
+        onSelect={(picked) => {
+          const key = steps[picked]?.key;
+          if (key) void goTo(key);
+        }}
+      />
+
       <form.AppForm>
         <form.Form unsaved="draft" className="grid gap-10 lg:grid-cols-[1fr_18rem]">
-          <fieldset disabled={!editable} className="flex min-w-0 flex-col gap-10">
-            {definition.description_md && <Markdown>{definition.description_md}</Markdown>}
-            {blind && (
-              <Alert>
-                <IconEyeOff />
-                <AlertTitle>{t("sub.blindTitle")}</AlertTitle>
-                <AlertDescription>{t("sub.blindBody")}</AlertDescription>
-              </Alert>
-            )}
-            <FieldGroup>
-              <form.Field name="title">{(field) => <field.TextField required />}</form.Field>
-              {definition.items.map((item) =>
-                item.kind === "file" ? (
-                  <FileItem
-                    key={item.key}
-                    event={event}
-                    item={item}
-                    submission={submission}
-                    teamId={team.id}
-                    files={files.filter((file) => file.item_key === item.key)}
-                    disabled={!editable}
-                    onChanged={refresh}
-                  />
-                ) : (
-                  <form.Field key={item.key} name={`answers.${item.key}`}>
-                    {(field) => (
-                      <SubmissionItemField
-                        item={item}
-                        id={field.name}
-                        value={field.value}
-                        errors={field.meta.errors}
-                        onChange={(next) => field.handleChange(next)}
-                        onBlur={field.handleBlur}
-                        blind={blind}
-                      />
-                    )}
-                  </form.Field>
-                ),
-              )}
-            </FieldGroup>
-            <PrizePicker
-              eventId={event.id}
-              orgId={event.org_id}
-              submissionId={submission.id}
-              formId={submission.form_id}
+          <div className="flex min-w-0 flex-col gap-10">
+            <fieldset
               disabled={!editable}
-            />
-            {definition.judged && settings.judging.teamRubric === true && (
-              <TeamRubric
-                eventId={event.id}
-                submissionId={submission.id}
-                editable={editable}
-                showCriteria={settings.judging.teamRubricShows === "criteria"}
-              />
-            )}
-            <Screen.Section title={t("sub.visibility")}>
-              <form.Field name="isPublic">
-                {(field) => (
-                  <field.SwitchField
-                    disabled={publicLocked}
-                    description={publicLocked ? t("sub.publicLocked") : undefined}
+              className={cn("flex min-w-0 flex-col gap-10", step !== "project" && "hidden")}
+            >
+              {definition.description_md && <Markdown>{definition.description_md}</Markdown>}
+              {blind && (
+                <Alert>
+                  <IconEyeOff />
+                  <AlertTitle>{t("sub.blindTitle")}</AlertTitle>
+                  <AlertDescription>{t("sub.blindBody")}</AlertDescription>
+                </Alert>
+              )}
+              <FieldGroup>
+                <form.Field name="title">{(field) => <field.TextField required />}</form.Field>
+                {definition.items.map((item) =>
+                  item.kind === "file" ? (
+                    <FileItem
+                      key={item.key}
+                      event={event}
+                      item={item}
+                      submission={submission}
+                      teamId={team.id}
+                      files={files.filter((file) => file.item_key === item.key)}
+                      disabled={!editable}
+                      onChanged={refresh}
+                    />
+                  ) : (
+                    <form.Field key={item.key} name={`answers.${item.key}`}>
+                      {(field) => (
+                        <SubmissionItemField
+                          item={item}
+                          id={field.name}
+                          value={field.value}
+                          errors={field.meta.errors}
+                          onChange={(next) => field.handleChange(next)}
+                          onBlur={field.handleBlur}
+                          blind={blind}
+                        />
+                      )}
+                    </form.Field>
+                  ),
+                )}
+              </FieldGroup>
+            </fieldset>
+
+            {step === "prizes" && (
+              <div className="flex min-w-0 flex-col gap-10">
+                <PrizePicker
+                  eventId={event.id}
+                  orgId={event.org_id}
+                  submissionId={submission.id}
+                  formId={submission.form_id}
+                  disabled={!editable}
+                />
+                {hasRubric && (
+                  <TeamRubric
+                    eventId={event.id}
+                    submissionId={submission.id}
+                    editable={editable}
+                    showCriteria={settings.judging.teamRubricShows === "criteria"}
                   />
                 )}
-              </form.Field>
-            </Screen.Section>
-          </fieldset>
+              </div>
+            )}
+
+            {step === "review" && (
+              <form.Subscribe selector={(state) => state.values}>
+                {(values) => (
+                  <ReviewStep
+                    eventId={event.id}
+                    form={definition}
+                    values={values}
+                    files={files}
+                    team={team}
+                    blind={blind}
+                    missing={missingItems(
+                      values,
+                      definition,
+                      files,
+                      team.members,
+                      event.team_size_min,
+                      t,
+                    )}
+                    onFix={() => void goTo("project")}
+                    visibility={
+                      <fieldset disabled={!editable}>
+                        <Screen.Section title={t("sub.visibility")}>
+                          <form.Field name="isPublic">
+                            {(field) => (
+                              <field.SwitchField
+                                disabled={publicLocked}
+                                description={publicLocked ? t("sub.publicLocked") : undefined}
+                              />
+                            )}
+                          </form.Field>
+                        </Screen.Section>
+                      </fieldset>
+                    }
+                  />
+                )}
+              </form.Subscribe>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <form.FormAlert title={t("sub.notSubmittedYet")} />
+              <div className="flex flex-wrap items-center gap-2">
+                {index > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const key = steps[index - 1]?.key;
+                      if (key) void goTo(key);
+                    }}
+                  >
+                    <IconArrowLeft />
+                    {t("sub.back")}
+                  </Button>
+                )}
+                {nextStep &&
+                  (editable ? (
+                    <form.Submit
+                      pending={t("sub.saving")}
+                      onClick={() => (intent.current = "next")}
+                    >
+                      {t("sub.next")}
+                      <IconArrowRight />
+                    </form.Submit>
+                  ) : (
+                    <Button type="button" onClick={() => void goTo(nextStep)}>
+                      {t("sub.next")}
+                      <IconArrowRight />
+                    </Button>
+                  ))}
+                {!nextStep && editable && !submitted && (
+                  <form.Submit
+                    pending={t("sub.submitting")}
+                    onClick={() => (intent.current = "submit")}
+                  >
+                    {t("sub.submit")}
+                  </form.Submit>
+                )}
+              </div>
+            </div>
+          </div>
 
           <aside className="flex flex-col gap-4 lg:sticky lg:top-(--layout-offset) lg:self-start">
             <form.Subscribe selector={(state) => state.values}>
@@ -533,6 +672,7 @@ function SubmissionEditor({
                 return (
                   <Steps
                     title={t("sub.ready")}
+                    onJump={jump}
                     steps={[
                       {
                         key: "title",
@@ -563,25 +703,16 @@ function SubmissionEditor({
                 );
               }}
             </form.Subscribe>
-            <form.FormAlert title={t("sub.notSubmittedYet")} />
             <ErrorAlert error={unsubmit.error} title={t("sub.takeBackFailed")} />
             {editable && (
               <div className="flex flex-col gap-2">
                 <form.Submit
-                  pending={submitted ? t("sub.saving") : t("sub.submitting")}
-                  onClick={() => (intent.current = submitted ? "save" : "submit")}
+                  variant="secondary"
+                  pending={t("sub.saving")}
+                  onClick={() => (intent.current = "save")}
                 >
-                  {submitted ? t("sub.saveChanges") : t("sub.submit")}
+                  {submitted ? t("sub.saveChanges") : t("sub.saveDraft")}
                 </form.Submit>
-                {!submitted && (
-                  <form.Submit
-                    variant="secondary"
-                    pending={t("sub.saving")}
-                    onClick={() => (intent.current = "save")}
-                  >
-                    {t("sub.saveDraft")}
-                  </form.Submit>
-                )}
                 {submitted && (
                   <Button
                     type="button"

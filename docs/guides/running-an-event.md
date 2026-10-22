@@ -297,7 +297,10 @@ enter** caps how many. The prizes show on the event home (add the **Prizes** blo
 **Manage → Submission forms** defines what teams hand in. An event can have
 several forms (a proposal, then a final project), each with its own window
 and items: short and long text, Markdown, links, videos, Drive links, files,
-choices, checkboxes and numbers. On the same page:
+choices, checkboxes and numbers. **New form** opens its own page. **Who submits
+this** sends a form to every team (leave it empty) or only to teams in chosen
+divisions; other teams don't see it. A team that moves out of a form's divisions
+keeps a draft it already started but can't submit it. On the same page:
 
 - **Submit complete drafts at close** submits drafts that have every required
   item.

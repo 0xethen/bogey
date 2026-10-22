@@ -388,6 +388,9 @@ a writing contest can take a single essay.
   `window_key` (the window that opens and closes it; `submissions` by default,
   or `submit-<key>` for its own), `judged`, `sort`. New hackathons start with a
   **Project** form (tagline, description, code, demo, video).
+- **`submission_form_divisions`**: `form_id`, `division_id`. A form with no
+  rows is for everyone; otherwise only teams in those divisions start and
+  submit it (`private.form_reaches_team`). Deleting a division drops its rows.
 - **`submission_items`**: `form_id`, `key`, `label`, `help`, `kind`, `required`,
   `options jsonb?`, `config jsonb` (limits like `maxLength`, `accept`, `maxMb`,
   and `namesPeople` for items where teams may name themselves under blind

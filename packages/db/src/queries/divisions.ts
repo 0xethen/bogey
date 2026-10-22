@@ -138,6 +138,24 @@ export const chooseDivisionFn = createServerFn({ method: "POST" })
     return ok(null);
   });
 
+export const chooseTeamDivisionFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as { eventId?: unknown; divisionId?: unknown };
+    return {
+      eventId: requireId(raw.eventId, "eventId"),
+      divisionId: requireId(raw.divisionId, "divisionId"),
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const supabase = createServerClient();
+    const { error } = await supabase.rpc("choose_team_division", {
+      p_event: data.eventId,
+      p_division: data.divisionId,
+    });
+    if (error) return toFailure(error, "moving your team to the division");
+    return ok(null);
+  });
+
 export const setDivisionFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
     const raw = (input ?? {}) as { eventId?: unknown; userId?: unknown; divisionId?: unknown };

@@ -23,8 +23,11 @@ A short guide to taking part, written so an organizer can send it around or prin
 ## Submitting
 
 On the **Submission** tab, fill in the form your team was given: a title, descriptions, links, files. Anyone on the team can edit it.
-It saves as a draft until the team presses **Submit**; if the submissions window closes first, drafts are submitted for you when the
-organizers have that switched on. Choose the **prizes** you're entering, and whether the project shows in the public gallery.
+It goes in steps: **Project** (the form), **Prizes** (when there are prizes to enter) and **Review**. **Next** saves the draft as you go.
+Review shows what judges see first (the title, your team, its division and how much is filled in), what's still missing, and whether
+the project shows in the public gallery. When the event lets teams pick their division, you can move your whole team there too.
+It saves as a draft until the team presses **Submit** on Review; if the submissions window closes first, drafts are submitted for you
+when the organizers have that switched on. Some forms are only for certain divisions; you only see the ones for yours.
 
 You can change a submission until its window closes. After that it's read only.
 
