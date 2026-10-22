@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Manage → People → roster import has a **Guessing** choice (none, some, or as much as possible; the default, as before) that applies to that import. It sets how freely Bogey guesses column meanings, matches divisions, sessions and teams by similar names, and merges similarly named teams.
+
 ## 2.3.0 (2026-10-22)
 
 - The gallery is a **Gallery** tab on the event's tab row (with an external-link icon, opening in a new browser tab) for whoever can open it, instead of a button on Home and Results. Organizers can hide, rename or time it under Manage → Pages → Tabs like any other tab.

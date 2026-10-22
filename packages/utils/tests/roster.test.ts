@@ -278,3 +278,34 @@ test("rules place people, sign them up, and leave them out", () => {
   expect(find("drew.foster@example.com")).toBeUndefined();
   expect(find("sana.ahmed@example.com")?.team).toBe("Late Joiners");
 });
+
+test("guess level none uses only exact headers and exact names", () => {
+  const text = "Email,Full name,What school?,Team name\na@x.com,Ann,Gwinnett,Cobol\n";
+  const kinds = (guess: "none" | "some" | "max") =>
+    readRoster(text, {}, guess).columns.map((column) => column.kind);
+  expect(kinds("none")).toEqual(["email", "name", "answer", "team"]);
+  expect(kinds("max")).toEqual(["email", "name", "school", "team"]);
+});
+
+test("guess level none leaves timestamps and unknown headers alone", () => {
+  const text = "Email,Submitted\na@x.com,2026-10-01 10:00\n";
+  expect(readRoster(text, {}, "max").columns[1]?.kind).toBe("ignore");
+  expect(readRoster(text, {}, "none").columns[1]?.kind).toBe("answer");
+});
+
+test("names match more loosely as the guess level rises", () => {
+  expect(matchName("High school", catalog.divisions, "none")?.id).toBe("hs");
+  expect(matchName("high school students", catalog.divisions, "none")).toBeUndefined();
+  expect(matchName("high school students", catalog.divisions, "some")?.id).toBe("hs");
+  expect(matchName("Programming AI", catalog.sessions, "some")).toBeUndefined();
+  expect(matchName("Programming AI", catalog.sessions, "max")?.id).toBe("ai");
+});
+
+test("similar team names only merge when guessing", () => {
+  const text = "a@x.com,Ann,Cobolers\nb@x.com,Bo,Coboler\n";
+  const similar = (guess: "none" | "some" | "max") =>
+    planRoster(text, { guess }).conflicts.filter((conflict) => conflict.kind === "similar").length;
+  expect(similar("none")).toBe(0);
+  expect(similar("some")).toBeGreaterThan(0);
+  expect(similar("max")).toBeGreaterThan(0);
+});

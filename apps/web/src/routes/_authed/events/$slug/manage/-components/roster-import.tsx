@@ -13,10 +13,12 @@ import {
 import { agendaQueryOptions } from "@bogey/db/queries/sessions";
 import {
   COLUMN_KINDS,
+  GUESS_LEVELS,
   planRoster,
   tableToText,
   valuesToMap,
   type ColumnKind,
+  type GuessLevel,
   type RosterCatalog,
   type RosterPlan,
   type RosterResolutions,
@@ -66,6 +68,12 @@ const kindOptions = (t: T): Tuple<SelectOption<ColumnKind>> =>
     description: each.description
       ? sayOr(t, `columnKind.${each.kind}.help`, each.description)
       : undefined,
+  }));
+
+const guessOptions = (t: T): Tuple<SelectOption<GuessLevel>> =>
+  GUESS_LEVELS.map((level) => ({
+    value: level,
+    label: t(`rosterImport.guess.${level}`),
   }));
 
 const ACCEPT = ".csv,.tsv,.txt,.xlsx";
@@ -136,6 +144,7 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
   const [kinds, setKinds] = useState<Readonly<Record<number, ColumnKind>>>({});
+  const [guess, setGuess] = useState<GuessLevel>("max");
   const [rules, setRules] = useState<ImportRule[]>([]);
   const [resolutions, setResolutions] = useState<RosterResolutions>({});
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -143,7 +152,7 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
   const jump = useCallback((line: number) => editor.current?.jumpToLine(line), []);
 
   const plan = (text: string): RosterPlan =>
-    planRoster(text, { kinds, rules, resolutions, catalog, maxTeamSize, say, locale });
+    planRoster(text, { kinds, rules, resolutions, catalog, maxTeamSize, guess, say, locale });
 
   const form = useAppForm({
     ...appFormOptions.strictSchema({
@@ -289,6 +298,7 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
                 <Review
                   plan={plan(text)}
                   catalog={catalog}
+                  guess={guess}
                   kinds={kinds}
                   onKinds={(next) => {
                     setKinds(next);
@@ -303,6 +313,24 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
               ) : null
             }
           </form.Subscribe>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="font-medium">{t("rosterImport.guessing")}</span>
+              <OptSelect
+                size="sm"
+                ariaLabel={t("rosterImport.guessing")}
+                className="w-40"
+                value={guess}
+                options={guessOptions(t)}
+                onChange={(next) => {
+                  setGuess(next);
+                  setResolutions({});
+                }}
+              />
+            </div>
+            <p className="text-sm text-muted-fg">{t(`rosterImport.guess.${guess}Help`)}</p>
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <form.Field name="role">
@@ -367,6 +395,7 @@ function Part({
 function Review({
   plan,
   catalog,
+  guess,
   kinds,
   onKinds,
   rules,
@@ -377,6 +406,7 @@ function Review({
 }: {
   plan: RosterPlan;
   catalog: RosterCatalog;
+  guess: GuessLevel;
   kinds: Readonly<Record<number, ColumnKind>>;
   onKinds: (next: Readonly<Record<number, ColumnKind>>) => void;
   rules: ImportRule[];
@@ -393,7 +423,7 @@ function Review({
       [...new Set(table.rows.map((row) => row.cells[column.index]?.trim() ?? "").filter(Boolean))],
     ]),
   );
-  const toMap = valuesToMap(table, catalog);
+  const toMap = valuesToMap(table, catalog, guess);
   const placed = plan.people.filter((person) => person.wantsTeam).length;
   const asking = plan.people.filter((person) => person.teamOptions?.length).length;
   const kept = table.columns.filter((column) => column.kind === "answer").length;
