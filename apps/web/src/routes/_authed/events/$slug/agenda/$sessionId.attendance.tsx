@@ -18,7 +18,11 @@ import { Checkbox } from "@bogey/ui/components/checkbox";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Input } from "@bogey/ui/components/input";
 import { Screen } from "@bogey/ui/components/screen";
-import { sessionTimes, useTakesAttendance } from "#/components/event/agenda/agenda.tsx";
+import {
+  SessionPages,
+  sessionTimes,
+  useTakesAttendance,
+} from "#/components/event/agenda/agenda.tsx";
 import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
@@ -63,6 +67,7 @@ function RouteComponent() {
         .join(" · ")}
       width="narrow"
     >
+      <SessionPages slug={event.slug} session={session} />
       {session.kind.includes(".") && (
         <PluginSlot pluginKey={session.kind.slice(0, session.kind.indexOf("."))} eventId={event.id}>
           {({ slots, settings }) => {

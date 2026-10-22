@@ -244,7 +244,7 @@ export function ManualAssignments({ eventId }: { eventId: string }) {
                     }
                   />
                   <div>
-                    <pasteForm.Submit size="sm" variant="outline" pending={t("webhooks.adding")}>
+                    <pasteForm.Submit size="sm" variant="secondary" pending={t("webhooks.adding")}>
                       {lines.length > 0
                         ? t("fairness.addN", { count: lines.length })
                         : t("fairness.addMany")}

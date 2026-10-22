@@ -8,7 +8,12 @@ import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { Button } from "@bogey/ui/components/button";
 import { Markdown } from "@bogey/ui/components/markdown";
 import { Screen } from "@bogey/ui/components/screen";
-import { CheckInForm, SessionCard, useTakesAttendance } from "#/components/event/agenda/agenda.tsx";
+import {
+  CheckInForm,
+  SessionCard,
+  SessionPages,
+  useTakesAttendance,
+} from "#/components/event/agenda/agenda.tsx";
 import { sessionKindsWithPlugins } from "#/lib/plugins.ts";
 import { participates, useEventViewer } from "#/lib/viewer.ts";
 import { useT } from "#/lib/translate.tsx";
@@ -92,6 +97,7 @@ function RouteComponent() {
         )
       }
     >
+      <SessionPages slug={event.slug} session={session} />
       <SessionCard
         session={session}
         named={false}

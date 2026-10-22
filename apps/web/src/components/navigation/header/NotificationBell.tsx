@@ -14,7 +14,6 @@ import { useT } from "#/lib/translate.tsx";
 import { Button } from "@bogey/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@bogey/ui/components/popover";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
-import { ScrollArea } from "@bogey/ui/components/scroll-area";
 import { cn } from "@bogey/ui/lib/utils";
 import { useViewerSession } from "#/lib/viewer.ts";
 import { Separator } from "@bogey/ui/components/separator";
@@ -98,7 +97,7 @@ export function NotificationBell() {
     <Popover>
       <PopoverTrigger
         render={
-          <Button size="icon-xs" variant="ghost" className="relative">
+          <Button size="icon-xs" variant="ghost" className="relative m-0 p-0">
             <IconBell />
             {unread > 0 && (
               <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-4 font-semibold text-primary-fg">
@@ -127,13 +126,13 @@ export function NotificationBell() {
         </div>
         <Separator />
         {data && data.items.length > 0 ? (
-          <ScrollArea className="max-h-96">
+          <div className="max-h-96 overflow-y-auto overscroll-contain">
             <ul className="flex flex-col">
               {data.items.map((item) => (
                 <Row key={item.id} item={item} onOpen={open} />
               ))}
             </ul>
-          </ScrollArea>
+          </div>
         ) : (
           <Empty>
             <EmptyDescription>{t("nav.allCaughtUp")}</EmptyDescription>

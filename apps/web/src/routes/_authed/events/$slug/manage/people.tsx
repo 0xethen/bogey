@@ -1,8 +1,9 @@
 import { useRoleLabel } from "#/lib/roles.ts";
-import { IconDownload } from "@tabler/icons-react";
+import { IconDownload, IconFilter } from "@tabler/icons-react";
 import { exportHref } from "#/lib/exports.ts";
-import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { fromLink, usePeopleMutation } from "./-components/people-shared.ts";
 import { eventInviteLinksQueryOptions } from "@bogey/db/queries/invites";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -10,7 +11,6 @@ import {
   manageSummaryQueryOptions,
   type EventPeople,
   removeMemberFn,
-  reviewRegistrationFn,
   setExtraRolesFn,
   setMemberRoleFn,
 } from "@bogey/db/queries/manage";
@@ -25,49 +25,46 @@ import { useLiveInvalidate } from "@bogey/db/realtime";
 import { eventDivisionsQueryOptions, setDivisionFn } from "@bogey/db/queries/divisions";
 import { rosterOverlapsQueryOptions, type RosterOverlap } from "@bogey/db/queries/roster";
 import { RosterImport } from "./-components/roster-import.tsx";
-import { BulkReview } from "./-components/bulk-review.tsx";
-import { Checkbox } from "@bogey/ui/components/checkbox";
 import { StatusDot } from "@bogey/ui/components/status-dot";
 import { z } from "zod";
-import { browserClient } from "@bogey/db/browser";
 import { unwrap } from "@bogey/db/errors";
 import type { EventRole } from "@bogey/db/permissions";
 import { Button } from "@bogey/ui/components/button";
 import { Badge } from "@bogey/ui/components/badge";
 import { OptSelect } from "@bogey/ui/components/opt-select";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@bogey/ui/components/alert-dialog";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
-import { PageControls, usePaged } from "@bogey/ui/components/page-controls";
+import { Popover, PopoverContent, PopoverTrigger } from "@bogey/ui/components/popover";
 import { checkInFn } from "@bogey/db/queries/checkin";
-import { Facts, type Fact } from "@bogey/ui/components/facts";
+import { Facts } from "@bogey/ui/components/facts";
 import { NameAvatar } from "@bogey/ui/components/avatar";
-import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
-import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { tagHoldersQueryOptions, tagsQueryOptions, type Tag } from "@bogey/db/queries/tags";
-import { TagBadge, TagPicker, TagsEditor } from "#/components/tags/tags.tsx";
+import { TagPicker } from "#/components/tags/tags.tsx";
 import { isOrgAdmin } from "@bogey/db/auth";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/people")({
   staticData: {
     title: msg("adminTab.people"),
     settings: (t) => [
-      searchSection(t("managePeople.waiting"), {
-        keywords: ["approve", "pending"],
-        id: "waiting-for-review",
-      }),
-      searchSection(t("managePeople.waitlist"), { id: "waitlist" }),
-      searchSection(t("managePeople.invited"), { id: "invited" }),
       searchSection(t("managePeople.roster"), {
         keywords: ["import", "csv", "spreadsheet"],
         id: "add-people-from-a-roster",
       }),
-      searchSection(t("tags.title"), { keywords: ["labels", "judge types"], id: "tags" }),
     ],
   },
   validateSearch: z.object({ link: z.uuid().optional().catch(undefined) }),
@@ -95,28 +92,6 @@ function tagScopeQueries(event: { id: string; org_id: string }) {
 
 const ROLES: Tuple<EventRole> = ["participant", "judge", "staff", "organizer"];
 
-function fromLink(people: EventPeople, linkId: string): EventPeople {
-  const registrations = people.registrations.filter((row) => row.invite_link_id === linkId);
-  const users = new Set(registrations.map((row) => row.user_id));
-  return {
-    ...people,
-    registrations,
-    members: people.members.filter((member) => users.has(member.userId)),
-  };
-}
-
-function usePeopleMutation<T, R>(eventId: string, run: (input: T) => Promise<R>) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: run,
-    onSettled: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: eventPeopleQueryOptions(eventId).queryKey }),
-        queryClient.invalidateQueries({ queryKey: manageSummaryQueryOptions(eventId).queryKey }),
-      ]),
-  });
-}
-
 function RouteComponent() {
   const t = useT();
   const roleLabel = useRoleLabel();
@@ -130,15 +105,6 @@ function RouteComponent() {
     filter: `event_id=eq.${event.id}`,
   });
 
-  const review = usePeopleMutation(
-    event.id,
-    async (input: { id: string; decision: "approved" | "rejected" }) =>
-      unwrap(
-        await reviewRegistrationFn({
-          data: { registrationId: input.id, decision: input.decision },
-        }),
-      ),
-  );
   const setRole = usePeopleMutation(event.id, async (input: { userId: string; role: EventRole }) =>
     unwrap(await setMemberRoleFn({ data: { eventId: event.id, ...input } })),
   );
@@ -183,42 +149,30 @@ function RouteComponent() {
   }, [holders]);
   const { data: roster } = useSuspenseQuery(checkinRosterQueryOptions(event.id));
   const arrival = useMemo(() => new Map(roster.map((entry) => [entry.userId, entry])), [roster]);
+  const [confirming, setConfirming] = useState<{
+    title: string;
+    description: string;
+    run: () => void;
+  } | null>(null);
   const [filter, setFilter] = useState<"everyone" | "absent" | "here">("everyone");
+  const [roleFilter, setRoleFilter] = useState<string[]>([]);
+  const [divisionFilter, setDivisionFilter] = useState<string[]>([]);
   const shown = people.members.filter((member) => {
     const here = arrival.get(member.userId);
-    if (filter === "here") return here ? isCheckedIn(here) : false;
-    if (filter === "absent") return !here || !isCheckedIn(here);
+    if (filter === "here" && !(here && isCheckedIn(here))) return false;
+    if (filter === "absent" && here && isCheckedIn(here)) return false;
+    if (roleFilter.length > 0 && !roleFilter.includes(member.role)) return false;
+    if (divisionFilter.length > 0 && !divisionFilter.includes(member.divisionId ?? NO_DIVISION)) {
+      return false;
+    }
     return true;
   });
+  const filtering = (filter === "everyone" ? 0 : 1) + roleFilter.length + divisionFilter.length;
 
   const [pickedMembers, setPickedMembers] = useState<ReadonlySet<string>>(new Set());
   const picked = people.members
     .filter((member) => pickedMembers.has(member.userId))
     .map((member) => member.userId);
-
-  const pending = people.registrations.filter((row) => row.status === "pending");
-  const waitlist = people.registrations
-    .filter((row) => row.status === "waitlisted")
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const toggle = useCallback(
-    (id: string) =>
-      setSelected((current) => {
-        const next = new Set(current);
-        if (!next.delete(id)) next.add(id);
-        return next;
-      }),
-    [],
-  );
-  const chosen = [...selected].filter((id) =>
-    people.registrations.some(
-      (row) => row.id === id && ["pending", "waitlisted"].includes(row.status),
-    ),
-  );
-  const waiting = people.registrations.filter((row) => row.status === "approved" && !row.user_id);
-  const pendingPage = usePaged(pending);
-  const waitlistPage = usePaged(waitlist);
-  const error = review.error ?? setRole.error ?? remove.error ?? place.error;
 
   // the mutation objects are new every render; their mutate functions and flags aren't
   const { mutate: changeRole, isPending: changingRole } = setRole;
@@ -231,12 +185,45 @@ function RouteComponent() {
         t,
         roleLabel,
         you: session.user.id,
+        slug: event.slug,
         divisions,
         pluginRoleOptions,
         arrival,
         pending: changingRole || placing || removing,
-        onRole: (userId, role) => changeRole({ userId, role }),
-        onDivision: (userId, divisionId) => placeIn({ userId, divisionId }),
+        onRole: (member, role) => {
+          const change = () => changeRole({ userId: member.userId, role });
+          if (member.teamId && member.role === "participant" && role !== "participant") {
+            setConfirming({
+              title: t("managePeople.roleTeamTitle", { name: member.name }),
+              description: t("managePeople.roleTeamBody", {
+                name: member.name,
+                team: member.team ?? "",
+                role: roleLabel(role),
+              }),
+              run: change,
+            });
+          } else change();
+        },
+        onDivision: (member, divisionId) => {
+          const change = () => placeIn({ userId: member.userId, divisionId });
+          const name = divisions.find((each) => each.id === divisionId)?.name;
+          if (member.teamId && divisionId !== (member.divisionId ?? undefined)) {
+            setConfirming({
+              title: t("managePeople.divisionTeamTitle", { name: member.name }),
+              description:
+                member.teamSize > 1
+                  ? t("managePeople.divisionTeamBlocked", {
+                      team: member.team ?? "",
+                      count: member.teamSize - 1,
+                    })
+                  : t("managePeople.divisionTeamMoves", {
+                      team: member.team ?? "",
+                      division: name ?? t("checkin.noDivision"),
+                    }),
+              run: change,
+            });
+          } else change();
+        },
         onExtraRoles: (userId, roles) => changeExtraRoles({ userId, roles }),
         tags: {
           orgId: event.org_id,
@@ -255,6 +242,7 @@ function RouteComponent() {
       divisions,
       pluginRoleOptions,
       arrival,
+      event.slug,
       changingRole,
       placing,
       removing,
@@ -267,22 +255,9 @@ function RouteComponent() {
       usableTags,
       heldBy,
       eventTags,
+      setConfirming,
     ],
   );
-  const onReview = review.mutate;
-  const reviewRow = (row: EventPeople["registrations"][number], index: number, queued: boolean) => (
-    <ReviewRow
-      key={row.id}
-      row={row}
-      index={index}
-      queued={queued}
-      checked={selected.has(row.id)}
-      busy={review.isPending}
-      onToggle={toggle}
-      onReview={onReview}
-    />
-  );
-
   return (
     <Screen
       title={t("adminTab.people")}
@@ -302,56 +277,30 @@ function RouteComponent() {
     >
       {!link && <RosterImport eventId={event.id} maxTeamSize={event.team_size_max} />}
 
-      <ErrorAlert error={error} title={t("managePeople.failed")} />
+      <AlertDialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirming?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirming?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel autoFocus>{t("common.cancel")}</AlertDialogCancel>
+            <Button
+              onClick={() => {
+                confirming?.run();
+                setConfirming(null);
+              }}
+            >
+              {t("common.continue")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {pending.length > 0 && (
-        <Screen.Section
-          id="waiting-for-review"
-          title={t("managePeople.waiting")}
-          description={t("managePeople.waitingHelp")}
-          actions={
-            <BulkReview eventId={event.id} ids={chosen} onDone={() => setSelected(new Set())} />
-          }
-        >
-          <DisclosureList>
-            {pendingPage.shown.map((row, index) =>
-              reviewRow(row, pendingPage.paging.page * pendingPage.paging.pageSize + index, false),
-            )}
-          </DisclosureList>
-          <PageControls paging={pendingPage.paging} />
-        </Screen.Section>
-      )}
-
-      {waitlist.length > 0 && (
-        <Screen.Section
-          id="waitlist"
-          title={t("managePeople.waitlist")}
-          description={
-            <Linked
-              text={t("managePeople.waitlistHelp", { autoPromote: LINK })}
-              links={[
-                <SettingLink
-                  key="autoPromote"
-                  to={`/events/${event.slug}/manage/registration`}
-                  hash="registration.autoPromote"
-                >
-                  {t("path.autoPromote")}
-                </SettingLink>,
-              ]}
-            />
-          }
-          actions={
-            <BulkReview eventId={event.id} ids={chosen} onDone={() => setSelected(new Set())} />
-          }
-        >
-          <DisclosureList>
-            {waitlistPage.shown.map((row, index) =>
-              reviewRow(row, waitlistPage.paging.page * waitlistPage.paging.pageSize + index, true),
-            )}
-          </DisclosureList>
-          <PageControls paging={waitlistPage.paging} />
-        </Screen.Section>
-      )}
+      <ErrorAlert
+        error={setRole.error ?? setExtraRoles.error ?? remove.error ?? place.error}
+        title={t("managePeople.failed")}
+      />
 
       <Screen.Section
         id="in-this-event"
@@ -359,16 +308,20 @@ function RouteComponent() {
         description={t("managePeople.count", { count: people.members.length })}
         actions={
           <>
-            <OptSelect
-              size="sm"
-              ariaLabel={t("managePeople.show")}
-              value={filter}
-              options={[
-                { value: "everyone", label: t("badges.everyone") },
-                { value: "here", label: t("session.checkedIn") },
-                { value: "absent", label: t("managePeople.notCheckedIn") },
-              ]}
-              onChange={setFilter}
+            <MemberFilter
+              arrival={filter}
+              onArrival={setFilter}
+              roles={roleFilter}
+              onRoles={setRoleFilter}
+              divisions={divisionFilter}
+              onDivisions={setDivisionFilter}
+              divisionOptions={divisions}
+              count={filtering}
+              onClear={() => {
+                setFilter("everyone");
+                setRoleFilter([]);
+                setDivisionFilter([]);
+              }}
             />
             <Button
               size="sm"
@@ -421,132 +374,94 @@ function RouteComponent() {
         )}
       </Screen.Section>
 
-      {waiting.length > 0 && (
-        <Screen.Section
-          id="invited"
-          title={t("managePeople.invited")}
-          description={t("managePeople.invitedHelp", { count: waiting.length, event: event.name })}
-        >
-          <DisclosureList>
-            {waiting.map((row) => (
-              <DisclosureRow
-                key={row.id}
-                leading={<NameAvatar name={String(row.email)} />}
-                title={String(row.email)}
-                meta={
-                  <>
-                    {t("managePeople.invitedAgo")} <RelativeTime value={row.created_at} />
-                  </>
-                }
-                actions={<Badge variant="outline">{roleLabel(row.role)}</Badge>}
-              />
-            ))}
-          </DisclosureList>
-        </Screen.Section>
-      )}
-
-      <Screen.Section
-        id="tags"
-        title={t("tags.title")}
-        description={eventTags ? t("tags.eventIntro") : t("tags.eventsOff")}
-      >
-        {tags.some((tag) => !tag.event_id) && (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm text-muted-fg">{t("tags.fromOrg")}</span>
-            <div className="flex flex-wrap gap-1.5">
-              {tags
-                .filter((tag) => !tag.event_id)
-                .map((tag) => (
-                  <TagBadge key={tag.id} tag={tag} />
-                ))}
-            </div>
-          </div>
-        )}
-        {eventTags && <TagsEditor scope={{ orgId: event.org_id, eventId: event.id }} />}
-      </Screen.Section>
-
       <Overlaps eventId={event.id} />
       <PluginSettingSections page="people" />
     </Screen>
   );
 }
 
-type Registration = EventPeople["registrations"][number];
-
-// memoized so ticking one box or opening one row doesn't redraw every other row
-const ReviewRow = memo(function ReviewRow({
-  row,
-  index,
-  queued,
-  checked,
-  busy,
-  onToggle,
-  onReview,
+function MemberFilter({
+  arrival,
+  onArrival,
+  roles,
+  onRoles,
+  divisions,
+  onDivisions,
+  divisionOptions,
+  count,
+  onClear,
 }: {
-  row: Registration;
-  index: number;
-  queued: boolean;
-  checked: boolean;
-  busy: boolean;
-  onToggle: (id: string) => void;
-  onReview: (input: { id: string; decision: "approved" | "rejected" }) => void;
+  arrival: "everyone" | "absent" | "here";
+  onArrival: (next: "everyone" | "absent" | "here") => void;
+  roles: Tuple<string>;
+  onRoles: (next: string[]) => void;
+  divisions: Tuple<string>;
+  onDivisions: (next: string[]) => void;
+  divisionOptions: Tuple<Division>;
+  count: number;
+  onClear: () => void;
 }) {
   const t = useT();
-  const name = row.full_name ?? String(row.email);
-  const answers = answerFacts(row.answers, t);
+  const roleLabel = useRoleLabel();
   return (
-    <DisclosureRow
-      leading={
-        <span className="flex items-center gap-3">
-          <Checkbox
-            checked={checked}
-            onCheckedChange={() => onToggle(row.id)}
-            aria-label={t("managePeople.select", { name })}
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button size="sm" variant="outline">
+            <IconFilter />
+            {t("managePeople.filter")}
+            {count > 0 && <Badge variant="secondary">{count}</Badge>}
+          </Button>
+        }
+      />
+      <PopoverContent align="end" className="w-80 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">{t("managePeople.show")}</span>
+          <OptSelect
+            size="sm"
+            ariaLabel={t("managePeople.show")}
+            value={arrival}
+            options={[
+              { value: "everyone", label: t("badges.everyone") },
+              { value: "here", label: t("session.checkedIn") },
+              { value: "absent", label: t("managePeople.notCheckedIn") },
+            ]}
+            onChange={onArrival}
           />
-          <NameAvatar name={name} />
-        </span>
-      }
-      title={name}
-      meta={
-        <>
-          {queued ? `#${index + 1}, ` : ""}
-          {row.full_name ? `${String(row.email)}, ` : ""}
-          {t("managePeople.registered")} <RelativeTime value={row.created_at} />
-        </>
-      }
-      actions={
-        <>
-          <Button
-            size="sm"
-            disabled={busy}
-            onClick={() => onReview({ id: row.id, decision: "approved" })}
-          >
-            {queued ? t("managePeople.approveAnyway") : t("managePeople.approve")}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            confirm={{
-              title: t("managePeople.declineTitle", { name }),
-              description: t("managePeople.declineBody"),
-              label: t("deletions.decline"),
-            }}
-            onClick={() => onReview({ id: row.id, decision: "rejected" })}
-          >
-            {t("managePeople.declineButton")}
-          </Button>
-        </>
-      }
-    >
-      {answers.length > 0 ? (
-        <Facts facts={answers} className="pl-11" />
-      ) : (
-        <p className="pl-11 text-sm text-muted-fg">{t("managePeople.noAnswers")}</p>
-      )}
-    </DisclosureRow>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">{t("managePeople.roleColumn")}</span>
+          <MultiSelect
+            options={ROLES.map((role) => ({ value: role, label: roleLabel(role) }))}
+            value={roles}
+            placeholder={t("managePeople.anyRole")}
+            onValueChange={onRoles}
+          />
+        </div>
+        {divisionOptions.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">{t("managePeople.divisionColumn")}</span>
+            <MultiSelect
+              options={[
+                { value: NO_DIVISION, label: t("checkin.noDivision") },
+                ...divisionOptions.map((division) => ({
+                  value: division.id,
+                  label: division.name,
+                })),
+              ]}
+              value={divisions}
+              placeholder={t("managePeople.anyDivision")}
+              onValueChange={onDivisions}
+            />
+          </div>
+        )}
+        <Button size="sm" variant="ghost" disabled={count === 0} onClick={onClear}>
+          {t("managePeople.clearFilters")}
+        </Button>
+      </PopoverContent>
+    </Popover>
   );
-});
+}
 
 const NO_TAGS: string[] = [];
 
@@ -559,12 +474,13 @@ function memberColumns(options: {
   t: T;
   roleLabel: (role: string) => string;
   you: string;
+  slug: string;
   divisions: Tuple<Division>;
   pluginRoleOptions: Tuple<SearchSelectOption>;
   arrival: ReadonlyMap<string, RosterEntry>;
   pending: boolean;
-  onRole: (userId: string, role: EventRole) => void;
-  onDivision: (userId: string, divisionId: string | undefined) => void;
+  onRole: (member: Member, role: EventRole) => void;
+  onDivision: (member: Member, divisionId: string | undefined) => void;
   onExtraRoles: (userId: string, roles: string[]) => void;
   onRemove: (userId: string) => void;
   tags: {
@@ -612,7 +528,7 @@ function memberColumns(options: {
               value={member.role}
               options={ROLES.map((role) => ({ value: role, label: options.roleLabel(role) }))}
               disabled={options.pending}
-              onChange={(role) => options.onRole(member.userId, role)}
+              onChange={(role) => options.onRole(member, role)}
             />
             {options.pluginRoleOptions.length > 0 && (
               <div className="min-w-48">
@@ -661,7 +577,21 @@ function memberColumns(options: {
     memberColumn.accessor((member) => member.team ?? "", {
       id: "team",
       header: t("managePeople.teamColumn"),
-      cell: (info) => <span className="text-muted-fg">{info.getValue() || "–"}</span>,
+      cell: (info) => {
+        const member = info.row.original;
+        return member.teamId ? (
+          <Link
+            to="/events/$slug/manage/teams"
+            params={{ slug: options.slug }}
+            hash={member.teamId}
+            className="link"
+          >
+            {info.getValue()}
+          </Link>
+        ) : (
+          <span className="text-muted-fg">–</span>
+        );
+      },
     }),
     ...(options.divisions.length > 0
       ? [
@@ -685,7 +615,7 @@ function memberColumns(options: {
                   ]}
                   disabled={options.pending}
                   onChange={(next) =>
-                    options.onDivision(member.userId, next === NO_DIVISION ? undefined : next)
+                    options.onDivision(member, next === NO_DIVISION ? undefined : next)
                   }
                 />
               );
@@ -914,68 +844,6 @@ function Overlaps({ eventId }: { eventId: string }) {
       </DisclosureList>
     </Screen.Section>
   );
-}
-
-function AnswerFile({ path, name }: { path: string; name: string }) {
-  const t = useT();
-  const open = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await browserClient()
-        .storage.from("registrations")
-        .createSignedUrl(path, 60);
-      if (error) throw new Error(error.message);
-      return data.signedUrl;
-    },
-    onSuccess: (url) => {
-      window.open(url, "_blank", "noopener");
-    },
-  });
-  return (
-    <span className="flex flex-wrap items-center gap-2">
-      <Button
-        type="button"
-        size="xs"
-        variant="outline"
-        disabled={open.isPending}
-        onClick={() => open.mutate()}
-      >
-        {t("managePeople.openFile", { name })}
-      </Button>
-      {open.error && <span className="text-danger">{open.error.message}</span>}
-    </span>
-  );
-}
-
-function answerValue(value: unknown, t: T): ReactNode | null {
-  if (typeof value === "string") return value === "" ? null : value;
-  if (typeof value === "number") return String(value);
-  if (typeof value === "boolean") return value ? t("common.yes") : t("common.no");
-  if (Array.isArray(value)) {
-    const items = value.filter((entry): entry is string => typeof entry === "string");
-    return items.length ? items.join(", ") : null;
-  }
-  if (value && typeof value === "object") {
-    const record: Record<string, unknown> = { ...value };
-    if (typeof record.path === "string" && typeof record.name === "string") {
-      return <AnswerFile path={record.path} name={record.name} />;
-    }
-    if (record.accepted === true) {
-      return typeof record.at === "string"
-        ? t("managePeople.agreedOn", { date: record.at.slice(0, 10) })
-        : t("managePeople.agreed");
-    }
-  }
-  return null;
-}
-
-function answerFacts(answers: unknown, t: T): Fact[] {
-  if (!answers || typeof answers !== "object" || Array.isArray(answers)) return [];
-  return Object.entries(answers).flatMap(([key, value]) => {
-    const shown = answerValue(value, t);
-    if (shown === null) return [];
-    const label = key.replace(/[_-]+/g, " ");
-    return [{ label: label[0]?.toUpperCase() + label.slice(1), value: shown }];
-  });
 }
 
 function checkInText(entry: RosterEntry | undefined, t: T): string | undefined {

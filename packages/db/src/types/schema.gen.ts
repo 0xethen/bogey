@@ -39,6 +39,8 @@ export const CORE_AUDIT_ACTIONS = [
   "export.downloaded",
   "form.deleted",
   "form.saved",
+  "gallery.comment_posted",
+  "gallery.comment_removed",
   "judging.advanced",
   "judging.assigned",
   "judging.conflict_declared",
@@ -98,6 +100,7 @@ export const CORE_AUDIT_ACTIONS = [
   "submission.deletion_declined",
   "submission.deletion_requested",
   "submission.disqualified",
+  "submission.gallery_look_set",
   "submission.reinstated",
   "submission.submitted",
   "submission.tracks_set",
@@ -161,6 +164,9 @@ export const COLUMN_VALUES = {
   },
   profiles: {
     visibility: ["org", "public"],
+  },
+  submissions: {
+    card_size: ["compact", "standard", "large"],
   },
   tags: {
     tone: ["gray", "red", "orange", "amber", "green", "teal", "blue", "violet", "pink"],

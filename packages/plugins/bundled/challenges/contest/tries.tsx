@@ -375,7 +375,7 @@ export function Submissions({ eventId, settings, splat }: PluginRouteContext<Set
                         setShown("all");
                       }}
                     >
-                      Show them all
+                      Show all
                     </Button>
                   )}
                 </p>

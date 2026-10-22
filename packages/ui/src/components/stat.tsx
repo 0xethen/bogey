@@ -24,7 +24,7 @@ export function Stat({
   render,
   className,
 }: {
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
   label: string;
   value: number;
   of?: number;
@@ -40,9 +40,11 @@ export function Stat({
       className={cn(statVariants({ variant }), className)}
       render={render}
     >
-      <ItemMedia variant="icon" className={urgent ? "text-primary" : "text-muted-fg"}>
-        <Icon />
-      </ItemMedia>
+      {Icon && (
+        <ItemMedia variant="icon" className={urgent ? "text-primary" : "text-muted-fg"}>
+          <Icon />
+        </ItemMedia>
+      )}
       <ItemContent>
         <ItemTitle className="font-heading text-2xl tabular-nums">
           {value}

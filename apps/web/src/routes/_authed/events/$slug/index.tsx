@@ -23,7 +23,6 @@ import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import { useDraft, useUnsavedState } from "#/components/unsaved-changes/index.tsx";
-import { GalleryLink } from "#/components/event/gallery-link.tsx";
 import { HomeBlockView, type HomeData } from "./-components/home/blocks.tsx";
 import { HomeEditor } from "./-components/home/editor.tsx";
 import { pluginSettingsQueryOptions, sessionKindsWithPlugins } from "#/lib/plugins.ts";
@@ -180,7 +179,6 @@ function RouteComponent() {
           </>
         ) : (
           <>
-            <GalleryLink event={event} />
             {manages && (
               <Button size="sm" variant="outline" onClick={() => setCustomize(true)}>
                 <IconLayoutDashboard />

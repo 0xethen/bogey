@@ -1,5 +1,5 @@
-export function plural(count: number, one: string, many = `${one}s`): string {
-  return `${count} ${count === 1 ? one : many}`;
+export function plural(count: number, one: string, many = `${one}s`, showCount = true): string {
+  return `${showCount ? `${count} ` : ""}${count === 1 ? one : many}`;
 }
 
 export function excerpt(markdown: string, max = 160): string {

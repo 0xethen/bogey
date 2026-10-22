@@ -386,9 +386,9 @@ function OpenConversation({
         }
         onBack={onBack}
       >
-        {conversation.visibility === "public" && (
+        {/* {(conversation.visibility === "public" && import.meta.env.DEV) && (
           <Badge variant="secondary">{t("conv.shared")}</Badge>
-        )}
+        )} */}
         {moderate && <Moderation conversation={conversation} />}
         <ArchiveButton conversation={conversation} />
       </ChannelHeader>
@@ -562,6 +562,15 @@ function Moderation({ conversation }: { conversation: Conversation }) {
   };
   return (
     <div className="flex gap-1">
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() =>
+          void update({ status: conversation.status === "closed" ? "open" : "closed" })
+        }
+      >
+        {conversation.status === "closed" ? t("conv.reopen") : t("common.close")}
+      </Button>
       {conversation.audience === "organizers" && (
         <Button
           size="sm"
@@ -573,15 +582,6 @@ function Moderation({ conversation }: { conversation: Conversation }) {
           {conversation.visibility === "public" ? t("conv.unshare") : t("conv.share")}
         </Button>
       )}
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={() =>
-          void update({ status: conversation.status === "closed" ? "open" : "closed" })
-        }
-      >
-        {conversation.status === "closed" ? t("conv.reopen") : t("common.close")}
-      </Button>
       {(conversation.teamId || (conversation.askerId && !conversation.mine)) && (
         <BlockButton conversation={conversation} />
       )}

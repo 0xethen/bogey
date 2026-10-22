@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { galleryQueryOptions, type Gallery } from "@bogey/db/queries/gallery";
-import { Badge } from "@bogey/ui/components/badge";
-import { VoteButton } from "#/components/event/judging/vote-button.tsx";
+import { IconLayoutGrid, IconPlayerPlay } from "@tabler/icons-react";
+import {
+  galleryEngagementQueryOptions,
+  galleryQueryOptions,
+  type Gallery,
+} from "@bogey/db/queries/gallery";
+import { voteCountsQueryOptions } from "@bogey/db/queries/votes";
 import { Button } from "@bogey/ui/components/button";
 import {
   Empty,
@@ -12,22 +16,20 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@bogey/ui/components/empty";
-import { IconLayoutGrid } from "@tabler/icons-react";
-import { CardGrid, LinkCard } from "#/routes/gallery/$slug/-components/link-card.tsx";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Screen } from "@bogey/ui/components/screen";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
+import { cn } from "@bogey/ui/lib/utils";
 import { localizationQueryOptions } from "#/lib/i18n.ts";
+import { availableSorts, gallerySearch, sortProjects } from "#/lib/gallery.ts";
+import { useShuffleSeed } from "#/lib/slideshow.ts";
 import { msg, translatorFor, useT } from "#/lib/translate.tsx";
-
-const search = z.object({
-  form: z.string().optional().catch(undefined),
-  track: z.string().optional().catch(undefined),
-  division: z.string().optional().catch(undefined),
-});
+import { LayoutToggle, SortMenu } from "#/routes/gallery/$slug/-components/gallery-controls.tsx";
+import { ProjectCard } from "#/routes/gallery/$slug/-components/project-card.tsx";
 
 export const Route = createFileRoute("/gallery/$slug/")({
   staticData: { title: msg("gallery.projects") },
-  validateSearch: search,
+  validateSearch: gallerySearch,
   head: ({ match }) => {
     const gallery = match.context.query.getQueryData(
       galleryQueryOptions(match.params.slug).queryKey,
@@ -52,21 +54,43 @@ export const Route = createFileRoute("/gallery/$slug/")({
   component: RouteComponent,
 });
 
+const LAYOUT_CLASS = {
+  grid: "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
+  // columns everywhere, native grid-lanes where the browser has it
+  lanes:
+    "columns-1 gap-4 sm:columns-2 lg:columns-3 supports-[display:grid-lanes]:grid-lanes supports-[display:grid-lanes]:columns-auto supports-[display:grid-lanes]:[grid-template-columns:repeat(auto-fill,minmax(18rem,1fr))]",
+} as const;
+
 function RouteComponent() {
   const t = useT();
   const { slug } = Route.useParams();
   const filter = Route.useSearch();
   const navigate = Route.useNavigate();
   const { data: gallery } = useSuspenseQuery(galleryQueryOptions(slug));
+  const eventId = gallery?.event.id ?? "";
+  const engagement = useQuery({ ...galleryEngagementQueryOptions(eventId), enabled: !!gallery });
+  const counts = useQuery({ ...voteCountsQueryOptions(eventId), enabled: !!gallery });
+  const seed = useShuffleSeed();
   if (!gallery) return null;
 
-  const shown = gallery.projects.filter(
-    (project) =>
-      (!filter.form || project.formId === filter.form) &&
-      (!filter.track || project.trackIds.includes(filter.track)) &&
-      (!filter.division || project.divisionId === filter.division),
+  const { settings } = gallery;
+  const votes = new Map((counts.data ?? []).map((row) => [row.submissionId, row.count]));
+  const sorts = availableSorts(settings, gallery.projects, { votes });
+  const sort = filter.sort && sorts.includes(filter.sort) ? filter.sort : settings.sort;
+  const layout = settings.switchLayout ? (filter.layout ?? settings.layout) : settings.layout;
+  const counted = new Map((engagement.data ?? []).map((row) => [row.submissionId, row]));
+
+  const shown = sortProjects(
+    gallery.projects.filter(
+      (project) =>
+        (!filter.form || project.formId === filter.form) &&
+        (!filter.track || project.trackIds.includes(filter.track)) &&
+        (!filter.division || project.divisionId === filter.division),
+    ),
+    sort,
+    { engagement: counted, votes, seed },
   );
-  const set = (patch: z.infer<typeof search>) =>
+  const set = (patch: Partial<z.infer<typeof gallerySearch>>) =>
     void navigate({ search: { ...filter, ...patch }, replace: true });
 
   return (
@@ -78,14 +102,36 @@ function RouteComponent() {
         gallery.projects.length > 0 && (
           <>
             <Filters gallery={gallery} filter={filter} onChange={set} />
-            <Button
-              size="sm"
-              variant="outline"
-              nativeButton={false}
-              render={<Link to="/gallery/$slug/present" params={{ slug }} />}
-            >
-              {t("gallery.slideshow")}
-            </Button>
+            <div className="flex items-center gap-1">
+              <SortMenu value={sort} options={sorts} onChange={(next) => set({ sort: next })} />
+              {settings.switchLayout && (
+                <LayoutToggle value={layout} onChange={(next) => set({ layout: next })} />
+              )}
+              {settings.slideshow && (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        size="icon-sm"
+                        variant="outline"
+                        nativeButton={false}
+                        aria-label={t("gallery.slideshow")}
+                        render={
+                          <Link
+                            to="/gallery/$slug/present"
+                            params={{ slug }}
+                            search={{ ...filter, sort }}
+                          />
+                        }
+                      />
+                    }
+                  >
+                    <IconPlayerPlay />
+                  </TooltipTrigger>
+                  <TooltipContent>{t("gallery.slideshow")}</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </>
         )
       }
@@ -105,34 +151,30 @@ function RouteComponent() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <CardGrid>
+        <div className={cn(LAYOUT_CLASS[layout])}>
           {shown.map((project) => (
-            <div key={project.id} className="flex flex-col gap-2">
-              <LinkCard
-                render={
-                  <Link to="/gallery/$slug/$projectId" params={{ slug, projectId: project.id }} />
-                }
-                eyebrow={project.teamName}
-                title={project.title}
-                description={project.blurb}
-                footer={gallery.tracks
-                  .filter((track) => project.trackIds.includes(track.id))
-                  .map((track) => (
-                    <Badge key={track.id} variant="secondary">
-                      {track.name}
-                    </Badge>
-                  ))}
+            <div
+              key={project.id}
+              className={cn(
+                layout === "lanes" && "mb-4 break-inside-avoid supports-[display:grid-lanes]:mb-0",
+                layout === "grid" && project.cardSize === "large" && "lg:col-span-2",
+              )}
+            >
+              <ProjectCard
+                gallery={gallery}
+                project={project}
+                tracks={gallery.tracks.filter((track) => project.trackIds.includes(track.id))}
+                engagement={counted.get(project.id)}
               />
-              <VoteButton eventId={gallery.event.id} submissionId={project.id} />
             </div>
           ))}
-        </CardGrid>
+        </div>
       )}
     </Screen>
   );
 }
 
-type Filter = z.infer<typeof search>;
+type Filter = z.infer<typeof gallerySearch>;
 
 function Filters({
   gallery,

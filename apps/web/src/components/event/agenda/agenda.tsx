@@ -133,8 +133,8 @@ export function SessionCard({
               {session.required && <RequiredMark />}
             </h3>
           )}
-          {kind && <KindBadge kind={kind} />}
-          {session.category && <Badge variant="secondary">{session.category}</Badge>}
+          {named && kind && <KindBadge kind={kind} />}
+          {named && session.category && <Badge variant="secondary">{session.category}</Badge>}
           {session.visibility === "staff" && (
             <Badge variant="outline">{t("agenda.staffOnly")}</Badge>
           )}
@@ -146,6 +146,12 @@ export function SessionCard({
           )}
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-fg">
+          {!named && kind && (
+            <span className="text-fg">
+              {kind.label}
+              {session.category ? ` (${session.category})` : ""}
+            </span>
+          )}
           {ownTimes && <span>{formatTimeRange(start, end, time)}</span>}
           {session.location && (
             <span className="inline-flex items-center gap-1">
@@ -496,5 +502,34 @@ export function CheckInForm({ eventId, code = "" }: { eventId: string; code?: st
         </p>
       )}
     </form.AppForm>
+  );
+}
+
+/** Switches between a session's own pages: its main page and, for whoever takes attendance, attendance. */
+export function SessionPages({ slug, session }: { slug: string; session: AgendaSession }) {
+  const t = useT();
+  const takesAttendance = useTakesAttendance();
+  if (!session.hasPage || !takesAttendance(session)) return null;
+  const params = { slug, sessionId: session.id };
+  return (
+    <nav aria-label={t("agenda.sessionPages")} className="flex gap-1 text-sm">
+      <Link
+        to="/events/$slug/agenda/$sessionId"
+        params={params}
+        activeOptions={{ exact: true }}
+        className="rounded-md px-2.5 py-1 text-muted-fg no-underline hover:text-fg"
+        activeProps={{ className: "bg-muted font-medium text-fg" }}
+      >
+        {t("agenda.mainPage")}
+      </Link>
+      <Link
+        to="/events/$slug/agenda/$sessionId/attendance"
+        params={params}
+        className="rounded-md px-2.5 py-1 text-muted-fg no-underline hover:text-fg"
+        activeProps={{ className: "bg-muted font-medium text-fg" }}
+      >
+        {t("agenda.attendance")}
+      </Link>
+    </nav>
   );
 }

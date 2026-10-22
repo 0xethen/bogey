@@ -110,7 +110,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
                   ) : tried.has(problem.id) ? (
                     <span className="flex items-center gap-1 text-xs text-muted-fg">
                       <IconCircleDashed className="size-4" />
-                      Tried
+                      Attempted
                     </span>
                   ) : null}
                 </span>

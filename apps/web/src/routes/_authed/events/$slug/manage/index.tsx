@@ -116,7 +116,7 @@ function RouteComponent() {
     summary.pending > 0 && (
       <LinkRow
         key="pending"
-        render={<Link to="/events/$slug/manage/people" params={params} />}
+        render={<Link to="/events/$slug/manage/review" params={params} />}
         leading={<IconClockHour4 className="size-5 text-warning" />}
         title={t("overview.registrationsWaiting", { count: summary.pending })}
         meta={t("overview.registrationsHelp")}

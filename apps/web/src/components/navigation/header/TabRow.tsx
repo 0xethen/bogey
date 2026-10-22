@@ -1,6 +1,7 @@
 import type { EventViewer } from "#/lib/viewer.ts";
 import { useT } from "#/lib/translate.tsx";
 import { Link, useLocation } from "@tanstack/react-router";
+import { IconExternalLink } from "@tabler/icons-react";
 import { cn } from "@bogey/ui/lib/utils";
 import { useActiveInView } from "@bogey/ui/hooks/scroll";
 import {
@@ -24,6 +25,8 @@ export interface RouteTab {
   to: string;
   exact?: boolean;
   end?: boolean;
+  /** Opens in a new browser tab, outside the event's own pages. */
+  external?: boolean;
   menu?: Tuple<RouteTabLink>;
 }
 
@@ -81,6 +84,16 @@ const MENU_LINK =
 const ACTIVE_TAB = "font-medium text-fg after:scale-x-100 starting:after:scale-x-0";
 
 function TabLink({ tab }: { tab: RouteTab }) {
+  const t = useT();
+  if (tab.external) {
+    return (
+      <a href={tab.to} target="_blank" rel="noopener noreferrer" className={TAB}>
+        {tab.label}
+        <IconExternalLink className="size-3.5" aria-hidden />
+        <span className="sr-only">{t("nav.opensNewTab")}</span>
+      </a>
+    );
+  }
   return (
     <Link
       to={tab.to}

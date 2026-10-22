@@ -1,5 +1,4 @@
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
-import { GalleryLink } from "#/components/event/gallery-link.tsx";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { groupResults, publishedResultsQueryOptions } from "@bogey/db/queries/judging";
@@ -60,7 +59,6 @@ function RouteComponent() {
               {t("results.present")}
             </Button>
           )}
-          <GalleryLink event={event} />
         </>
       }
     >

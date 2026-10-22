@@ -62,7 +62,9 @@ function ReportForm({ orgId, path }: { orgId: string; path: string }) {
       <form.Form>
         <FieldGroup>
           <form.Field name="reason">
-            {(field) => <field.TextAreaField rows={4} required />}
+            {(field) => (
+              <field.TextAreaField rows={4} required description={t("report.description")} />
+            )}
           </form.Field>
           <form.FormAlert title={t("report.failed")} />
           <form.Submit pending={t("onboarding.sending")}>{t("report.send")}</form.Submit>

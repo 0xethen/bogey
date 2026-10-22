@@ -280,6 +280,23 @@ Set at: instance, org, event.
 | `selfCheckIn` | on / off | — | Let people check themselves in with the venue code staff show on a screen |
 | `requiredToCompete` | on / off | `false` | Participants can't change teams, submit or vote until they've checked in |
 
+## Gallery (`gallery`)
+
+Set at: instance, org, event.
+
+| Key | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `layout` | `grid` · `lanes` | `grid` | How the gallery lays out projects: an even grid, or lanes that pack tightly |
+| `switchLayout` | on / off | `true` | Whether visitors can switch the layout for themselves |
+| `banners` | on / off | `true` | Show a banner image on each project's card |
+| `teamBanners` | on / off | `true` | Whether teams choose their own banner from their project's images |
+| `teamSizes` | on / off | `false` | Whether teams choose how large their card is |
+| `winners` | on / off | `true` | Mark award winners in the gallery once results are published |
+| `likes` | on / off | `false` | Let signed-in visitors like projects |
+| `comments` | on / off | `false` | Let signed-in visitors comment on projects |
+| `sort` | `newest` · `oldest` · `title` · `team` · `winners` · `liked` · `votes` · `discussed` · `random` | `newest` | How projects are ordered until a visitor picks another order |
+| `slideshow` | on / off | `true` | Offer the slideshow |
+
 ## Popular vote (`voting`)
 
 Set at: instance, org, event.

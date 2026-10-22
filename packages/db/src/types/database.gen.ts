@@ -1517,6 +1517,86 @@ export type Database = {
           },
         ];
       };
+      gallery_comments: {
+        Row: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          event_id: string;
+          id: string;
+          submission_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id: string;
+          body: string;
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          submission_id: string;
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          submission_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gallery_comments_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gallery_comments_event_id_submission_id_fkey";
+            columns: ["event_id", "submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
+      gallery_likes: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          submission_id: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          submission_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          submission_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gallery_likes_event_id_submission_id_fkey";
+            columns: ["event_id", "submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "gallery_likes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       instance_audit: {
         Row: {
           action: string;
@@ -3195,6 +3275,7 @@ export type Database = {
           event_id: string;
           file_name: string;
           id: string;
+          is_banner: boolean;
           item_key: string;
           size_bytes: number;
           sort: number;
@@ -3208,6 +3289,7 @@ export type Database = {
           event_id: string;
           file_name: string;
           id?: string;
+          is_banner?: boolean;
           item_key: string;
           size_bytes: number;
           sort?: number;
@@ -3220,6 +3302,7 @@ export type Database = {
           event_id?: string;
           file_name?: string;
           id?: string;
+          is_banner?: boolean;
           item_key?: string;
           size_bytes?: number;
           sort?: number;
@@ -3413,6 +3496,7 @@ export type Database = {
       submissions: {
         Row: {
           answers: NonNullable<Json>;
+          card_size: string;
           created_at: string;
           deletion_requested_at: string | null;
           deletion_requested_by: string | null;
@@ -3431,6 +3515,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           answers?: NonNullable<Json>;
+          card_size?: string;
           created_at?: string;
           deletion_requested_at?: string | null;
           deletion_requested_by?: string | null;
@@ -3448,6 +3533,7 @@ export type Database = {
         };
         Update: {
           answers?: NonNullable<Json>;
+          card_size?: string;
           created_at?: string;
           deletion_requested_at?: string | null;
           deletion_requested_by?: string | null;
@@ -4355,6 +4441,7 @@ export type Database = {
       declare_conflict: { Args: { p_reason?: string; p_submission: string }; Returns: undefined };
       delete_account: { Args: { p_user: string }; Returns: undefined };
       delete_event: { Args: { p_confirm: string; p_event: string }; Returns: Json };
+      delete_gallery_comment: { Args: { p_comment: string }; Returns: undefined };
       delete_submission: { Args: { p_submission: string }; Returns: string };
       delete_webhook: { Args: { p_id: string }; Returns: undefined };
       disband_team: { Args: { p_event: string }; Returns: undefined };
@@ -4421,6 +4508,24 @@ export type Database = {
       event_gate: { Args: { p_event: string }; Returns: string };
       event_network_status: { Args: { p_event: string }; Returns: Json };
       flag_submission: { Args: { p_reason: string; p_submission: string }; Returns: string };
+      gallery_engagement: {
+        Args: { p_event: string };
+        Returns: {
+          comments: number;
+          likes: number;
+          submission_id: string;
+        }[];
+      };
+      gallery_thread: {
+        Args: { p_submission: string };
+        Returns: {
+          author_id: string;
+          author_name: string;
+          body: string;
+          created_at: string;
+          id: string;
+        }[];
+      };
       import_roster: { Args: { p_event: string; p_notify?: boolean; p_rows: Json }; Returns: Json };
       inherited_settings: {
         Args: {
@@ -4679,6 +4784,7 @@ export type Database = {
         };
         Returns: string;
       };
+      post_gallery_comment: { Args: { p_body: string; p_submission: string }; Returns: string };
       preview_results: { Args: { p_event: string }; Returns: Json };
       project_export_access: { Args: { p_event: string }; Returns: string };
       project_export_results: { Args: { p_event: string }; Returns: Json };
@@ -4876,6 +4982,11 @@ export type Database = {
         Args: { p_division?: string; p_event: string; p_user: string };
         Returns: undefined;
       };
+      set_gallery_like: { Args: { p_like: boolean; p_submission: string }; Returns: undefined };
+      set_gallery_look: {
+        Args: { p_banner?: string; p_size: string; p_submission: string };
+        Returns: undefined;
+      };
       set_org_limits: { Args: { p_limits: Json; p_org: string }; Returns: undefined };
       set_org_status: {
         Args: {
@@ -4933,6 +5044,7 @@ export type Database = {
         Args: { p_submission: string; p_submit?: boolean };
         Returns: {
           answers: NonNullable<Json>;
+          card_size: string;
           created_at: string;
           deletion_requested_at: string | null;
           deletion_requested_by: string | null;

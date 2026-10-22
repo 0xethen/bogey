@@ -129,8 +129,10 @@ import { Route as AuthedEventsSlugManagePrizesRouteImport } from './routes/_auth
 import { Route as AuthedEventsSlugManageRegistrationRouteImport } from './routes/_authed/events/$slug/manage/registration'
 import { Route as AuthedEventsSlugManageRegistrationFormRouteImport } from './routes/_authed/events/$slug/manage/registration-form'
 import { Route as AuthedEventsSlugManageResultsRouteImport } from './routes/_authed/events/$slug/manage/results'
+import { Route as AuthedEventsSlugManageReviewRouteImport } from './routes/_authed/events/$slug/manage/review'
 import { Route as AuthedEventsSlugManageSecurityRouteImport } from './routes/_authed/events/$slug/manage/security'
 import { Route as AuthedEventsSlugManageSubmissionsRouteImport } from './routes/_authed/events/$slug/manage/submissions'
+import { Route as AuthedEventsSlugManageTagsRouteImport } from './routes/_authed/events/$slug/manage/tags'
 import { Route as AuthedEventsSlugManageTeamsRouteImport } from './routes/_authed/events/$slug/manage/teams'
 import { Route as AuthedEventsSlugManageWebhooksRouteImport } from './routes/_authed/events/$slug/manage/webhooks'
 import { Route as AuthedEventsSlugPagesIndexRouteImport } from './routes/_authed/events/$slug/pages/index'
@@ -804,6 +806,12 @@ const AuthedEventsSlugManageResultsRoute =
     path: '/results',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
+const AuthedEventsSlugManageReviewRoute =
+  AuthedEventsSlugManageReviewRouteImport.update({
+    id: '/review',
+    path: '/review',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
 const AuthedEventsSlugManageSecurityRoute =
   AuthedEventsSlugManageSecurityRouteImport.update({
     id: '/security',
@@ -814,6 +822,12 @@ const AuthedEventsSlugManageSubmissionsRoute =
   AuthedEventsSlugManageSubmissionsRouteImport.update({
     id: '/submissions',
     path: '/submissions',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageTagsRoute =
+  AuthedEventsSlugManageTagsRouteImport.update({
+    id: '/tags',
+    path: '/tags',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
 const AuthedEventsSlugManageTeamsRoute =
@@ -1051,8 +1065,10 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
   '/events/$slug/manage/registration-form': typeof AuthedEventsSlugManageRegistrationFormRoute
   '/events/$slug/manage/results': typeof AuthedEventsSlugManageResultsRoute
+  '/events/$slug/manage/review': typeof AuthedEventsSlugManageReviewRoute
   '/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
+  '/events/$slug/manage/tags': typeof AuthedEventsSlugManageTagsRoute
   '/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
   '/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
@@ -1180,8 +1196,10 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
   '/events/$slug/manage/registration-form': typeof AuthedEventsSlugManageRegistrationFormRoute
   '/events/$slug/manage/results': typeof AuthedEventsSlugManageResultsRoute
+  '/events/$slug/manage/review': typeof AuthedEventsSlugManageReviewRoute
   '/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
+  '/events/$slug/manage/tags': typeof AuthedEventsSlugManageTagsRoute
   '/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
   '/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
@@ -1326,8 +1344,10 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationRoute
   '/_authed/events/$slug/manage/registration-form': typeof AuthedEventsSlugManageRegistrationFormRoute
   '/_authed/events/$slug/manage/results': typeof AuthedEventsSlugManageResultsRoute
+  '/_authed/events/$slug/manage/review': typeof AuthedEventsSlugManageReviewRoute
   '/_authed/events/$slug/manage/security': typeof AuthedEventsSlugManageSecurityRoute
   '/_authed/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsRoute
+  '/_authed/events/$slug/manage/tags': typeof AuthedEventsSlugManageTagsRoute
   '/_authed/events/$slug/manage/teams': typeof AuthedEventsSlugManageTeamsRoute
   '/_authed/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/_authed/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
@@ -1471,8 +1491,10 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/registration'
     | '/events/$slug/manage/registration-form'
     | '/events/$slug/manage/results'
+    | '/events/$slug/manage/review'
     | '/events/$slug/manage/security'
     | '/events/$slug/manage/submissions'
+    | '/events/$slug/manage/tags'
     | '/events/$slug/manage/teams'
     | '/events/$slug/manage/webhooks'
     | '/events/$slug/pages/$page'
@@ -1600,8 +1622,10 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/registration'
     | '/events/$slug/manage/registration-form'
     | '/events/$slug/manage/results'
+    | '/events/$slug/manage/review'
     | '/events/$slug/manage/security'
     | '/events/$slug/manage/submissions'
+    | '/events/$slug/manage/tags'
     | '/events/$slug/manage/teams'
     | '/events/$slug/manage/webhooks'
     | '/events/$slug/pages/$page'
@@ -1745,8 +1769,10 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/registration'
     | '/_authed/events/$slug/manage/registration-form'
     | '/_authed/events/$slug/manage/results'
+    | '/_authed/events/$slug/manage/review'
     | '/_authed/events/$slug/manage/security'
     | '/_authed/events/$slug/manage/submissions'
+    | '/_authed/events/$slug/manage/tags'
     | '/_authed/events/$slug/manage/teams'
     | '/_authed/events/$slug/manage/webhooks'
     | '/_authed/events/$slug/pages/$page'
@@ -2650,6 +2676,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManageResultsRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
+    '/_authed/events/$slug/manage/review': {
+      id: '/_authed/events/$slug/manage/review'
+      path: '/review'
+      fullPath: '/events/$slug/manage/review'
+      preLoaderRoute: typeof AuthedEventsSlugManageReviewRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
     '/_authed/events/$slug/manage/security': {
       id: '/_authed/events/$slug/manage/security'
       path: '/security'
@@ -2662,6 +2695,13 @@ declare module '@tanstack/react-router' {
       path: '/submissions'
       fullPath: '/events/$slug/manage/submissions'
       preLoaderRoute: typeof AuthedEventsSlugManageSubmissionsRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/tags': {
+      id: '/_authed/events/$slug/manage/tags'
+      path: '/tags'
+      fullPath: '/events/$slug/manage/tags'
+      preLoaderRoute: typeof AuthedEventsSlugManageTagsRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
     '/_authed/events/$slug/manage/teams': {
@@ -2983,8 +3023,10 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageRegistrationRoute: typeof AuthedEventsSlugManageRegistrationRoute
   AuthedEventsSlugManageRegistrationFormRoute: typeof AuthedEventsSlugManageRegistrationFormRoute
   AuthedEventsSlugManageResultsRoute: typeof AuthedEventsSlugManageResultsRoute
+  AuthedEventsSlugManageReviewRoute: typeof AuthedEventsSlugManageReviewRoute
   AuthedEventsSlugManageSecurityRoute: typeof AuthedEventsSlugManageSecurityRoute
   AuthedEventsSlugManageSubmissionsRoute: typeof AuthedEventsSlugManageSubmissionsRoute
+  AuthedEventsSlugManageTagsRoute: typeof AuthedEventsSlugManageTagsRoute
   AuthedEventsSlugManageTeamsRoute: typeof AuthedEventsSlugManageTeamsRoute
   AuthedEventsSlugManageWebhooksRoute: typeof AuthedEventsSlugManageWebhooksRoute
   AuthedEventsSlugManageIndexRoute: typeof AuthedEventsSlugManageIndexRoute
@@ -3017,9 +3059,11 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageRegistrationFormRoute:
       AuthedEventsSlugManageRegistrationFormRoute,
     AuthedEventsSlugManageResultsRoute: AuthedEventsSlugManageResultsRoute,
+    AuthedEventsSlugManageReviewRoute: AuthedEventsSlugManageReviewRoute,
     AuthedEventsSlugManageSecurityRoute: AuthedEventsSlugManageSecurityRoute,
     AuthedEventsSlugManageSubmissionsRoute:
       AuthedEventsSlugManageSubmissionsRoute,
+    AuthedEventsSlugManageTagsRoute: AuthedEventsSlugManageTagsRoute,
     AuthedEventsSlugManageTeamsRoute: AuthedEventsSlugManageTeamsRoute,
     AuthedEventsSlugManageWebhooksRoute: AuthedEventsSlugManageWebhooksRoute,
     AuthedEventsSlugManageIndexRoute: AuthedEventsSlugManageIndexRoute,

@@ -1330,6 +1330,99 @@ export const settingsRegistry = {
       },
     },
   }),
+  gallery: namespace({
+    label: "Gallery",
+    scopes: ["instance", "org", "event"],
+    defaults: {
+      layout: "grid",
+      switchLayout: true,
+      banners: true,
+      teamBanners: true,
+      teamSizes: false,
+      winners: true,
+      likes: false,
+      comments: false,
+      sort: "newest",
+      slideshow: true,
+    },
+    schema: z.object({
+      layout: z
+        .enum(["grid", "lanes"])
+        .optional()
+        .describe("How the gallery lays out projects: an even grid, or lanes that pack tightly"),
+      switchLayout: z
+        .boolean()
+        .optional()
+        .describe("Whether visitors can switch the layout for themselves"),
+      banners: z.boolean().optional().describe("Show a banner image on each project's card"),
+      teamBanners: z
+        .boolean()
+        .optional()
+        .describe("Whether teams choose their own banner from their project's images"),
+      teamSizes: z.boolean().optional().describe("Whether teams choose how large their card is"),
+      winners: z
+        .boolean()
+        .optional()
+        .describe("Mark award winners in the gallery once results are published"),
+      likes: z.boolean().optional().describe("Let signed-in visitors like projects"),
+      comments: z.boolean().optional().describe("Let signed-in visitors comment on projects"),
+      sort: z
+        .enum([
+          "newest",
+          "oldest",
+          "title",
+          "team",
+          "winners",
+          "liked",
+          "votes",
+          "discussed",
+          "random",
+        ])
+        .optional()
+        .describe("How projects are ordered until a visitor picks another order"),
+      slideshow: z.boolean().optional().describe("Offer the slideshow"),
+    }),
+    fields: {
+      layout: {
+        label: say("setting.gallery.layout"),
+        options: [
+          { value: "grid", label: say("setting.gallery.layout.grid") },
+          { value: "lanes", label: say("setting.gallery.layout.lanes") },
+        ],
+      },
+      switchLayout: { label: say("setting.gallery.switchLayout") },
+      banners: { label: say("setting.gallery.banners") },
+      teamBanners: {
+        label: say("setting.gallery.teamBanners"),
+        description: say("setting.gallery.teamBanners.help"),
+      },
+      teamSizes: {
+        label: say("setting.gallery.teamSizes"),
+        description: say("setting.gallery.teamSizes.help"),
+      },
+      winners: { label: say("setting.gallery.winners") },
+      likes: { label: say("setting.gallery.likes") },
+      comments: {
+        label: say("setting.gallery.comments"),
+        description: say("setting.gallery.comments.help"),
+      },
+      sort: {
+        label: say("setting.gallery.sort"),
+        options: [
+          { value: "newest", label: say("setting.gallery.sort.newest") },
+          { value: "oldest", label: say("setting.gallery.sort.oldest") },
+          { value: "title", label: say("setting.gallery.sort.title") },
+          { value: "team", label: say("setting.gallery.sort.team") },
+          { value: "winners", label: say("setting.gallery.sort.winners") },
+          { value: "liked", label: say("setting.gallery.sort.liked") },
+          { value: "votes", label: say("setting.gallery.sort.votes") },
+          { value: "discussed", label: say("setting.gallery.sort.discussed") },
+          { value: "random", label: say("setting.gallery.sort.random") },
+        ],
+      },
+      slideshow: { label: say("setting.gallery.slideshow") },
+    },
+  }),
   voting: namespace({
     label: "Popular vote",
     scopes: ["instance", "org", "event"],

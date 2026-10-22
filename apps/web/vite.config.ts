@@ -32,7 +32,7 @@ const config = defineConfig({
     ),
   },
   lint: {
-    rules: { "import/extensions": ["allow"] },
+    rules: { "import/extensions": "allow", "no-unused-vars": "warn" },
   },
   plugins: lazyPlugins(() =>
     process.env.VITEST

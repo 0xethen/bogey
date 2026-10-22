@@ -1,4 +1,4 @@
-import { memo, useCallback, useLayoutEffect, useRef, type ReactNode } from "react";
+import { memo, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   createColumnHelper,
   createSortedRowModel,
@@ -12,7 +12,7 @@ import {
   type RowData,
   type TableOptions,
 } from "@tanstack/react-table";
-import { IconArrowDown, IconArrowUp, IconArrowsSort } from "@tabler/icons-react";
+import { IconArrowDown, IconArrowUp, IconArrowsSort, IconChevronRight } from "@tabler/icons-react";
 import { cn } from "@bogey/ui/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table.tsx";
 import { Checkbox } from "./checkbox.tsx";
@@ -47,6 +47,7 @@ export function DataTable<T extends RowData>({
   className,
   selection,
   pageSize,
+  detail,
 }: {
   columns: TableOptions<Features, T>["columns"];
   data: T[];
@@ -56,6 +57,8 @@ export function DataTable<T extends RowData>({
   selection?: DataTableSelection<T>;
   /** Rows per page to start with; without it every row shows. */
   pageSize?: number;
+  /** Rows open on an arrow to show this beneath them; keep the function stable, rows compare it. */
+  detail?: (row: T) => ReactNode;
 }) {
   const t = useUiText();
   const table = useTable({ features: dataTableFeatures, columns, data, getRowId });
@@ -105,6 +108,7 @@ export function DataTable<T extends RowData>({
                   />
                 </TableHead>
               )}
+              {detail && <TableHead className="w-8" aria-label={t("ui.details")} />}
               {group.headers.map((header) => {
                 const sorted = header.column.getIsSorted();
                 const label = header.isPlaceholder ? null : <table.FlexRender header={header} />;
@@ -143,7 +147,7 @@ export function DataTable<T extends RowData>({
           {rows.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={table.getAllLeafColumns().length + (selection ? 1 : 0)}
+                colSpan={table.getAllLeafColumns().length + (selection ? 1 : 0) + (detail ? 1 : 0)}
                 className={cn("h-20 text-center text-muted-fg")}
               >
                 {empty ?? t("ui.noRows")}
@@ -157,6 +161,8 @@ export function DataTable<T extends RowData>({
                 original={row.original}
                 columns={columns}
                 selectable={!!selection}
+                detail={detail}
+                columnCount={table.getAllLeafColumns().length + (selection ? 1 : 0) + 1}
                 selected={selection?.selected.has(row.id) ?? false}
                 label={selection ? t("ui.selectRow", { name: selection.label(row.original) }) : ""}
                 onToggle={toggle}
@@ -194,6 +200,8 @@ type DataRowProps<T extends RowData> = {
   /** Compared so a change to what the cells render redraws the rows. */
   columns: unknown;
   selectable: boolean;
+  detail: ((row: T) => ReactNode) | undefined;
+  columnCount: number;
   selected: boolean;
   label: string;
   onToggle: (id: string) => void;
@@ -206,34 +214,67 @@ const DataRow = memo(
   function DataRow<T extends RowData>({
     row,
     selectable,
+    detail,
+    columnCount,
     selected,
     label,
     onToggle,
     render,
   }: DataRowProps<T>) {
+    const t = useUiText();
+    const [open, setOpen] = useState(false);
     return (
-      <TableRow data-state={selected ? "selected" : undefined}>
-        {selectable && (
-          <TableCell className="w-8 align-top">
-            <Checkbox
-              aria-label={label}
-              checked={selected}
-              onCheckedChange={() => onToggle(row.id)}
-            />
-          </TableCell>
+      <>
+        <TableRow data-state={selected ? "selected" : undefined}>
+          {selectable && (
+            <TableCell className="w-8 align-middle">
+              <Checkbox
+                aria-label={label}
+                checked={selected}
+                onCheckedChange={() => onToggle(row.id)}
+              />
+            </TableCell>
+          )}
+          {detail && (
+            <TableCell className="w-8 align-middle">
+              <button
+                type="button"
+                aria-expanded={open}
+                aria-label={open ? t("ui.hideDetails") : t("ui.showDetails")}
+                className="grid size-6 place-items-center rounded-md text-muted-fg hocus:text-fg"
+                onClick={() => setOpen((current) => !current)}
+              >
+                <IconChevronRight
+                  className={cn(
+                    "size-4 transition-transform motion-reduce:transition-none",
+                    open && "rotate-90",
+                  )}
+                />
+              </button>
+            </TableCell>
+          )}
+          {row.getAllCells().map((cell) => (
+            <TableCell key={cell.id} className="align-middle">
+              {render(cell)}
+            </TableCell>
+          ))}
+        </TableRow>
+        {detail && open && (
+          <TableRow className="hover:bg-transparent">
+            <TableCell colSpan={columnCount} className="bg-muted/30 pb-4">
+              {detail(row.original)}
+            </TableCell>
+          </TableRow>
         )}
-        {row.getAllCells().map((cell) => (
-          <TableCell key={cell.id} className="align-top">
-            {render(cell)}
-          </TableCell>
-        ))}
-      </TableRow>
+      </>
     );
   },
   (before, after) =>
     before.original === after.original &&
     before.columns === after.columns &&
     before.selectable === after.selectable &&
+    before.detail === after.detail &&
+    before.columnCount === after.columnCount &&
     before.selected === after.selected &&
     before.label === after.label &&
     before.onToggle === after.onToggle,

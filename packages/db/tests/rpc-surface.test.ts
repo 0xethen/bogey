@@ -15,6 +15,10 @@ const SIGNED_OUT = {
   open_event:
     "opens a public event by its address; an unlisted one only to signed-in visitors, who are remembered",
   vote_counts: "counts votes only when the event lets the caller see them",
+  gallery_engagement:
+    "counts a public gallery's likes and comments, only where the organizers turned them on",
+  gallery_thread:
+    "a project's comments with their authors' names, only while the gallery and comments are on",
   invite_link_view: "the join page shows an invite before sign-in",
   org_for_host: "resolves the org from the hostname before sign-in",
   report_page: "anyone can report a public page; a trigger-free insert into a table nobody reads",
@@ -75,6 +79,13 @@ const SIGNED_IN = {
   skip_submission:
     "a judge sets an absent team aside; creates the assignment row judges can't insert",
   cast_vote: "checks the voting window, who may vote, the cap and own-team rule, then audits",
+  set_gallery_look:
+    "a team picks its gallery banner and card size, which the organizers' gallery settings can switch off, and it audits",
+  set_gallery_like:
+    "likes a public project while the organizers have likes on; too frequent to audit",
+  post_gallery_comment:
+    "comments on a public project while the organizers have comments on, then audits",
+  delete_gallery_comment: "an author or an organizer removes a comment and it is audited",
   retract_vote: "takes back the caller's vote while voting is open and audits it",
   assign_round_robin: "organizers assign judges across teams they can't all read",
   set_person_tags:

@@ -4,7 +4,7 @@ import type { Session } from "@bogey/db/auth";
 import { isOrgAdmin, sessionQueryOptions } from "@bogey/db/auth";
 import { can, previewAccess, useViewAs, type EventAccess } from "@bogey/db/permissions";
 import type { Event } from "@bogey/db/queries/events";
-import { windowByKey, type EventWindow } from "@bogey/db/queries/windows";
+import { isWindowOpen, windowByKey, type EventWindow } from "@bogey/db/queries/windows";
 import type { PluginManifest } from "@bogey/plugins";
 import type { ResolvedValue } from "@bogey/config/settings";
 import { isSubmissionWindow } from "#/lib/windows.ts";
@@ -38,6 +38,9 @@ export const judgesOnly = (viewer: EventViewer) =>
 export const atTheDesk = ({ access }: EventViewer) => can(access, "people.checkin");
 export const hasAgenda = (viewer: EventViewer) => viewer.hasAgenda;
 export const hasResults = ({ windows }: EventViewer) => !!windowByKey(windows, "results");
+/** The public gallery is open to this viewer: a public event whose gallery window is open. */
+export const hasGallery = ({ event, windows }: EventViewer) =>
+  event.visibility === "public" && isWindowOpen(windowByKey(windows, "gallery"));
 export const chats = ({ access, chat }: Pick<EventViewer, "access" | "chat">) =>
   chat.enabled &&
   (can(access, "event.manage") ||

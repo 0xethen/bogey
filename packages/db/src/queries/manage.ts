@@ -303,6 +303,9 @@ export interface Person {
   role: EventRole;
   email: string | null;
   team: string | null;
+  teamId: string | null;
+  /** Everyone on their team, them included. */
+  teamSize: number;
   divisionId: string | null;
   extraRoles: string[];
 }
@@ -329,7 +332,7 @@ export const eventPeopleFn = createServerFn({ method: "GET" })
         )
         .eq("event_id", eventId)
         .eq("status", "active"),
-      supabase.from("team_members").select("user_id, teams(name)").eq("event_id", eventId),
+      supabase.from("team_members").select("user_id, team_id, teams(name)").eq("event_id", eventId),
     ]);
     const error = registrations.error ?? members.error ?? teams.error;
     if (error) return toFailure(error, "loading people");
@@ -342,6 +345,11 @@ export const eventPeopleFn = createServerFn({ method: "GET" })
     const teamOf = new Map(
       (teams.data ?? []).flatMap((row) => (row.teams ? [[row.user_id, row.teams.name]] : [])),
     );
+    const teamSizes = new Map<string, number>();
+    for (const row of teams.data ?? []) {
+      teamSizes.set(row.team_id, (teamSizes.get(row.team_id) ?? 0) + 1);
+    }
+    const teamIdOf = new Map((teams.data ?? []).map((row) => [row.user_id, row.team_id]));
     return ok({
       registrations: registrations.data ?? [],
       members: (members.data ?? [])
@@ -351,6 +359,8 @@ export const eventPeopleFn = createServerFn({ method: "GET" })
           role: row.role,
           email: emails.get(row.user_id) ?? null,
           team: teamOf.get(row.user_id) ?? null,
+          teamId: teamIdOf.get(row.user_id) ?? null,
+          teamSize: teamSizes.get(teamIdOf.get(row.user_id) ?? "") ?? 0,
           divisionId: row.division_id,
           extraRoles: row.event_role_grants.map((grant) => grant.role_key),
         }))

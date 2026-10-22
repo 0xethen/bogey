@@ -420,9 +420,18 @@ every round or just one. The final awards are proposed from each form's last rou
 When a **public** event's Gallery window opens, `/gallery/<event-slug>` lists
 every submitted project whose team turned on **Show in the public gallery**,
 with filters by form, track and division. It works signed out and has link
-previews for sharing. The event home and Results link to it while it's open.
+previews for sharing. While it's open, a **Gallery** tab appears on the event's
+tab row and opens it in a new browser tab.
 Disqualified projects never appear, and judges still don't see team names
 while judging is blind.
+
+Manage → Submissions → **Public gallery** sets how it looks and what visitors
+can do: a grid or lanes layout (and whether visitors can switch), banners on
+cards, winner markers once results are published, likes and comments for
+signed-in visitors (both off by default), the default sort, and the slideshow.
+Teams pick their card's banner from their project's images, and its size if you
+allow that, under **Gallery card** on their Submission page. The slideshow
+doesn't loop unless the viewer turns that on in its settings.
 
 ## 8. Talking to participants
 

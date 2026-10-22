@@ -485,7 +485,8 @@ export function JurySolutions({ eventId, problem }: { eventId: string; problem: 
                   {each.label || each.language}
                   <span className="ml-2 font-normal text-muted-fg">{each.language}</span>
                 </span>
-                <span className="text-muted-fg">expected {VERDICTS[each.expected]}</span>
+                {/* expected verdict */}
+                <span className="text-muted-fg">{VERDICTS[each.expected]}</span>
                 {each.verdict ? (
                   <>
                     <TestVerdict verdict={each.verdict} />

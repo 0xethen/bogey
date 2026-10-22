@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { IconCamera, IconCameraOff, IconUserPlus, IconUsers } from "@tabler/icons-react";
+import { IconCamera, IconCameraOff, IconUserPlus } from "@tabler/icons-react";
 import {
   checkInFn,
   checkinRosterQueryOptions,
@@ -319,7 +319,7 @@ function Desk() {
           description={t("checkin.walkInHelp")}
         >
           <walkInForm.AppForm>
-            <walkInForm.Form className="flex flex-wrap items-end gap-2">
+            <walkInForm.Form className="flex flex-wrap items-end gap-6">
               <walkInForm.Field name="email">
                 {(field) => <field.TextField type="email" required autoComplete="off" />}
               </walkInForm.Field>
@@ -363,7 +363,7 @@ function Desk() {
           {byGroup((entry) => entry.role).map(([role, counts]) => (
             <Stat
               key={role}
-              icon={IconUsers}
+              // icon={IconUsers}
               label={roleLabel(role).toLowerCase()}
               value={counts.here}
               of={counts.total}

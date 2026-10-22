@@ -21,7 +21,9 @@ import {
   IconPuzzle,
   IconShieldLock,
   IconSpeakerphone,
+  IconTags,
   IconTrophy,
+  IconUserCheck,
   IconUsers,
   IconUsersGroup,
   IconWebhook,
@@ -144,7 +146,17 @@ function RouteComponent() {
           label: t("adminTab.people"),
           icon: IconUsers,
           to: `${base}/people`,
-          badge: summary.data?.pending,
+          sub: [
+            {
+              key: "review",
+              label: t("manageNav.review"),
+              icon: IconUserCheck,
+              to: `${base}/review`,
+              badge: summary.data?.pending,
+              // registrations waiting on a decision need you, like unanswered messages
+              badgeVariant: summary.data?.pending ? "default" : "text",
+            },
+          ],
         },
         ...(event.team_size_max > 1
           ? [{ key: "teams", label: t("facts.teams"), icon: IconUsersGroup, to: `${base}/teams` }]
@@ -155,6 +167,7 @@ function RouteComponent() {
           icon: IconCategory,
           to: `${base}/divisions`,
         },
+        { key: "tags", label: t("tags.title"), icon: IconTags, to: `${base}/tags` },
       ],
     },
     {

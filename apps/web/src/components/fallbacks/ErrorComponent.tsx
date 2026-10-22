@@ -7,6 +7,7 @@ import {
   describeCause,
   errorCode,
   requestErrorCode,
+  // userMessage,
   type BogeyErrorCode,
 } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
@@ -19,7 +20,8 @@ import {
 import { Screen } from "@bogey/ui/components/screen";
 import { useT, type PlainKey } from "#/lib/translate.tsx";
 
-type Kind = BogeyErrorCode | "offline" | "outdated";
+type WebErrorCode = "offline" | "outdated";
+type Kind = BogeyErrorCode | WebErrorCode;
 
 function Glyph({ className = "size-5", children }: { className?: string; children: ReactNode }) {
   return (
@@ -111,6 +113,7 @@ export function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const kind = kindOf(error, useOffline());
   const copy = COPY[kind];
   const message = error instanceof BogeyRequestError ? error.message : t(copy.description);
+  // const userMsg = userMessage(error, kind);
 
   const retry = async () => {
     if (kind === "outdated") {

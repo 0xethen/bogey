@@ -9,6 +9,7 @@ import type { PlainKey, T } from "#/lib/translate.tsx";
 import {
   atTheDesk,
   hasAgenda,
+  hasGallery,
   hasResults,
   hasSubmissionPage,
   hasTeamPage,
@@ -26,6 +27,7 @@ export const CORE_TAB_AUDIENCE: Record<string, PlainKey> = {
   checkin: "manageTabs.forCheckin",
   judging: "manageTabs.forJudging",
   results: "manageTabs.forResults",
+  gallery: "manageTabs.forGallery",
 };
 
 /** Home can be renamed and moved but not hidden; Manage stays last and as it is. */
@@ -88,6 +90,13 @@ export function eventTabs(
     { key: "checkin", label: t("eventTab.checkin"), to: `${base}/checkin`, show: atTheDesk },
     { key: "judging", label: t("eventTab.judging"), to: `${base}/judging`, show: judgesOnly },
     { key: "results", label: t("eventTab.results"), to: `${base}/results`, show: hasResults },
+    {
+      key: "gallery",
+      label: t("eventTab.gallery"),
+      to: `/gallery/${slug}`,
+      show: hasGallery,
+      external: true,
+    },
     ...pluginTabs(slug, plugins, pluginSettings),
     {
       key: MANAGE_TAB,

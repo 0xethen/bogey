@@ -1,6 +1,6 @@
 import { exportHref } from "#/lib/exports.ts";
 import { useMemo, useState, type ReactNode } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useLocation } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
@@ -104,7 +104,16 @@ function RouteComponent() {
   });
   const error = move.error ?? update.error ?? disband.error;
   const unassigned = usePaged(data.unassigned);
-  const teams = usePaged(data.teams);
+  // a link from People lands on its team: first in the list, and open
+  const linked = useLocation({ select: (location) => decodeURIComponent(location.hash) });
+  const ordered = useMemo(
+    () => [
+      ...data.teams.filter((team) => team.id === linked),
+      ...data.teams.filter((team) => team.id !== linked),
+    ],
+    [data.teams, linked],
+  );
+  const teams = usePaged(ordered);
 
   const destinations = (current: string | null) => [
     { value: NO_TEAM, label: t("manageTeams.noTeam") },
@@ -198,6 +207,8 @@ function RouteComponent() {
             {teams.shown.map((team) => (
               <DisclosureRow
                 key={team.id}
+                id={team.id}
+                defaultOpen={team.id === linked}
                 leading={
                   <StatusDot
                     tone={team.members.length >= event.team_size_min ? "done" : "attention"}

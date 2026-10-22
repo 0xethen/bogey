@@ -245,7 +245,7 @@ export function useProblems(eventId: string, order: Settings["problemOrder"]) {
 export const PROBLEM_KIND: Record<ProblemKind, { label: string; description: string }> = {
   pass_fail: {
     label: "Pass/fail",
-    description: "Solved when every test passes; anything less scores nothing.",
+    description: "Solved when every test passes.",
   },
   partial: {
     label: "Partial credit",
@@ -253,7 +253,7 @@ export const PROBLEM_KIND: Record<ProblemKind, { label: string; description: str
   },
   shortest: {
     label: "Shortest code",
-    description: "Accepted solutions compete with their length: the shorter, the better.",
+    description: "Solved solutions compete with their length: the shorter, the better.",
   },
 };
 
@@ -353,9 +353,9 @@ const CELL_TONES: Record<Settings["verdictColors"], Record<CellState, string>> =
 export const CELL_LABEL: Record<CellState, string> = {
   first: "Solved first",
   solved: "Solved",
-  tried: "Tried, not solved",
+  tried: "Not solved", // Tried
   pending: "Being judged",
-  untried: "Not tried",
+  untried: "Not attempted",
 };
 
 export function cellTone(colors: Settings["verdictColors"], state: CellState): string {

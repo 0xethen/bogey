@@ -33,6 +33,19 @@ import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
+const GALLERY_KEYS = [
+  "layout",
+  "switchLayout",
+  "banners",
+  "teamBanners",
+  "teamSizes",
+  "winners",
+  "likes",
+  "comments",
+  "sort",
+  "slideshow",
+] as const;
+
 export const Route = createFileRoute("/_authed/events/$slug/manage/submissions")({
   staticData: {
     title: msg("window.submissions"),
@@ -41,6 +54,11 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions")
       searchSection(t("manageSubs.drafts"), { id: "drafts" }),
       searchSection(t("manageSubs.reminders"), { id: "reminders" }),
       ...searchSettings("submissions", ["reminderHours"], t),
+      searchSection(t("manageSubs.gallery"), {
+        keywords: ["banner", "likes", "comments"],
+        id: "gallery",
+      }),
+      ...searchSettings("gallery", GALLERY_KEYS, t),
       searchSection(t("manageSubs.disqualified"), { id: "disqualified" }),
     ],
   },
@@ -51,6 +69,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions")
       context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "submissions",
+        "gallery",
       ]),
     ]),
   component: RouteComponent,
@@ -188,7 +207,8 @@ function RouteComponent() {
             </Button>
           ) : (
             <Button
-              variant="destructive"
+              variant="ghost"
+              className="text-destructive"
               size="sm"
               disabled={disqualify.isPending}
               confirm={{
@@ -204,9 +224,8 @@ function RouteComponent() {
             </Button>
           )}
           <Button
+            variant="destructive"
             size="sm"
-            variant="ghost"
-            className="text-destructive"
             disabled={remove.isPending}
             confirm={{
               title: t("manageSubs.deleteTitle", {
@@ -334,6 +353,17 @@ function RouteComponent() {
           scope={{ scope: "event", eventId: event.id }}
           namespace="submissions"
           keys={["reminderHours"]}
+        />
+      </Screen.Section>
+      <Screen.Section
+        id="gallery"
+        title={t("manageSubs.gallery")}
+        description={t("manageSubs.galleryHelp")}
+      >
+        <SettingFields
+          scope={{ scope: "event", eventId: event.id }}
+          namespace="gallery"
+          keys={GALLERY_KEYS}
         />
       </Screen.Section>
       {disqualified.length > 0 && (

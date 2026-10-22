@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
+import { GalleryLook } from "#/components/event/submission/gallery-look.tsx";
 import { browserClient } from "@bogey/db/browser";
 import {
   addSubmissionFileFn,
@@ -592,6 +593,12 @@ function SubmissionEditor({
                 )}
               </div>
             )}
+            <GalleryLook
+              eventId={event.id}
+              slug={event.slug}
+              submission={submission}
+              files={files}
+            />
             <DeleteSubmission event={event} submission={submission} open={open} onDone={refresh} />
           </aside>
         </form.Form>
