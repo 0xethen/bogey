@@ -381,10 +381,15 @@ begin
       values (v_new.id, r.name, r.description_md, r.sort) returning id into v_id;
       v_rubrics := v_rubrics || jsonb_build_object(r.id::text, v_id);
     end loop;
-    insert into public.criteria (event_id, label, description_md, min_score, max_score, weight, sort, round_id, rubric_id)
+    insert into public.criteria (
+      event_id, label, description_md, min_score, max_score, weight, sort, round_id, rubric_id, guidance)
     select v_new.id, label, description_md, min_score, max_score, weight, sort,
-      (v_rounds ->> round_id::text)::uuid, (v_rubrics ->> rubric_id::text)::uuid
+      (v_rounds ->> round_id::text)::uuid, (v_rubrics ->> rubric_id::text)::uuid, guidance
     from public.criteria where event_id = p_source;
+    insert into public.rubric_divisions (event_id, rubric_id, division_id)
+    select v_new.id, (v_rubrics ->> rd.rubric_id::text)::uuid, (v_divisions ->> rd.division_id::text)::uuid
+    from public.rubric_divisions rd
+    where rd.event_id = p_source and v_divisions ? rd.division_id::text;
   end if;
 
   if 'agenda' = any (p_include) then

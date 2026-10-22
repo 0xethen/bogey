@@ -9,6 +9,13 @@ import {
   type Division,
 } from "@bogey/db/queries/divisions";
 import { eventPeopleQueryOptions } from "@bogey/db/queries/manage";
+import {
+  rubricDivisionsQueryOptions,
+  rubricsQueryOptions,
+  setDivisionRubricsFn,
+  type Rubric,
+  type RubricDivision,
+} from "@bogey/db/queries/judging";
 import { requestFailure } from "@bogey/db/errors";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
@@ -45,6 +52,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/divisions")({
     Promise.all([
       context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
       context.query.ensureQueryData(eventPeopleQueryOptions(context.event.id)),
+      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
+      context.query.ensureQueryData(rubricDivisionsQueryOptions(context.event.id)),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "divisions",
       ]),
@@ -79,6 +88,13 @@ const divisionSchema = (t: T) =>
       .boolean()
       .meta({ label: t("manageDivisions.switchable") })
       .describe(t("manageDivisions.switchableHelp")),
+    rubricIds: z
+      .array(z.string())
+      .meta({
+        label: t("manageDivisions.rubrics"),
+        placeholder: t("manageDivisions.rubricsPlaceholder"),
+      })
+      .describe(t("manageDivisions.rubricsHelp")),
   });
 type DivisionValues = z.infer<ReturnType<typeof divisionSchema>>;
 
@@ -103,13 +119,14 @@ const divisionsSchema = (t: T) =>
       }),
   });
 
-const toValues = (division: Division): DivisionValues => ({
+const toValues = (division: Division, links: Tuple<RubricDivision>): DivisionValues => ({
   uid: division.id,
   id: division.id,
   name: division.name,
   description: division.description ?? "",
   selectable: division.selectable,
   switchable: division.switchable,
+  rubricIds: links.filter((link) => link.divisionId === division.id).map((link) => link.rubricId),
 });
 
 const unfinished = (item: DivisionValues, schema: ReturnType<typeof divisionSchema>) =>
@@ -123,13 +140,16 @@ function RouteComponent() {
   const queryClient = useQueryClient();
   const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(event.id));
   const { data: people } = useSuspenseQuery(eventPeopleQueryOptions(event.id));
+  const { data: rubrics } = useSuspenseQuery(rubricsQueryOptions(event.id));
+  const { data: links } = useSuspenseQuery(rubricDivisionsQueryOptions(event.id));
+  const rubricOptions = rubrics.map((rubric) => ({ value: rubric.id, label: rubric.name }));
   const [active, setActive] = useState<string | null>(null);
   const scope = { scope: "event", eventId: event.id } as const;
   const count = (id: string) => people.members.filter((member) => member.divisionId === id).length;
 
   const form = useAppForm({
     ...appFormOptions.strictSchema({
-      defaultValues: { items: divisions.map(toValues) },
+      defaultValues: { items: divisions.map((division) => toValues(division, links)) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
     }),
@@ -137,13 +157,36 @@ function RouteComponent() {
       const result = await saveDivisionsFn({
         data: {
           eventId: event.id,
-          divisions: value.items.map(({ uid: _uid, ...item }) => item),
+          divisions: value.items.map(({ uid: _uid, rubricIds: _rubrics, ...item }) => item),
         },
       }).catch(requestFailure);
       if (!result.ok) return createValidationError(result.error.message);
       queryClient.setQueryData(eventDivisionsQueryOptions(event.id).queryKey, result.data);
+      // new divisions get their ids on save, so their rubrics follow by name
+      const savedId = (item: DivisionValues) =>
+        item.id ||
+        result.data.find(
+          (division) => division.name.toLowerCase() === item.name.trim().toLowerCase(),
+        )?.id;
+      const assigned =
+        rubrics.length > 0
+          ? await setDivisionRubricsFn({
+              data: {
+                eventId: event.id,
+                items: value.items.flatMap((item) => {
+                  const divisionId = savedId(item);
+                  return divisionId ? [{ divisionId, rubricIds: item.rubricIds }] : [];
+                }),
+              },
+            }).catch(requestFailure)
+          : null;
       await queryClient.invalidateQueries({ queryKey: ["divisions", event.id] });
-      formApi.reset({ items: result.data.map(toValues) });
+      const savedLinks = await queryClient.fetchQuery({
+        ...rubricDivisionsQueryOptions(event.id),
+        staleTime: 0,
+      });
+      formApi.reset({ items: result.data.map((division) => toValues(division, savedLinks)) });
+      if (assigned && !assigned.ok) return createValidationError(assigned.error.message);
       setActive(null);
       return undefined;
     },
@@ -182,7 +225,9 @@ function RouteComponent() {
                           confirmRemove={
                             members > 0 ? t("manageDivisions.inUse", { count: members }) : undefined
                           }
-                          preview={<DivisionPreview item={item} members={members} />}
+                          preview={
+                            <DivisionPreview item={item} members={members} rubrics={rubrics} />
+                          }
                           editing={active === item.uid || unfinished(item, itemSchema)}
                           onEdit={() => setActive(item.uid)}
                           onDone={() => setActive(null)}
@@ -199,6 +244,11 @@ function RouteComponent() {
                           <form.Field name={`items[${index}].switchable`}>
                             {(field) => <field.SwitchField />}
                           </form.Field>
+                          {rubrics.length > 0 && (
+                            <form.Field name={`items[${index}].rubricIds`}>
+                              {(field) => <field.MultiSelectField options={rubricOptions} />}
+                            </form.Field>
+                          )}
                         </EditableListItem>
                       );
                     })}
@@ -216,6 +266,7 @@ function RouteComponent() {
                           description: "",
                           selectable: true,
                           switchable: true,
+                          rubricIds: [],
                         });
                         setActive(uid);
                       }}
@@ -240,8 +291,17 @@ function RouteComponent() {
   );
 }
 
-function DivisionPreview({ item, members }: { item: DivisionValues; members: number }) {
+function DivisionPreview({
+  item,
+  members,
+  rubrics,
+}: {
+  item: DivisionValues;
+  members: number;
+  rubrics: Tuple<Rubric>;
+}) {
   const t = useT();
+  const judgedOn = rubrics.filter((rubric) => item.rubricIds.includes(rubric.id));
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
@@ -254,6 +314,13 @@ function DivisionPreview({ item, members }: { item: DivisionValues; members: num
         <p className="text-sm text-muted-fg">{item.description.trim()}</p>
       )}
       <p className="text-xs text-muted-fg">{divisionRule(item, t)}</p>
+      {judgedOn.length > 0 && (
+        <p className="text-xs text-muted-fg">
+          {t("manageDivisions.judgedOn", {
+            names: judgedOn.map((rubric) => rubric.name).join(", "),
+          })}
+        </p>
+      )}
     </div>
   );
 }

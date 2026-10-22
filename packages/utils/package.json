@@ -24,6 +24,7 @@
     "./pending": "./src/pending.ts",
     "./fairness": "./src/fairness.ts",
     "./score-scale": "./src/score-scale.ts",
+    "./guidance": "./src/guidance.ts",
     "./registration-form": "./src/registration-form.ts",
     "./ical": "./src/ical.ts",
     "./feeds": "./src/feeds.ts",

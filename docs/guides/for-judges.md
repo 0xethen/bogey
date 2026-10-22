@@ -14,6 +14,7 @@ A short guide to judging, written so an organizer can send it around or print it
 1. Your **queue** lists the projects assigned to you with their table, team, round and prizes. A button at the top opens the next
    team to visit, in table order. If a team isn't at their table, press **Team absent** beside it (**Restore** brings it back).
 2. Open a project. Read or watch it, then score each criterion with the slider or the number; the labels under it say what the range means.
+   When organizers wrote guidance, the band your score falls in shows under it, and **Show guidance** lists every band.
 3. Add notes if you like. Notes can be shared with the team after results, if the organizers allow it.
 4. Scores save as you go. If your connection drops, the page says how many scores are waiting to send and sends them when you reconnect.
    Keep the page open until it reports they're sent.

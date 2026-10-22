@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { setSubmissionRubricFn, type Criterion, type Rubric } from "@bogey/db/queries/judging";
+import {
+  rubricOf,
+  setSubmissionRubricFn,
+  type Criterion,
+  type ProjectRubric,
+  type Rubric,
+} from "@bogey/db/queries/judging";
 import { unwrap } from "@bogey/db/errors";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
@@ -21,7 +27,7 @@ export function RubricPicker({
 }: {
   submissionId: string;
   rubrics: Tuple<Rubric>;
-  value: string | null;
+  value: ProjectRubric;
   editable: boolean;
   /** Lists the picked rubric's own criteria under it when given. */
   criteria?: Tuple<Criterion>;
@@ -40,30 +46,41 @@ export function RubricPicker({
       ]);
     },
   });
-  if (rubrics.length === 0) return null;
-  const picked = rubrics.find((rubric) => rubric.id === value) ?? null;
+  // rubrics meant for other divisions aren't offered, but a pick made before stays visible
+  const offered = rubrics.filter(
+    (rubric) => value.allowed.includes(rubric.id) || rubric.id === value.picked,
+  );
+  if (offered.length === 0) return null;
+  const current = rubrics.find((rubric) => rubric.id === rubricOf(value)) ?? null;
+  const fallback = rubrics.find((rubric) => rubric.id === value.fallback) ?? null;
+  const choices = offered.filter((rubric) => rubric.id !== fallback?.id);
   const id = `rubric-${submissionId}`;
-  const own = picked && criteria ? criteria.filter((item) => item.rubric_id === picked.id) : [];
+  const own = current && criteria ? criteria.filter((item) => item.rubric_id === current.id) : [];
   return (
     <Field>
       <FieldLabel htmlFor={id}>{t("rubric.label")}</FieldLabel>
-      {editable ? (
+      {editable && choices.length > 0 ? (
         <OptSelect
           id={id}
-          value={picked?.id ?? NONE}
+          value={value.picked && value.picked !== fallback?.id ? value.picked : NONE}
           disabled={pick.isPending}
           options={[
-            { value: NONE, label: t("rubric.none") },
-            ...rubrics.map((rubric) => ({ value: rubric.id, label: rubric.name })),
+            {
+              value: NONE,
+              label: fallback
+                ? t("rubric.divisionDefault", { name: fallback.name })
+                : t("rubric.none"),
+            },
+            ...choices.map((rubric) => ({ value: rubric.id, label: rubric.name })),
           ]}
           onChange={(next) => pick.mutate(next === NONE ? null : next)}
         />
       ) : (
-        <p className="text-sm">{picked?.name ?? t("rubric.notPicked")}</p>
+        <p className="text-sm">{current?.name ?? t("rubric.notPicked")}</p>
       )}
       {description && <FieldDescription>{description}</FieldDescription>}
-      {picked?.description_md && (
-        <Markdown className="text-sm text-muted-fg">{picked.description_md}</Markdown>
+      {current?.description_md && (
+        <Markdown className="text-sm text-muted-fg">{current.description_md}</Markdown>
       )}
       {own.length > 0 && (
         <ul className="list-disc pl-5 text-sm text-muted-fg">

@@ -43,6 +43,7 @@ import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
 import type { Session } from "@bogey/db/auth";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { useMemo, useRef } from "react";
+import { readGuidance } from "@bogey/utils/guidance";
 
 export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionId")({
   staticData: { title: msg("judging.project") },
@@ -163,7 +164,7 @@ function RouteComponent() {
             <RubricPicker
               submissionId={submissionId}
               rubrics={rubrics}
-              value={sheet.rubricId}
+              value={sheet.rubric}
               editable={rubricEditable}
               description={t("rubric.judgeHelp")}
               onPicked={() =>
@@ -355,6 +356,7 @@ function ScoreCard({
                     descriptionMd: criterion.description_md,
                     minScore: criterion.min_score,
                     maxScore: criterion.max_score,
+                    guidance: readGuidance(criterion.guidance),
                   }}
                   value={field.value ?? null}
                   disabled={!open}

@@ -10,6 +10,13 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Criteria have their own page, Manage → Judging → Criteria, with the criteria, rubrics and the rubric-picking settings. Manage → Judging keeps progress, rounds, manual assignments, deliberation and calibration.
+- Each criterion can say what its scores mean: "Guidance by score" takes bands like "1-3: slides only" and "7-10: works end to end", added one at a time or split evenly ("Split into 3"). Judges see the band their score falls in under the criterion as they score, and every band with "Show guidance".
+- Criteria → "Import from a file" reads a rubric spreadsheet (CSV or Excel), with a column per score band ("Criterion, 1-3, 4-6, 7-10") or a row per band ("Criterion, From, To, Guidance"). Criteria with the same name take its guidance and new ones are added, for you to review before saving. "Download as CSV" exports the current guidance in the same shape.
+- Rubrics can be assigned to divisions, from a rubric's "Divisions" on the Criteria page or a division's "Rubrics" on Manage → Divisions. A division with one rubric judges its projects on it without a pick; with several, its projects pick among them. A rubric with no divisions stays open to every project, and rubrics meant for other divisions aren't offered.
+
+**Upgrade notes:** run `bogey db migrate` (migration `20261022100000_criteria_guidance`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria.
+
 ## 2.3.0 (2026-10-22)
 
 - The gallery is a **Gallery** tab on the event's tab row (with an external-link icon, opening in a new browser tab) for whoever can open it, instead of a button on Home and Results. Organizers can hide, rename or time it under Manage → Pages → Tabs like any other tab.

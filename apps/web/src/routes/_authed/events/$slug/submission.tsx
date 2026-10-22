@@ -31,6 +31,7 @@ import {
   criteriaQueryOptions,
   rubricsQueryOptions,
   submissionRubricQueryOptions,
+  NO_PROJECT_RUBRIC,
 } from "@bogey/db/queries/judging";
 import { PrizePicker } from "#/routes/_authed/events/$slug/-components/prize-picker.tsx";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
@@ -620,7 +621,7 @@ function TeamRubric({
 }) {
   const t = useT();
   const { data: rubrics = [] } = useQuery(rubricsQueryOptions(eventId));
-  const { data: picked = null } = useQuery(submissionRubricQueryOptions(submissionId));
+  const { data: picked = NO_PROJECT_RUBRIC } = useQuery(submissionRubricQueryOptions(submissionId));
   const { data: criteria } = useQuery({ ...criteriaQueryOptions(eventId), enabled: showCriteria });
   if (rubrics.length === 0) return null;
   return (

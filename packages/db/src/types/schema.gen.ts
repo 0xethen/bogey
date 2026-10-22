@@ -56,6 +56,7 @@ export const CORE_AUDIT_ACTIONS = [
   "judging.panels_saved",
   "judging.pin_added",
   "judging.pin_removed",
+  "judging.rubric_divisions_saved",
   "judging.rubric_set",
   "judging.skipped",
   "judging.tables_assigned",
