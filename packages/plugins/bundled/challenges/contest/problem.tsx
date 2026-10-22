@@ -83,7 +83,6 @@ import {
 import { Separator } from "@bogey/ui/components/separator";
 import { Spinner } from "@bogey/ui/components/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 
 const MAX_SOURCE = 256 * 1024;
 const UPLOAD_TYPES = ".py,.js,.mjs,.cpp,.cc,.cxx,.c++,.h,.hpp,.java,.txt";
@@ -573,18 +572,13 @@ function Editor({
               Run
             </Button>
           )}
-          <Tooltip disabled={!blocked}>
-            <TooltipTrigger render={<span />}>
-              <Button
-                disabled={!!blocked || !source.trim() || !language || submit.isPending}
-                title={blocked ?? undefined}
-                onClick={() => submit.mutate()}
-              >
-                {submit.isPending ? "Submitting..." : "Submit"}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{blocked}</TooltipContent>
-          </Tooltip>
+          <Button
+            disabled={!!blocked || !source.trim() || !language || submit.isPending}
+            tooltip={blocked}
+            onClick={() => submit.mutate()}
+          >
+            {submit.isPending ? "Submitting..." : "Submit"}
+          </Button>
         </div>
       </div>
 

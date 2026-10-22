@@ -43,6 +43,7 @@
 - [Data model](../architecture/data-model.md)
 - [Security model](../architecture/security-model.md)
 - [Plugin system](../architecture/plugin-system.md)
+- [Tables](../architecture/tables.md)
 - [How Bogey compares](../architecture/comparison.md)
 - [CLI plan](../architecture/cli.md)
 - [Decisions](../adr/README.md)

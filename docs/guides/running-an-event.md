@@ -237,7 +237,9 @@ filters by it. **Check in before competing** (on by default for in-person events
 participants from changing teams, submitting or voting until they have been checked in.
 
 **Manage → People** is the roster: registrations, members and roles in one
-list. Add people in bulk by pasting emails (with optional names, teams, roles
+table. Search it by name, email or team; filter it by check-in, roles and
+divisions; sort by any column; hide columns; and group the rows by team, role
+or division, each group opening and closing. Add people in bulk by pasting emails (with optional names, teams, roles
 and teammates' emails) or columns from a spreadsheet, with a header like
 `email, name, team, role, teammate2, teammate3`. Before anything is added, the
 page points out where the roster disagrees with itself: one team name used for

@@ -1,7 +1,7 @@
 import { useRoleLabel } from "#/lib/roles.ts";
-import { IconDownload, IconFilter } from "@tabler/icons-react";
+import { IconDownload } from "@tabler/icons-react";
 import { exportHref } from "#/lib/exports.ts";
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { fromLink, usePeopleMutation } from "./-components/people-shared.ts";
 import { eventInviteLinksQueryOptions } from "@bogey/db/queries/invites";
@@ -30,7 +30,6 @@ import { z } from "zod";
 import { unwrap } from "@bogey/db/errors";
 import type { EventRole } from "@bogey/db/permissions";
 import { Button } from "@bogey/ui/components/button";
-import { Badge } from "@bogey/ui/components/badge";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import {
   AlertDialog,
@@ -43,8 +42,12 @@ import {
 } from "@bogey/ui/components/alert-dialog";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
-import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
-import { Popover, PopoverContent, PopoverTrigger } from "@bogey/ui/components/popover";
+import {
+  DataTable,
+  dataColumns,
+  type DataTableFilter,
+  type DataTableGroups,
+} from "@bogey/ui/components/data-table";
 import { checkInFn } from "@bogey/db/queries/checkin";
 import { Facts } from "@bogey/ui/components/facts";
 import { NameAvatar } from "@bogey/ui/components/avatar";
@@ -67,7 +70,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/people")({
       }),
     ],
   },
-  validateSearch: z.object({ link: z.uuid().optional().catch(undefined) }),
+  validateSearch: z.object({
+    link: z.uuid().optional().catch(undefined),
+    group: z.enum(["team", "role", "division"]).optional().catch(undefined),
+  }),
   loader: ({ context }) =>
     Promise.all([
       context.query.ensureQueryData(eventInviteLinksQueryOptions(context.event.id)),
@@ -96,11 +102,11 @@ function RouteComponent() {
   const t = useT();
   const roleLabel = useRoleLabel();
   const { event, session, plugins } = Route.useRouteContext();
-  const { link: linkId } = Route.useSearch();
+  const { link: linkId, group: grouping = "none" } = Route.useSearch();
   const { data: everyone } = useSuspenseQuery(eventPeopleQueryOptions(event.id));
   const { data: links } = useSuspenseQuery(eventInviteLinksQueryOptions(event.id));
   const link = linkId ? links.find((each) => each.id === linkId) : undefined;
-  const people = link ? fromLink(everyone, link.id) : everyone;
+  const people = useMemo(() => (link ? fromLink(everyone, link.id) : everyone), [everyone, link]);
   useLiveInvalidate("registrations", eventPeopleQueryOptions(event.id).queryKey, {
     filter: `event_id=eq.${event.id}`,
   });
@@ -149,25 +155,12 @@ function RouteComponent() {
   }, [holders]);
   const { data: roster } = useSuspenseQuery(checkinRosterQueryOptions(event.id));
   const arrival = useMemo(() => new Map(roster.map((entry) => [entry.userId, entry])), [roster]);
+  const rows = useStableRows(people.members, arrival, heldBy);
   const [confirming, setConfirming] = useState<{
     title: string;
     description: string;
     run: () => void;
   } | null>(null);
-  const [filter, setFilter] = useState<"everyone" | "absent" | "here">("everyone");
-  const [roleFilter, setRoleFilter] = useState<string[]>([]);
-  const [divisionFilter, setDivisionFilter] = useState<string[]>([]);
-  const shown = people.members.filter((member) => {
-    const here = arrival.get(member.userId);
-    if (filter === "here" && !(here && isCheckedIn(here))) return false;
-    if (filter === "absent" && here && isCheckedIn(here)) return false;
-    if (roleFilter.length > 0 && !roleFilter.includes(member.role)) return false;
-    if (divisionFilter.length > 0 && !divisionFilter.includes(member.divisionId ?? NO_DIVISION)) {
-      return false;
-    }
-    return true;
-  });
-  const filtering = (filter === "everyone" ? 0 : 1) + roleFilter.length + divisionFilter.length;
 
   const [pickedMembers, setPickedMembers] = useState<ReadonlySet<string>>(new Set());
   const picked = people.members
@@ -179,17 +172,17 @@ function RouteComponent() {
   const { mutate: placeIn, isPending: placing } = place;
   const { mutate: changeExtraRoles } = setExtraRoles;
   const { mutate: removeMember, isPending: removing } = remove;
+  const you = session.user.id;
+  const orgAdmin = isOrgAdmin(session);
   const columns = useMemo(
     () =>
       memberColumns({
         t,
         roleLabel,
-        you: session.user.id,
+        you,
         slug: event.slug,
         divisions,
         pluginRoleOptions,
-        arrival,
-        pending: changingRole || placing || removing,
         onRole: (member, role) => {
           const change = () => changeRole({ userId: member.userId, role });
           if (member.teamId && member.role === "participant" && role !== "participant") {
@@ -229,8 +222,7 @@ function RouteComponent() {
           orgId: event.org_id,
           eventId: event.id,
           all: usableTags,
-          held: (userId) => heldBy.get(userId) ?? NO_TAGS,
-          orgAdmin: isOrgAdmin(session),
+          orgAdmin,
           eventTags,
         },
         onRemove: (userId) => removeMember(userId),
@@ -238,14 +230,10 @@ function RouteComponent() {
     [
       t,
       roleLabel,
-      session,
+      you,
       divisions,
       pluginRoleOptions,
-      arrival,
       event.slug,
-      changingRole,
-      placing,
-      removing,
       changeRole,
       placeIn,
       changeExtraRoles,
@@ -253,10 +241,49 @@ function RouteComponent() {
       event.org_id,
       event.id,
       usableTags,
-      heldBy,
+      orgAdmin,
       eventTags,
       setConfirming,
     ],
+  );
+  const filters = useMemo(
+    (): DataTableFilter[] => [
+      {
+        column: "checkin",
+        title: t("managePeople.show"),
+        single: { all: t("badges.everyone") },
+        options: [
+          { value: HERE, label: t("session.checkedIn") },
+          { value: ABSENT, label: t("managePeople.notCheckedIn") },
+        ],
+      },
+      {
+        column: "role",
+        title: t("managePeople.roleColumn"),
+        options: [
+          ...ROLES.map((role) => ({ value: role, label: roleLabel(role) })),
+          ...pluginRoleOptions,
+        ],
+      },
+      ...(divisions.length > 0
+        ? [
+            {
+              column: "division",
+              title: t("managePeople.divisionColumn"),
+              options: [
+                { value: NO_DIVISION, label: t("checkin.noDivision") },
+                ...divisions.map((division) => ({ value: division.id, label: division.name })),
+              ],
+            },
+          ]
+        : []),
+    ],
+    [t, roleLabel, pluginRoleOptions, divisions],
+  );
+  const navigate = Route.useNavigate();
+  const groups = useMemo(
+    () => personGroups(grouping, { t, roleLabel, divisions }),
+    [grouping, t, roleLabel, divisions],
   );
   return (
     <Screen
@@ -308,21 +335,6 @@ function RouteComponent() {
         description={t("managePeople.count", { count: people.members.length })}
         actions={
           <>
-            <MemberFilter
-              arrival={filter}
-              onArrival={setFilter}
-              roles={roleFilter}
-              onRoles={setRoleFilter}
-              divisions={divisionFilter}
-              onDivisions={setDivisionFilter}
-              divisionOptions={divisions}
-              count={filtering}
-              onClear={() => {
-                setFilter("everyone");
-                setRoleFilter([]);
-                setDivisionFilter([]);
-              }}
-            />
             <Button
               size="sm"
               variant="outline"
@@ -356,20 +368,45 @@ function RouteComponent() {
                 onDone={() => setPickedMembers(new Set())}
               />
             )}
-            <div className="overflow-x-auto">
+            <Busy value={changingRole || placing || removing}>
               <DataTable
                 columns={columns}
-                data={shown}
-                getRowId={(member) => member.userId}
+                data={rows}
+                getRowId={rowId}
                 selection={{
                   selected: pickedMembers,
                   onChange: setPickedMembers,
-                  label: (member) => member.name,
+                  label: rowName,
                 }}
+                search={{ text: searchText, placeholder: t("managePeople.search") }}
+                filters={filters}
+                columnsMenu
+                groups={groups}
+                toolbar={
+                  <OptSelect
+                    size="sm"
+                    ariaLabel={t("managePeople.groupBy")}
+                    value={grouping}
+                    options={[
+                      { value: "none", label: t("managePeople.groupNone") },
+                      { value: "team", label: t("managePeople.groupTeam") },
+                      { value: "role", label: t("managePeople.groupRole") },
+                      ...(divisions.length > 0
+                        ? [{ value: "division" as const, label: t("managePeople.groupDivision") }]
+                        : []),
+                    ]}
+                    onChange={(next) =>
+                      void navigate({
+                        search: (prev) => ({ ...prev, group: next === "none" ? undefined : next }),
+                        replace: true,
+                      })
+                    }
+                  />
+                }
                 empty={t("managePeople.noneShown")}
                 pageSize={50}
               />
-            </div>
+            </Busy>
           </div>
         )}
       </Screen.Section>
@@ -380,95 +417,99 @@ function RouteComponent() {
   );
 }
 
-function MemberFilter({
-  arrival,
-  onArrival,
-  roles,
-  onRoles,
-  divisions,
-  onDivisions,
-  divisionOptions,
-  count,
-  onClear,
-}: {
-  arrival: "everyone" | "absent" | "here";
-  onArrival: (next: "everyone" | "absent" | "here") => void;
-  roles: Tuple<string>;
-  onRoles: (next: string[]) => void;
-  divisions: Tuple<string>;
-  onDivisions: (next: string[]) => void;
-  divisionOptions: Tuple<Division>;
-  count: number;
-  onClear: () => void;
-}) {
-  const t = useT();
-  const roleLabel = useRoleLabel();
-  return (
-    <Popover>
-      <PopoverTrigger
-        render={
-          <Button size="sm" variant="outline">
-            <IconFilter />
-            {t("managePeople.filter")}
-            {count > 0 && <Badge variant="secondary">{count}</Badge>}
-          </Button>
-        }
-      />
-      <PopoverContent align="end" className="w-80 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">{t("managePeople.show")}</span>
-          <OptSelect
-            size="sm"
-            ariaLabel={t("managePeople.show")}
-            value={arrival}
-            options={[
-              { value: "everyone", label: t("badges.everyone") },
-              { value: "here", label: t("session.checkedIn") },
-              { value: "absent", label: t("managePeople.notCheckedIn") },
-            ]}
-            onChange={onArrival}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">{t("managePeople.roleColumn")}</span>
-          <MultiSelect
-            options={ROLES.map((role) => ({ value: role, label: roleLabel(role) }))}
-            value={roles}
-            placeholder={t("managePeople.anyRole")}
-            onValueChange={onRoles}
-          />
-        </div>
-        {divisionOptions.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{t("managePeople.divisionColumn")}</span>
-            <MultiSelect
-              options={[
-                { value: NO_DIVISION, label: t("checkin.noDivision") },
-                ...divisionOptions.map((division) => ({
-                  value: division.id,
-                  label: division.name,
-                })),
-              ]}
-              value={divisions}
-              placeholder={t("managePeople.anyDivision")}
-              onValueChange={onDivisions}
-            />
-          </div>
-        )}
-        <Button size="sm" variant="ghost" disabled={count === 0} onClick={onClear}>
-          {t("managePeople.clearFilters")}
-        </Button>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-const NO_TAGS: string[] = [];
+const NO_TAGS: Tuple<string> = [];
+const HERE = "here";
+const ABSENT = "absent";
 
 type Member = EventPeople["members"][number];
 type Division = { id: string; name: string };
+type Grouping = "team" | "role" | "division";
 
-const memberColumn = dataColumns<Member>();
+/** A person's row: the member, plus their check-in and tags, kept apart so each can be compared. */
+interface PersonRow {
+  member: Member;
+  here: RosterEntry | undefined;
+  tags: Tuple<string>;
+}
+
+const rowId = (row: PersonRow) => row.member.userId;
+const rowName = (row: PersonRow) => row.member.name;
+const searchText = (row: PersonRow) =>
+  `${row.member.name} ${row.member.email ?? ""} ${row.member.team ?? ""}`;
+
+// rows keep their identity while nothing about that person changed, so the table
+// only redraws the rows that did
+function useStableRows(
+  members: Tuple<Member>,
+  arrival: ReadonlyMap<string, RosterEntry>,
+  heldBy: ReadonlyMap<string, Tuple<string>>,
+): PersonRow[] {
+  const [cache] = useState(() => new Map<string, PersonRow>());
+  return useMemo(
+    () =>
+      members.map((member) => {
+        const here = arrival.get(member.userId);
+        const tags = heldBy.get(member.userId) ?? NO_TAGS;
+        const before = cache.get(member.userId);
+        if (
+          before &&
+          before.member === member &&
+          before.here === here &&
+          sameList(before.tags, tags)
+        ) {
+          return before;
+        }
+        const row = { member, here, tags };
+        cache.set(member.userId, row);
+        return row;
+      }),
+    [members, arrival, heldBy, cache],
+  );
+}
+
+function sameList(a: Tuple<string>, b: Tuple<string>) {
+  return a.length === b.length && a.every((each, index) => each === b[index]);
+}
+
+function personGroups(
+  grouping: Grouping | "none",
+  context: { t: T; roleLabel: (role: string) => string; divisions: Tuple<Division> },
+): DataTableGroups<PersonRow> | undefined {
+  const { t, roleLabel, divisions } = context;
+  // the "nobody" group goes last
+  const lastIfEmpty = (a: string, b: string) => (a === "" ? 1 : b === "" ? -1 : a.localeCompare(b));
+  switch (grouping) {
+    case "team":
+      return {
+        by: (row) => row.member.team ?? "",
+        label: (key) => key || t("managePeople.noTeam"),
+        compare: lastIfEmpty,
+      };
+    case "role":
+      return {
+        by: (row) => row.member.role,
+        label: (key) => roleLabel(key),
+        compare: (a, b) =>
+          ROLES.findIndex((role) => role === a) - ROLES.findIndex((role) => role === b),
+      };
+    case "division": {
+      const names = new Map(divisions.map((division) => [division.id, division.name]));
+      return {
+        by: (row) => row.member.divisionId ?? "",
+        label: (key) => names.get(key) ?? t("checkin.noDivision"),
+        compare: (a, b) => lastIfEmpty(names.get(a) ?? "", names.get(b) ?? ""),
+      };
+    }
+    case "none":
+      return undefined;
+  }
+}
+
+// whether a change is saving; cells read it so rows needn't redraw for it
+const BusyContext = createContext(false);
+const Busy = BusyContext.Provider;
+
+const memberColumn = dataColumns<PersonRow>();
 
 function memberColumns(options: {
   t: T;
@@ -477,8 +518,6 @@ function memberColumns(options: {
   slug: string;
   divisions: Tuple<Division>;
   pluginRoleOptions: Tuple<SearchSelectOption>;
-  arrival: ReadonlyMap<string, RosterEntry>;
-  pending: boolean;
   onRole: (member: Member, role: EventRole) => void;
   onDivision: (member: Member, divisionId: string | undefined) => void;
   onExtraRoles: (userId: string, roles: string[]) => void;
@@ -487,17 +526,18 @@ function memberColumns(options: {
     orgId: string;
     eventId: string;
     all: Tuple<Tag>;
-    held: (userId: string) => string[];
     orgAdmin: boolean;
     eventTags: boolean;
   };
 }) {
   const { t } = options;
   return memberColumn.columns([
-    memberColumn.accessor("name", {
+    memberColumn.accessor((row) => row.member.name, {
+      id: "name",
       header: t("checkin.name"),
+      enableHiding: false,
       cell: (info) => {
-        const member = info.row.original;
+        const member = info.row.original.member;
         return (
           <span className="flex min-w-48 items-center gap-3">
             <NameAvatar name={member.name} />
@@ -516,37 +556,19 @@ function memberColumns(options: {
         );
       },
     }),
-    memberColumn.accessor("role", {
+    memberColumn.accessor((row) => options.roleLabel(row.member.role), {
+      id: "role",
       header: t("managePeople.roleColumn"),
-      cell: (info) => {
-        const member = info.row.original;
-        return (
-          <div className="flex flex-col gap-1.5">
-            <OptSelect
-              size="sm"
-              ariaLabel={t("members.roleFor", { name: member.name })}
-              value={member.role}
-              options={ROLES.map((role) => ({ value: role, label: options.roleLabel(role) }))}
-              disabled={options.pending}
-              onChange={(role) => options.onRole(member, role)}
-            />
-            {options.pluginRoleOptions.length > 0 && (
-              <div className="min-w-48">
-                <label htmlFor={`extra-roles-${member.userId}`} className="sr-only">
-                  {t("managePeople.extraRolesFor", { name: member.name })}
-                </label>
-                <MultiSelect
-                  id={`extra-roles-${member.userId}`}
-                  options={options.pluginRoleOptions}
-                  value={member.extraRoles}
-                  placeholder={t("managePeople.extraRoles")}
-                  onValueChange={(roles) => options.onExtraRoles(member.userId, roles)}
-                />
-              </div>
-            )}
-          </div>
-        );
-      },
+      getUniqueValues: (row) => [row.member.role, ...row.member.extraRoles],
+      cell: (info) => (
+        <RoleCell
+          member={info.row.original.member}
+          roleLabel={options.roleLabel}
+          pluginRoleOptions={options.pluginRoleOptions}
+          onRole={options.onRole}
+          onExtraRoles={options.onExtraRoles}
+        />
+      ),
     }),
     ...(options.tags.all.length > 0
       ? [
@@ -554,7 +576,7 @@ function memberColumns(options: {
             id: "tags",
             header: t("tags.column"),
             cell: (info) => {
-              const member = info.row.original;
+              const { member, tags } = info.row.original;
               return (
                 <TagPicker
                   orgId={options.tags.orgId}
@@ -562,7 +584,7 @@ function memberColumns(options: {
                   userId={member.userId}
                   name={member.name}
                   tags={options.tags.all}
-                  held={options.tags.held(member.userId)}
+                  held={tags}
                   editableScopes={{
                     // org tags go on org members, which participants aren't
                     org: options.tags.orgAdmin && member.role !== "participant",
@@ -574,11 +596,11 @@ function memberColumns(options: {
           }),
         ]
       : []),
-    memberColumn.accessor((member) => member.team ?? "", {
+    memberColumn.accessor((row) => row.member.team ?? "", {
       id: "team",
       header: t("managePeople.teamColumn"),
       cell: (info) => {
-        const member = info.row.original;
+        const member = info.row.original.member;
         return member.teamId ? (
           <Link
             to="/events/$slug/manage/teams"
@@ -595,37 +617,29 @@ function memberColumns(options: {
     }),
     ...(options.divisions.length > 0
       ? [
-          memberColumn.accessor((member) => member.divisionId ?? "", {
-            id: "division",
-            header: t("managePeople.divisionColumn"),
-            cell: (info) => {
-              const member = info.row.original;
-              if (member.role !== "participant") return <span className="text-muted-fg">–</span>;
-              return (
-                <OptSelect
-                  size="sm"
-                  ariaLabel={t("managePeople.divisionFor", { name: member.name })}
-                  value={member.divisionId ?? NO_DIVISION}
-                  options={[
-                    { value: NO_DIVISION, label: t("checkin.noDivision") },
-                    ...options.divisions.map((division) => ({
-                      value: division.id,
-                      label: division.name,
-                    })),
-                  ]}
-                  disabled={options.pending}
-                  onChange={(next) =>
-                    options.onDivision(member, next === NO_DIVISION ? undefined : next)
-                  }
+          memberColumn.accessor(
+            (row) =>
+              options.divisions.find((division) => division.id === row.member.divisionId)?.name ??
+              "",
+            {
+              id: "division",
+              header: t("managePeople.divisionColumn"),
+              getUniqueValues: (row) => [row.member.divisionId ?? NO_DIVISION],
+              cell: (info) => (
+                <DivisionCell
+                  member={info.row.original.member}
+                  divisions={options.divisions}
+                  onDivision={options.onDivision}
                 />
-              );
+              ),
             },
-          }),
+          ),
         ]
       : []),
-    memberColumn.accessor((member) => checkInText(options.arrival.get(member.userId), t) ?? "", {
+    memberColumn.accessor((row) => checkInText(row.here, t) ?? "", {
       id: "checkin",
       header: t("managePeople.checkInColumn"),
+      getUniqueValues: (row) => [row.here && isCheckedIn(row.here) ? HERE : ABSENT],
       cell: (info) => (
         <span className="whitespace-nowrap text-muted-fg">{info.getValue() || "–"}</span>
       ),
@@ -633,34 +647,121 @@ function memberColumns(options: {
     memberColumn.display({
       id: "actions",
       header: () => <span className="sr-only">{t("adminPeople.actions")}</span>,
-      cell: (info) => {
-        const member = info.row.original;
-        const you = member.userId === options.you;
-        return (
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive"
-              disabled={options.pending}
-              confirm={{
-                title: you
-                  ? t("managePeople.removeSelfTitle")
-                  : t("members.removeTitle", { name: member.name }),
-                description: you
-                  ? t("managePeople.removeSelfBody")
-                  : t("managePeople.removeBody", { name: member.name }),
-                label: t("twoFactor.remove"),
-              }}
-              onClick={() => options.onRemove(member.userId)}
-            >
-              {t("managePeople.removeButton")}
-            </Button>
-          </div>
-        );
-      },
+      enableHiding: false,
+      cell: (info) => (
+        <RemoveCell
+          member={info.row.original.member}
+          you={info.row.original.member.userId === options.you}
+          onRemove={options.onRemove}
+        />
+      ),
     }),
   ]);
+}
+
+function RoleCell({
+  member,
+  roleLabel,
+  pluginRoleOptions,
+  onRole,
+  onExtraRoles,
+}: {
+  member: Member;
+  roleLabel: (role: string) => string;
+  pluginRoleOptions: Tuple<SearchSelectOption>;
+  onRole: (member: Member, role: EventRole) => void;
+  onExtraRoles: (userId: string, roles: string[]) => void;
+}) {
+  const t = useT();
+  const busy = useContext(BusyContext);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <OptSelect
+        size="sm"
+        ariaLabel={t("members.roleFor", { name: member.name })}
+        value={member.role}
+        options={ROLES.map((role) => ({ value: role, label: roleLabel(role) }))}
+        disabled={busy}
+        onChange={(role) => onRole(member, role)}
+      />
+      {pluginRoleOptions.length > 0 && (
+        <div className="min-w-48">
+          <label htmlFor={`extra-roles-${member.userId}`} className="sr-only">
+            {t("managePeople.extraRolesFor", { name: member.name })}
+          </label>
+          <MultiSelect
+            id={`extra-roles-${member.userId}`}
+            options={pluginRoleOptions}
+            value={member.extraRoles}
+            placeholder={t("managePeople.extraRoles")}
+            onValueChange={(roles) => onExtraRoles(member.userId, roles)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DivisionCell({
+  member,
+  divisions,
+  onDivision,
+}: {
+  member: Member;
+  divisions: Tuple<Division>;
+  onDivision: (member: Member, divisionId: string | undefined) => void;
+}) {
+  const t = useT();
+  const busy = useContext(BusyContext);
+  if (member.role !== "participant") return <span className="text-muted-fg">–</span>;
+  return (
+    <OptSelect
+      size="sm"
+      ariaLabel={t("managePeople.divisionFor", { name: member.name })}
+      value={member.divisionId ?? NO_DIVISION}
+      options={[
+        { value: NO_DIVISION, label: t("checkin.noDivision") },
+        ...divisions.map((division) => ({ value: division.id, label: division.name })),
+      ]}
+      disabled={busy}
+      onChange={(next) => onDivision(member, next === NO_DIVISION ? undefined : next)}
+    />
+  );
+}
+
+function RemoveCell({
+  member,
+  you,
+  onRemove,
+}: {
+  member: Member;
+  you: boolean;
+  onRemove: (userId: string) => void;
+}) {
+  const t = useT();
+  const busy = useContext(BusyContext);
+  return (
+    <div className="flex justify-end">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-destructive"
+        disabled={busy}
+        confirm={{
+          title: you
+            ? t("managePeople.removeSelfTitle")
+            : t("members.removeTitle", { name: member.name }),
+          description: you
+            ? t("managePeople.removeSelfBody")
+            : t("managePeople.removeBody", { name: member.name }),
+          label: t("twoFactor.remove"),
+        }}
+        onClick={() => onRemove(member.userId)}
+      >
+        {t("managePeople.removeButton")}
+      </Button>
+    </div>
+  );
 }
 
 const KEEP = "keep";

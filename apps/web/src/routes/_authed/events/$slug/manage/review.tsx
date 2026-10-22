@@ -213,6 +213,7 @@ function RouteComponent() {
 const registrationColumn = dataColumns<Registration>();
 
 const nameOf = (row: Registration) => row.full_name ?? String(row.email);
+const searchText = (row: Registration) => `${row.full_name ?? ""} ${String(row.email)}`;
 
 function ReviewTable({
   rows,
@@ -300,6 +301,7 @@ function ReviewTable({
         data={[...rows]}
         getRowId={(row) => row.id}
         selection={{ selected, onChange: onSelect, label: nameOf }}
+        search={{ text: searchText, placeholder: t("managePeople.searchRegistrations") }}
         pageSize={25}
       />
     </div>
