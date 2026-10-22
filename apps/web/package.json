@@ -36,6 +36,7 @@
     "@tanstack/react-router-devtools": "catalog:",
     "@tanstack/react-router-ssr-query": "catalog:",
     "@tanstack/react-start": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
     "date-fns": "catalog:",
     "fflate": "catalog:",
     "nitro": "catalog:",

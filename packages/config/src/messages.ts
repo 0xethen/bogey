@@ -728,6 +728,7 @@ export const en = {
   "kiosk.welcome": "Welcome to {event}",
   "kiosk.intro": "Not registered yet? Fill this out and you're checked in.",
   "kiosk.fullScreen": "Full screen",
+  "kiosk.exitFullScreen": "Exit full screen",
   "kiosk.name": "Your name",
   "kiosk.enterName": "Enter your name",
   "kiosk.email": "Your email",

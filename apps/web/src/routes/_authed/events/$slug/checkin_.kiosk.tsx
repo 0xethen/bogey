@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { IconCircleCheck, IconMaximize } from "@tabler/icons-react";
+import { IconCircleCheck, IconMaximize, IconMinimize } from "@tabler/icons-react";
 import { checkinRosterQueryOptions, walkInFn, type WalkInResult } from "@bogey/db/queries/checkin";
 import { requestFailure } from "@bogey/db/errors";
 import { can, useCan } from "@bogey/db/permissions";
@@ -18,6 +18,7 @@ import {
   rewardEarlyPunishLate,
   useAppForm,
 } from "@bogey/ui/lib/form";
+import { useExternalValue } from "@bogey/ui/hooks/external";
 import { isoToWallTime } from "@bogey/utils/time";
 import { OnboardingForm } from "#/components/event/team/onboarding-form.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
@@ -134,16 +135,7 @@ function Kiosk() {
       title={t("kiosk.welcome", { event: event.name })}
       description={t("kiosk.intro")}
       width="narrow"
-      actions={
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => void document.documentElement.requestFullscreen?.().catch(() => undefined)}
-          title={t("kiosk.fullScreen")}
-        >
-          <IconMaximize />
-        </Button>
-      }
+      actions={<FullscreenButton />}
     >
       {done ? (
         <div role="status" className="flex flex-col items-center gap-4 py-12 text-center">
@@ -186,6 +178,32 @@ function Kiosk() {
         />
       )}
     </Screen>
+  );
+}
+
+function FullscreenButton() {
+  const t = useT();
+  const full = useExternalValue(
+    (onChange) => {
+      document.addEventListener("fullscreenchange", onChange);
+      return () => document.removeEventListener("fullscreenchange", onChange);
+    },
+    () => document.fullscreenElement !== null,
+    false,
+  );
+  const label = full ? t("kiosk.exitFullScreen") : t("kiosk.fullScreen");
+  return (
+    <Button
+      variant="outline"
+      onClick={() =>
+        void (
+          full ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()
+        )?.catch(() => undefined)
+      }
+    >
+      {full ? <IconMinimize /> : <IconMaximize />}
+      {label}
+    </Button>
   );
 }
 

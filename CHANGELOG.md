@@ -10,6 +10,9 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- A session's attendance page works on a phone: the check-in code shows with its QR code, and "Copy link to check-in" and "New code..." are labelled buttons sharing the full width. The code on the full-screen QR is larger. The roster only renders the rows on screen, so long rosters stay quick.
+- The check-in kiosk's full screen button turns into "Exit full screen" (with its own icon) while in full screen, including when you leave with Esc.
+
 ## 2.3.0 (2026-10-22)
 
 - The gallery is a **Gallery** tab on the event's tab row (with an external-link icon, opening in a new browser tab) for whoever can open it, instead of a button on Home and Results. Organizers can hide, rename or time it under Manage → Pages → Tabs like any other tab.

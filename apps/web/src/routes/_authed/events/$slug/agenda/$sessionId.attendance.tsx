@@ -1,6 +1,7 @@
 import { Button } from "@bogey/ui/components/button";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -151,8 +152,8 @@ function CheckInCode({
         />
       }
     >
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded border border-border p-5">
-        <div className="flex items-center gap-8">
+      <div className="flex flex-col gap-4 rounded border border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex items-center gap-4 sm:gap-8">
           {code && origin && (
             <ExpandableQrCode
               value={`${origin}${page}?code=${encodeURIComponent(code)}`}
@@ -163,24 +164,26 @@ function CheckInCode({
               size={100}
             />
           )}
-          <p className="font-mono text-5xl font-semibold tracking-[0.3em] tabular-nums">{code}</p>
+          <p className="font-mono text-4xl font-semibold tracking-[0.2em] tabular-nums sm:text-5xl sm:tracking-[0.3em]">
+            {code}
+          </p>
         </div>
-        <div className="flex items-center">
+        <div className="flex gap-2">
           <Button
-            variant="ghost"
-            size="icon-sm"
+            variant="outline"
+            className="flex-1"
             onClick={() => {
               void navigator.clipboard
                 .writeText(`${origin}${page}?code=${encodeURIComponent(code)}`)
                 .then(() => setCopied(true));
             }}
-            title={copied ? t("session.copied") : t("session.linkCopy")}
           >
-            {copied ? <IconCopyCheck className="size-4" /> : <IconCopy className="size-4" />}
+            {copied ? <IconCopyCheck /> : <IconCopy />}
+            {copied ? t("session.copied") : t("session.linkCopy")}
           </Button>
           <Button
-            size="icon-sm"
-            variant="ghost"
+            variant="outline"
+            className="flex-1"
             disabled={rotate.isPending}
             confirm={{
               title: t("session.replaceTitle"),
@@ -188,9 +191,9 @@ function CheckInCode({
               label: t("session.replaceLabel"),
             }}
             onClick={() => rotate.mutate()}
-            title={t("session.newCode")}
           >
             <IconRefresh />
+            {t("session.newCode")}
           </Button>
         </div>
       </div>
@@ -258,26 +261,67 @@ function Roster({ sessionId, forEveryone }: { sessionId: string; forEveryone: bo
       ) : shown.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("session.noMatch", { search })}</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-border border-y border-border">
-          {shown.map((row) => (
-            <li key={row.userId}>
-              <label className="flex items-center gap-3 px-2 py-2.5 text-sm">
-                <Checkbox
-                  checked={row.attendedAt !== null}
-                  onCheckedChange={(checked) =>
-                    mark.mutate({ userId: row.userId, attended: checked })
-                  }
-                />
-                <span className="flex-1 font-medium">{row.name}</span>
-                {row.method === "code" && <Badge variant="outline">{t("session.checkedIn")}</Badge>}
-                {!row.signedUp && row.attendedAt && (
-                  <Badge variant="secondary">{t("session.walkIn")}</Badge>
-                )}
-              </label>
-            </li>
-          ))}
-        </ul>
+        <RosterRows rows={shown} onMark={(userId, attended) => mark.mutate({ userId, attended })} />
       )}
     </Screen.Section>
+  );
+}
+
+// Only the rows near the viewport are rendered, so a roster of thousands stays light. It scrolls
+// with the page, so the list needs no height of its own.
+function RosterRows({
+  rows,
+  onMark,
+}: {
+  rows: RosterEntry[];
+  onMark: (userId: string, attended: boolean) => void;
+}) {
+  const t = useT();
+  const list = useRef<HTMLUListElement>(null);
+  const [margin, setMargin] = useState(0);
+  useLayoutEffect(() => {
+    setMargin((list.current?.getBoundingClientRect().top ?? 0) + window.scrollY);
+  }, []);
+  // the compiler skips this component, which is what we want
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => 45,
+    overscan: 10,
+    scrollMargin: margin,
+    getItemKey: (index) => rows[index]?.userId ?? index,
+  });
+  return (
+    <ul
+      ref={list}
+      className="relative border-y border-border"
+      style={{ height: virtualizer.getTotalSize() }}
+    >
+      {virtualizer.getVirtualItems().map((item) => {
+        const row = rows[item.index];
+        if (!row) return null;
+        return (
+          <li
+            key={item.key}
+            data-index={item.index}
+            ref={virtualizer.measureElement}
+            className="absolute inset-x-0 top-0 border-b border-border last:border-b-0"
+            style={{ transform: `translateY(${item.start - margin}px)` }}
+          >
+            <label className="flex items-center gap-3 px-2 py-2.5 text-sm">
+              <Checkbox
+                checked={row.attendedAt !== null}
+                onCheckedChange={(checked) => onMark(row.userId, checked)}
+              />
+              <span className="flex-1 font-medium">{row.name}</span>
+              {row.method === "code" && <Badge variant="outline">{t("session.checkedIn")}</Badge>}
+              {!row.signedUp && row.attendedAt && (
+                <Badge variant="secondary">{t("session.walkIn")}</Badge>
+              )}
+            </label>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

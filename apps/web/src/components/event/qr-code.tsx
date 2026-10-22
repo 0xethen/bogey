@@ -69,7 +69,7 @@ export function ExpandableQrCode({
         <DialogTitle className="sr-only">{label}</DialogTitle>
         <QrCode value={value} label={label} className="size-auto w-full rounded-xl p-2" />
         {caption && (
-          <p className="font-mono text-2xl font-semibold tracking-[0.3em] tabular-nums">
+          <p className="font-mono text-4xl font-semibold tracking-[0.3em] tabular-nums">
             {caption}
           </p>
         )}
