@@ -11,6 +11,16 @@ create table public.submission_forms (
   unique (event_id, id)
 );
 
+-- A form with no rows here is for everyone; otherwise only teams in these divisions submit it.
+create table public.submission_form_divisions (
+  event_id uuid not null,
+  form_id uuid not null,
+  division_id uuid not null,
+  primary key (form_id, division_id),
+  foreign key (event_id, form_id) references public.submission_forms (event_id, id) on delete cascade,
+  foreign key (event_id, division_id) references public.divisions (event_id, id) on delete cascade
+);
+
 create table public.submission_items (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null,
@@ -85,6 +95,22 @@ as $$
   ), false);
 $$;
 grant execute on function private.team_write_allowed(uuid) to authenticated;
+
+create function private.form_reaches_team(p_form uuid, p_team uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select not exists (select 1 from public.submission_form_divisions where form_id = p_form)
+    or exists (
+      select 1 from public.submission_form_divisions fd
+      join public.teams t on t.division_id = fd.division_id
+      where fd.form_id = p_form and t.id = p_team
+    );
+$$;
+grant execute on function private.form_reaches_team(uuid, uuid) to authenticated;
 
 create function private.add_default_submission_form(p_event uuid)
 returns void
@@ -255,6 +281,10 @@ begin
     raise exception 'this submission was disqualified' using errcode = 'P0001';
   end if;
 
+  if p_submit and not private.form_reaches_team(v_row.form_id, v_row.team_id) then
+    raise exception 'this form is for teams in other divisions' using errcode = '42501';
+  end if;
+
   if p_submit then
     v_missing := private.submission_problems(p_submission);
     if cardinality(v_missing) > 0 then
@@ -408,6 +438,18 @@ begin
     end if;
   end if;
 
+  if jsonb_typeof(p_form -> 'division_ids') = 'array' then
+    delete from public.submission_form_divisions
+    where form_id = v_form.id
+      and division_id::text not in (select jsonb_array_elements_text(p_form -> 'division_ids'));
+    insert into public.submission_form_divisions (event_id, form_id, division_id)
+    select p_event, v_form.id, d.id
+    from public.divisions d
+    where d.event_id = p_event
+      and d.id::text in (select jsonb_array_elements_text(p_form -> 'division_ids'))
+    on conflict do nothing;
+  end if;
+
   for v_kind in
     select distinct item ->> 'kind' from jsonb_array_elements(p_items) item
     where (item ->> 'kind') like '%.%'
@@ -463,6 +505,8 @@ end;
 $$;
 
 create index submission_files_event_id_submission_id_fk_idx on public.submission_files (event_id, submission_id);
+create index submission_form_divisions_event_id_form_id_fk_idx on public.submission_form_divisions (event_id, form_id);
+create index submission_form_divisions_event_id_division_id_fk_idx on public.submission_form_divisions (event_id, division_id);
 create index submission_items_event_id_form_id_fk_idx on public.submission_items (event_id, form_id);
 create index submissions_event_id_form_id_fk_idx on public.submissions (event_id, form_id);
 create index submission_tracks_event_id_submission_id_fk_idx on public.submission_tracks (event_id, submission_id);
@@ -472,6 +516,7 @@ create index submissions_deletion_requested_by_fk_idx on public.submissions (del
 
 alter table public.submission_forms enable row level security;
 alter table public.submission_items enable row level security;
+alter table public.submission_form_divisions enable row level security;
 alter table public.submissions enable row level security;
 alter table public.submission_tracks enable row level security;
 alter table public.submission_files enable row level security;
@@ -515,6 +560,16 @@ create policy submission_forms_write_update on public.submission_forms for updat
 create policy submission_forms_write_delete on public.submission_forms for delete to authenticated
   using ((select private.can_manage(event_id)));
 
+create policy submission_form_divisions_select on public.submission_form_divisions for select to anon, authenticated
+  using (
+    (select private.has_permission(event_id, 'event.view'))
+    or (select private.gallery_open(event_id))
+  );
+create policy submission_form_divisions_write_insert on public.submission_form_divisions for insert to authenticated
+  with check ((select private.can_manage(event_id)));
+create policy submission_form_divisions_write_delete on public.submission_form_divisions for delete to authenticated
+  using ((select private.can_manage(event_id)));
+
 create policy submission_items_select on public.submission_items for select to anon, authenticated
   using (
     (select private.has_permission(event_id, 'event.view'))
@@ -536,6 +591,7 @@ create policy submissions_insert on public.submissions for insert to authenticat
       status = 'draft'
       and (select private.is_team_member(team_id))
       and (select private.team_write_allowed(form_id))
+      and (select private.form_reaches_team(form_id, team_id))
     )
     or
     ((select private.can_manage(event_id)))

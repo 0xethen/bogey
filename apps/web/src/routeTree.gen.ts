@@ -118,7 +118,6 @@ import { Route as AuthedEventsSlugManageDemosRouteImport } from './routes/_authe
 import { Route as AuthedEventsSlugManageDetailsRouteImport } from './routes/_authed/events/$slug/manage/details'
 import { Route as AuthedEventsSlugManageDivisionsRouteImport } from './routes/_authed/events/$slug/manage/divisions'
 import { Route as AuthedEventsSlugManageEmailRouteImport } from './routes/_authed/events/$slug/manage/email'
-import { Route as AuthedEventsSlugManageFormsRouteImport } from './routes/_authed/events/$slug/manage/forms'
 import { Route as AuthedEventsSlugManageHomepageRouteImport } from './routes/_authed/events/$slug/manage/homepage'
 import { Route as AuthedEventsSlugManageJudgingRouteImport } from './routes/_authed/events/$slug/manage/judging'
 import { Route as AuthedEventsSlugManageMessagesRouteImport } from './routes/_authed/events/$slug/manage/messages'
@@ -152,6 +151,8 @@ import { Route as ApiV1EventsSlugHackathonDotjsonRouteImport } from './routes/ap
 import { Route as ApiV1EventsSlugResultsRouteImport } from './routes/api/v1/events/$slug/results'
 import { Route as AuthedEventsSlugAgendaSessionIdIndexRouteImport } from './routes/_authed/events/$slug/agenda/$sessionId.index'
 import { Route as AuthedEventsSlugAgendaSessionIdAttendanceRouteImport } from './routes/_authed/events/$slug/agenda/$sessionId.attendance'
+import { Route as AuthedEventsSlugManageFormsIndexRouteImport } from './routes/_authed/events/$slug/manage/forms/index'
+import { Route as AuthedEventsSlugManageFormsNewRouteImport } from './routes/_authed/events/$slug/manage/forms/new'
 import { Route as AuthedEventsSlugXKeySplatRouteImport } from './routes/_authed/events/$slug/x/$key/$'
 import { Route as AuthedEventsSlugManageXKeySplatRouteImport } from './routes/_authed/events/$slug/manage/x/$key/$'
 
@@ -740,12 +741,6 @@ const AuthedEventsSlugManageEmailRoute =
     path: '/email',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
-const AuthedEventsSlugManageFormsRoute =
-  AuthedEventsSlugManageFormsRouteImport.update({
-    id: '/forms',
-    path: '/forms',
-    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
-  } as any)
 const AuthedEventsSlugManageHomepageRoute =
   AuthedEventsSlugManageHomepageRouteImport.update({
     id: '/homepage',
@@ -938,6 +933,18 @@ const AuthedEventsSlugAgendaSessionIdAttendanceRoute =
     path: '/$sessionId/attendance',
     getParentRoute: () => AuthedEventsSlugAgendaRouteRoute,
   } as any)
+const AuthedEventsSlugManageFormsIndexRoute =
+  AuthedEventsSlugManageFormsIndexRouteImport.update({
+    id: '/forms/',
+    path: '/forms/',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageFormsNewRoute =
+  AuthedEventsSlugManageFormsNewRouteImport.update({
+    id: '/forms/new',
+    path: '/forms/new',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
 const AuthedEventsSlugXKeySplatRoute =
   AuthedEventsSlugXKeySplatRouteImport.update({
     id: '/x/$key/$',
@@ -1054,7 +1061,6 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
-  '/events/$slug/manage/forms': typeof AuthedEventsSlugManageFormsRoute
   '/events/$slug/manage/homepage': typeof AuthedEventsSlugManageHomepageRoute
   '/events/$slug/manage/judging': typeof AuthedEventsSlugManageJudgingRoute
   '/events/$slug/manage/messages': typeof AuthedEventsSlugManageMessagesRoute
@@ -1092,8 +1098,10 @@ export interface FileRoutesByFullPath {
   '/events/$slug/results/': typeof AuthedEventsSlugResultsIndexRoute
   '/api/v1/events/$slug/': typeof ApiV1EventsSlugIndexRoute
   '/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
+  '/events/$slug/manage/forms/new': typeof AuthedEventsSlugManageFormsNewRoute
   '/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
   '/events/$slug/agenda/$sessionId/': typeof AuthedEventsSlugAgendaSessionIdIndexRoute
+  '/events/$slug/manage/forms/': typeof AuthedEventsSlugManageFormsIndexRoute
   '/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
 }
 export interface FileRoutesByTo {
@@ -1185,7 +1193,6 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
-  '/events/$slug/manage/forms': typeof AuthedEventsSlugManageFormsRoute
   '/events/$slug/manage/homepage': typeof AuthedEventsSlugManageHomepageRoute
   '/events/$slug/manage/judging': typeof AuthedEventsSlugManageJudgingRoute
   '/events/$slug/manage/messages': typeof AuthedEventsSlugManageMessagesRoute
@@ -1223,8 +1230,10 @@ export interface FileRoutesByTo {
   '/events/$slug/results': typeof AuthedEventsSlugResultsIndexRoute
   '/api/v1/events/$slug': typeof ApiV1EventsSlugIndexRoute
   '/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
+  '/events/$slug/manage/forms/new': typeof AuthedEventsSlugManageFormsNewRoute
   '/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
   '/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdIndexRoute
+  '/events/$slug/manage/forms': typeof AuthedEventsSlugManageFormsIndexRoute
   '/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
 }
 export interface FileRoutesById {
@@ -1333,7 +1342,6 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
   '/_authed/events/$slug/manage/divisions': typeof AuthedEventsSlugManageDivisionsRoute
   '/_authed/events/$slug/manage/email': typeof AuthedEventsSlugManageEmailRoute
-  '/_authed/events/$slug/manage/forms': typeof AuthedEventsSlugManageFormsRoute
   '/_authed/events/$slug/manage/homepage': typeof AuthedEventsSlugManageHomepageRoute
   '/_authed/events/$slug/manage/judging': typeof AuthedEventsSlugManageJudgingRoute
   '/_authed/events/$slug/manage/messages': typeof AuthedEventsSlugManageMessagesRoute
@@ -1371,8 +1379,10 @@ export interface FileRoutesById {
   '/_authed/events/$slug/results/': typeof AuthedEventsSlugResultsIndexRoute
   '/api/v1/events/$slug/': typeof ApiV1EventsSlugIndexRoute
   '/_authed/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
+  '/_authed/events/$slug/manage/forms/new': typeof AuthedEventsSlugManageFormsNewRoute
   '/_authed/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
   '/_authed/events/$slug/agenda/$sessionId/': typeof AuthedEventsSlugAgendaSessionIdIndexRoute
+  '/_authed/events/$slug/manage/forms/': typeof AuthedEventsSlugManageFormsIndexRoute
   '/_authed/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
 }
 export interface FileRouteTypes {
@@ -1480,7 +1490,6 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/details'
     | '/events/$slug/manage/divisions'
     | '/events/$slug/manage/email'
-    | '/events/$slug/manage/forms'
     | '/events/$slug/manage/homepage'
     | '/events/$slug/manage/judging'
     | '/events/$slug/manage/messages'
@@ -1518,8 +1527,10 @@ export interface FileRouteTypes {
     | '/events/$slug/results/'
     | '/api/v1/events/$slug/'
     | '/events/$slug/agenda/$sessionId/attendance'
+    | '/events/$slug/manage/forms/new'
     | '/events/$slug/x/$key/$'
     | '/events/$slug/agenda/$sessionId/'
+    | '/events/$slug/manage/forms/'
     | '/events/$slug/manage/x/$key/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1611,7 +1622,6 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/details'
     | '/events/$slug/manage/divisions'
     | '/events/$slug/manage/email'
-    | '/events/$slug/manage/forms'
     | '/events/$slug/manage/homepage'
     | '/events/$slug/manage/judging'
     | '/events/$slug/manage/messages'
@@ -1649,8 +1659,10 @@ export interface FileRouteTypes {
     | '/events/$slug/results'
     | '/api/v1/events/$slug'
     | '/events/$slug/agenda/$sessionId/attendance'
+    | '/events/$slug/manage/forms/new'
     | '/events/$slug/x/$key/$'
     | '/events/$slug/agenda/$sessionId'
+    | '/events/$slug/manage/forms'
     | '/events/$slug/manage/x/$key/$'
   id:
     | '__root__'
@@ -1758,7 +1770,6 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/details'
     | '/_authed/events/$slug/manage/divisions'
     | '/_authed/events/$slug/manage/email'
-    | '/_authed/events/$slug/manage/forms'
     | '/_authed/events/$slug/manage/homepage'
     | '/_authed/events/$slug/manage/judging'
     | '/_authed/events/$slug/manage/messages'
@@ -1796,8 +1807,10 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/results/'
     | '/api/v1/events/$slug/'
     | '/_authed/events/$slug/agenda/$sessionId/attendance'
+    | '/_authed/events/$slug/manage/forms/new'
     | '/_authed/events/$slug/x/$key/$'
     | '/_authed/events/$slug/agenda/$sessionId/'
+    | '/_authed/events/$slug/manage/forms/'
     | '/_authed/events/$slug/manage/x/$key/$'
   fileRoutesById: FileRoutesById
 }
@@ -2599,13 +2612,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManageEmailRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
-    '/_authed/events/$slug/manage/forms': {
-      id: '/_authed/events/$slug/manage/forms'
-      path: '/forms'
-      fullPath: '/events/$slug/manage/forms'
-      preLoaderRoute: typeof AuthedEventsSlugManageFormsRouteImport
-      parentRoute: typeof AuthedEventsSlugManageRouteRoute
-    }
     '/_authed/events/$slug/manage/homepage': {
       id: '/_authed/events/$slug/manage/homepage'
       path: '/homepage'
@@ -2837,6 +2843,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugAgendaSessionIdAttendanceRouteImport
       parentRoute: typeof AuthedEventsSlugAgendaRouteRoute
     }
+    '/_authed/events/$slug/manage/forms/': {
+      id: '/_authed/events/$slug/manage/forms/'
+      path: '/forms'
+      fullPath: '/events/$slug/manage/forms/'
+      preLoaderRoute: typeof AuthedEventsSlugManageFormsIndexRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/forms/new': {
+      id: '/_authed/events/$slug/manage/forms/new'
+      path: '/forms/new'
+      fullPath: '/events/$slug/manage/forms/new'
+      preLoaderRoute: typeof AuthedEventsSlugManageFormsNewRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
     '/_authed/events/$slug/x/$key/$': {
       id: '/_authed/events/$slug/x/$key/$'
       path: '/x/$key/$'
@@ -3012,7 +3032,6 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageDetailsRoute: typeof AuthedEventsSlugManageDetailsRoute
   AuthedEventsSlugManageDivisionsRoute: typeof AuthedEventsSlugManageDivisionsRoute
   AuthedEventsSlugManageEmailRoute: typeof AuthedEventsSlugManageEmailRoute
-  AuthedEventsSlugManageFormsRoute: typeof AuthedEventsSlugManageFormsRoute
   AuthedEventsSlugManageHomepageRoute: typeof AuthedEventsSlugManageHomepageRoute
   AuthedEventsSlugManageJudgingRoute: typeof AuthedEventsSlugManageJudgingRoute
   AuthedEventsSlugManageMessagesRoute: typeof AuthedEventsSlugManageMessagesRoute
@@ -3030,6 +3049,8 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageTeamsRoute: typeof AuthedEventsSlugManageTeamsRoute
   AuthedEventsSlugManageWebhooksRoute: typeof AuthedEventsSlugManageWebhooksRoute
   AuthedEventsSlugManageIndexRoute: typeof AuthedEventsSlugManageIndexRoute
+  AuthedEventsSlugManageFormsNewRoute: typeof AuthedEventsSlugManageFormsNewRoute
+  AuthedEventsSlugManageFormsIndexRoute: typeof AuthedEventsSlugManageFormsIndexRoute
   AuthedEventsSlugManageXKeySplatRoute: typeof AuthedEventsSlugManageXKeySplatRoute
 }
 
@@ -3046,7 +3067,6 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageDetailsRoute: AuthedEventsSlugManageDetailsRoute,
     AuthedEventsSlugManageDivisionsRoute: AuthedEventsSlugManageDivisionsRoute,
     AuthedEventsSlugManageEmailRoute: AuthedEventsSlugManageEmailRoute,
-    AuthedEventsSlugManageFormsRoute: AuthedEventsSlugManageFormsRoute,
     AuthedEventsSlugManageHomepageRoute: AuthedEventsSlugManageHomepageRoute,
     AuthedEventsSlugManageJudgingRoute: AuthedEventsSlugManageJudgingRoute,
     AuthedEventsSlugManageMessagesRoute: AuthedEventsSlugManageMessagesRoute,
@@ -3067,6 +3087,9 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageTeamsRoute: AuthedEventsSlugManageTeamsRoute,
     AuthedEventsSlugManageWebhooksRoute: AuthedEventsSlugManageWebhooksRoute,
     AuthedEventsSlugManageIndexRoute: AuthedEventsSlugManageIndexRoute,
+    AuthedEventsSlugManageFormsNewRoute: AuthedEventsSlugManageFormsNewRoute,
+    AuthedEventsSlugManageFormsIndexRoute:
+      AuthedEventsSlugManageFormsIndexRoute,
     AuthedEventsSlugManageXKeySplatRoute: AuthedEventsSlugManageXKeySplatRoute,
   }
 

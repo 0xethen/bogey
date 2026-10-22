@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
@@ -11,14 +11,13 @@ import {
 } from "@bogey/db/queries/submissions";
 import { setWindowsFn } from "@bogey/db/queries/manage";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
+import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import { EditableList, EditableListItem } from "@bogey/ui/components/editable-list";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { FieldDescription, FieldGroup } from "@bogey/ui/components/field";
 import { Switch } from "@bogey/ui/components/switch";
-import { Screen } from "@bogey/ui/components/screen";
 import { IconPlus } from "@tabler/icons-react";
 import {
   appFormOptions,
@@ -28,10 +27,6 @@ import {
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { windowLabel } from "#/lib/windows.ts";
-import {
-  prefetchSettingFields,
-  SettingFields,
-} from "#/components/settings/fields/setting-fields.tsx";
 import { SubmissionItemPreview } from "#/components/event/submission/submission-item-field.tsx";
 import { useEventRefresh } from "#/lib/refresh.ts";
 import {
@@ -47,32 +42,9 @@ import {
   validItemConfig,
   type MountedItemType,
 } from "@bogey/plugins";
-import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
-import { msg, useT, type PlainKey, type T } from "#/lib/translate.tsx";
+import { useT, type PlainKey, type T } from "#/lib/translate.tsx";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/forms")({
-  staticData: {
-    title: msg("manageNav.forms"),
-    settings: (t) => [
-      searchSection(t("manageForms.submitting"), { id: "submitting-and-deleting" }),
-      ...searchSettings(
-        "submissions",
-        ["autoSubmit", "deletion", "submittedTitle", "submittedBody"],
-        t,
-      ),
-    ],
-  },
-  loader: ({ context }) =>
-    Promise.all([
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
-        "submissions",
-      ]),
-    ]),
-  component: RouteComponent,
-  pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,
-});
+const eventRoute = getRouteApi("/_authed/events/$slug");
 
 interface KindOption {
   value: string;
@@ -94,53 +66,6 @@ const KINDS: Tuple<{ value: string; label: PlainKey; description: PlainKey }> = 
 ];
 
 const OWN_WINDOW = "__own";
-
-function RouteComponent() {
-  const t = useT();
-  const { event } = Route.useRouteContext();
-  const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(event.id));
-  const [adding, setAdding] = useState(false);
-
-  return (
-    <Screen
-      title={t("manageNav.forms")}
-      description={t("manageForms.intro")}
-      width="embedded"
-      actions={
-        !adding && (
-          <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
-            <IconPlus />
-            {t("manageForms.new")}
-          </Button>
-        )
-      }
-    >
-      {adding && <FormEditor form={null} onDone={() => setAdding(false)} />}
-      {forms.length === 0 && !adding ? (
-        <p className="text-sm text-muted-fg">{t("manageForms.none")}</p>
-      ) : (
-        <DisclosureList>
-          {forms.map((form) => (
-            <DisclosureRow
-              key={form.id}
-              title={form.title}
-              meta={`${t("manageForms.items", { count: form.items.length })} · ${t("manageForms.opensWith", { window: windowLabel({ key: form.window_key }, t) })}${form.judged ? "" : ` · ${t("manageForms.notJudged")}`}`}
-            >
-              <FormEditor form={form} />
-            </DisclosureRow>
-          ))}
-        </DisclosureList>
-      )}
-      <Screen.Section id="submitting-and-deleting" title={t("manageForms.submitting")}>
-        <SettingFields
-          scope={{ scope: "event", eventId: event.id }}
-          namespace="submissions"
-          keys={["autoSubmit", "deletion", "submittedTitle", "submittedBody"]}
-        />
-      </Screen.Section>
-    </Screen>
-  );
-}
 
 const itemSchema = (t: T) =>
   z.object({
@@ -206,6 +131,10 @@ const formSchema = (t: T) =>
       .boolean()
       .meta({ label: t("manageForms.judged") })
       .describe(t("manageForms.judgedHelp")),
+    divisions: z
+      .array(z.string())
+      .meta({ label: t("manageForms.audience"), placeholder: t("manageForms.everyone") })
+      .describe(t("manageForms.audienceHelp")),
     items: z
       .array(itemSchema(t))
       .max(60, t("manageForms.atMost60"))
@@ -353,10 +282,11 @@ const BLANK: Omit<ItemDraft, "uid"> = {
 
 const FIRST_ITEM: ItemDraft = { ...BLANK, uid: "first", kind: "markdown" };
 
-function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: () => void }) {
+/** Edits a form, or creates one when `form` is null; `onDone` runs once it is created, and on Cancel. */
+export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: () => void }) {
   const t = useT();
   const schema = useMemo(() => formSchema(t), [t]);
-  const { event, plugins } = Route.useRouteContext();
+  const { event, plugins } = eventRoute.useRouteContext();
   const itemTypes = pluginItemTypes(plugins);
   const kinds: Tuple<KindOption> = [
     ...KINDS.map((kind) => ({
@@ -385,6 +315,7 @@ function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: ()
   const queryClient = useQueryClient();
   const refreshEvent = useEventRefresh(event.id);
   const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
+  const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(event.id));
   const [active, setActive] = useState<string | null>(null);
   const refresh = () =>
     Promise.all([
@@ -412,6 +343,7 @@ function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: ()
         description: form?.description_md ?? "",
         window: form?.window_key ?? "submissions",
         judged: form?.judged ?? true,
+        divisions: form?.divisionIds ?? [],
         items: form ? form.items.map(toDraft) : [FIRST_ITEM],
       },
       errorVisibility,
@@ -440,6 +372,7 @@ function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: ()
             descriptionMd: value.description,
             windowKey,
             judged: value.judged,
+            divisionIds: value.divisions,
           },
           items,
         },
@@ -447,7 +380,7 @@ function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: ()
       if (!result.ok) return createValidationError(result.error.message);
       formApi.reset({ ...value, window: windowKey, items: items.map(toDraft) });
       await refresh();
-      onDone?.();
+      if (!form) onDone?.();
       return undefined;
     },
   });
@@ -459,13 +392,9 @@ function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: ()
 
   return (
     <editor.AppForm>
-      {form ? <editor.SaveBarEntry /> : <editor.DraftGuard />}
       <editor.Form
-        className={
-          form
-            ? "flex flex-col gap-6 pl-1"
-            : "flex flex-col gap-6 rounded-2xl border border-border p-4"
-        }
+        unsaved="save"
+        className={form ? "flex flex-col gap-6 pl-1" : "flex flex-col gap-6"}
       >
         <FieldGroup>
           <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
@@ -484,6 +413,18 @@ function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: ()
             {(field) => <field.MarkdownField rows={3} />}
           </editor.Field>
           <editor.Field name="judged">{(field) => <field.SwitchField />}</editor.Field>
+          {divisions.length > 0 && (
+            <editor.Field name="divisions">
+              {(field) => (
+                <field.MultiSelectField
+                  options={divisions.map((division) => ({
+                    value: division.id,
+                    label: division.name,
+                  }))}
+                />
+              )}
+            </editor.Field>
+          )}
         </FieldGroup>
 
         <editor.Field name="items">

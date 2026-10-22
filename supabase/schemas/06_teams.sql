@@ -511,6 +511,61 @@ begin
 end;
 $$;
 
+-- Moves the caller's whole team (and its members) to another division, within the same rules as
+-- choose_division: the target is one participants pick, and nobody is in a division that can't be left.
+create function public.choose_team_division(p_event uuid, p_division uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_team public.teams;
+  v_target public.divisions;
+begin
+  if not private.has_permission(p_event, 'event.compete') then
+    raise exception 'only participants choose a division' using errcode = '42501';
+  end if;
+  perform private.require_network(p_event);
+  select t.* into v_team from public.teams t
+  join public.team_members tm on tm.team_id = t.id
+  where tm.event_id = p_event and tm.user_id = (select auth.uid());
+  if v_team.id is null then
+    perform public.choose_division(p_event, p_division);
+    return;
+  end if;
+  select * into v_target from public.divisions where id = p_division and event_id = p_event;
+  if v_target.id is null then
+    raise exception 'no such division' using errcode = 'P0002';
+  end if;
+  if v_team.division_id is not distinct from p_division then
+    return;
+  end if;
+  if v_team.locked_at is not null then
+    raise exception 'your team is locked; ask an organizer' using errcode = '42501';
+  end if;
+  if not v_target.selectable then
+    raise exception 'organizers place teams in %', v_target.name using errcode = '42501';
+  end if;
+  if exists (
+    select 1 from public.divisions d
+    where not d.switchable and d.id <> p_division
+      and (d.id = v_team.division_id or d.id in (
+        select m.division_id from public.event_members m
+        join public.team_members tm on tm.user_id = m.user_id and tm.team_id = v_team.id
+        where m.event_id = p_event))
+  ) then
+    raise exception 'your team can''t switch out of its division; ask an organizer' using errcode = '42501';
+  end if;
+  update public.teams set division_id = p_division where id = v_team.id;
+  update public.event_members set division_id = p_division
+  where event_id = p_event
+    and user_id in (select user_id from public.team_members where team_id = v_team.id);
+  perform private.audit(p_event, 'division.chosen', 'division', p_division,
+    jsonb_build_object('from', v_team.division_id, 'team', v_team.id));
+end;
+$$;
+
 create function public.set_division(p_event uuid, p_user uuid, p_division uuid default null)
 returns void
 language plpgsql
@@ -546,6 +601,7 @@ grant execute on function
   public.disband_team(uuid),
   public.new_team_code(uuid),
   public.choose_division(uuid, uuid),
+  public.choose_team_division(uuid, uuid),
   public.set_division(uuid, uuid, uuid)
 to authenticated;
 

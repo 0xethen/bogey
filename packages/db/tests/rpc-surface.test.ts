@@ -130,6 +130,8 @@ const SIGNED_IN = {
   new_team_code: "a captain replaces their team's invite code, which they can't write directly",
   choose_division:
     "participants move themselves between divisions the event lets them pick and leave",
+  choose_team_division:
+    "a participant moves their whole team between divisions the event lets them pick and leave",
   set_division: "organizers move someone, and a team of just them, between divisions",
   post_announcement: "posts with its audience rows in one transaction and audits it",
   my_sessions: "the caller's own signed-in sessions, which live in the auth schema",

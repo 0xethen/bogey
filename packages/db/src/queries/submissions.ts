@@ -51,6 +51,13 @@ function pluginConfig(value: {
 
 export interface SubmissionForm extends SubmissionFormRow {
   items: SubmissionItem[];
+  /** The divisions whose teams submit this form; empty means everyone. */
+  divisionIds: string[];
+}
+
+/** Whether a team (or a participant without one) in this division gets the form. */
+export function formReaches(form: Pick<SubmissionForm, "divisionIds">, division: string | null) {
+  return form.divisionIds.length === 0 || (!!division && form.divisionIds.includes(division));
 }
 
 function parseItem(row: Tables<"submission_items">): SubmissionItem {
@@ -76,16 +83,23 @@ function parseItem(row: Tables<"submission_items">): SubmissionItem {
 
 async function loadForms(eventId: string): Promise<DbResult<SubmissionForm[]>> {
   const supabase = createServerClient();
-  const [forms, items] = await Promise.all([
+  const [forms, items, divisions] = await Promise.all([
     supabase.from("submission_forms").select("*").eq("event_id", eventId).order("sort"),
     supabase.from("submission_items").select("*").eq("event_id", eventId).order("sort"),
+    supabase
+      .from("submission_form_divisions")
+      .select("form_id, division_id")
+      .eq("event_id", eventId),
   ]);
-  const error = forms.error ?? items.error;
+  const error = forms.error ?? items.error ?? divisions.error;
   if (error) return toFailure(error, "loading submission forms");
   return ok(
     (forms.data ?? []).map((form) => ({
       ...form,
       items: (items.data ?? []).filter((item) => item.form_id === form.id).map(parseItem),
+      divisionIds: (divisions.data ?? [])
+        .filter((row) => row.form_id === form.id)
+        .map((row) => row.division_id),
     })),
   );
 }
@@ -102,7 +116,7 @@ export const submissionFormsQueryOptions = (eventId: string) =>
   });
 
 export interface MySubmissions {
-  team: { id: string; name: string; members: number } | null;
+  team: { id: string; name: string; members: number; divisionId: string | null } | null;
   forms: { form: SubmissionForm; submission: Submission | null; files: SubmissionFile[] }[];
 }
 
@@ -113,23 +127,34 @@ export const mySubmissionsFn = createServerFn({ method: "GET" })
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return fail("forbidden", "Sign in first.");
 
-    const [forms, membership] = await Promise.all([
+    const [forms, membership, member] = await Promise.all([
       loadForms(eventId),
       supabase
         .from("team_members")
-        .select("team_id, teams(name)")
+        .select("team_id, teams(name, division_id)")
+        .eq("event_id", eventId)
+        .eq("user_id", userData.user.id)
+        .maybeSingle(),
+      supabase
+        .from("event_members")
+        .select("division_id")
         .eq("event_id", eventId)
         .eq("user_id", userData.user.id)
         .maybeSingle(),
     ]);
     if (!forms.ok) return forms;
-    if (membership.error) return toFailure(membership.error, "loading your submissions");
+    const loadError = membership.error ?? member.error;
+    if (loadError) return toFailure(loadError, "loading your submissions");
     if (!membership.data) {
+      const division = member.data?.division_id ?? null;
       return ok({
         team: null,
-        forms: forms.data.map((form) => ({ form, submission: null, files: [] })),
+        forms: forms.data
+          .filter((form) => formReaches(form, division))
+          .map((form) => ({ form, submission: null, files: [] })),
       });
     }
+    const division = membership.data.teams?.division_id ?? null;
 
     const teamId = membership.data.team_id;
     const [submissions, members] = await Promise.all([
@@ -153,9 +178,12 @@ export const mySubmissionsFn = createServerFn({ method: "GET" })
         id: teamId,
         name: membership.data.teams?.name ?? "Your team",
         members: members.count ?? 1,
+        divisionId: division,
       },
-      forms: forms.data.map((form) => {
+      forms: forms.data.flatMap((form) => {
         const submission = submissions.data?.find((row) => row.form_id === form.id) ?? null;
+        // a draft started before the team changed divisions stays visible
+        if (!submission && !formReaches(form, division)) return [];
         return {
           form,
           submission,
@@ -488,6 +516,7 @@ export interface FormDefinition {
     descriptionMd: string;
     windowKey: string;
     judged: boolean;
+    divisionIds: string[];
   };
   items: SubmissionItem[];
 }
@@ -548,6 +577,9 @@ export const saveSubmissionFormFn = createServerFn({ method: "POST" })
           typeof form.descriptionMd === "string" ? form.descriptionMd.slice(0, 5000) : "",
         windowKey,
         judged: form.judged !== false,
+        divisionIds: Array.isArray(form.divisionIds)
+          ? form.divisionIds.slice(0, 50).map((id) => requireId(id, "division"))
+          : [],
       },
       items,
     };
@@ -578,6 +610,7 @@ export const saveSubmissionFormFn = createServerFn({ method: "POST" })
         description_md: data.form.descriptionMd,
         window_key: data.form.windowKey,
         judged: data.form.judged,
+        division_ids: data.form.divisionIds,
       },
       p_items: items,
     });

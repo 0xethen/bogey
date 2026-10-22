@@ -3361,6 +3361,40 @@ export type Database = {
           },
         ];
       };
+      submission_form_divisions: {
+        Row: {
+          division_id: string;
+          event_id: string;
+          form_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          division_id: string;
+          event_id: string;
+          form_id: string;
+        };
+        Update: {
+          division_id?: string;
+          event_id?: string;
+          form_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "submission_form_divisions_event_id_division_id_fkey";
+            columns: ["event_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "submission_form_divisions_event_id_form_id_fkey";
+            columns: ["event_id", "form_id"];
+            isOneToOne: false;
+            referencedRelation: "submission_forms";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
       submission_items: {
         Row: {
           config: NonNullable<Json>;
@@ -4344,6 +4378,7 @@ export type Database = {
       };
       choose_division: { Args: { p_division: string; p_event: string }; Returns: undefined };
       choose_session: { Args: { p_session: string }; Returns: undefined };
+      choose_team_division: { Args: { p_division: string; p_event: string }; Returns: undefined };
       choose_team_option: { Args: { p_event: string; p_team?: string }; Returns: undefined };
       claim_certificate: {
         Args: { p_award?: string; p_event: string; p_kind: string };
