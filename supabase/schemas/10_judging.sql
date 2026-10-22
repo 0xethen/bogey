@@ -169,6 +169,31 @@ begin
 end;
 $$;
 
+-- criteria.guidance: [{min, max, body}], whole-number bands inside the criterion's range
+create function private.guidance_ok(p_guidance jsonb, p_min smallint, p_max smallint)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when jsonb_typeof(p_guidance) = 'array' then
+    jsonb_array_length(p_guidance) <= 20 and not exists (
+      select 1 from jsonb_array_elements(p_guidance) g
+      where case
+        when jsonb_typeof(g) = 'object' and jsonb_typeof(g -> 'min') = 'number'
+          and jsonb_typeof(g -> 'max') = 'number' and jsonb_typeof(g -> 'body') = 'string' then
+          (g ->> 'min')::numeric <> trunc((g ->> 'min')::numeric)
+          or (g ->> 'max')::numeric <> trunc((g ->> 'max')::numeric)
+          or (g ->> 'min')::numeric < p_min or (g ->> 'max')::numeric > p_max
+          or (g ->> 'min')::numeric > (g ->> 'max')::numeric
+          or length(g ->> 'body') > 2000
+        else true
+      end)
+  else false end;
+$$;
+-- criteria writes check it as the caller
+grant execute on function private.guidance_ok(jsonb, smallint, smallint) to authenticated, service_role;
+
 -- a named set of criteria for one kind of project (a theme); criteria without one count for every project
 create table public.rubrics (
   id uuid primary key default gen_random_uuid(),
@@ -191,7 +216,10 @@ create table public.criteria (
   sort smallint not null default 0,
   round_id uuid,
   rubric_id uuid,
+  -- what each band of scores means, shown to judges beside the criterion
+  guidance jsonb not null default '[]',
   check (min_score >= 0 and min_score < max_score),
+  check (private.guidance_ok(guidance, min_score, max_score)),
   unique (event_id, label),
   unique (event_id, id),
   foreign key (event_id, round_id) references public.judging_rounds (event_id, id) on delete set null (round_id),
@@ -212,6 +240,60 @@ create table public.submission_rubrics (
 );
 create index submission_rubrics_event_id_rubric_id_fk_idx on public.submission_rubrics (event_id, rubric_id);
 create index submission_rubrics_set_by_fk_idx on public.submission_rubrics (set_by);
+
+-- rubrics meant for a division's projects; a rubric with no divisions is open to every project
+create table public.rubric_divisions (
+  event_id uuid not null,
+  rubric_id uuid not null,
+  division_id uuid not null,
+  primary key (rubric_id, division_id),
+  foreign key (event_id, rubric_id) references public.rubrics (event_id, id) on delete cascade,
+  foreign key (event_id, division_id) references public.divisions (event_id, id) on delete cascade
+);
+create index rubric_divisions_event_id_rubric_id_fk_idx on public.rubric_divisions (event_id, rubric_id);
+create index rubric_divisions_event_id_division_id_fk_idx on public.rubric_divisions (event_id, division_id);
+
+-- a division's rubric when it has exactly one
+create function private.division_rubric(p_division uuid)
+returns uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select (array_agg(rubric_id))[1] from public.rubric_divisions
+  where division_id = p_division
+  having count(*) = 1;
+$$;
+
+-- the rubrics a project may be judged on: those without divisions, plus its division's
+create function private.allowed_rubrics(p_event uuid, p_division uuid)
+returns uuid[]
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(array_agg(r.id order by r.sort), '{}') from public.rubrics r
+  where r.event_id = p_event
+    and (not exists (select 1 from public.rubric_divisions rd where rd.rubric_id = r.id)
+      or exists (select 1 from public.rubric_divisions rd where rd.rubric_id = r.id and rd.division_id = p_division));
+$$;
+
+-- the rubric a project is judged on: its pick, else its division's only rubric
+create function private.submission_rubric(p_submission uuid)
+returns uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(
+    (select x.rubric_id from public.submission_rubrics x where x.submission_id = p_submission),
+    (select private.division_rubric(t.division_id)
+     from public.submissions s join public.teams t on t.id = s.team_id
+     where s.id = p_submission));
+$$;
 
 create table public.judge_assignments (
   id uuid primary key default gen_random_uuid(),
@@ -454,11 +536,11 @@ as $$
   ),
   entries as (
     select s.id as submission_id, s.team_id, r.id as round_id, r.ordinal, r.name as round_name,
-      case when r.format = 'offline' then 'offline' else r.method end as method, sr.rubric_id
+      case when r.format = 'offline' then 'offline' else r.method end as method,
+      private.submission_rubric(s.id) as rubric_id
     from public.judging_rounds r
     join public.submission_forms f on f.id = r.form_id and f.judged
     join public.submissions s on s.form_id = f.id and s.status = 'submitted'
-    left join public.submission_rubrics sr on sr.submission_id = s.id
     where r.event_id = p_event
       and (r.ordinal = 1 or exists (
         select 1 from public.round_entries e where e.round_id = r.id and e.submission_id = s.id))
@@ -1531,8 +1613,7 @@ begin
   join public.criteria c on c.id = sc.criterion_id
   join public.judging_rounds r on r.id = sc.round_id
   where sc.submission_id = p_submission
-    and (c.rubric_id is null
-      or c.rubric_id = (select x.rubric_id from public.submission_rubrics x where x.submission_id = p_submission))
+    and (c.rubric_id is null or c.rubric_id = private.submission_rubric(p_submission))
     and not exists (select 1 from public.judge_conflicts jc where jc.judge_id = sc.judge_id and jc.team_id = v_sub.team_id)
   group by r.name, r.ordinal, c.label, c.min_score, c.max_score, c.sort
   order by r.ordinal, c.sort;
@@ -1750,6 +1831,10 @@ begin
     if not exists (select 1 from public.rubrics where id = p_rubric and event_id = v_sub.event_id) then
       raise exception 'that rubric isn''t in this event' using errcode = '22023';
     end if;
+    if not p_rubric = any (private.allowed_rubrics(v_sub.event_id,
+        (select t.division_id from public.teams t where t.id = v_sub.team_id))) then
+      raise exception 'that rubric is for other divisions' using errcode = '22023';
+    end if;
     insert into public.submission_rubrics (event_id, submission_id, rubric_id, set_by)
     values (v_sub.event_id, p_submission, p_rubric, (select auth.uid()))
     on conflict (submission_id) do update
@@ -1757,6 +1842,58 @@ begin
   end if;
   perform private.audit(v_sub.event_id, 'judging.rubric_set', 'submission', p_submission,
     jsonb_build_object('rubric', p_rubric));
+end;
+$$;
+
+-- a project's rubric pick, the division rubric it falls back to, and the rubrics it may pick
+create function public.project_rubric(p_submission uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_sub public.submissions;
+  v_division uuid;
+begin
+  select * into v_sub from public.submissions where id = p_submission;
+  if v_sub.id is null or not (
+    private.can_manage(v_sub.event_id)
+    or private.has_permission(v_sub.event_id, 'judging.score')
+    or private.is_team_member(v_sub.team_id)
+  ) then
+    return null;
+  end if;
+  select division_id into v_division from public.teams where id = v_sub.team_id;
+  return jsonb_build_object(
+    'picked', (select rubric_id from public.submission_rubrics where submission_id = p_submission),
+    'fallback', private.division_rubric(v_division),
+    'allowed', to_jsonb(private.allowed_rubrics(v_sub.event_id, v_division)));
+end;
+$$;
+
+-- replaces the rubrics of each listed division; p_items is [{division_id, rubric_ids}]
+create function public.set_division_rubrics(p_event uuid, p_items jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not private.can_manage(p_event) then
+    raise exception 'not allowed' using errcode = '42501';
+  end if;
+  delete from public.rubric_divisions
+  where event_id = p_event
+    and division_id in (select (item ->> 'division_id')::uuid from jsonb_array_elements(p_items) item);
+  insert into public.rubric_divisions (event_id, rubric_id, division_id)
+  select p_event, (rubric #>> '{}')::uuid, (item ->> 'division_id')::uuid
+  from jsonb_array_elements(p_items) item,
+    jsonb_array_elements(coalesce(item -> 'rubric_ids', '[]')) rubric
+  on conflict do nothing;
+  perform private.audit(p_event, 'judging.rubric_divisions_saved', 'event', p_event,
+    jsonb_build_object('divisions', jsonb_array_length(p_items)));
 end;
 $$;
 
@@ -1940,8 +2077,7 @@ begin
     select c.id, c.min_score, c.max_score, c.weight from public.criteria c
     where c.event_id = new.event_id
       and (c.round_id is null or c.round_id = new.round_id)
-      and (c.rubric_id is null or c.rubric_id = (
-        select r.rubric_id from public.submission_rubrics r where r.submission_id = new.submission_id))
+      and (c.rubric_id is null or c.rubric_id = private.submission_rubric(new.submission_id))
   ),
   totals as (
     select sc.judge_id, count(*) as scored,
@@ -1992,6 +2128,18 @@ begin
     from jsonb_array_elements(p_rubrics) with ordinality as t(item, ordinality)
     on conflict (id) do update set
       name = excluded.name, description_md = excluded.description_md, sort = excluded.sort;
+    -- a rubric item with division_ids replaces its divisions
+    delete from public.rubric_divisions
+    where event_id = p_event and rubric_id in (
+      select (item ->> 'id')::uuid from jsonb_array_elements(p_rubrics) item
+      where jsonb_typeof(item -> 'division_ids') = 'array');
+    insert into public.rubric_divisions (event_id, rubric_id, division_id)
+    select p_event, (item ->> 'id')::uuid, (division #>> '{}')::uuid
+    from jsonb_array_elements(p_rubrics) item,
+      jsonb_array_elements(case when jsonb_typeof(item -> 'division_ids') = 'array'
+        then item -> 'division_ids' else '[]' end) division
+    where item ->> 'id' is not null
+    on conflict do nothing;
   end if;
 
   delete from public.criteria
@@ -2002,17 +2150,18 @@ begin
   get diagnostics v_removed = row_count;
 
   update public.criteria set label = id::text where event_id = p_event;
-  insert into public.criteria (id, event_id, label, description_md, min_score, max_score, weight, sort, round_id, rubric_id)
+  insert into public.criteria (
+    id, event_id, label, description_md, min_score, max_score, weight, sort, round_id, rubric_id, guidance)
   select coalesce((item ->> 'id')::uuid, gen_random_uuid()), p_event, item ->> 'label',
     coalesce(item ->> 'description_md', ''), coalesce((item ->> 'min_score')::smallint, 0),
     (item ->> 'max_score')::smallint,
     (item ->> 'weight')::numeric, (ordinality - 1)::smallint, nullif(item ->> 'round_id', '')::uuid,
-    nullif(item ->> 'rubric_id', '')::uuid
+    nullif(item ->> 'rubric_id', '')::uuid, coalesce(item -> 'guidance', '[]')
   from jsonb_array_elements(p_items) with ordinality as t(item, ordinality)
   on conflict (id) do update set
     label = excluded.label, description_md = excluded.description_md,
     min_score = excluded.min_score, max_score = excluded.max_score, weight = excluded.weight, sort = excluded.sort,
-    round_id = excluded.round_id, rubric_id = excluded.rubric_id;
+    round_id = excluded.round_id, rubric_id = excluded.rubric_id, guidance = excluded.guidance;
 
   perform private.audit(p_event, 'judging.criteria_saved', 'event', p_event,
     jsonb_build_object('count', jsonb_array_length(p_items), 'removed', v_removed,
@@ -2045,6 +2194,8 @@ grant execute on function
   public.skip_submission(uuid, boolean),
   public.save_criteria(uuid, jsonb, jsonb),
   public.set_submission_rubric(uuid, uuid),
+  public.project_rubric(uuid),
+  public.set_division_rubrics(uuid, jsonb),
   public.flag_submission(uuid, text),
   public.resolve_flag(uuid, text),
   public.add_deliberation_note(uuid, text),
@@ -2073,6 +2224,7 @@ alter table public.round_entries enable row level security;
 alter table public.criteria enable row level security;
 alter table public.rubrics enable row level security;
 alter table public.submission_rubrics enable row level security;
+alter table public.rubric_divisions enable row level security;
 alter table public.judging_flags enable row level security;
 alter table public.deliberation_notes enable row level security;
 alter table public.judge_assignments enable row level security;
@@ -2117,6 +2269,8 @@ create policy criteria_write_delete on public.criteria for delete to authenticat
   using ((select private.can_manage(event_id)));
 
 create policy rubrics_select on public.rubrics for select to anon, authenticated
+  using ((select private.can_view_event(event_id)));
+create policy rubric_divisions_select on public.rubric_divisions for select to anon, authenticated
   using ((select private.can_view_event(event_id)));
 create policy submission_rubrics_select on public.submission_rubrics for select to authenticated
   using (

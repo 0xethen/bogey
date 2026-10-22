@@ -164,6 +164,9 @@ const SIGNED_IN = {
     "organizers' bulk clean-ups across tables, confirmed by the event's address and audited",
   set_submission_rubric:
     "checks who may pick a project's rubric (organizers, judges, its team) per the judging settings, and audits it",
+  project_rubric:
+    "a project's rubric pick, division fallback and choices, for its organizers, judges and team",
+  set_division_rubrics: "organizers replace which rubrics divisions use, and it's audited",
   flag_submission:
     "a judge who may deliberate on a project flags it, once at a time, and it's audited",
   resolve_flag: "closes a flag for the judges deliberating on it, and audits it",

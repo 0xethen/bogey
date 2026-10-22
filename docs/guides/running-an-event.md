@@ -312,13 +312,18 @@ disqualify or reinstate, delete, and act on deletion requests.
 
 ## 7. Judging
 
-**Manage → Judging**:
+**Manage → Judging → Criteria** holds what judges score; **Manage → Judging**
+holds the rest:
 
 1. Add **criteria**, each with a score range (0 to 10 by default) and a
-   weight. **Duplicate** copies one as a starting point. For an event with
-   several themes, **Add a rubric** per theme ("Health", "Climate") and set
-   each theme's criteria to count in it; criteria left on **Every rubric**
-   count for every project. See [Rubrics](#rubrics).
+   weight. **Duplicate** copies one as a starting point. Under **Guidance by
+   score**, say what each band of scores looks like ("7-10: works end to end");
+   **Split into 3** (or 4, 5) starts the bands evenly. Judges see the band their
+   score falls in beside the criterion. See [Guidance from a file](#guidance-from-a-file)
+   to load a rubric spreadsheet you already have. For an event with several themes,
+   **Add a rubric** per theme ("Health", "Climate") and set each theme's criteria
+   to count in it; criteria left on **Every rubric** count for every project. See
+   [Rubrics](#rubrics).
 2. Turn on **blind judging** if judges shouldn't see team names. Teams are
    asked to keep names out of their answers. For questions that need names,
    like who built what, turn on **May name people** on that submission item:
@@ -356,19 +361,40 @@ Judges score from their own queue while the Judging window is open.
   rest or who give everything the same mark.
 - **Fewest judges per entry**: the results preview warns about entries with fewer before you publish.
 
+### Guidance from a file
+
+**Manage → Judging → Criteria → Import from a file** reads a CSV or Excel sheet in either shape:
+
+| Criterion | Weight | Weak (1-3)      | Fair (4-6)  | Strong (7-10)    |
+| --------- | ------ | --------------- | ----------- | ---------------- |
+| Impact    | 2      | Nobody needs it | Some people | Everyone         |
+| Build     |        | Slides only     |             | Works end to end |
+
+or a row per band, with **Criterion**, **From**, **To** and **Guidance** columns (or one
+**Range** column holding "7-10"). A band's name in its header ("Strong") starts its guidance.
+Criteria with the same name as one in the file take its guidance (and its weight or
+description, when the file has them), widening their range if a band needs it; the rest are
+added. Nothing is saved until you press **Save**, so review the list first. **Download as CSV**
+gives the current criteria in the row-per-band shape, to edit and import back.
+
 ### Rubrics
 
 A project is scored on the shared criteria plus its rubric's own. There's one rubric per project,
 shared by all its judges and its team, so every project is ranked on what fits it and the totals
 stay out of 100.
 
+Give a rubric **Divisions** (on Manage → Judging → Criteria, or a division's **Rubrics** on
+Manage → Divisions; both edit the same thing) to use it for those divisions' projects. A
+division with one rubric judges its projects on it without anyone picking; with several, its
+projects pick among them. A rubric with no divisions can be picked by any project.
+
 - **Judges pick the rubric** (on by default): a judge picks or changes it at the top of the score
   sheet. Scores already given for another rubric's criteria are kept but don't count.
 - **Teams pick their rubric** (off by default): teams choose on their submission while they can
   still edit it, and judges can still change it unless you turn that off. **What teams see**
   shows them rubric names only, or each rubric's criteria too.
-- A project with no rubric picked is ranked on the shared criteria alone. The results preview
-  names each project's rubric.
+- A project with no rubric picked, and no single rubric from its division, is ranked on the shared
+  criteria alone. The results preview names each project's rubric.
 
 Themes aren't a separate setting: a rubric is the theme.
 

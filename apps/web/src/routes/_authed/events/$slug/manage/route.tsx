@@ -14,6 +14,7 @@ import {
   IconInfoCircle,
   IconLayoutDashboard,
   IconLayoutNavbar,
+  IconListCheck,
   IconMail,
   IconMessages,
   IconPlug,
@@ -193,7 +194,14 @@ function RouteComponent() {
           label: t("judging.title"),
           icon: IconGavel,
           to: `${base}/judging`,
+          exact: true,
           sub: [
+            {
+              key: "criteria",
+              label: t("manageNav.criteria"),
+              icon: IconListCheck,
+              to: `${base}/judging/criteria`,
+            },
             {
               key: "demos",
               label: t("manageNav.demos"),

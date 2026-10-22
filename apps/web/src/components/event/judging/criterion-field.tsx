@@ -1,5 +1,6 @@
 import { Field, FieldLabel } from "@bogey/ui/components/field";
 import { Markdown } from "@bogey/ui/components/markdown";
+import { ScoreGuide, type ScoreBand } from "@bogey/ui/components/score-guide";
 import { ScoreInput } from "./score-input.tsx";
 import { useT } from "#/lib/translate.tsx";
 
@@ -9,6 +10,7 @@ export interface CriterionShown {
   descriptionMd: string;
   minScore: number;
   maxScore: number;
+  guidance?: Tuple<ScoreBand>;
 }
 
 export function CriterionField({
@@ -46,6 +48,7 @@ export function CriterionField({
         disabled={disabled}
         onChange={onChange}
       />
+      {criterion.guidance && <ScoreGuide bands={criterion.guidance} score={value} />}
     </Field>
   );
 }

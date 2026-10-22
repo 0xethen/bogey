@@ -803,6 +803,7 @@ export type Database = {
         Row: {
           description_md: string;
           event_id: string;
+          guidance: Json;
           id: string;
           label: string;
           max_score: number;
@@ -816,6 +817,7 @@ export type Database = {
         Insert: {
           description_md?: string;
           event_id: string;
+          guidance?: Json;
           id?: string;
           label: string;
           max_score?: number;
@@ -828,6 +830,7 @@ export type Database = {
         Update: {
           description_md?: string;
           event_id?: string;
+          guidance?: Json;
           id?: string;
           label?: string;
           max_score?: number;
@@ -2821,6 +2824,40 @@ export type Database = {
           },
         ];
       };
+      rubric_divisions: {
+        Row: {
+          division_id: string;
+          event_id: string;
+          rubric_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          division_id: string;
+          event_id: string;
+          rubric_id: string;
+        };
+        Update: {
+          division_id?: string;
+          event_id?: string;
+          rubric_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rubric_divisions_event_id_division_id_fkey";
+            columns: ["event_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "rubric_divisions_event_id_rubric_id_fkey";
+            columns: ["event_id", "rubric_id"];
+            isOneToOne: false;
+            referencedRelation: "rubrics";
+            referencedColumns: ["event_id", "id"];
+          },
+        ];
+      };
       rubrics: {
         Row: {
           description_md: string;
@@ -4788,6 +4825,7 @@ export type Database = {
       preview_results: { Args: { p_event: string }; Returns: Json };
       project_export_access: { Args: { p_event: string }; Returns: string };
       project_export_results: { Args: { p_event: string }; Returns: Json };
+      project_rubric: { Args: { p_submission: string }; Returns: Json };
       prune_participants: {
         Args: {
           p_confirm?: string;
@@ -4980,6 +5018,10 @@ export type Database = {
       };
       set_division: {
         Args: { p_division?: string; p_event: string; p_user: string };
+        Returns: undefined;
+      };
+      set_division_rubrics: {
+        Args: { p_event: string; p_items: Json };
         Returns: undefined;
       };
       set_gallery_like: { Args: { p_like: boolean; p_submission: string }; Returns: undefined };

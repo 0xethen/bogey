@@ -5,6 +5,12 @@ import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../erro
 import type { Enums, Json, Tables } from "../types.ts";
 import { optionalId, requireId, requireNumber, requireOneOf, requireText } from "./validate.ts";
 import { activeRound, type RoundEntry, type RoundInfo } from "@bogey/utils/rounds";
+import {
+  MAX_BAND_BODY,
+  MAX_BANDS,
+  overlappingBands,
+  type GuidanceBand,
+} from "@bogey/utils/guidance";
 import { parseAwards, type Award } from "./awards.ts";
 import { profileNames } from "./profile-names.ts";
 import { slotStart } from "./demos.ts";
@@ -67,18 +73,46 @@ export function criteriaFor(
   );
 }
 
+/** A project's rubric pick, the division rubric it falls back to, and the rubrics it may pick. */
+export interface ProjectRubric {
+  picked: string | null;
+  fallback: string | null;
+  allowed: string[];
+}
+
+export const NO_PROJECT_RUBRIC: ProjectRubric = { picked: null, fallback: null, allowed: [] };
+
+/** The rubric a project is judged on. */
+export const rubricOf = (rubric: ProjectRubric): string | null => rubric.picked ?? rubric.fallback;
+
+function readProjectRubric(value: Json): ProjectRubric {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return NO_PROJECT_RUBRIC;
+  }
+  const text = (item: Json | undefined) => (typeof item === "string" ? item : null);
+  return {
+    picked: text(value.picked),
+    fallback: text(value.fallback),
+    allowed: Array.isArray(value.allowed)
+      ? value.allowed.flatMap((item) => (typeof item === "string" ? [item] : []))
+      : [],
+  };
+}
+
+async function loadProjectRubric(
+  supabase: ReturnType<typeof createServerClient>,
+  submissionId: string,
+): Promise<DbResult<ProjectRubric>> {
+  const { data, error } = await supabase.rpc("project_rubric", { p_submission: submissionId });
+  if (error) return toFailure(error, "loading the rubric");
+  return ok(readProjectRubric(data));
+}
+
 export const submissionRubricFn = createServerFn({ method: "GET" })
   .validator((submissionId: unknown) => requireId(submissionId, "submissionId"))
-  .handler(async ({ data: submissionId }): Promise<DbResult<string | null>> => {
-    const supabase = createServerClient();
-    const { data, error } = await supabase
-      .from("submission_rubrics")
-      .select("rubric_id")
-      .eq("submission_id", submissionId)
-      .maybeSingle();
-    if (error) return toFailure(error, "loading the rubric");
-    return ok(data?.rubric_id ?? null);
-  });
+  .handler(async ({ data: submissionId }): Promise<DbResult<ProjectRubric>> =>
+    loadProjectRubric(createServerClient(), submissionId),
+  );
 
 export const submissionRubricQueryOptions = (submissionId: string) =>
   queryOptions({
@@ -102,6 +136,64 @@ export const setSubmissionRubricFn = createServerFn({ method: "POST" })
       ...(data.rubricId ? { p_rubric: data.rubricId } : {}),
     });
     if (error) return toFailure(error, "picking the rubric");
+    return ok(null);
+  });
+
+export interface RubricDivision {
+  rubricId: string;
+  divisionId: string;
+}
+
+export const rubricDivisionsFn = createServerFn({ method: "GET" })
+  .validator((eventId: unknown) => requireId(eventId, "eventId"))
+  .handler(async ({ data: eventId }): Promise<DbResult<RubricDivision[]>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from("rubric_divisions")
+      .select("rubric_id, division_id")
+      .eq("event_id", eventId);
+    if (error) return toFailure(error, "loading rubric divisions");
+    return ok(
+      (data ?? []).map((row) => ({ rubricId: row.rubric_id, divisionId: row.division_id })),
+    );
+  });
+
+export const rubricDivisionsQueryOptions = (eventId: string) =>
+  queryOptions({
+    queryKey: ["rubrics", eventId, "divisions"] as const,
+    queryFn: async () => unwrap(await rubricDivisionsFn({ data: eventId })),
+    retry: retryPolicy,
+  });
+
+/** Replaces the rubrics of each listed division. */
+export const setDivisionRubricsFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as { eventId?: unknown; items?: unknown };
+    if (!Array.isArray(raw.items) || raw.items.length > 50) {
+      throw new Error("Use at most 50 divisions");
+    }
+    const items = raw.items.map((entry) => {
+      const item = (entry ?? {}) as { divisionId?: unknown; rubricIds?: unknown };
+      if (!Array.isArray(item.rubricIds) || item.rubricIds.length > 20) {
+        throw new Error("Use at most 20 rubrics");
+      }
+      return {
+        divisionId: requireId(item.divisionId, "divisionId"),
+        rubricIds: item.rubricIds.map((id) => requireId(id, "rubricId")),
+      };
+    });
+    return { eventId: requireId(raw.eventId, "eventId"), items };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const supabase = createServerClient();
+    const { error } = await supabase.rpc("set_division_rubrics", {
+      p_event: data.eventId,
+      p_items: data.items.map((item) => ({
+        division_id: item.divisionId,
+        rubric_ids: item.rubricIds,
+      })),
+    });
+    if (error) return toFailure(error, "saving division rubrics");
     return ok(null);
   });
 
@@ -433,7 +525,9 @@ export interface JudgeSheet {
   scores: { [criterionId: string]: number };
   feedback: { id: string; body: string; visibility: FeedbackVisibility } | null;
   status: AssignmentStatus | null;
+  /** The rubric the project is judged on: its pick, else its division's. */
   rubricId: string | null;
+  rubric: ProjectRubric;
 }
 
 export const judgeSheetFn = createServerFn({ method: "GET" })
@@ -474,14 +568,11 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
         .eq("round_id", round.data.id)
         .eq("judge_id", userId)
         .maybeSingle(),
-      supabase
-        .from("submission_rubrics")
-        .select("rubric_id")
-        .eq("submission_id", data.submissionId)
-        .maybeSingle(),
+      loadProjectRubric(supabase, data.submissionId),
     ]);
-    const error = scores.error ?? feedback.error ?? assignment.error ?? rubric.error;
+    const error = scores.error ?? feedback.error ?? assignment.error;
     if (error) return toFailure(error, "loading your scores");
+    if (!rubric.ok) return rubric;
     return ok({
       roundId: round.data.id,
       roundName: round.data.name,
@@ -497,7 +588,8 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
           }
         : null,
       status: assignment.data?.status ?? null,
-      rubricId: rubric.data?.rubric_id ?? null,
+      rubricId: rubricOf(rubric.data),
+      rubric: rubric.data,
     });
   });
 
@@ -612,12 +704,35 @@ export interface CriterionDraft {
   weight: number;
   roundId: string | null;
   rubricId: string | null;
+  guidance: GuidanceBand[];
 }
 
 export interface RubricDraft {
   id: string;
   name: string;
   descriptionMd: string;
+  divisionIds: string[];
+}
+
+function readBands(value: unknown, minScore: number, maxScore: number): GuidanceBand[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > MAX_BANDS) {
+    throw new Error(`Use at most ${MAX_BANDS} guidance bands a criterion`);
+  }
+  const bands = value.map((entry): GuidanceBand => {
+    const band = (entry ?? {}) as Record<string, unknown>;
+    const min = Number(band.min);
+    const max = Number(band.max);
+    if (!Number.isInteger(min) || !Number.isInteger(max) || min > max) {
+      throw new Error("Guidance bands are whole-number ranges");
+    }
+    if (min < minScore || max > maxScore) {
+      throw new Error("Guidance bands stay inside the criterion's scores");
+    }
+    return { min, max, body: requireText(band.body, "Guidance", MAX_BAND_BODY) };
+  });
+  if (overlappingBands(bands).length) throw new Error("Two guidance bands share a score");
+  return bands;
 }
 
 export const saveCriteriaFn = createServerFn({ method: "POST" })
@@ -637,6 +752,9 @@ export const saveCriteriaFn = createServerFn({ method: "POST" })
             name: requireText(item.name, "Rubric", 60),
             descriptionMd:
               typeof item.descriptionMd === "string" ? item.descriptionMd.slice(0, 2000) : "",
+            divisionIds: Array.isArray(item.divisionIds)
+              ? item.divisionIds.slice(0, 50).map((id) => requireId(id, "divisionId"))
+              : [],
           };
         })
       : null;
@@ -670,6 +788,7 @@ export const saveCriteriaFn = createServerFn({ method: "POST" })
         weight,
         roundId: optionalId(item.roundId, "roundId") ?? null,
         rubricId: optionalId(item.rubricId, "rubricId") ?? null,
+        guidance: readBands(item.guidance, minScore, maxScore),
       };
     });
     const labels = new Set(items.map((item) => item.label.toLowerCase()));
@@ -687,6 +806,7 @@ export const saveCriteriaFn = createServerFn({ method: "POST" })
       weight: item.weight,
       round_id: item.roundId,
       rubric_id: item.rubricId,
+      guidance: item.guidance.map((band) => ({ ...band })),
     }));
     const { data: removed, error } = await supabase.rpc("save_criteria", {
       p_event: data.eventId,
@@ -697,6 +817,7 @@ export const saveCriteriaFn = createServerFn({ method: "POST" })
               id: rubric.id,
               name: rubric.name,
               description_md: rubric.descriptionMd,
+              division_ids: rubric.divisionIds,
             })),
           }
         : {}),

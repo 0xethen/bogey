@@ -33,6 +33,7 @@ type TableName =
   | "ranking_inputs"
   | "rubrics"
   | "criteria"
+  | "rubric_divisions"
   | "submission_rubrics"
   | "judging_flags"
   | "deliberation_notes"
@@ -110,6 +111,7 @@ export const ARCHIVE_TABLES: readonly TableSpec[] = [
   table("judging_rounds", { id: "id", refs: { form_id: "submission_forms" }, replace: true }),
   table("rubrics", { id: "id" }),
   table("criteria", { id: "id", refs: { round_id: "judging_rounds", rubric_id: "rubrics" } }),
+  table("rubric_divisions", { refs: { rubric_id: "rubrics", division_id: "divisions" } }),
   table("event_pages", { id: "id" }),
   table("settings", { id: "id", clear: ["updated_by", "org_id"] }),
   table("onboarding_forms"),

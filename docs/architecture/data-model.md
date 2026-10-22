@@ -427,12 +427,19 @@ ones.
   must fall in the range. Ranking maps the range to 0..1, clamped, so scores
   given before a range change still count sensibly.
   `rubric_id?` puts it in one rubric; without one it counts for every project.
+  `guidance` is a list of `{min, max, body}` score bands shown to judges, whole numbers inside
+  the range (`private.guidance_ok`, at most 20).
 - **`rubrics`**: `event_id`, `name`, `description_md`, `sort`. Saved with the criteria by
   `save_criteria(event, items, rubrics)`; removing one removes its criteria and their scores.
 - **`submission_rubrics`**: `submission_id` (one per project), `rubric_id`, `set_by`. Written only
   by `set_submission_rubric`: organizers, judges who may score it while its round is open
   (`judging.judgeRubric`), or its team while it can edit the submission (`judging.teamRubric`).
-  Ranking, `team_scores` and the gap check count only shared criteria and the picked rubric's.
+  Ranking, `team_scores` and the gap check count only shared criteria and the project's rubric's
+  (`private.submission_rubric`: the pick, else its division's only rubric).
+- **`rubric_divisions`**: `rubric_id`, `division_id`. A rubric with divisions is offered only to
+  their projects (`set_submission_rubric` refuses others); one with none, to every project. Saved by
+  `save_criteria` (a rubric's `division_ids`) or `set_division_rubrics(event, items)`.
+  `project_rubric(submission)` returns a project's pick, its division fallback and what it may pick.
 - **`judging_flags`**: `submission_id`, `round_id`, `raised_by?`, `reason`, `gap?`, `resolved_at?`,
   `resolved_by?`, `resolution`. At most one open flag per project. Raised by `flag_submission`, or
   by a trigger on `scores` (no `raised_by`, `gap` set) once when two judges' complete totals differ
