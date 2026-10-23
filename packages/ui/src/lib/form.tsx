@@ -173,6 +173,7 @@ function FieldFrame({
   description,
   hideLabel,
   heading,
+  row,
   className,
   children,
 }: {
@@ -182,19 +183,63 @@ function FieldFrame({
   description?: ReactNode;
   hideLabel?: boolean;
   heading?: ReactNode;
+  // short controls: label left, control right once the field group is wide
+  row?: boolean;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <FormField field={field} className={className}>
-      {heading ?? (
-        <FormLabel field={field} required={required} className={hideLabel ? "sr-only" : undefined}>
-          {label}
-        </FormLabel>
+    <FormField
+      field={field}
+      className={cn(
+        row &&
+          "@xl/field-group:grid @xl/field-group:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] @xl/field-group:items-start @xl/field-group:gap-x-6 @xl/field-group:gap-y-1",
+        className,
       )}
-      {children}
-      {description && <FormDescription field={field}>{description}</FormDescription>}
-      <FormError field={field} />
+    >
+      <div
+        className={cn(
+          "contents",
+          row && "@xl/field-group:block @xl/field-group:col-start-1 @xl/field-group:row-start-1",
+        )}
+      >
+        {heading ?? (
+          <FormLabel
+            field={field}
+            required={required}
+            className={hideLabel ? "sr-only" : undefined}
+          >
+            {label}
+          </FormLabel>
+        )}
+      </div>
+      <div
+        className={cn(
+          "contents",
+          row &&
+            "@xl/field-group:block @xl/field-group:col-start-2 @xl/field-group:row-span-2 @xl/field-group:row-start-1",
+        )}
+      >
+        {children}
+      </div>
+      {description && (
+        <div
+          className={cn(
+            "contents",
+            row && "@xl/field-group:block @xl/field-group:col-start-1 @xl/field-group:row-start-2",
+          )}
+        >
+          <FormDescription field={field}>{description}</FormDescription>
+        </div>
+      )}
+      <div
+        className={cn(
+          "contents",
+          row && "@xl/field-group:block @xl/field-group:col-start-2 @xl/field-group:row-start-3",
+        )}
+      >
+        <FormError field={field} />
+      </div>
     </FormField>
   );
 }
@@ -451,7 +496,7 @@ function SlugField({
     caret.current = null;
   });
   return (
-    <FieldFrame field={field} label={label} required={required} description={description}>
+    <FieldFrame field={field} label={label} required={required} description={description} row>
       <Input
         ref={input}
         id={field.name}
@@ -675,7 +720,7 @@ function NumberField({
 }) {
   const { label, description, placeholder } = resolve(field, props);
   return (
-    <FieldFrame field={field} label={label} required={required} description={description}>
+    <FieldFrame field={field} label={label} required={required} description={description} row>
       <NumberInput
         field={field}
         min={min}
@@ -719,7 +764,7 @@ function DateTimeField({
 }) {
   const { label, description } = resolve(field, props);
   return (
-    <FieldFrame field={field} label={label} required={required} description={description}>
+    <FieldFrame field={field} label={label} required={required} description={description} row>
       <DateTime field={field} label={label} showIcon={showIcon} />
     </FieldFrame>
   );
@@ -738,7 +783,7 @@ function MultiSelectField({
 }) {
   const { label, description, placeholder } = resolve(field, props);
   return (
-    <FieldFrame field={field} label={label} required={required} description={description}>
+    <FieldFrame field={field} label={label} required={required} description={description} row>
       <MultiSelectInput field={field} options={options} placeholder={placeholder} empty={empty} />
     </FieldFrame>
   );

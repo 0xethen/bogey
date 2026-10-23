@@ -103,6 +103,7 @@ export function SettingRow({
   description,
   source,
   inline = false,
+  row = false,
   lock,
   children,
 }: {
@@ -113,6 +114,8 @@ export function SettingRow({
   description?: ReactNode;
   source: SettingSource;
   inline?: boolean;
+  // short controls: label left, control right on wide screens
+  row?: boolean;
   lock?: SettingLock;
   children: ReactNode;
 }) {
@@ -129,6 +132,21 @@ export function SettingRow({
           <Origin source={source} />
         </FieldContent>
         {children}
+      </Field>
+    );
+  }
+  if (row) {
+    return (
+      <Field
+        id={anchor}
+        className="group/setting jump-target md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] md:items-start md:gap-x-6 md:gap-y-1"
+      >
+        <div className="flex flex-col gap-1 md:col-start-1 md:row-start-1">
+          <Label id={id} label={label} keyName={keyName} source={source} lock={lock} />
+          {description && <FieldDescription>{description}</FieldDescription>}
+          <Origin source={source} />
+        </div>
+        <div className="md:col-start-2 md:row-start-1">{children}</div>
       </Field>
     );
   }

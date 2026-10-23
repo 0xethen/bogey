@@ -39,6 +39,7 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   return (
     <Screen
+      width="embedded"
       title={t("orgTab.audit")}
       description={
         <>

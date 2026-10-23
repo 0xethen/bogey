@@ -30,6 +30,7 @@ function RouteComponent() {
 
   return (
     <Screen
+      width="wide"
       title={t("orgTab.audit")}
       description={t("audit.intro")}
       actions={

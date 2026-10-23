@@ -249,6 +249,7 @@ export function SettingFields<N extends CoreNamespace>({
           </SettingRow>
         ) : control.kind === "number" ? (
           <SettingRow
+            row
             key={key}
             id={id}
             anchor={`${namespace}.${key}`}
@@ -334,6 +335,7 @@ export function SettingFields<N extends CoreNamespace>({
           </SettingRow>
         ) : (
           <SettingRow
+            row
             key={key}
             id={id}
             anchor={`${namespace}.${key}`}
@@ -399,7 +401,7 @@ function NumberSetting({
   return (
     <NumberInput
       id={id}
-      className="max-w-56"
+      className="w-full"
       scrub={scrub}
       defaultValue={initial ?? undefined}
       min={min}

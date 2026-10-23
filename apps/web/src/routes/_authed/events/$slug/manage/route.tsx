@@ -306,7 +306,7 @@ function RouteComponent() {
       <SettingsLayout
         label={t("manageNav.label")}
         // organizers' tables want the room; other settings layouts keep the cap
-        className="xl:max-w-none"
+        className="max-w-none"
         header={<EventSwitcher event={event} orgAdmin={orgAdmin} />}
         groups={allGroups}
       >
