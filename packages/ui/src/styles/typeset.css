@@ -235,11 +235,7 @@
     }
 
     &:where(:not(pre) > code) {
-      background-color: var(--color-muted, color-mix(in oklab, currentColor 8%, transparent));
-      font-family: var(--typeset-font-mono);
       font-size: 0.85em;
-      border-radius: min(calc(var(--radius, 0.5em) * 0.6), 0.35em);
-      padding: 0.125em 0.3em;
     }
 
     &:where(pre) {

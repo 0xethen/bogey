@@ -71,6 +71,13 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* inline code only; code blocks are pre > code */
+@layer base {
+  :not(pre) > code {
+    @apply font-mono rounded bg-accent/50 px-1;
+  }
+}
+
 :root[data-font="system"] {
   --font-heading: system-ui, sans-serif;
   --font-sans: system-ui, sans-serif;
