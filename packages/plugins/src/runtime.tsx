@@ -170,6 +170,13 @@ export interface PluginSettingControlProps {
   onChange: (value: string | number | boolean) => void;
 }
 
+export type PluginMenubarKind = "button" | "menu";
+
+export interface PluginMenubarItem<TSettings = Record<string, unknown>> {
+  kind: PluginMenubarKind;
+  component: PluginPreferencesPage<TSettings>;
+}
+
 export interface PluginSlots<TSettings = Record<string, unknown>> {
   pending?: ComponentType;
   authCaptcha?: ComponentType<PluginAuthCaptchaContext<TSettings>>;
@@ -177,7 +184,8 @@ export interface PluginSlots<TSettings = Record<string, unknown>> {
   eventWrapper?: ComponentType<PluginContext<TSettings> & { children: ReactNode }>;
   preferencesPanel?: PluginPreferencesPage<TSettings>;
   accountMenu?: PluginPreferencesPage<TSettings>;
-  menubar?: PluginPreferencesPage<TSettings>;
+  /** A bare component is an icon button beside the bell; `{ kind: "menu" }` sits beside the account menu. */
+  menubar?: PluginPreferencesPage<TSettings> | PluginMenubarItem<TSettings>;
   organizerPanel?: PluginPage<TSettings>;
   manageOverview?: PluginPage<TSettings>;
   conversationTopic?: ComponentType<PluginContext<TSettings> & { topic: string }>;

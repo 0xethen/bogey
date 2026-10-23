@@ -68,7 +68,7 @@ function useNotificationSignals(items: Tuple<Notification> | undefined) {
   }, [items]);
 }
 
-export function NotificationBell() {
+export function NotificationsButton() {
   const t = useT();
   const session = useViewerSession();
   const router = useRouter();
@@ -97,7 +97,7 @@ export function NotificationBell() {
     <Popover>
       <PopoverTrigger
         render={
-          <Button size="icon-xs" variant="ghost" className="relative m-0 p-0">
+          <Button size="icon-xs" variant="ghost" className="relative">
             <IconBell />
             {unread > 0 && (
               <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] leading-4 font-semibold text-primary-fg">

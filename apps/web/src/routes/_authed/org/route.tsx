@@ -3,7 +3,7 @@ import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { isOrgAdmin } from "@bogey/db/auth";
 import { orgAdmin } from "#/lib/viewer.ts";
 import { msg } from "#/lib/translate.tsx";
-import { OrgTabs } from "#/components/navigation/header/plugin-area-tabs.tsx";
+import { OrgTabs } from "#/components/navigation/header/AreaTabs.tsx";
 
 export const Route = createFileRoute("/_authed/org")({
   staticData: {

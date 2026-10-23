@@ -42,6 +42,7 @@ import { cmdK } from "#/components/app/CmdK.tsx";
 import { signOutDialog } from "#/components/app/SignOutDialog.tsx";
 import { useModifierLabel } from "#/lib/hooks/modifier-label.ts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
+import { Button } from "@bogey/ui/components/button";
 
 export function AccountMenu() {
   const session = useViewerSession();
@@ -73,10 +74,16 @@ function Account({ session }: { session: Session }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          aria-label={t("nav.accountMenu")}
-          className="shrink-0 flex items-center gap-1.5 text-sm text-muted-fg transition-colors hocus:text-fg data-popup-open:text-fg"
+          aria-label={t("nav.accountMenuFor", { name })}
+          render={
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-6 gap-1.5 px-1.5 text-sm font-normal text-muted-fg hocus:text-fg data-popup-open:text-fg [&_svg:not([class*='size-'])]:size-4"
+            />
+          }
         >
-          <IconUserCircle className="size-4" />
+          <IconUserCircle />
           <span className="hidden max-w-40 truncate sm:inline">{name}</span>
           <IconChevronDown className="size-3.5" />
         </DropdownMenuTrigger>

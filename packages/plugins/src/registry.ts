@@ -8,6 +8,8 @@ import type { PluginManifest } from "./types.ts";
 import type {
   PluginActionHandler,
   PluginItemType,
+  PluginMenubarKind,
+  PluginPreferencesPage,
   PluginRuntime,
   PluginSlots,
 } from "./runtime.tsx";
@@ -170,6 +172,29 @@ export function pluginSlots(): Promise<LoadedSlots[]> {
 
 export function loadedPluginSlots(): LoadedSlots[] {
   return loadedSlots;
+}
+
+export interface MenubarContribution {
+  key: string;
+  manifest: PluginManifest;
+  kind: PluginMenubarKind;
+  Component: PluginPreferencesPage;
+}
+
+// only plugins with a menubar item, so each one sits at the same place in the tree on the server and in the browser
+export function pluginMenubarItems(
+  kind: PluginMenubarKind,
+  loaded: Tuple<LoadedSlots> = loadedPluginSlots(),
+): MenubarContribution[] {
+  return loaded.flatMap(({ key, manifest, slots }) => {
+    const item = slots.menubar;
+    if (!item) return [];
+    const normalized =
+      "component" in item && "kind" in item
+        ? { kind: item.kind, Component: item.component }
+        : { kind: "button" as const, Component: item as PluginPreferencesPage };
+    return normalized.kind === kind ? [{ key, manifest, ...normalized }] : [];
+  });
 }
 
 export async function loadPluginSlots(): Promise<LoadedSlots[]> {

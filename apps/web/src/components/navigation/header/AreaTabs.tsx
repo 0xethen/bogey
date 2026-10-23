@@ -5,9 +5,9 @@ import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { offeredPlugins, pluginAreaLinks } from "#/lib/plugins.ts";
 import { orgTabs } from "#/lib/org.ts";
 import { useT, type T } from "#/lib/translate.tsx";
-import { RouteTabs, type RouteTab } from "./TabRow.tsx";
+import { SectionTabs, type SectionTab } from "./SectionTabs.tsx";
 
-function withPluginTabs(core: Tuple<RouteTab>, plugins: Tuple<RouteTab>): Tuple<RouteTab> {
+function withPluginTabs(core: Tuple<SectionTab>, plugins: Tuple<SectionTab>): Tuple<SectionTab> {
   if (plugins.length === 0) return core;
   return [...core.slice(0, -1), ...plugins, ...core.slice(-1)];
 }
@@ -20,10 +20,10 @@ export function OrgTabs() {
     enabled: orgId !== undefined,
   });
   const plugins = settings.data ? offeredPlugins(settings.data.plugins) : [];
-  return <RouteTabs tabs={withPluginTabs(orgTabs(t), pluginAreaLinks(plugins, "org"))} />;
+  return <SectionTabs tabs={withPluginTabs(orgTabs(t), pluginAreaLinks(plugins, "org"))} />;
 }
 
-export const adminTabs = (t: T): Tuple<RouteTab> => [
+export const adminTabs = (t: T): Tuple<SectionTab> => [
   { key: "overview", label: t("adminTab.overview"), to: "/admin", exact: true },
   { key: "orgs", label: t("adminTab.orgs"), to: "/admin/orgs" },
   { key: "people", label: t("adminTab.people"), to: "/admin/people" },
@@ -36,6 +36,8 @@ export const adminTabs = (t: T): Tuple<RouteTab> => [
 export function AdminTabs() {
   const t = useT();
   return (
-    <RouteTabs tabs={withPluginTabs(adminTabs(t), pluginAreaLinks(installedPlugins(), "admin"))} />
+    <SectionTabs
+      tabs={withPluginTabs(adminTabs(t), pluginAreaLinks(installedPlugins(), "admin"))}
+    />
   );
 }

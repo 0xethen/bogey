@@ -341,22 +341,22 @@ until one does. A panel gets `{ eventId, settings, session }` and renders only w
 
 ### Slots
 
-| Slot                | Where                                                    | Gets                                                                    |
-| ------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `organizerPanel`    | under the plugin's settings in Manage → Plugins          | `{ eventId, settings, session }`                                        |
-| `manageOverview`    | a section of Manage → Overview, while the plugin is on   | `{ eventId, settings, session }`                                        |
-| `wrapper`           | around the whole app, first key outermost                | `{ children }`                                                          |
-| `eventWrapper`      | around an event's pages, while the plugin is on          | `{ eventId, settings, session, children }`                              |
-| `conversationTopic` | above a conversation with the plugin's topic             | `{ eventId, settings, session, topic }`                                 |
-| `judgingPanel`      | the judge's sheet, for a round it ranks                  | `{ eventId, settings, session, method, formId, roundId, submissionId }` |
-| `sessionPanel`      | the page of a session of the plugin's kind               | `{ eventId, settings, session, sessionId, kind }`                       |
-| `eventListIcon`     | beside an event's name in Events, while the plugin is on | `{ eventId, settings }`; keep it to one small icon with a `title`       |
-| `preferencesPanel`  | a section on the Account page                            | `{ settings, session }` (settings are defaults)                         |
-| `accountMenu`       | items in the account menu (`DropdownMenu*`)              | `{ settings, session }` (settings are defaults)                         |
-| `menubar`           | an icon button left of the notifications bell            | `{ settings, session }` (settings are defaults)                         |
-| `pending`           | replaces the loading skeleton; first plugin wins         | nothing                                                                 |
-| `settingControls`   | in place of a setting's own input, keyed by its name     | `{ id, value, onChange }`; the value is stored as the setting's type    |
-| `authCaptcha`       | the sign-in forms, above the button; first plugin wins   | `{ settings, onToken }` (settings are the instance's)                   |
+| Slot                | Where                                                                                                 | Gets                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `organizerPanel`    | under the plugin's settings in Manage → Plugins                                                       | `{ eventId, settings, session }`                                        |
+| `manageOverview`    | a section of Manage → Overview, while the plugin is on                                                | `{ eventId, settings, session }`                                        |
+| `wrapper`           | around the whole app, first key outermost                                                             | `{ children }`                                                          |
+| `eventWrapper`      | around an event's pages, while the plugin is on                                                       | `{ eventId, settings, session, children }`                              |
+| `conversationTopic` | above a conversation with the plugin's topic                                                          | `{ eventId, settings, session, topic }`                                 |
+| `judgingPanel`      | the judge's sheet, for a round it ranks                                                               | `{ eventId, settings, session, method, formId, roundId, submissionId }` |
+| `sessionPanel`      | the page of a session of the plugin's kind                                                            | `{ eventId, settings, session, sessionId, kind }`                       |
+| `eventListIcon`     | beside an event's name in Events, while the plugin is on                                              | `{ eventId, settings }`; keep it to one small icon with a `title`       |
+| `preferencesPanel`  | a section on the Account page                                                                         | `{ settings, session }` (settings are defaults)                         |
+| `accountMenu`       | items in the account menu (`DropdownMenu*`)                                                           | `{ settings, session }` (settings are defaults)                         |
+| `menubar`           | an icon button left of the bell, or `{ kind: "menu", component }` for a menu left of the account menu | `{ settings, session }` (settings are defaults)                         |
+| `pending`           | replaces the loading skeleton; first plugin wins                                                      | nothing                                                                 |
+| `settingControls`   | in place of a setting's own input, keyed by its name                                                  | `{ id, value, onChange }`; the value is stored as the setting's type    |
+| `authCaptcha`       | the sign-in forms, above the button; first plugin wins                                                | `{ settings, onToken }` (settings are the instance's)                   |
 
 An `eventWrapper` can guard a page (lockdown covers it until its rules are met). If one throws, the
 page stays covered for everyone but organizers, who get it unwrapped with the error so they can reach

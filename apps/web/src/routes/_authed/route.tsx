@@ -10,9 +10,7 @@ import { localizationFn, localizationQueryOptions } from "#/lib/i18n.ts";
 import { CmdK } from "#/components/app/CmdK.tsx";
 import { SecurityNotice } from "#/components/app/SecurityNotice.tsx";
 import { SignOutDialog } from "#/components/app/SignOutDialog.tsx";
-import { AccountMenu } from "#/components/navigation/header/AccountMenu.tsx";
-import { NotificationBell } from "#/components/navigation/header/NotificationBell.tsx";
-import { PluginMenubar } from "#/components/navigation/header/PluginMenubar.tsx";
+import { MenubarActions } from "#/components/navigation/header/MenubarActions.tsx";
 import { AccessibilityPreferences } from "#/lib/accessibility.tsx";
 import { useT } from "#/lib/translate.tsx";
 
@@ -20,15 +18,7 @@ export const Route = createFileRoute("/_authed")({
   staticData: {
     header: {
       type: "menubar",
-      content: {
-        end: (
-          <>
-            <PluginMenubar />
-            <NotificationBell />
-            <AccountMenu />
-          </>
-        ),
-      },
+      content: { end: <MenubarActions /> },
     },
     classNames: { root: "overscroll-y-none" },
   },

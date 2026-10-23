@@ -33,7 +33,7 @@ import {
   type PluginManifest,
   type PluginRouteArea,
 } from "@bogey/plugins";
-import type { EventTab } from "#/components/navigation/header/TabRow.tsx";
+import type { EventTab } from "#/components/navigation/header/SectionTabs.tsx";
 import type { EventViewer } from "#/lib/viewer.ts";
 
 export function offeredPlugins(settings: ResolvedValue<"plugins">): PluginManifest[] {

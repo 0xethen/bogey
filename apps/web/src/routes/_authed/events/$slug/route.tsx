@@ -19,10 +19,11 @@ import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { agendaQueryOptions } from "@bogey/db/queries/sessions";
 import { eventAccessQueryOptions, eventGateQueryOptions } from "@bogey/db/permissions";
 import { useLiveBroadcast, useLiveInvalidate } from "@bogey/db/realtime";
-import { RouteTabs } from "#/components/navigation/header/TabRow.tsx";
+import { SectionTabs } from "#/components/navigation/header/SectionTabs.tsx";
 import { arrangeTabs, eventTabs, visibleTabs } from "#/lib/event-tabs.ts";
 import { orNotFound } from "#/lib/routing.ts";
 import { agendaMilestones } from "#/lib/windows.ts";
+import { useTakesAttendance } from "#/lib/attendance.ts";
 import { manages, useEventViewer } from "#/lib/viewer.ts";
 import { mayAnnounce } from "#/lib/messaging.ts";
 import { enabledPlugins, missingPlugins, pluginSettingsQueryOptions } from "#/lib/plugins.ts";
@@ -239,11 +240,14 @@ function EventTabs() {
     ...settingsQueryOptions({ eventId: viewer?.event.id ?? "" }, ["agenda"]),
     enabled: !!viewer,
   });
+  const takesAttendance = useTakesAttendance();
   const sessions =
     agendaSettings.data?.agenda.tabMenu === false
       ? []
       : (agenda.data?.slots ?? []).flatMap((slot) =>
-          slot.sessions.filter((session) => session.hasPage),
+          slot.sessions
+            .filter((session) => session.hasPage)
+            .map((session) => ({ ...session, attendance: takesAttendance(session) })),
         );
   // live, so a tab kept to a window comes and goes as it opens and closes
   const windows = useQuery({
@@ -260,7 +264,7 @@ function EventTabs() {
     t,
   );
   return (
-    <RouteTabs
+    <SectionTabs
       tabs={visibleTabs(arrangeTabs(all, tabs ?? []), {
         ...viewer,
         windows: windows.data ?? viewer.windows,

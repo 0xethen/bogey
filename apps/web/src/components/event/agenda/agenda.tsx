@@ -13,7 +13,6 @@ import {
   type AgendaSlot,
 } from "@bogey/db/queries/sessions";
 import { requestFailure, unwrap } from "@bogey/db/errors";
-import { useCan } from "@bogey/db/permissions";
 import {
   dateParts,
   formatDate,
@@ -35,7 +34,7 @@ import { useMemo } from "react";
 import { milestoneLabel, type Milestone } from "#/lib/windows.ts";
 import { useLocale } from "@bogey/ui/lib/locale";
 import { KindBadge, shownKind } from "#/components/event/agenda/session-kind.tsx";
-import { useSession } from "#/lib/viewer.ts";
+import { useTakesAttendance } from "#/lib/attendance.ts";
 import { useT, type T } from "#/lib/translate.tsx";
 
 export function sessionTimes(
@@ -52,13 +51,6 @@ export function sessionTimes(
  * Whether the viewer takes a session's attendance. The agenda's `canTakeAttendance` is the real
  * role's answer; this narrows it to the role being viewed as, keeping sessions the viewer hosts.
  */
-export function useTakesAttendance(): (session: AgendaSession) => boolean {
-  const attendance = useCan("sessions.attendance");
-  const me = useSession()?.user.id;
-  return (session) =>
-    session.canTakeAttendance && (attendance || session.hosts.some((host) => host.id === me));
-}
-
 function seatsLeft(session: AgendaSession): number | null {
   return session.capacity === null ? null : Math.max(0, session.capacity - session.taken);
 }

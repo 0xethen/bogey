@@ -33,7 +33,7 @@ export const en = {
   "auth.notSetUpBody":
     "If you are an admin, please refer to the setup instructions. Otherwise, check back later.",
 
-  "nav.accountMenu": "Account menu",
+  "nav.accountMenuFor": "Account menu for {name}",
   "nav.account": "Account",
   "nav.signOut": "Sign out...",
   "nav.search": "Search",

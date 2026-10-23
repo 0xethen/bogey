@@ -15,6 +15,10 @@ advisory (see docs/contributing.md#security-releases). -->
 - Pictures for a design upload to the event's (or organization's) folder. Removing a picture or swapping the background deletes the old file once the design is saved, not while you edit, so discarding is safe; going back to the standard design deletes its pictures, and an organization's files go with it.
 
 **Upgrade notes:** run `bogey db migrate` (migration `20261024090000_certificate_designs`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them.
+- The menubar's right side is two groups: icon buttons (plugins' buttons, like event sounds, then notifications) and menus (the account menu), the same height and spacing. The account menu's trigger reads "Account menu for <name>" to screen readers.
+- The tabs under the menubar are one navigation menu: tabs with a menu open a dropdown on hover, and moving between them slides one dropdown from tab to tab instead of closing and reopening. It doesn't animate with reduced motion.
+- Hovering Agenda lists each session with its **Main page**, and **Attendance** for those who take it.
+- Fixed a hydration warning from plugin buttons in the menubar (event sounds' mute button).
 
 ## 2.4.0-beta.0 (2026-10-23)
 

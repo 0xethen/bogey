@@ -2,7 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { platformAdmin } from "#/lib/viewer.ts";
 import { msg } from "#/lib/translate.tsx";
-import { AdminTabs } from "#/components/navigation/header/plugin-area-tabs.tsx";
+import { AdminTabs } from "#/components/navigation/header/AreaTabs.tsx";
 
 export const Route = createFileRoute("/_authed/admin")({
   staticData: {

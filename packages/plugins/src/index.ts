@@ -82,6 +82,8 @@ export type {
   PluginPublicContext,
   PluginPublicPage,
   PluginPreferencesPage,
+  PluginMenubarItem,
+  PluginMenubarKind,
   PluginItemFieldProps,
   PluginItemInfo,
   PluginItemType,
@@ -113,9 +115,11 @@ export {
   loadPluginSlots,
   pluginSlots,
   loadedPluginSlots,
+  pluginMenubarItems,
   pluginStatuses,
   type InstalledLocale,
   type LoadedSlots,
+  type MenubarContribution,
   type PluginStatus,
 } from "./registry.ts";
 

@@ -1,14 +1,14 @@
 import { useMatches } from "@tanstack/react-router";
 import type { AnyRouteMatch } from "@tanstack/react-router";
 import type { ComponentType, ReactNode } from "react";
-import { RouteTabs, type RouteTab } from "./TabRow.tsx";
+import { SectionTabs, type SectionTab } from "./SectionTabs.tsx";
 import { PreviewBar } from "./PreviewBar.tsx";
 import { Menubar } from "./Menubar.tsx";
 
 export interface HeaderDeclaration {
   type?: "menubar" | "nav" | "none";
   content?: { start?: ReactNode; end?: ReactNode };
-  nav?: Tuple<RouteTab> | ComponentType;
+  nav?: Tuple<SectionTab> | ComponentType;
 }
 
 export interface ResolvedHeader {
@@ -51,5 +51,5 @@ export function Header() {
 }
 
 function HeaderNav({ nav: Nav }: { nav: NonNullable<HeaderDeclaration["nav"]> }) {
-  return typeof Nav === "function" ? <Nav /> : <RouteTabs tabs={Nav} />;
+  return typeof Nav === "function" ? <Nav /> : <SectionTabs tabs={Nav} />;
 }

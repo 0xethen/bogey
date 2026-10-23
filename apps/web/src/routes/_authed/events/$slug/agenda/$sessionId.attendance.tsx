@@ -19,15 +19,12 @@ import { Checkbox } from "@bogey/ui/components/checkbox";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Input } from "@bogey/ui/components/input";
 import { Screen } from "@bogey/ui/components/screen";
-import {
-  SessionPages,
-  sessionTimes,
-  useTakesAttendance,
-} from "#/components/event/agenda/agenda.tsx";
+import { SessionPages, sessionTimes } from "#/components/event/agenda/agenda.tsx";
 import { PreviewGate } from "#/components/app/PreviewGate.tsx";
 import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 import { useT } from "#/lib/translate.tsx";
+import { useTakesAttendance } from "#/lib/attendance.ts";
 import { useExternalValue } from "@bogey/ui/hooks/external";
 import { ExpandableQrCode } from "#/components/event/qr-code.tsx";
 import { IconCopy, IconCopyCheck, IconRefresh } from "@tabler/icons-react";

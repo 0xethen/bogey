@@ -3,7 +3,7 @@ import type { EventPage } from "@bogey/db/queries/pages";
 import type { AgendaSession } from "@bogey/db/queries/sessions";
 import { isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import type { PluginManifest } from "@bogey/plugins";
-import type { EventTab } from "#/components/navigation/header/TabRow.tsx";
+import type { EventTab } from "#/components/navigation/header/SectionTabs.tsx";
 import { pluginTabs } from "#/lib/plugins.ts";
 import type { PlainKey, T } from "#/lib/translate.tsx";
 import {
@@ -34,11 +34,14 @@ export const CORE_TAB_AUDIENCE: Record<string, PlainKey> = {
 export const PINNED_TAB = "home";
 const MANAGE_TAB = "manage";
 
+/** A session with a page, and whether the viewer takes its attendance (its other page). */
+export type TabMenuSession = Pick<AgendaSession, "id" | "name"> & { attendance?: boolean };
+
 /** What the Home and Agenda tabs list when hovered: the event's own pages, and its sessions' pages. */
 export interface TabMenus {
   pages: Tuple<EventPage>;
   prizes: boolean;
-  sessions: Tuple<Pick<AgendaSession, "id" | "name">>;
+  sessions: Tuple<TabMenuSession>;
 }
 
 export const NO_MENUS: TabMenus = { pages: [], prizes: false, sessions: [] };
@@ -73,11 +76,20 @@ export function eventTabs(
       label: t("eventTab.agenda"),
       to: `${base}/agenda`,
       show: hasAgenda,
-      menu: menus.sessions.map((session) => ({
-        key: session.id,
-        label: session.name,
-        to: `${base}/agenda/${session.id}`,
-      })),
+      menu: menus.sessions.map((session) => {
+        const to = `${base}/agenda/${session.id}`;
+        return {
+          key: session.id,
+          label: session.name,
+          to,
+          pages: [
+            { key: "main", label: t("agenda.mainPage"), to },
+            ...(session.attendance
+              ? [{ key: "attendance", label: t("agenda.attendance"), to: `${to}/attendance` }]
+              : []),
+          ],
+        };
+      }),
     },
     { key: "team", label: t("eventTab.team"), to: `${base}/team`, show: hasTeamPage },
     {
