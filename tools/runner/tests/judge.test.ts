@@ -411,3 +411,12 @@ test("a run script's output that is a link reads as no output, never the link's 
   assert.equal(outcome.runs[0]?.output_excerpt, "");
   assert.equal(outcome.verdict, "WA");
 });
+
+test("a NUL byte in the output can't stop the verdict being stored", async () => {
+  const outcome = await judge(
+    claim({}, [tc("t1")]),
+    deps(new FakeSandbox(() => ran("a\0b", { stderr: "\0" }))),
+  );
+  assert.equal(outcome.runs[0]?.output_excerpt, "a�b");
+  assert.equal(outcome.runs[0]?.stderr_excerpt, "�");
+});

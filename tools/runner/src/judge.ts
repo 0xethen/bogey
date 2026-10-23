@@ -36,12 +36,17 @@ interface Step {
 
 const mb = (value: number, ceiling: number) => Math.min(value, ceiling);
 
+// Postgres text can't hold NUL, so a program printing one would otherwise fail the whole record
+export function storable(text: string): string {
+  return text.replaceAll("\0", "�");
+}
+
 function excerpt(text: string): string {
-  return text.length > EXCERPT ? text.slice(0, EXCERPT) : text;
+  return storable(text.length > EXCERPT ? text.slice(0, EXCERPT) : text);
 }
 
 function compileOutputOf(result: ExecResult): string {
-  return `${result.stdout}${result.stderr}`.trim().slice(0, COMPILE_OUTPUT);
+  return storable(`${result.stdout}${result.stderr}`.trim().slice(0, COMPILE_OUTPUT));
 }
 
 function exec(step: Step, spec: ExecSpec): Promise<ExecResult> {

@@ -230,7 +230,7 @@ export function createApi(
       await rpc(names.requeue, {
         p_judging: judgingId,
         p_runner: config.runnerId,
-        p_reason: reason.slice(0, 4000),
+        p_reason: reason.slice(0, 4000).replaceAll("\0", "\uFFFD"),
       });
     },
     async release(judgingId) {

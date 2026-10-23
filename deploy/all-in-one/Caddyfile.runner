@@ -1,0 +1,32 @@
+# The runner's only way to the database: the challenges_runner_* functions, as the anon role.
+# Everything else, including the rest of the REST API, is refused (docs/self-hosting/runner-security.md).
+{
+	admin off
+	auto_https off
+	persist_config off
+}
+
+:8000 {
+	@runner {
+		method POST
+		path_regexp ^/rest/v1/rpc/challenges_runner_(claim|heartbeat|record|requeue|release|test_data)$
+	}
+
+	handle @runner {
+		request_body {
+			max_size 4MB
+		}
+		uri strip_prefix /rest/v1
+		# no other role, schema or preference can be asked for
+		request_header -Authorization
+		request_header -Apikey
+		request_header -Prefer
+		request_header -Accept-Profile
+		request_header -Content-Profile
+		reverse_proxy rest:3000
+	}
+
+	handle {
+		respond 403
+	}
+}

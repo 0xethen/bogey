@@ -3,6 +3,7 @@ name: bogey
 services:
   db:
     image: supabase/postgres:17.6.1.136
+    networks: [backend]
     restart: unless-stopped
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro,z
@@ -34,6 +35,7 @@ services:
 
   auth:
     image: supabase/gotrue:v2.196.0
+    networks: [backend]
     restart: unless-stopped
     depends_on:
       db:
@@ -127,6 +129,7 @@ services:
 
   rest:
     image: postgrest/postgrest:v14.17
+    networks: [backend]
     restart: unless-stopped
     depends_on:
       db:
@@ -152,6 +155,7 @@ services:
   realtime:
     container_name: realtime-dev.supabase-realtime
     image: supabase/realtime:v2.134.10
+    networks: [backend]
     restart: unless-stopped
     depends_on:
       db:
@@ -190,6 +194,7 @@ services:
 
   storage:
     image: supabase/storage-api:v1.74.0
+    networks: [backend]
     restart: unless-stopped
     depends_on:
       db:
@@ -224,6 +229,7 @@ services:
 
   kong:
     image: kong/kong:3.9.3
+    networks: [backend, edge]
     restart: unless-stopped
     depends_on:
       auth:
@@ -257,6 +263,7 @@ services:
 
   migrate:
     image: ${BOGEY_IMAGE:-ghcr.io/0xethen/bogey:latest}
+    networks: [backend]
     restart: "no"
     depends_on:
       db:
@@ -294,9 +301,10 @@ services:
     volumes:
       - ./bogey.config.ts:/app/bogey.config.ts:ro
     networks:
-      default:
+      backend:
         aliases:
           - host.docker.internal
+      edge: {}
 
   caddy:
     image: caddy:2
@@ -315,13 +323,14 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      default:
+      edge:
         aliases:
           - ${BOGEY_HOST}
 
   meta:
     profiles: [studio]
     image: supabase/postgres-meta:v0.99.0
+    networks: [backend]
     restart: unless-stopped
     depends_on:
       db:
@@ -338,6 +347,7 @@ services:
   studio:
     profiles: [studio]
     image: supabase/studio:2026.09.07-sha-7996410
+    networks: [backend]
     restart: unless-stopped
     depends_on:
       - meta
@@ -362,6 +372,13 @@ services:
       SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
       AUTH_JWT_SECRET: ${JWT_SECRET}
       ENABLED_FEATURES_LOGS_ALL: "false"
+
+# backend: the database and the Supabase services, with web and the gateway. edge: Caddy, the gateway
+# and web. Caddy can't reach the database or the services behind the gateway. compose.runner.yml adds
+# the runner's own networks (docs/self-hosting/runner-security.md).
+networks:
+  backend:
+  edge:
 
 volumes:
   db-data:

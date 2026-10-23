@@ -1,18 +1,89 @@
+# The challenges runner, as three services on networks of their own
+# (docs/self-hosting/runner-security.md):
+#   runner          judges; holds only BOGEY_RUNNER_KEY; reaches runner-gateway and docker-proxy
+#   runner-gateway  passes on only the runner's database functions, to the REST service
+#   docker-proxy    holds the Docker socket; lets through only the container calls the runner makes
+# Run: docker compose -f compose.yml -f compose.runner.yml up -d
+
+x-runner-settings: &runner-settings
+  BOGEY_RUNNER_ID: runner
+  BOGEY_RUNNER_WORK_DIR: ${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}
+  BOGEY_RUNNER_RUNTIME: ${BOGEY_RUNNER_RUNTIME:-}
+  BOGEY_RUNNER_IMAGES: ${BOGEY_RUNNER_IMAGES:-}
+  BOGEY_RUNNER_MAX_MEMORY_MB: ${BOGEY_RUNNER_MAX_MEMORY_MB:-1024}
+  BOGEY_RUNNER_COMPILE_MEMORY_MB: ${BOGEY_RUNNER_COMPILE_MEMORY_MB:-2048}
+  BOGEY_RUNNER_PIDS: ${BOGEY_RUNNER_PIDS:-128}
+  BOGEY_RUNNER_COMPILE_PIDS: ${BOGEY_RUNNER_COMPILE_PIDS:-512}
+  BOGEY_RUNNER_CPUS: ${BOGEY_RUNNER_CPUS:-1}
+  BOGEY_RUNNER_COMPILE_CPUS: ${BOGEY_RUNNER_COMPILE_CPUS:-2}
+
 services:
   runner:
     image: ${BOGEY_RUNNER_IMAGE:-ghcr.io/0xethen/bogey-runner:latest}
     restart: unless-stopped
     depends_on:
-      kong:
-        condition: service_healthy
+      - runner-gateway
+      - docker-proxy
+    user: "${BOGEY_RUNNER_UID:-1000}:${BOGEY_RUNNER_UID:-1000}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs:
+      - /tmp:size=16m,nosuid,nodev,noexec
+    mem_limit: 512m
+    pids_limit: 256
     environment:
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      BOGEY_RUNNER_ID: ${BOGEY_RUNNER_ID:-runner}
+      <<: *runner-settings
+      SUPABASE_URL: http://runner-gateway:8000
+      BOGEY_RUNNER_KEY: ${BOGEY_RUNNER_KEY:?make one with docker compose exec web bogey runner key add runner}
       BOGEY_RUNNER_CONCURRENCY: ${BOGEY_RUNNER_CONCURRENCY:-2}
-      BOGEY_RUNNER_WORK_DIR: /var/lib/bogey-runner
+      DOCKER_HOST: tcp://docker-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/bogey-runner:/var/lib/bogey-runner
+      - ${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}:${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}
+    networks: [runner-api, runner-docker]
+
+  docker-proxy:
+    image: ${BOGEY_RUNNER_IMAGE:-ghcr.io/0xethen/bogey-runner:latest}
+    restart: unless-stopped
+    command: ["node", "src/proxy.ts"]
+    # the runner's uid, so it can check the runner's folders, and the socket's group
+    user: "${BOGEY_RUNNER_UID:-1000}:${BOGEY_RUNNER_UID:-1000}"
     group_add:
       - "${DOCKER_GID:-999}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    pids_limit: 64
+    environment:
+      <<: *runner-settings
+      DOCKER_SOCKET: /var/run/docker.sock
+    volumes:
+      - ${BOGEY_RUNNER_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+      - ${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}:${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}:ro
+    networks: [runner-docker]
+
+  runner-gateway:
+    image: caddy:2@sha256:504a44d7d74bd2bc28a66afc4774912fc21223ca8a67734af1c54ab2f999b489
+    restart: unless-stopped
+    depends_on:
+      rest:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    # the caddy binary carries this file capability and won't start without it
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs:
+      - /data
+      - /config
+    volumes:
+      - ./Caddyfile.runner:/etc/caddy/Caddyfile:ro
+    networks: [runner-api, backend]
+
+networks:
+  # internal: no way out to the internet or the host's other networks
+  runner-api:
+    internal: true
+  runner-docker:
+    internal: true
