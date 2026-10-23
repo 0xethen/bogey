@@ -32,6 +32,7 @@ commands that author Bogey (schema, themes, types, release) and the ones that co
 | [`queues`](#queues) | Show waiting mail and webhook deliveries | checkout, container |
 | [`release`](#release) | Cut a Bogey release: bump the version, stamp the changelog, tag and push | checkout |
 | [`reset`](#reset) | Factory-reset a database: dump it, confirm, then re-apply the baseline | checkout, container |
+| [`runner`](#runner) | Make, list and revoke the challenges runner's keys | checkout, container |
 | [`seed`](#seed) | Create the demo hackathon and contest in an org | checkout, container |
 | [`themes`](#themes) | Regenerate the theme list from packages/ui/src/styles/themes | checkout |
 | [`types`](#types) | Regenerate packages/db's Database types (core schema only) | checkout |
@@ -159,7 +160,8 @@ bogey doctor [--remote]
 Checks that this instance is wired up: bogey.config.ts reads and is valid (BOGEY_CONFIG
 names another file), the sign-up hook in supabase/config.toml
 (and, when GOTRUE_* variables are set, the self-hosted equivalent), .env
-safety, that disabled plugins are installed, and, when DATABASE_URL is set (environment or .env),
+safety, that a compose.runner.yml here doesn't give the runner the service key or the Docker
+socket, that disabled plugins are installed, and, when DATABASE_URL is set (environment or .env),
 that the database has applied every migration (needs psql). It also asks GitHub whether a
 security advisory names this version (an issue) and whether a newer release is out (a note),
 unless update checks are off. Exits non-zero on any issue.
@@ -167,7 +169,8 @@ unless update checks are off. Exits non-zero on any issue.
   --remote   Also check the project .env points at, through its API with the service key:
              sign-ups and auto-confirm, that the schema is applied and an organization exists,
              the app address, whether the keys only bogey.config.ts sets match the database,
-             and whether mail has gone through the Send Email hook. With
+             whether a challenges runner still judges with the service key, and whether mail
+             has gone through the Send Email hook. With
              SUPABASE_ACCESS_TOKEN (a Management API token, Supabase Cloud only) it reads the
              dashboard's hook, OTP length and authenticator-app settings too.
 
@@ -426,6 +429,24 @@ Needs pg_dump and psql. Storage objects are not touched.
 To undo: pg_restore --clean --if-exists --no-owner -d <url> <dir>/pre-reset.dump
 
 Short flags: -y --yes, -d --db-url, -o --out
+```
+
+## runner
+
+```
+bogey runner keys
+bogey runner add <name> [--replace]
+bogey runner revoke <name>
+
+Keys for the challenges runner (docs/self-hosting/runner-security.md). A runner key can claim
+queued judgings, read the tests of a judging it holds and record its verdict; nothing else.
+
+  keys               List the keys, when each was last used, and whether a runner still judges
+                     with the service key
+  add <name>         Make a key and print it once; put it in the runner's BOGEY_RUNNER_KEY.
+                     The database keeps only its SHA-256. --replace gives an existing name a
+                     new key (the old one stops working)
+  revoke <name>      Stop a key working; the runner's next call fails
 ```
 
 ## seed

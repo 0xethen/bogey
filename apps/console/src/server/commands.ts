@@ -549,6 +549,32 @@ export const COMMANDS: Tuple<ConsoleCommand> = [
     cli: ["mfa", "off"],
   },
   {
+    id: "runner-keys",
+    group: "status",
+    label: "Runner keys",
+    description:
+      "bogey runner keys: the challenges runner's keys, and whether a runner still judges with the service key.",
+    kind: "read",
+    cli: ["runner", "keys"],
+  },
+  {
+    id: "runner-revoke",
+    group: "people",
+    label: "Revoke a runner key",
+    description: "bogey runner revoke: the runner using this key stops at its next call.",
+    kind: "change",
+    cli: ["runner", "revoke"],
+    params: [
+      {
+        kind: "text",
+        name: "name",
+        label: "Key name",
+        pattern: /^[a-z0-9][a-z0-9-]{0,39}$/,
+        placeholder: "runner",
+      },
+    ],
+  },
+  {
     id: "seed-demo",
     group: "people",
     label: "Seed the demo",
@@ -772,6 +798,7 @@ export const NOT_IN_CONSOLE: Readonly<Record<string, string>> = {
   "plugins new": "scaffolds plugin source",
   "plugins link": "points installed/ at a plugin checkout for development",
   "plugins schema": "prints JSON Schemas for library authors",
+  "runner add": "prints a secret key once; make it at a terminal and put it straight into .env",
 };
 
 export function findCommand(id: unknown): ConsoleCommand | undefined {

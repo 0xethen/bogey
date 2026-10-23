@@ -23,6 +23,7 @@ export const WHERE: Readonly<Record<string, string>> = {
   stop: "checkout, host",
   release: "checkout",
   reset: "checkout, container",
+  runner: "checkout, container",
   seed: "checkout, container",
   themes: "checkout",
   types: "checkout",

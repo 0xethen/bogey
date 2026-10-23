@@ -16,20 +16,20 @@ new run makes a new token.
 It needs a checkout of Bogey (it is `apps/console`), not just the image. It runs the CLI from a fixed list of commands,
 grouped in tabs:
 
-| Tab             | Commands                                                                                                                                                                                           |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status          | `doctor` (and `--remote`), `db status`, `plugins status`, `queues` (these four run when the page opens), `preflight`, `plugins list`, `plugins outdated`, `mfa status`, `config check`, `org list` |
-| Database        | `db migrate`, `db repair` (preview with `--dry-run`, then apply), `backup`                                                                                                                         |
-| Plugins         | `plugins migrate`, `info`, `enable`, `disable`, `search`, `add` (preview, then install), `install`, `remove` (preview, then uninstall), `library`, `sql`                                           |
-| Orgs & accounts | `org init`, `org create`, `org domain add`/`remove`, `login`, `mfa on`/`off`, `seed demo`                                                                                                          |
-| Events          | `event export`, `event import`                                                                                                                                                                     |
-| App & host      | `config apply`, `restart` (and `--build`), `stop`, `upgrade` (preview with `--dry-run`, then run), container logs                                                                                  |
+| Tab             | Commands                                                                                                                                                                                                          |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status          | `doctor` (and `--remote`), `db status`, `plugins status`, `queues` (these four run when the page opens), `preflight`, `plugins list`, `plugins outdated`, `mfa status`, `config check`, `org list`, `runner keys` |
+| Database        | `db migrate`, `db repair` (preview with `--dry-run`, then apply), `backup`                                                                                                                                        |
+| Plugins         | `plugins migrate`, `info`, `enable`, `disable`, `search`, `add` (preview, then install), `install`, `remove` (preview, then uninstall), `library`, `sql`                                                          |
+| Orgs & accounts | `org init`, `org create`, `org domain add`/`remove`, `login`, `mfa on`/`off`, `runner revoke`, `seed demo`                                                                                                        |
+| Events          | `event export`, `event import`                                                                                                                                                                                    |
+| App & host      | `config apply`, `restart` (and `--build`), `stop`, `upgrade` (preview with `--dry-run`, then run), container logs                                                                                                 |
 
 The commands sit in a side panel next to a terminal-style screen; drag the divider between them to resize (stretched wide, the panel lays its commands out in two columns). Each command is a row showing the exact `bogey ...` line it will run; click it for its options, or type in the search box to find one across tabs. Running one opens a tab on the screen with its output. Anything that changes something asks first, and the CLI never prompts (the console runs it with `BOGEY_NO_INPUT=1`; a command that needs an answer says which flag gives it). Container logs come from
 `deploy/compose.yml` through Docker. Next to the version in the header, the console shows a newer release (linking to its
 notes) or, in red, a security advisory that names the version you run (see
 [Knowing when to upgrade](upgrading.md#knowing-when-to-upgrade)). The commands that author Bogey itself (`docs`, `themes`, `types`, `release`, `db
-baseline`, ...) and `reset` stay in the terminal. See [0025](../adr/0025-operator-console.md) for why it is separate from the web app.
+baseline`, ...) and `reset` stay in the terminal, and so does `runner add`, which prints a secret once. See [0025](../adr/0025-operator-console.md) for why it is separate from the web app.
 
 ## Terminal (off by default)
 

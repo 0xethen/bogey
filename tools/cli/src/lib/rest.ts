@@ -81,6 +81,13 @@ export function update<T>(
   });
 }
 
+export function rpc<T>(credentials: Credentials, name: string, args: object): Promise<Result<T>> {
+  return call<T>(credentials, `/rest/v1/rpc/${name}`, {
+    method: "POST",
+    body: JSON.stringify(args),
+  });
+}
+
 export function remove<T>(
   credentials: Credentials,
   table: string,

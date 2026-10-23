@@ -22,6 +22,7 @@ import { runQueues, USAGE as queues } from "./commands/queues.ts";
 import { runRelease, USAGE as release } from "./commands/release.ts";
 import { runRepair, USAGE as repair } from "./commands/repair.ts";
 import { askWith, runReset, USAGE as reset } from "./commands/reset.ts";
+import { runRunner, SUBCOMMANDS as runnerSubcommands, USAGE as runner } from "./commands/runner.ts";
 import { runSeed, USAGE as seed } from "./commands/seed.ts";
 import { runRestart, runStop, RESTART_USAGE, STOP_USAGE } from "./commands/stack.ts";
 import { runThemes, USAGE as themes } from "./commands/themes.ts";
@@ -196,6 +197,13 @@ export const COMMANDS: Tuple<Command> = [
     summary: "Factory-reset a database: dump it, confirm, then re-apply the baseline",
     usage: reset,
     run: (cwd, args, prompter) => runReset(cwd, args, undefined, askWith(prompter)),
+  },
+  {
+    name: "runner",
+    summary: "Make, list and revoke the challenges runner's keys",
+    usage: runner,
+    subcommands: runnerSubcommands,
+    run: (cwd, args) => runRunner(cwd, args),
   },
   {
     name: "seed",

@@ -134,3 +134,21 @@ export function checkEnvFileSafety(envContent: string): ConsistencyIssue[] {
 
   return issues;
 }
+
+/** A compose.runner.yml from before 2.4 gives the runner the service key and the Docker socket. */
+export function checkRunnerCompose(content: string, path: string): ConsistencyIssue[] {
+  const issues: ConsistencyIssue[] = [];
+  if (/SUPABASE_SERVICE_ROLE_KEY/.test(content)) {
+    issues.push({
+      message: `${path} gives the runner the service-role key. Replace it with this release's, make a key with bogey runner add runner and set BOGEY_RUNNER_KEY in .env (docs/self-hosting/runner-security.md)`,
+    });
+  }
+  const runner =
+    /\n {2}runner:\n([\s\S]*?)(?=\n {2}[a-z][\w-]*:\n|\n[a-z]|$)/.exec(content)?.[1] ?? "";
+  if (/docker\.sock/.test(runner)) {
+    issues.push({
+      message: `${path} mounts the Docker socket into the runner itself; this release puts it behind docker-proxy. Replace it with this release's`,
+    });
+  }
+  return issues;
+}

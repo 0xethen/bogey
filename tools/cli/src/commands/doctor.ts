@@ -6,6 +6,7 @@ import {
   checkDatabaseUrl,
   checkEnvFileSafety,
   checkPluginKeys,
+  checkRunnerCompose,
   checkSelfHostedHookWiring,
   type ConsistencyIssue,
 } from "../lib/checks.ts";
@@ -35,6 +36,7 @@ import { httpFetcher, type Fetcher } from "@bogey/plugins/updates";
 import { bundledPluginKeys, pluginDir, pluginFolders } from "../lib/plugin-dirs.ts";
 import { changedNotice, pluginMigrationState } from "./plugins.ts";
 import { operatorDrift } from "./config.ts";
+import { LEGACY_ADVICE, legacyJudgings } from "./runner.ts";
 import type { CliResult } from "../cli.ts";
 
 export const USAGE = `bogey doctor [--remote]
@@ -42,7 +44,8 @@ export const USAGE = `bogey doctor [--remote]
 Checks that this instance is wired up: bogey.config.ts reads and is valid (BOGEY_CONFIG
 names another file), the sign-up hook in supabase/config.toml
 (and, when GOTRUE_* variables are set, the self-hosted equivalent), .env
-safety, that disabled plugins are installed, and, when DATABASE_URL is set (environment or .env),
+safety, that a compose.runner.yml here doesn't give the runner the service key or the Docker
+socket, that disabled plugins are installed, and, when DATABASE_URL is set (environment or .env),
 that the database has applied every migration (needs psql). It also asks GitHub whether a
 security advisory names this version (an issue) and whether a newer release is out (a note),
 unless update checks are off. Exits non-zero on any issue.
@@ -50,7 +53,8 @@ unless update checks are off. Exits non-zero on any issue.
   --remote   Also check the project .env points at, through its API with the service key:
              sign-ups and auto-confirm, that the schema is applied and an organization exists,
              the app address, whether the keys only bogey.config.ts sets match the database,
-             and whether mail has gone through the Send Email hook. With
+             whether a challenges runner still judges with the service key, and whether mail
+             has gone through the Send Email hook. With
              SUPABASE_ACCESS_TOKEN (a Management API token, Supabase Cloud only) it reads the
              dashboard's hook, OTP length and authenticator-app settings too.`;
 
@@ -69,6 +73,13 @@ function localIssues(cwd: string, run: Runner): ConsistencyIssue[] {
   if (existsSync(envPath)) issues.push(...checkEnvFileSafety(readFileSync(envPath, "utf-8")));
 
   issues.push(...checkSelfHostedHookWiring(process.env));
+
+  for (const path of [join(root, "compose.runner.yml"), join(cwd, "compose.runner.yml")]) {
+    if (existsSync(path)) {
+      issues.push(...checkRunnerCompose(readFileSync(path, "utf-8"), path));
+      break;
+    }
+  }
 
   let disabledPlugins: Tuple<string> = [];
   try {
@@ -219,6 +230,7 @@ export async function runDoctorRemote(
     }),
   );
   issues.push(...(await operatorIssues(resolved.credentials, root)));
+  if (await legacyJudgings(resolved.credentials)) issues.push({ message: LEGACY_ADVICE });
   return report([...issues, ...remote.issues], [...release.notes, ...remote.notes]);
 }
 
