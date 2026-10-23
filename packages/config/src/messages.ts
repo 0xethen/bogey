@@ -3427,6 +3427,9 @@ export const en = {
     "Windows show on the event home and as dates on the agenda. Hide ones whose names or times would give something away, like judging.",
   "manageAgenda.seeFailed": "Couldn't change what participants see",
   "manageAgenda.aSession": "a session",
+  "manageAgenda.noAttendanceTitle": "No session takes attendance",
+  "manageAgenda.noAttendanceBody":
+    "Turn on attendance in a session's settings and its check-ins show up here.",
   "manageAgenda.attendanceIntro":
     "Sessions that take attendance. Required ones and people's picks count as missed when someone wasn't there.",
   "manageAgenda.hereOnly": "{here} here",

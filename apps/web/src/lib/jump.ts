@@ -37,7 +37,11 @@ export function jumpTo(id: string): void {
 function flash(target: HTMLElement): Animation {
   const style = getComputedStyle(target);
   const accent = style.getPropertyValue("--color-primary").trim() || "currentColor";
-  const wash = `color-mix(in oklch, ${accent} 12%, transparent)`;
+  // whole sections get a neutral wash instead of the primary one
+  const wash =
+    target.offsetHeight > 160
+      ? "color-mix(in oklch, var(--color-muted-fg) 10%, transparent)"
+      : `color-mix(in oklch, ${accent} 12%, transparent)`;
   const pad = `calc(${style.getPropertyValue("--spacing").trim() || "0.25rem"} * 2)`;
   return target.animate(
     [

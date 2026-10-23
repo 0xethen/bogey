@@ -264,7 +264,7 @@ function WindowHelp({ slug }: { slug: string }) {
     <Linked
       text={t("manageTabs.windowHelp", { agenda: LINK })}
       links={[
-        <SettingLink key="agenda" to={`/events/${slug}/manage/agenda`} hash="windows">
+        <SettingLink key="agenda" to={`/events/${slug}/manage/agenda-windows`} hash="windows">
           {t("path.agenda")}
         </SettingLink>,
       ]}

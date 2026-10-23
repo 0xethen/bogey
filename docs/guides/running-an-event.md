@@ -95,7 +95,8 @@ shows under Templates on the Events page and in **Start from**.
 ## 3. Agenda
 
 **Manage → Agenda** holds everything with a time: the sessions people go to,
-and the event's **windows**.
+and the event's **windows**. It has four pages: Agenda (sessions), Session types,
+Windows (with reminders and what participants see) and Attendance.
 
 ### Sessions
 

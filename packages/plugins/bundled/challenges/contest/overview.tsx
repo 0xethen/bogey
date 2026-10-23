@@ -52,7 +52,11 @@ export function ManageOverview({ eventId, settings }: PluginContext<Settings>) {
           {!contest ? (
             <>
               No contest window is set. Add one in{" "}
-              <RouterLink className="link" to={`/events/${slug}/manage/agenda`} hash="windows">
+              <RouterLink
+                className="link"
+                to={`/events/${slug}/manage/agenda-windows`}
+                hash="windows"
+              >
                 Agenda
               </RouterLink>
               .

@@ -1,128 +1,97 @@
-import { exportHref } from "#/lib/exports.ts";
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import {
-  IconBell,
-  IconBellOff,
-  IconCheck,
-  IconCircleX,
-  IconDownload,
-  IconPlus,
-  IconTrash,
-} from "@tabler/icons-react";
-import {
-  SESSION_KIND_ICONS,
-  SESSION_KIND_TONES,
-  sessionKindSchema,
-  type SessionKind,
-} from "@bogey/config/settings";
+import { IconCheck, IconPlus, IconTrash } from "@tabler/icons-react";
+import { type SessionKind } from "@bogey/config/settings";
 import {
   agendaQueryOptions,
   attendanceQueryOptions,
   saveAgendaFn,
-  saveSessionLevelsFn,
   type Agenda,
   type AgendaSession,
   type AgendaSlot,
   type SessionVisibility,
   type SlotKind,
 } from "@bogey/db/queries/sessions";
-import { eventPeopleQueryOptions, removeWindowFn, setWindowsFn } from "@bogey/db/queries/manage";
-import type { WindowChange } from "@bogey/db/queries/manage";
-import { eventWindowsQueryOptions, type EventWindow } from "@bogey/db/queries/windows";
-import { settingsQueryOptions } from "@bogey/db/queries/settings";
-import { requestFailure, unwrap } from "@bogey/db/errors";
-import { pluginWindows } from "@bogey/plugins";
+import { eventPeopleQueryOptions } from "@bogey/db/queries/manage";
+import { requestFailure } from "@bogey/db/errors";
 import { isoToWallTime, wallTimeToIso, formatTimeRange } from "@bogey/utils/time";
-import { toSlug } from "@bogey/utils/keys";
 import { Button } from "@bogey/ui/components/button";
-import { Checkbox } from "@bogey/ui/components/checkbox";
 import {
   EditableList,
   EditableListGroup,
   EditableListItem,
   type EditableListPosition,
 } from "@bogey/ui/components/editable-list";
-import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
-import { OptSelect } from "@bogey/ui/components/opt-select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "@bogey/ui/components/popover";
-import { RadioGroup, RadioGroupItem } from "@bogey/ui/components/radio-group";
 import { Screen } from "@bogey/ui/components/screen";
-import { Switch } from "@bogey/ui/components/switch";
-import { Timeline } from "#/components/event/agenda/timeline.tsx";
-import { cn } from "@bogey/ui/lib/utils";
 import { TimeFormatProvider, useTimeFormat } from "@bogey/ui/lib/time-format";
-import { useDraft } from "#/components/unsaved-changes/index.tsx";
 import {
   appFormOptions,
   errorVisibility,
   FieldSelect,
   rewardEarlyPunishLate,
-  schemaMetaOf,
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { RequiredNote, SessionCard } from "#/components/event/agenda/agenda.tsx";
-import {
-  KIND_ICONS,
-  KIND_TONES,
-  KindBadge,
-  resolveKind,
-  UNTYPED,
-} from "#/components/event/agenda/session-kind.tsx";
-import {
-  prefetchSettingFields,
-  SettingFields,
-} from "#/components/settings/fields/setting-fields.tsx";
-import { useEventRefresh } from "#/lib/refresh.ts";
-import { useSettingsMutation } from "#/lib/settings.ts";
-import { SettingLink } from "#/components/settings/setting-link.tsx";
-import { CORE_WINDOWS, timelineItems, windowLabel } from "#/lib/windows.ts";
-
-const agendaSettings = (eventId: string) =>
-  settingsQueryOptions({ eventId }, ["agenda", "schedule"]);
-
+import { resolveKind, UNTYPED } from "#/components/event/agenda/session-kind.tsx";
 import { sessionKindsWithPlugins } from "#/lib/plugins.ts";
-import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
+import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
+import { agendaSettings, levelsOf } from "./-components/agenda-shared.ts";
+
+// where the settings that moved off this page now live
+const MOVED: Record<string, "agenda-types" | "agenda-windows" | "agenda-attendance"> = {
+  "session-types": "agenda-types",
+  windows: "agenda-windows",
+  reminders: "agenda-windows",
+  "what-participants-see": "agenda-windows",
+  "agenda.reminderMinutes": "agenda-windows",
+  "agenda.tabMenu": "agenda-windows",
+  "schedule.display": "agenda-windows",
+  "schedule.showEventTimezone": "agenda-windows",
+  "schedule.countdownLabel": "agenda-windows",
+  attendance: "agenda-attendance",
+};
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
   // a session's page links here with its id to open it for editing
   validateSearch: z.object({ session: z.string().optional() }),
+  beforeLoad: ({ params, location }) => {
+    const moved = MOVED[decodeURIComponent(location.hash)];
+    if (moved === "agenda-types") {
+      throw redirect({
+        to: "/events/$slug/manage/agenda-types",
+        params,
+        hash: location.hash,
+        replace: true,
+      });
+    }
+    if (moved === "agenda-windows") {
+      throw redirect({
+        to: "/events/$slug/manage/agenda-windows",
+        params,
+        hash: location.hash,
+        replace: true,
+      });
+    }
+    if (moved === "agenda-attendance") {
+      throw redirect({
+        to: "/events/$slug/manage/agenda-attendance",
+        params,
+        hash: location.hash,
+        replace: true,
+      });
+    }
+  },
   staticData: {
     title: msg("eventTab.agenda"),
     command: { keywords: ["schedule", "sessions", "windows", "attendance"] },
     settings: (t) => [
-      searchSection(t("manageAgenda.reminders"), { id: "reminders" }),
-      ...searchSettings("agenda", ["reminderMinutes"], t),
-      ...searchSettings("agenda", ["tabMenu"], t),
-      searchSection(t("manageAgenda.types"), {
-        keywords: ["levels", "beginner", "advanced", "talk", "workshop"],
-        id: "session-types",
-      }),
       searchSection(t("manageAgenda.sessions"), {
         keywords: ["workshops", "slots", "hosts"],
         id: "sessions",
-      }),
-      searchSection(t("manageAgenda.windows"), {
-        keywords: ["registration", "submissions", "judging", "results", "gallery", "open", "close"],
-        id: "windows",
-      }),
-      searchSection(t("manageAgenda.participantsSee"), { id: "what-participants-see" }),
-      ...searchSettings("schedule", ["display", "showEventTimezone", "countdownLabel"], t),
-      searchSection(t("manageAgenda.attendance"), {
-        keywords: ["check-in", "codes"],
-        id: "attendance",
       }),
     ],
   },
@@ -130,13 +99,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
     Promise.all([
       context.query.ensureQueryData(agendaQueryOptions(context.event.id)),
       context.query.ensureQueryData(eventPeopleQueryOptions(context.event.id)),
-      context.query.ensureQueryData(attendanceQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
       context.query.ensureQueryData(agendaSettings(context.event.id)),
-      prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
-        "schedule",
-        "agenda",
-      ]),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
@@ -158,20 +121,9 @@ function RouteComponent() {
       }
       width="embedded"
     >
-      <SessionTypes />
       <TimeFormatProvider value={{ ...time, timeZone: event.timezone, zone: true }}>
         <SessionsEditor />
-        <Windows />
       </TimeFormatProvider>
-      <ParticipantView />
-      <Screen.Section id="reminders" title={t("manageAgenda.reminders")}>
-        <SettingFields
-          scope={{ scope: "event", eventId: event.id }}
-          namespace="agenda"
-          keys={["reminderMinutes"]}
-        />
-      </Screen.Section>
-      <Attendance />
       <PluginSettingSections page="agenda" />
     </Screen>
   );
@@ -327,12 +279,6 @@ function blankSession(): SessionValues {
 // a kind that isn't a defined type (an old one-off tag) is treated as no type; plugin kinds are kept
 function typeOf(kinds: Tuple<SessionKind>, kind: string): string {
   return kind.includes(".") || kinds.some((each) => each.key === kind) ? kind : UNTYPED;
-}
-
-function levelsOf(agenda: Agenda, kind: string): string[] {
-  return agenda.categories
-    .filter((category) => category.kind === kind)
-    .map((category) => category.label);
 }
 
 function toValues(agenda: Agenda, kinds: Tuple<SessionKind>, timeZone: string): AgendaValues {
@@ -813,754 +759,6 @@ function SessionsEditor() {
           )}
         </form.Form>
       </form.AppForm>
-    </Screen.Section>
-  );
-}
-
-type Mode = "scheduled" | "open" | "closed";
-
-const modes = (t: T): Tuple<{ value: Mode; label: string }> => [
-  { value: "scheduled", label: t("manageAgenda.scheduled") },
-  { value: "open", label: t("manageAgenda.openNow") },
-  { value: "closed", label: t("manageAgenda.closeNow") },
-];
-
-function Windows() {
-  const t = useT();
-  const { event, plugins } = Route.useRouteContext();
-  const refreshEvent = useEventRefresh(event.id);
-  const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
-  const add = useMutation({
-    mutationFn: async (changes: WindowChange[]) =>
-      unwrap(await setWindowsFn({ data: { eventId: event.id, windows: changes } })),
-    onSuccess: refreshEvent,
-  });
-  const [adding, setAdding] = useState<string | null>(null);
-  const [unchosen, setUnchosen] = useState(false);
-  const offered = [...CORE_WINDOWS, ...pluginWindows(plugins).map((window) => window.key)];
-  const missing = offered.filter((key) => !windows.some((window) => window.key === key));
-
-  return (
-    <Screen.Section
-      id="windows"
-      title={t("manageAgenda.windows")}
-      description={t("manageAgenda.windowsHelp")}
-      actions={
-        missing.length > 0 && (
-          <div className="flex items-center gap-2">
-            <OptSelect
-              ariaLabel={t("manageAgenda.windowToAdd")}
-              size="sm"
-              value={adding}
-              placeholder={t("manageAgenda.addWindow")}
-              options={missing.map((key) => ({ value: key, label: windowLabel({ key }, t) }))}
-              onChange={setAdding}
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={add.isPending}
-              onClick={() => {
-                if (!adding) return setUnchosen(true);
-                add.mutate([{ key: adding, opens_at: null, closes_at: null, override: null }], {
-                  onSuccess: () => setAdding(null),
-                });
-              }}
-            >
-              {t("manageAgenda.add")}
-            </Button>
-          </div>
-        )
-      }
-    >
-      <ErrorAlert
-        error={unchosen && !adding ? t("manageAgenda.chooseWindowFirst") : null}
-        title={t("manageAgenda.nothingToAdd")}
-      />
-      <ErrorAlert error={add.error} title={t("manageAgenda.addFailed")} />
-      {windows.length === 0 ? (
-        <p className="text-sm text-muted-fg">{t("manageAgenda.noWindows")}</p>
-      ) : (
-        <Timeline
-          divided={false}
-          items={timelineItems(
-            windows,
-            (window) => (
-              <WindowEditor
-                key={`${window.key}-${window.updated_at}`}
-                window={window}
-                eventId={event.id}
-                timeZone={event.timezone}
-              />
-            ),
-            undefined,
-            t,
-          )}
-        />
-      )}
-    </Screen.Section>
-  );
-}
-
-const windowSchema = (t: T) =>
-  z
-    .object({
-      mode: z.enum(["scheduled", "open", "closed"]).meta({ label: t("manageAgenda.mode") }),
-      opens: z.string().meta({ label: t("timeline.opens") }),
-      closes: z.string().meta({ label: t("timeline.closes") }),
-      reminder: z.enum(["default", "none", "custom"]),
-      minutes: z
-        .number()
-        .int()
-        .min(1)
-        .max(1440)
-        .meta({ label: t("manageAgenda.reminderMinutes") }),
-    })
-    .superRefine((value, ctx) => {
-      if (
-        value.mode === "scheduled" &&
-        value.opens &&
-        value.closes &&
-        value.closes <= value.opens
-      ) {
-        ctx.addIssue({ code: "custom", path: ["closes"], message: t("manageAgenda.closesAfter") });
-      }
-    });
-
-function WindowEditor({
-  window,
-  eventId,
-  timeZone,
-}: {
-  window: EventWindow;
-  eventId: string;
-  timeZone: string;
-}) {
-  const t = useT();
-  const schema = useMemo(() => windowSchema(t), [t]);
-  const refreshEvent = useEventRefresh(eventId);
-  const eventSlug = Route.useRouteContext().event.slug;
-  const { data: settings } = useSuspenseQuery(agendaSettings(eventId));
-  const fallback = settings.agenda.reminderMinutes;
-  const remove = useMutation({
-    mutationFn: async () => unwrap(await removeWindowFn({ data: { eventId, key: window.key } })),
-    onSuccess: refreshEvent,
-  });
-  const form = useAppForm({
-    ...appFormOptions.strictSchema({
-      defaultValues: {
-        mode: window.override ?? "scheduled",
-        opens: isoToWallTime(window.opens_at, timeZone),
-        closes: isoToWallTime(window.closes_at, timeZone),
-        reminder: reminderOf(window.reminder_minutes),
-        minutes: window.reminder_minutes || fallback || 5,
-      },
-      errorVisibility,
-      validators: [rewardEarlyPunishLate(schema)],
-    }),
-    onSubmit: async ({ value, createValidationError }) => {
-      const change: WindowChange = {
-        key: window.key,
-        opens_at: wallTimeToIso(value.opens, timeZone),
-        closes_at: wallTimeToIso(value.closes, timeZone),
-        override: value.mode === "scheduled" ? null : value.mode,
-        reminder_minutes:
-          value.reminder === "default" ? null : value.reminder === "none" ? 0 : value.minutes,
-      };
-      const result = await setWindowsFn({ data: { eventId, windows: [change] } }).catch(
-        requestFailure,
-      );
-      if (!result.ok) return createValidationError(result.error.message);
-      await refreshEvent();
-      return undefined;
-    },
-  });
-
-  return (
-    <form.AppForm>
-      <form.Form unsaved="save" className="flex flex-col gap-3">
-        <form.Field name="mode">
-          {(field) => (
-            <field.Field>
-              <field.Label />
-              <FieldSelect field={field} options={modes(t)} />
-            </field.Field>
-          )}
-        </form.Field>
-        <form.Subscribe selector={(state) => state.values.mode === "scheduled"}>
-          {(scheduled) =>
-            scheduled && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <form.Field name="opens">{(field) => <field.DateTimeField />}</form.Field>
-                <form.Field name="closes">{(field) => <field.DateTimeField />}</form.Field>
-              </div>
-            )
-          }
-        </form.Subscribe>
-        <form.FormAlert title={t("manageAgenda.windowSaveFailed")} />
-        <ErrorAlert error={remove.error} title={t("manageAgenda.removeWindowFailed")} />
-        <div className="grid grid-cols-2 gap-2">
-          <Popover>
-            <form.Subscribe selector={(state) => state.values.reminder}>
-              {(reminder) => (
-                <PopoverTrigger render={<Button size="sm" variant="outline" />}>
-                  {reminder === "none" ? <IconBellOff /> : <IconBell />}
-                  {t("manageAgenda.setReminder")}
-                </PopoverTrigger>
-              )}
-            </form.Subscribe>
-            <PopoverContent align="start">
-              <PopoverHeader>
-                <PopoverTitle>{t("manageAgenda.reminderTitle")}</PopoverTitle>
-                <PopoverDescription>
-                  {t("manageAgenda.reminderHelp", { name: windowLabel(window, t) })}
-                </PopoverDescription>
-              </PopoverHeader>
-              <form.Field name="reminder">
-                {(field) => (
-                  <RadioGroup
-                    value={field.value}
-                    onValueChange={(next) => {
-                      if (next === "default" || next === "none" || next === "custom") {
-                        field.handleChange(next);
-                      }
-                    }}
-                  >
-                    {(
-                      [
-                        [
-                          "default",
-                          fallback > 0
-                            ? t("manageAgenda.reminderDefault", { minutes: fallback })
-                            : t("manageAgenda.reminderDefaultOff"),
-                        ],
-                        ["none", t("manageAgenda.reminderNone")],
-                        ["custom", t("manageAgenda.reminderCustom")],
-                      ] as const
-                    ).map(([value, label]) => (
-                      <Field key={value} orientation="horizontal">
-                        <RadioGroupItem value={value} id={`${window.key}-reminder-${value}`} />
-                        <FieldLabel
-                          htmlFor={`${window.key}-reminder-${value}`}
-                          className="font-normal"
-                        >
-                          {label}
-                        </FieldLabel>
-                      </Field>
-                    ))}
-                  </RadioGroup>
-                )}
-              </form.Field>
-              <form.Subscribe selector={(state) => state.values.reminder === "custom"}>
-                {(custom) =>
-                  custom && (
-                    <form.Field name="minutes">
-                      {(field) => <field.NumberField min={1} max={1440} />}
-                    </form.Field>
-                  )
-                }
-              </form.Subscribe>
-              <FieldDescription>
-                <SettingLink
-                  to={`/events/${eventSlug}/manage/agenda`}
-                  hash="agenda.reminderMinutes"
-                >
-                  {t("manageAgenda.reminderDefaultLink")}
-                </SettingLink>
-              </FieldDescription>
-            </PopoverContent>
-          </Popover>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-destructive"
-            disabled={remove.isPending}
-            confirm={{
-              title: t("manageAgenda.removeWindowTitle", { name: windowLabel(window, t) }),
-              description: t("manageAgenda.removeWindowBody"),
-              label: t("twoFactor.remove"),
-            }}
-            onClick={() => remove.mutate()}
-          >
-            <IconCircleX />
-            <span className="sm:hidden">{t("manageAgenda.removeShort")}</span>
-            <span className="max-sm:hidden">{t("manageAgenda.removeWindow")}</span>
-          </Button>
-        </div>
-      </form.Form>
-    </form.AppForm>
-  );
-}
-
-function reminderOf(minutes: number | null): "default" | "none" | "custom" {
-  return minutes === null ? "default" : minutes === 0 ? "none" : "custom";
-}
-
-const kindValuesSchema = (t: T) =>
-  z.object({
-    kinds: z
-      .array(
-        sessionKindSchema.omit({ key: true }).extend({
-          uid: z.string(),
-          key: z.string(),
-          label: sessionKindSchema.shape.label.meta({
-            label: t("checkin.name"),
-            placeholder: t("manageAgenda.workshop"),
-          }),
-          tone: sessionKindSchema.shape.tone.meta({ label: t("manageAgenda.color") }),
-          icon: sessionKindSchema.shape.icon.meta({ label: t("manageAgenda.icon") }),
-          levels: z
-            .array(
-              z
-                .string()
-                .trim()
-                .max(40, t("form.maxLength", { max: 40 })),
-            )
-            .max(20)
-            .meta({
-              label: t("manageAgenda.levelsLabel"),
-              placeholder: t("manageAgenda.levelPlaceholder"),
-            })
-            .describe(t("manageAgenda.levelsHelp")),
-        }),
-      )
-      .max(40),
-  });
-
-type KindValues = z.infer<ReturnType<typeof kindValuesSchema>>["kinds"][number];
-
-function withKeys(kinds: Tuple<KindValues>): (SessionKind & { levels: string[] })[] {
-  const taken = new Set(kinds.map((kind) => kind.key).filter(Boolean));
-  return kinds.map(({ uid: _uid, ...kind }) => {
-    if (kind.key) return kind;
-    const base = toSlug(kind.label, 40).replace(/^[^a-z]+/, "") || "type";
-    let key = base;
-    for (let n = 2; taken.has(key); n++) key = `${base}-${n}`;
-    taken.add(key);
-    return { ...kind, key };
-  });
-}
-
-const toKindValues = (kinds: Tuple<SessionKind>, agenda: Agenda): KindValues[] =>
-  kinds.map((kind) => ({ ...kind, uid: kind.key, levels: levelsOf(agenda, kind.key) }));
-
-function SessionTypes() {
-  const t = useT();
-  const schema = useMemo(() => kindValuesSchema(t), [t]);
-  const { event } = Route.useRouteContext();
-  const { data: settings } = useSuspenseQuery(agendaSettings(event.id));
-  const { data: agenda } = useSuspenseQuery(agendaQueryOptions(event.id));
-  const save = useSettingsMutation({ scope: "event", eventId: event.id }, "agenda");
-  const queryClient = useQueryClient();
-  const [active, setActive] = useState<string | null>(null);
-  const used = new Map<string, number>();
-  for (const session of agenda.slots.flatMap((slot) => slot.sessions)) {
-    used.set(session.kind, (used.get(session.kind) ?? 0) + 1);
-  }
-
-  const form = useAppForm({
-    ...appFormOptions.strictSchema({
-      defaultValues: { kinds: toKindValues(settings.agenda.kinds, agenda) },
-      errorVisibility,
-      validators: [rewardEarlyPunishLate(schema)],
-    }),
-    onSubmit: async ({ value, formApi, createValidationError }) => {
-      const typed = withKeys(value.kinds);
-      const kinds: SessionKind[] = typed.map(({ levels: _levels, ...kind }) => kind);
-      try {
-        await save.mutateAsync({ kinds });
-      } catch (error) {
-        return createValidationError(
-          error instanceof Error ? error.message : t("manageAgenda.typesFailed"),
-        );
-      }
-      const levels = [
-        ...typed.flatMap((kind) =>
-          [...new Set(kind.levels.map((label) => label.trim()).filter(Boolean))].map((label) => ({
-            kind: kind.key,
-            label,
-          })),
-        ),
-        // plugin types' levels aren't edited here
-        ...agenda.categories.filter((category) => category.kind.includes(".")),
-      ];
-      const saved = await saveSessionLevelsFn({ data: { eventId: event.id, levels } }).catch(
-        requestFailure,
-      );
-      if (!saved.ok) return createValidationError(saved.error.message);
-      const fresh = await queryClient.fetchQuery({
-        ...agendaQueryOptions(event.id),
-        staleTime: 0,
-      });
-      formApi.reset({ kinds: toKindValues(kinds, fresh) });
-      setActive(null);
-      return undefined;
-    },
-  });
-
-  return (
-    <Screen.Section
-      id="session-types"
-      title={t("manageAgenda.types")}
-      description={t("manageAgenda.typesHelp")}
-    >
-      <form.AppForm>
-        <form.Form unsaved="save" className="flex flex-col gap-3">
-          <form.Field name="kinds">
-            {(list) => (
-              <>
-                <EditableList
-                  onMove={(from, to) => list.moveValue(from, to)}
-                  empty={t("manageAgenda.noTypes")}
-                >
-                  {list.value.map((kind, index) => {
-                    const count = kind.key ? (used.get(kind.key) ?? 0) : 0;
-                    return (
-                      <EditableListItem
-                        key={kind.uid}
-                        id={kind.uid}
-                        index={index}
-                        noun={t("manageAgenda.typeNoun")}
-                        onRemove={() => list.removeValue(index)}
-                        confirmRemove={
-                          count > 0 ? t("manageAgenda.typeInUse", { count }) : undefined
-                        }
-                        preview={
-                          <div className="flex min-h-7 items-center gap-3">
-                            <KindBadge
-                              kind={{
-                                ...kind,
-                                label: kind.label || t("manageAgenda.untitledType"),
-                              }}
-                            />
-                            <span className="text-sm text-muted-fg">
-                              {[
-                                count > 0
-                                  ? t("manageAgenda.sessionCount", { count })
-                                  : t("manageAgenda.unused"),
-                                kind.levels.filter((label) => label.trim()).join(", "),
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </span>
-                            {count === 1 && (
-                              <span className="text-sm text-warning">
-                                {t("manageAgenda.singleUse")}
-                              </span>
-                            )}
-                          </div>
-                        }
-                        editing={
-                          active === kind.uid || !schema.shape.kinds.element.safeParse(kind).success
-                        }
-                        onEdit={() => setActive(kind.uid)}
-                        onDone={() => setActive(null)}
-                      >
-                        <div className="flex flex-col gap-4">
-                          <form.Field name={`kinds[${index}].label`}>
-                            {(field) => <field.TextField required />}
-                          </form.Field>
-                          <form.Field name={`kinds[${index}].levels`}>
-                            {(field) => <field.OptionsField />}
-                          </form.Field>
-                          <form.Field name={`kinds[${index}].tone`}>
-                            {(field) => (
-                              <Field>
-                                <FieldLabel>{schemaMetaOf(field).label}</FieldLabel>
-                                <div
-                                  role="radiogroup"
-                                  aria-label={schemaMetaOf(field).label}
-                                  className="flex flex-wrap gap-1.5"
-                                >
-                                  {SESSION_KIND_TONES.map((tone) => (
-                                    <button
-                                      key={tone}
-                                      type="button"
-                                      role="radio"
-                                      aria-checked={field.value === tone}
-                                      aria-label={t(KIND_TONES[tone].label)}
-                                      title={t(KIND_TONES[tone].label)}
-                                      onClick={() => field.handleChange(tone)}
-                                      className={cn(
-                                        "flex size-8 items-center justify-center rounded-pill ring-offset-2 ring-offset-background",
-                                        "aria-checked:ring-2 aria-checked:ring-fg hocus:ring-2 hocus:ring-border",
-                                      )}
-                                    >
-                                      <span
-                                        className={cn(
-                                          "size-6 rounded-pill",
-                                          KIND_TONES[tone].swatch,
-                                        )}
-                                      />
-                                    </button>
-                                  ))}
-                                </div>
-                              </Field>
-                            )}
-                          </form.Field>
-                          <form.Field name={`kinds[${index}].icon`}>
-                            {(field) => (
-                              <Field>
-                                <FieldLabel>{schemaMetaOf(field).label}</FieldLabel>
-                                <div
-                                  role="radiogroup"
-                                  aria-label={schemaMetaOf(field).label}
-                                  className="flex flex-wrap gap-1"
-                                >
-                                  {SESSION_KIND_ICONS.map((icon) => {
-                                    const Icon = KIND_ICONS[icon];
-                                    return (
-                                      <button
-                                        key={icon}
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={field.value === icon}
-                                        aria-label={icon}
-                                        title={icon}
-                                        onClick={() => field.handleChange(icon)}
-                                        className={cn(
-                                          "flex size-9 items-center justify-center rounded-xl text-muted-fg hocus:bg-muted hocus:text-fg",
-                                          "aria-checked:bg-primary/10 aria-checked:text-primary-text aria-checked:ring-1 aria-checked:ring-primary/40",
-                                        )}
-                                      >
-                                        <Icon className="size-4.5" />
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </Field>
-                            )}
-                          </form.Field>
-                        </div>
-                      </EditableListItem>
-                    );
-                  })}
-                </EditableList>
-                <div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const uid = crypto.randomUUID();
-                      list.pushValue({
-                        uid,
-                        key: "",
-                        label: "",
-                        tone: "gray",
-                        icon: "calendar",
-                        levels: [],
-                      });
-                      setActive(uid);
-                    }}
-                  >
-                    <IconPlus />
-                    {t("manageAgenda.addType")}
-                  </Button>
-                </div>
-              </>
-            )}
-          </form.Field>
-          <form.FormAlert title={t("manageAgenda.typesSaveFailed")} />
-        </form.Form>
-      </form.AppForm>
-    </Screen.Section>
-  );
-}
-
-function ParticipantView() {
-  const t = useT();
-  const { event } = Route.useRouteContext();
-  const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
-  const { data: settings } = useSuspenseQuery(agendaSettings(event.id));
-  const current = settings.schedule;
-  const save = useSettingsMutation({ scope: "event", eventId: event.id }, "schedule");
-  const [hidden, setHidden] = useDraft(
-    current.hiddenWindows,
-    async (hiddenWindows) => {
-      try {
-        await save.mutateAsync({ hiddenWindows: [...hiddenWindows] });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    (a, b) => a.length === b.length && a.every((key) => b.includes(key)),
-  );
-
-  return (
-    <Screen.Section
-      id="what-participants-see"
-      title={t("manageAgenda.participantsSee")}
-      description={t("manageAgenda.participantsSeeHelp")}
-    >
-      <SettingFields
-        scope={{ scope: "event", eventId: event.id }}
-        namespace="schedule"
-        keys={["display", "showEventTimezone", "countdownLabel"]}
-      />
-      <SettingFields
-        scope={{ scope: "event", eventId: event.id }}
-        namespace="agenda"
-        keys={["tabMenu"]}
-      />
-      {current.display !== "hidden" && (
-        <ul className="flex flex-col gap-2">
-          {windows.map((window) => (
-            <li key={window.key}>
-              <Field orientation="horizontal">
-                <Checkbox
-                  id={`show-${window.key}`}
-                  checked={!hidden.includes(window.key)}
-                  onCheckedChange={(checked) =>
-                    setHidden(
-                      checked
-                        ? hidden.filter((key) => key !== window.key)
-                        : [...hidden, window.key],
-                    )
-                  }
-                />
-                <FieldLabel htmlFor={`show-${window.key}`} className="font-normal">
-                  {windowLabel(window, t)}
-                </FieldLabel>
-              </Field>
-            </li>
-          ))}
-        </ul>
-      )}
-      <ErrorAlert error={save.error} title={t("manageAgenda.seeFailed")} />
-    </Screen.Section>
-  );
-}
-
-function Attendance() {
-  const t = useT();
-  const { event } = Route.useRouteContext();
-  const { data: agenda } = useSuspenseQuery(agendaQueryOptions(event.id));
-  const { data: rows } = useSuspenseQuery(attendanceQueryOptions(event.id));
-  const [missingOnly, setMissingOnly] = useState(false);
-
-  const sessions = agenda.slots.flatMap((slot) =>
-    slot.sessions
-      .filter((session) => session.takesAttendance)
-      .map((session) => ({ slot, session })),
-  );
-  if (sessions.length === 0) return null;
-
-  const names = new Map(sessions.map(({ session }) => [session.id, session.name]));
-  const order = new Map(sessions.map(({ session }, index) => [session.id, index]));
-  const people = new Map<string, { name: string; expected: string[]; attended: string[] }>();
-  for (const row of rows) {
-    const person = people.get(row.userId) ?? { name: row.name, expected: [], attended: [] };
-    if (row.expected) person.expected.push(row.sessionId);
-    if (row.attendedAt) person.attended.push(row.sessionId);
-    people.set(row.userId, person);
-  }
-  const summaries = [...people.entries()].map(([userId, person]) => {
-    const missed = person.expected
-      .filter((id) => !person.attended.includes(id))
-      .sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
-      .map((id) => names.get(id) ?? t("manageAgenda.aSession"));
-    return {
-      userId,
-      name: person.name,
-      expected: person.expected.length,
-      attendedExpected: person.expected.length - missed.length,
-      extra: person.attended.filter((id) => !person.expected.includes(id)).length,
-      missed,
-    };
-  });
-  const list = summaries
-    .filter((person) => !missingOnly || person.missed.length > 0)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  return (
-    <Screen.Section
-      id="attendance"
-      title={t("manageAgenda.attendance")}
-      description={t("manageAgenda.attendanceIntro")}
-      actions={
-        <Button
-          size="sm"
-          variant="outline"
-          nativeButton={false}
-          render={<a href={exportHref(event.slug, "attendance")} download />}
-        >
-          <IconDownload />
-          {t("manageTeams.export")}
-        </Button>
-      }
-    >
-      <ul className="flex flex-col divide-y divide-border border-y border-border text-sm">
-        {sessions.map(({ slot, session }) => {
-          const here = rows.filter((row) => row.sessionId === session.id && row.attendedAt).length;
-          const expected = rows.filter(
-            (row) => row.sessionId === session.id && row.expected,
-          ).length;
-          return (
-            <li key={session.id} className="flex flex-wrap items-center gap-3 px-2 py-2.5">
-              <span className="w-32 text-muted-fg tabular-nums">
-                {formatTimeRange(session.startsAt ?? slot.startsAt, session.endsAt ?? slot.endsAt, {
-                  timeZone: event.timezone,
-                })}
-              </span>
-              <span className="flex-1 font-medium">{session.name}</span>
-              <span className="text-muted-fg">
-                {expected > 0
-                  ? t("session.here", { here, total: expected })
-                  : t("manageAgenda.hereOnly", { here })}
-              </span>
-              {session.canTakeAttendance && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  nativeButton={false}
-                  render={
-                    <Link
-                      to="/events/$slug/agenda/$sessionId/attendance"
-                      params={{ slug: event.slug, sessionId: session.id }}
-                    />
-                  }
-                >
-                  {t("agenda.takeAttendance")}
-                </Button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-
-      <Field orientation="horizontal" className="justify-between">
-        <FieldLabel htmlFor="missing-only">{t("manageAgenda.missedOnly")}</FieldLabel>
-        <Switch id="missing-only" checked={missingOnly} onCheckedChange={setMissingOnly} />
-      </Field>
-      {list.length === 0 ? (
-        <p className="text-sm text-muted-fg">
-          {missingOnly ? t("manageAgenda.nobodyMissed") : t("netSection.noParticipants")}
-        </p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-border border-y border-border text-sm">
-          {list.map((person) => (
-            <li
-              key={person.userId}
-              className="flex flex-col gap-0.5 px-2 py-2.5 sm:flex-row sm:gap-3"
-            >
-              <span className="font-medium sm:w-48">{person.name}</span>
-              <span className="text-muted-fg">
-                {person.expected > 0
-                  ? t("manageAgenda.expectedOf", {
-                      done: person.attendedExpected,
-                      total: person.expected,
-                    })
-                  : t("manageAgenda.nothingRequired")}
-                {person.extra > 0 && `, ${t("manageAgenda.plusOthers", { count: person.extra })}`}
-                {person.missed.length > 0 &&
-                  ` · ${t("manageAgenda.missed", { list: person.missed.join(", ") })}`}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
     </Screen.Section>
   );
 }

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   IconAlertTriangle,
   IconCalendarEvent,
+  IconCalendarTime,
   IconCategory,
   IconCertificate,
   IconClipboardList,
@@ -110,6 +111,26 @@ function RouteComponent() {
           label: t("eventTab.agenda"),
           icon: IconCalendarEvent,
           to: `${base}/agenda`,
+          sub: [
+            {
+              key: "agenda-types",
+              label: t("manageAgenda.types"),
+              icon: IconTags,
+              to: `${base}/agenda-types`,
+            },
+            {
+              key: "agenda-windows",
+              label: t("manageAgenda.windows"),
+              icon: IconCalendarTime,
+              to: `${base}/agenda-windows`,
+            },
+            {
+              key: "agenda-attendance",
+              label: t("manageAgenda.attendance"),
+              icon: IconUserCheck,
+              to: `${base}/agenda-attendance`,
+            },
+          ],
         },
         {
           key: "security",

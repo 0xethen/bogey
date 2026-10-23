@@ -110,6 +110,9 @@ import { Route as AuthedEventsSlugJudgingIndexRouteImport } from './routes/_auth
 import { Route as AuthedEventsSlugJudgingSubmissionIdRouteImport } from './routes/_authed/events/$slug/judging/$submissionId'
 import { Route as AuthedEventsSlugManageIndexRouteImport } from './routes/_authed/events/$slug/manage/index'
 import { Route as AuthedEventsSlugManageAgendaRouteImport } from './routes/_authed/events/$slug/manage/agenda'
+import { Route as AuthedEventsSlugManageAgendaAttendanceRouteImport } from './routes/_authed/events/$slug/manage/agenda-attendance'
+import { Route as AuthedEventsSlugManageAgendaTypesRouteImport } from './routes/_authed/events/$slug/manage/agenda-types'
+import { Route as AuthedEventsSlugManageAgendaWindowsRouteImport } from './routes/_authed/events/$slug/manage/agenda-windows'
 import { Route as AuthedEventsSlugManageAnnouncementsRouteImport } from './routes/_authed/events/$slug/manage/announcements'
 import { Route as AuthedEventsSlugManageAuditRouteImport } from './routes/_authed/events/$slug/manage/audit'
 import { Route as AuthedEventsSlugManageCertificatesRouteImport } from './routes/_authed/events/$slug/manage/certificates'
@@ -694,6 +697,24 @@ const AuthedEventsSlugManageAgendaRoute =
     path: '/agenda',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
+const AuthedEventsSlugManageAgendaAttendanceRoute =
+  AuthedEventsSlugManageAgendaAttendanceRouteImport.update({
+    id: '/agenda-attendance',
+    path: '/agenda-attendance',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageAgendaTypesRoute =
+  AuthedEventsSlugManageAgendaTypesRouteImport.update({
+    id: '/agenda-types',
+    path: '/agenda-types',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageAgendaWindowsRoute =
+  AuthedEventsSlugManageAgendaWindowsRouteImport.update({
+    id: '/agenda-windows',
+    path: '/agenda-windows',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
 const AuthedEventsSlugManageAnnouncementsRoute =
   AuthedEventsSlugManageAnnouncementsRouteImport.update({
     id: '/announcements',
@@ -1060,6 +1081,9 @@ export interface FileRoutesByFullPath {
   '/events/$slug/checkin/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
+  '/events/$slug/manage/agenda-attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  '/events/$slug/manage/agenda-types': typeof AuthedEventsSlugManageAgendaTypesRoute
+  '/events/$slug/manage/agenda-windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
@@ -1193,6 +1217,9 @@ export interface FileRoutesByTo {
   '/events/$slug/checkin/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
+  '/events/$slug/manage/agenda-attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  '/events/$slug/manage/agenda-types': typeof AuthedEventsSlugManageAgendaTypesRoute
+  '/events/$slug/manage/agenda-windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
@@ -1343,6 +1370,9 @@ export interface FileRoutesById {
   '/_authed/events/$slug/checkin_/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
   '/_authed/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/_authed/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
+  '/_authed/events/$slug/manage/agenda-attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  '/_authed/events/$slug/manage/agenda-types': typeof AuthedEventsSlugManageAgendaTypesRoute
+  '/_authed/events/$slug/manage/agenda-windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/_authed/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/_authed/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
   '/_authed/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
@@ -1492,6 +1522,9 @@ export interface FileRouteTypes {
     | '/events/$slug/checkin/kiosk'
     | '/events/$slug/judging/$submissionId'
     | '/events/$slug/manage/agenda'
+    | '/events/$slug/manage/agenda-attendance'
+    | '/events/$slug/manage/agenda-types'
+    | '/events/$slug/manage/agenda-windows'
     | '/events/$slug/manage/announcements'
     | '/events/$slug/manage/audit'
     | '/events/$slug/manage/certificates'
@@ -1625,6 +1658,9 @@ export interface FileRouteTypes {
     | '/events/$slug/checkin/kiosk'
     | '/events/$slug/judging/$submissionId'
     | '/events/$slug/manage/agenda'
+    | '/events/$slug/manage/agenda-attendance'
+    | '/events/$slug/manage/agenda-types'
+    | '/events/$slug/manage/agenda-windows'
     | '/events/$slug/manage/announcements'
     | '/events/$slug/manage/audit'
     | '/events/$slug/manage/certificates'
@@ -1774,6 +1810,9 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/checkin_/kiosk'
     | '/_authed/events/$slug/judging/$submissionId'
     | '/_authed/events/$slug/manage/agenda'
+    | '/_authed/events/$slug/manage/agenda-attendance'
+    | '/_authed/events/$slug/manage/agenda-types'
+    | '/_authed/events/$slug/manage/agenda-windows'
     | '/_authed/events/$slug/manage/announcements'
     | '/_authed/events/$slug/manage/audit'
     | '/_authed/events/$slug/manage/certificates'
@@ -2569,6 +2608,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManageAgendaRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
+    '/_authed/events/$slug/manage/agenda-attendance': {
+      id: '/_authed/events/$slug/manage/agenda-attendance'
+      path: '/agenda-attendance'
+      fullPath: '/events/$slug/manage/agenda-attendance'
+      preLoaderRoute: typeof AuthedEventsSlugManageAgendaAttendanceRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/agenda-types': {
+      id: '/_authed/events/$slug/manage/agenda-types'
+      path: '/agenda-types'
+      fullPath: '/events/$slug/manage/agenda-types'
+      preLoaderRoute: typeof AuthedEventsSlugManageAgendaTypesRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/agenda-windows': {
+      id: '/_authed/events/$slug/manage/agenda-windows'
+      path: '/agenda-windows'
+      fullPath: '/events/$slug/manage/agenda-windows'
+      preLoaderRoute: typeof AuthedEventsSlugManageAgendaWindowsRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
     '/_authed/events/$slug/manage/announcements': {
       id: '/_authed/events/$slug/manage/announcements'
       path: '/announcements'
@@ -3044,6 +3104,9 @@ const AuthedEventsSlugJudgingRouteRouteWithChildren =
 
 interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageAgendaRoute: typeof AuthedEventsSlugManageAgendaRoute
+  AuthedEventsSlugManageAgendaAttendanceRoute: typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  AuthedEventsSlugManageAgendaTypesRoute: typeof AuthedEventsSlugManageAgendaTypesRoute
+  AuthedEventsSlugManageAgendaWindowsRoute: typeof AuthedEventsSlugManageAgendaWindowsRoute
   AuthedEventsSlugManageAnnouncementsRoute: typeof AuthedEventsSlugManageAnnouncementsRoute
   AuthedEventsSlugManageAuditRoute: typeof AuthedEventsSlugManageAuditRoute
   AuthedEventsSlugManageCertificatesRoute: typeof AuthedEventsSlugManageCertificatesRoute
@@ -3078,6 +3141,12 @@ interface AuthedEventsSlugManageRouteRouteChildren {
 const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRouteChildren =
   {
     AuthedEventsSlugManageAgendaRoute: AuthedEventsSlugManageAgendaRoute,
+    AuthedEventsSlugManageAgendaAttendanceRoute:
+      AuthedEventsSlugManageAgendaAttendanceRoute,
+    AuthedEventsSlugManageAgendaTypesRoute:
+      AuthedEventsSlugManageAgendaTypesRoute,
+    AuthedEventsSlugManageAgendaWindowsRoute:
+      AuthedEventsSlugManageAgendaWindowsRoute,
     AuthedEventsSlugManageAnnouncementsRoute:
       AuthedEventsSlugManageAnnouncementsRoute,
     AuthedEventsSlugManageAuditRoute: AuthedEventsSlugManageAuditRoute,

@@ -40,6 +40,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - "Message a team..." picks the team from a searchable combobox instead of a plain dropdown.
 - Manage uses the full width of the screen at every size. Short settings and fields (switches, selects, numbers, slugs, dates) put the label on the left and the control on the right on wide screens, and stack on narrow ones; long text, Markdown and multi-input rows stay stacked. The audit pages (event and organization) fit their page's width.
 - Pages that are only a list now show a proper empty state with an icon and a short explanation when there is nothing yet: Prizes, Certificates, your plugin preferences in Account, Plugins for an organization and an event, and Deletion requests and Plugins in the admin area.
+- Manage → Agenda is split into pages like Submissions: **Agenda** (the sessions), **Session types**, **Windows** (windows, reminders and what participants see) and **Attendance**. They are in the Agenda tab's menu, and old links to the sections (`#windows`, `#session-types`, `#attendance`, `#reminders`) land on the right page. Jumping to a section no longer washes the whole section in the primary color.
 
 **Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions` and `20261022130000_access_default`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only.
 
