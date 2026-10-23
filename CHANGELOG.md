@@ -32,8 +32,6 @@ advisory (see docs/contributing.md#security-releases). -->
 - Divisions belong to teams: a team's division is its members' division, and people without a team keep their own. Manage → Teams is now a table (search, sort, filter by division, pages) with a **Division** column per team, and checking teams offers **Set division...** for all of them. On Manage → People, changing the division of someone who shares a team (or several picked people) asks whether to move their whole team or only them.
 - **Match teams...** on Manage → Teams opens in a dialog.
 - Copying an event keeps which divisions each submission form is for.
-
-**Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions`, `20261022130000_access_default` and `20261023090000_team_divisions`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only. Each team takes its members' most common division and its members follow it; teams whose members disagreed are listed as notices while migrating.
 - Judging a project is a two-panel page: the project on the left (team, division, table or demo slot, round, submitted time, links, and every form the team submitted, each collapsible) and scoring on the right, with a handle to resize them. Scores save as you go; "Save and mark done" (Mod+Enter) opens the next unfinished project, the arrows (or J and K) step through your queue, and a bar shows your progress.
 - When a judge finishes their queue, Judging shows what's next: flagged projects to discuss if they're part of deliberation, and other projects to browse if organizers allow it with the new "Judges can browse other projects" setting (Manage → Judging, off by default). Judges with assignments no longer see "Everything else" unless it's on.
 - Messages: each message's actions (Copy text, Forward to announcements, Delete announcement) sit under one "..." menu that shows on hover, on keyboard focus and always on touch screens. Deleting an announcement still asks you to confirm.
@@ -46,7 +44,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - Countdowns roll: the event home's countdown block and the presentation timers slide each digit to its new value (still when the device asks for reduced motion).
 - Side panels (drawers) have a separated header, a scrolling middle and a footer for their buttons.
 
-**Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions`, `20261022130000_access_default` and `20261023110000_presentations`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only.
+**Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions`, `20261022130000_access_default`, `20261023090000_team_divisions` and `20261023110000_presentations`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only. Each team takes its members' most common division and its members follow it; teams whose members disagreed are listed as notices while migrating.
 
 ## 2.3.0 (2026-10-22)
 
