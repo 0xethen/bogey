@@ -11,10 +11,10 @@ import { Button } from "@bogey/ui/components/button";
 import { FieldGroup } from "@bogey/ui/components/field";
 import { Screen } from "@bogey/ui/components/screen";
 import {
+  FieldCombobox,
   errorVisibility,
   remoteCheck,
   rewardEarlyPunishLate,
-  FieldSelect,
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { timezoneOptions } from "#/lib/timezone.ts";
@@ -229,7 +229,7 @@ function RouteComponent() {
               {(field) => (
                 <field.Field>
                   <field.Label />
-                  <FieldSelect field={field} options={timezoneOptions()} />
+                  <FieldCombobox field={field} options={timezoneOptions()} />
                   <field.Description />
                   <field.Error />
                 </field.Field>

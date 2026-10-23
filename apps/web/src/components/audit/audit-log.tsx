@@ -96,14 +96,12 @@ export function AuditLog({
         {!eventId && (
           <Field>
             <FieldLabel htmlFor="audit-event">{t("webhooks.event")}</FieldLabel>
-            <OptSelect
+            <SearchSelect
               id="audit-event"
-              value={filter.event ?? ""}
-              options={[
-                { value: "", label: t("audit.allEvents") },
-                ...(events.data ?? []).map((event) => ({ value: event.id, label: event.name })),
-              ]}
-              onChange={(event) => set({ event: event || undefined })}
+              value={filter.event}
+              placeholder={t("audit.allEvents")}
+              options={(events.data ?? []).map((event) => ({ value: event.id, label: event.name }))}
+              onValueChange={(event) => set({ event })}
             />
           </Field>
         )}

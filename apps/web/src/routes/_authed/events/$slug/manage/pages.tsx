@@ -23,7 +23,7 @@ import { EditableList, EditableListItem } from "@bogey/ui/components/editable-li
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
 import { Input } from "@bogey/ui/components/input";
-import { NativeSelect, NativeSelectOption } from "@bogey/ui/components/native-select";
+import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Panel } from "@bogey/ui/components/panel";
 import { Screen } from "@bogey/ui/components/screen";
 import { Switch } from "@bogey/ui/components/switch";
@@ -218,21 +218,19 @@ function Tabs() {
             {tab.key !== PINNED_TAB && (
               <Field>
                 <FieldLabel htmlFor={`tab-${tab.key}-window`}>{t("manageTabs.window")}</FieldLabel>
-                <NativeSelect
+                <OptSelect
                   id={`tab-${tab.key}-window`}
                   className="w-full"
                   value={tab.window ?? ""}
-                  onChange={(changed) =>
-                    change(tab.key, { window: changed.target.value || undefined })
-                  }
-                >
-                  <NativeSelectOption value="">{t("manageTabs.always")}</NativeSelectOption>
-                  {windowKeys(windows, tab.window).map((key) => (
-                    <NativeSelectOption key={key} value={key}>
-                      {t("manageTabs.whileOpen", { window: windowLabel({ key }, t) })}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
+                  options={[
+                    { value: "", label: t("manageTabs.always") },
+                    ...windowKeys(windows, tab.window).map((key) => ({
+                      value: key,
+                      label: t("manageTabs.whileOpen", { window: windowLabel({ key }, t) }),
+                    })),
+                  ]}
+                  onChange={(window) => change(tab.key, { window: window || undefined })}
+                />
                 <FieldDescription>
                   <WindowHelp slug={event.slug} />
                 </FieldDescription>

@@ -36,8 +36,8 @@ import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { FileDrop } from "@bogey/ui/components/file-drop";
 import { Input } from "@bogey/ui/components/input";
 import { Label } from "@bogey/ui/components/label";
-import { NativeSelect, NativeSelectOption } from "@bogey/ui/components/native-select";
 import { NumberInput } from "@bogey/ui/components/number-field";
+import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Panel } from "@bogey/ui/components/panel";
 import { Stage, type StageItem, type StageRect } from "@bogey/ui/components/stage";
 import { Switch } from "@bogey/ui/components/switch";
@@ -298,25 +298,27 @@ export function CertificateEditor({
           <Label className="sr-only" htmlFor={`${folder}-orientation`}>
             {t("manageCerts.orientation")}
           </Label>
-          <NativeSelect
+          <OptSelect
             id={`${folder}-orientation`}
             size="sm"
             value={draft.orientation}
-            onChange={(event) => {
-              const to = event.target.value === "portrait" ? "portrait" : "landscape";
+            options={[
+              {
+                value: "landscape",
+                label: t("manageCerts.landscape", { width: "297 mm", height: "210 mm" }),
+              },
+              {
+                value: "portrait",
+                label: t("manageCerts.portrait", { width: "210 mm", height: "297 mm" }),
+              },
+            ]}
+            onChange={(to) =>
               setDraft((current) => ({
                 orientation: to,
                 layout: turnCertificatePage(current.layout, current.orientation, to),
-              }));
-            }}
-          >
-            <NativeSelectOption value="landscape">
-              {t("manageCerts.landscape", { width: "297 mm", height: "210 mm" })}
-            </NativeSelectOption>
-            <NativeSelectOption value="portrait">
-              {t("manageCerts.portrait", { width: "210 mm", height: "297 mm" })}
-            </NativeSelectOption>
-          </NativeSelect>
+              }))
+            }
+          />
         </ToolbarGroup>
         <input
           ref={picker}
@@ -633,16 +635,15 @@ function LayerInspector({
             />
           </Row>
           <Row label={t("certDesign.fit")} htmlFor={`${id}-fit`}>
-            <NativeSelect
+            <OptSelect
               id={`${id}-fit`}
               value={layer.fit}
-              onChange={(event) =>
-                onChange({ fit: event.target.value === "cover" ? "cover" : "contain" })
-              }
-            >
-              <NativeSelectOption value="contain">{t("certDesign.fitContain")}</NativeSelectOption>
-              <NativeSelectOption value="cover">{t("certDesign.fitCover")}</NativeSelectOption>
-            </NativeSelect>
+              options={[
+                { value: "contain", label: t("certDesign.fitContain") },
+                { value: "cover", label: t("certDesign.fitCover") },
+              ]}
+              onChange={(fit) => onChange({ fit })}
+            />
           </Row>
         </div>
       )}
@@ -720,15 +721,16 @@ function TextFields({
           />
         </Row>
         <Row label={t("certDesign.font")} htmlFor={`${id}-font`}>
-          <NativeSelect
+          <OptSelect<CertificateFont>
             id={`${id}-font`}
             value={layer.font}
-            onChange={(event) => onChange({ font: event.target.value as CertificateFont })}
-          >
-            <NativeSelectOption value="sans">{t("certDesign.fontSans")}</NativeSelectOption>
-            <NativeSelectOption value="serif">{t("certDesign.fontSerif")}</NativeSelectOption>
-            <NativeSelectOption value="mono">{t("certDesign.fontMono")}</NativeSelectOption>
-          </NativeSelect>
+            options={[
+              { value: "sans", label: t("certDesign.fontSans") },
+              { value: "serif", label: t("certDesign.fontSerif") },
+              { value: "mono", label: t("certDesign.fontMono") },
+            ]}
+            onChange={(font) => onChange({ font })}
+          />
         </Row>
         <Row label={t("certDesign.color")} htmlFor={`${id}-color`}>
           <Input

@@ -11,6 +11,7 @@ import { localizationQueryOptions, setLanguageFn } from "#/lib/i18n.ts";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
 import { OptSelect } from "@bogey/ui/components/opt-select";
+import { SearchSelect } from "@bogey/ui/components/search-select";
 import { Screen } from "@bogey/ui/components/screen";
 import { Switch } from "@bogey/ui/components/switch";
 import { detectedTimezone, timezoneOptions } from "#/lib/timezone.ts";
@@ -163,11 +164,11 @@ function RouteComponent() {
         <LanguageField />
         <Field id="prefs.timezone" className="jump-target">
           <FieldLabel htmlFor="timezone">{t("prefs.timezone")}</FieldLabel>
-          <OptSelect
+          <SearchSelect
             id="timezone"
             value={zone}
             options={timezoneOptions(detected)}
-            onChange={setZone}
+            onValueChange={(next) => next && setZone(next)}
           />
           <FieldDescription>{t("prefs.timezoneHelp")}</FieldDescription>
         </Field>

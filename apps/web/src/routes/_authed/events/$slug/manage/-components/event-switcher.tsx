@@ -23,7 +23,7 @@ function Mark({ name }: { name: string }) {
   return (
     <span
       aria-hidden
-      className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg"
+      className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border bg-muted font-heading text-sm font-semibold text-fg"
     >
       {name.trim().charAt(0).toUpperCase() || "?"}
     </span>

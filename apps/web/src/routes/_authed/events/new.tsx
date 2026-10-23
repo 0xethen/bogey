@@ -27,11 +27,11 @@ import { Screen } from "@bogey/ui/components/screen";
 import { Stepper } from "#/components/event/submission/stepper.tsx";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
 import {
+  FieldCombobox,
   appFormOptions,
   errorVisibility,
   remoteCheck,
   rewardEarlyPunishLate,
-  FieldSelect,
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { detectedTimezone, timezoneOptions } from "#/lib/timezone.ts";
@@ -482,7 +482,7 @@ function RouteComponent() {
                   {(field) => (
                     <field.Field>
                       <field.Label />
-                      <FieldSelect field={field} options={timezoneOptions()} />
+                      <FieldCombobox field={field} options={timezoneOptions()} />
                       <field.Description />
                       <field.Error />
                     </field.Field>
