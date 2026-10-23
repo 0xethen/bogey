@@ -39,6 +39,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - Messages: each message's actions (Copy text, Forward to announcements, Delete announcement) sit under one "..." menu that shows on hover, on keyboard focus and always on touch screens. Deleting an announcement still asks you to confirm.
 - "Message a team..." picks the team from a searchable combobox instead of a plain dropdown.
 - Manage uses the full width of the screen at every size. Short settings and fields (switches, selects, numbers, slugs, dates) put the label on the left and the control on the right on wide screens, and stack on narrow ones; long text, Markdown and multi-input rows stay stacked. The audit pages (event and organization) fit their page's width.
+- Pages that are only a list now show a proper empty state with an icon and a short explanation when there is nothing yet: Prizes, Certificates, your plugin preferences in Account, Plugins for an organization and an event, and Deletion requests and Plugins in the admin area.
 
 **Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions` and `20261022130000_access_default`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only.
 

@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { IconTrophy } from "@tabler/icons-react";
 import { eventPrizesQueryOptions } from "@bogey/db/queries/prizes";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@bogey/ui/components/empty";
 import { Screen } from "@bogey/ui/components/screen";
 import { PrizeCard, usePrizeImage } from "#/components/event/judging/prize-card.tsx";
 import { msg, useT } from "#/lib/translate.tsx";
@@ -23,7 +31,15 @@ function RouteComponent() {
       width="narrow"
     >
       {prizes.length === 0 ? (
-        <p className="text-sm text-muted-fg">{t("prizes.none")}</p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconTrophy />
+            </EmptyMedia>
+            <EmptyTitle>{t("prizes.noneTitle")}</EmptyTitle>
+            <EmptyDescription>{t("prizes.none")}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ul className="flex flex-col gap-8">
           {prizes.map((prize) => (

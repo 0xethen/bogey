@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { IconPuzzle } from "@tabler/icons-react";
 import { z } from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { requestFailure } from "@bogey/db/errors";
@@ -12,6 +13,13 @@ import {
   type PluginStatus,
 } from "@bogey/plugins";
 import { pluginUpdatesQueryOptions } from "@bogey/plugins/update-check";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@bogey/ui/components/empty";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
@@ -76,21 +84,30 @@ function RouteComponent() {
         title={t("adminExt.checkFailed")}
       />
       {plugins.length === 0 ? (
-        <p className="text-sm text-muted-fg">
-          {t("adminExt.none")}{" "}
-          <code>
-            vpr bogey plugins add github:&lt;owner&gt;/&lt;repo&gt;/&lt;plugin&gt;@&lt;version&gt;
-          </code>
-          {t("adminExt.noneOr")} <code>vpr bogey plugins new &lt;key&gt;</code>.{" "}
-          <a
-            href="https://github.com/0xethen/bogey/wiki/plugins"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="link"
-          >
-            {t("adminExt.noneLink")}
-          </a>
-        </p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconPuzzle />
+            </EmptyMedia>
+            <EmptyTitle>{t("adminExt.noneTitle")}</EmptyTitle>
+            <EmptyDescription>
+              {t("adminExt.none")}{" "}
+              <code>
+                vpr bogey plugins add
+                github:&lt;owner&gt;/&lt;repo&gt;/&lt;plugin&gt;@&lt;version&gt;
+              </code>
+              {t("adminExt.noneOr")} <code>vpr bogey plugins new &lt;key&gt;</code>.{" "}
+              <a
+                href="https://github.com/0xethen/bogey/wiki/plugins"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="link"
+              >
+                {t("adminExt.noneLink")}
+              </a>
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <DisclosureList>
           {plugins.map(({ manifest, status, detail }) => {

@@ -528,6 +528,7 @@ export const en = {
   "calendar.offButton": "Turn off...",
   "calendar.make": "Make my calendar address",
 
+  "plugins.noneTitle": "No plugin preferences",
   "plugins.none": "No plugin keeps preferences of its own.",
 
   "security.linked": "Linked sign-ins",
@@ -821,6 +822,7 @@ export const en = {
   "certificates.get": "Get my certificate",
   "certificates.intro":
     "Certificates for {event}. Each has a code anyone can use to check it's real.",
+  "certificates.noneTitle": "Nothing to claim yet",
   "certificates.none":
     "There's nothing for you to claim yet. Certificates appear once the organizers turn them on and, for awards, once results are published.",
   "certKind.participation": "Participation",
@@ -829,6 +831,7 @@ export const en = {
   "certKind.volunteer": "Volunteer",
   "prizes.title": "Prizes",
   "prizes.intro": "What teams can win at {event}. Teams choose theirs on their submission.",
+  "prizes.noneTitle": "No prizes yet",
   "prizes.none": "No prizes have been announced yet.",
 
   "common.continue": "Continue",
@@ -1696,6 +1699,7 @@ export const en = {
     "Extend Bogey's functionality with plugins (packages/plugins/installed, and bundled for the ones that ship with Bogey). This instance supports Bogey Plugin API {api}. Installing, updating, or removing one needs a rebuild and redeploy. Disabling one (plugins.disabled in bogey.config.ts) only needs a restart. Orgs choose which to offer their events.",
   "adminExt.check": "Check for updates",
   "adminExt.checkFailed": "Couldn't check for updates",
+  "adminExt.noneTitle": "No plugins installed",
   "adminExt.none": "None installed. Add one with",
   "adminExt.noneOr": ", or start one with",
   "adminExt.noneLink": "Learn more",
@@ -1709,6 +1713,7 @@ export const en = {
   "adminExt.limits": "Limits",
   "adminExt.limitsFailed": "Couldn't save the limits",
   "adminExt.limitsHelp": "Leave empty to remove a limit.",
+  "orgExt.noneTitle": "No plugins installed",
   "orgExt.none": "No plugins are installed. Whoever runs it adds them.",
   "orgExt.noneLink": "Learn more",
   "orgExt.offered": "Offered to events",
@@ -1990,6 +1995,7 @@ export const en = {
   "deletions.intro": "People who asked for their account to be deleted from Account settings.",
   "deletions.turnOff": "Turn requests off...",
   "deletions.failed": "Couldn't resolve the request",
+  "deletions.noneTitle": "No deletion requests",
   "deletions.none": "No one is waiting.",
   "deletions.asked": "asked",
   "deletions.memberOf": "Member of {orgs}.",
@@ -2373,6 +2379,7 @@ export const en = {
   "eventExt.removeTitle": "Remove {key} from this event?",
   "eventExt.removeBody":
     "Its data stays in the database; if you install it again, switch it back on here.",
+  "eventExt.noneTitle": "No plugins to turn on",
   "eventExt.none": "No plugins are installed, or your organization hasn't offered any yet.",
   "eventExt.on": "On",
   "eventExt.noDescription": "(no description)",

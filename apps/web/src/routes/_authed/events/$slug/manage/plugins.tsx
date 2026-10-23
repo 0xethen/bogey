@@ -13,6 +13,14 @@ import {
 } from "@bogey/plugins";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@bogey/ui/components/empty";
+import { IconPuzzle } from "@tabler/icons-react";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
@@ -110,7 +118,15 @@ function RouteComponent() {
         </Screen.Section>
       )}
       {offered.length === 0 ? (
-        <p className="text-sm text-muted-fg">{t("eventExt.none")}</p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconPuzzle />
+            </EmptyMedia>
+            <EmptyTitle>{t("eventExt.noneTitle")}</EmptyTitle>
+            <EmptyDescription>{t("eventExt.none")}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <DisclosureList>
           {offered.map((manifest) => {

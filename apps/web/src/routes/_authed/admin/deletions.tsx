@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { IconUserOff } from "@tabler/icons-react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { deletionRequestsQueryOptions, resolveDeletionRequestFn } from "@bogey/db/queries/instance";
 import { unwrap } from "@bogey/db/errors";
@@ -6,6 +7,13 @@ import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Button } from "@bogey/ui/components/button";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@bogey/ui/components/empty";
 import { Screen } from "@bogey/ui/components/screen";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { msg, useT } from "#/lib/translate.tsx";
@@ -41,7 +49,15 @@ function RouteComponent() {
     >
       <ErrorAlert error={resolve.error} title={t("deletions.failed")} />
       {requests.length === 0 ? (
-        <p className="text-sm text-muted-fg">{t("deletions.none")}</p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconUserOff />
+            </EmptyMedia>
+            <EmptyTitle>{t("deletions.noneTitle")}</EmptyTitle>
+            <EmptyDescription>{t("deletions.none")}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <DisclosureList>
           {requests.map((request) => (

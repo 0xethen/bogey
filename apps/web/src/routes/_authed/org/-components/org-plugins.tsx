@@ -6,6 +6,14 @@ import {
   settingsEditableAt,
   settingsLockedAbove,
 } from "@bogey/plugins";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@bogey/ui/components/empty";
+import { IconPuzzle } from "@tabler/icons-react";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
@@ -36,12 +44,20 @@ export function OrgPlugins({ orgId }: { orgId: string }) {
   );
   if (plugins.length === 0) {
     return (
-      <p className="text-sm text-muted-fg">
-        {t("orgExt.none")}{" "}
-        <a href="docs/plugins.md" className="text-primary hover:underline">
-          {t("orgExt.noneLink")}
-        </a>
-      </p>
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <IconPuzzle />
+          </EmptyMedia>
+          <EmptyTitle>{t("orgExt.noneTitle")}</EmptyTitle>
+          <EmptyDescription>
+            {t("orgExt.none")}{" "}
+            <a href="docs/plugins.md" className="link">
+              {t("orgExt.noneLink")}
+            </a>
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     );
   }
 

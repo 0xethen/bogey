@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { IconCertificate } from "@tabler/icons-react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   claimCertificateFn,
@@ -9,6 +10,13 @@ import { unwrap } from "@bogey/db/errors";
 import { CERTIFICATE_LABELS, verificationPath } from "@bogey/utils/certificate";
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@bogey/ui/components/empty";
 import { Screen } from "@bogey/ui/components/screen";
 import { msg, sayOr, useT } from "#/lib/translate.tsx";
 
@@ -68,7 +76,15 @@ function RouteComponent() {
       width="narrow"
     >
       {options.length === 0 ? (
-        <p className="text-sm text-muted-fg">{t("certificates.none")}</p>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconCertificate />
+            </EmptyMedia>
+            <EmptyTitle>{t("certificates.noneTitle")}</EmptyTitle>
+            <EmptyDescription>{t("certificates.none")}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ul className="divide-y divide-border">
           {options.map((option) => (
