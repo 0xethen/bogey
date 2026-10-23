@@ -1561,6 +1561,10 @@ export const settingsRegistry = {
         .boolean()
         .optional()
         .describe("Show teams which judges sit on the panel they present their demo to"),
+      browseProjects: z
+        .boolean()
+        .optional()
+        .describe("Judges with assignments can also open and score projects outside them"),
       assignment: judgingAssignmentSchema
         .optional()
         .describe(
@@ -1654,6 +1658,10 @@ export const settingsRegistry = {
       demoJudges: {
         label: say("setting.judging.demoJudges"),
         description: say("setting.judging.demoJudges.help"),
+      },
+      browseProjects: {
+        label: say("setting.judging.browseProjects"),
+        description: say("setting.judging.browseProjects.help"),
       },
       judgeExport: {
         label: say("setting.judging.judgeExport"),

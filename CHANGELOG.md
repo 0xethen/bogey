@@ -34,6 +34,10 @@ advisory (see docs/contributing.md#security-releases). -->
 - Copying an event keeps which divisions each submission form is for.
 
 **Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions`, `20261022130000_access_default` and `20261023090000_team_divisions`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only. Each team takes its members' most common division and its members follow it; teams whose members disagreed are listed as notices while migrating.
+- Judging a project is a two-panel page: the project on the left (team, division, table or demo slot, round, submitted time, links, and every form the team submitted, each collapsible) and scoring on the right, with a handle to resize them. Scores save as you go; "Save and mark done" (Mod+Enter) opens the next unfinished project, the arrows (or J and K) step through your queue, and a bar shows your progress.
+- When a judge finishes their queue, Judging shows what's next: flagged projects to discuss if they're part of deliberation, and other projects to browse if organizers allow it with the new "Judges can browse other projects" setting (Manage → Judging, off by default). Judges with assignments no longer see "Everything else" unless it's on.
+
+**Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions` and `20261022130000_access_default`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only.
 
 ## 2.3.0 (2026-10-22)
 

@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/")({
     title: msg("judging.title"),
     settings: (t) => [
       searchSection(t("manageJudging.see"), { id: "what-judges-see" }),
-      ...searchSettings("judging", ["blind", "judgeExport"], t),
+      ...searchSettings("judging", ["blind", "browseProjects", "judgeExport"], t),
       searchSection(t("manageJudging.rounds"), {
         keywords: ["live demos", "presentations", "offline", "in person"],
         id: "rounds",
@@ -97,7 +97,7 @@ function RouteComponent() {
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}
           namespace="judging"
-          keys={["blind", "judgeExport"]}
+          keys={["blind", "browseProjects", "judgeExport"]}
         />
       </Screen.Section>
       <Rounds eventId={event.id} slug={event.slug} plugins={plugins} />

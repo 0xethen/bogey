@@ -14,6 +14,7 @@ import {
 import { parseAwards, type Award } from "./awards.ts";
 import { profileNames } from "./profile-names.ts";
 import { slotStart } from "./demos.ts";
+import type { TeamSubmission } from "./submissions.ts";
 
 export type Criterion = Tables<"criteria">;
 export type Rubric = Tables<"rubrics">;
@@ -515,6 +516,52 @@ export const judgeQueueQueryOptions = (eventId: string) =>
   queryOptions({
     queryKey: ["judge-queue", eventId] as const,
     queryFn: async () => unwrap(await judgeQueueFn({ data: eventId })),
+    retry: retryPolicy,
+  });
+
+export interface JudgeProject {
+  teamName: string;
+  divisionName: string | null;
+  /** Every submitted entry of the project's team, the judged one first. */
+  submissions: TeamSubmission[];
+}
+
+export const judgeProjectFn = createServerFn({ method: "GET" })
+  .validator((submissionId: unknown) => requireId(submissionId, "submissionId"))
+  .handler(async ({ data: submissionId }): Promise<DbResult<JudgeProject | null>> => {
+    const supabase = createServerClient();
+    const { data: judged, error } = await supabase
+      .from("submissions")
+      .select("team_id, teams(name, division_id)")
+      .eq("id", submissionId)
+      .maybeSingle();
+    if (error) return toFailure(error, "loading the project");
+    if (!judged) return ok(null);
+    const divisionId = judged.teams?.division_id ?? null;
+    const [entries, division] = await Promise.all([
+      supabase
+        .from("submissions")
+        .select("*, submission_files(*)")
+        .eq("team_id", judged.team_id)
+        .eq("status", "submitted")
+        .order("submitted_at", { ascending: true }),
+      divisionId
+        ? supabase.from("divisions").select("name").eq("id", divisionId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+    const failure = entries.error ?? division.error;
+    if (failure) return toFailure(failure, "loading the project");
+    const teamName = judged.teams?.name ?? "A team";
+    const submissions = (entries.data ?? [])
+      .map(({ submission_files, ...row }) => ({ ...row, teamName, files: submission_files ?? [] }))
+      .sort((a, b) => Number(b.id === submissionId) - Number(a.id === submissionId));
+    return ok({ teamName, divisionName: division.data?.name ?? null, submissions });
+  });
+
+export const judgeProjectQueryOptions = (submissionId: string) =>
+  queryOptions({
+    queryKey: ["judge-project", submissionId] as const,
+    queryFn: async () => unwrap(await judgeProjectFn({ data: submissionId })),
     retry: retryPolicy,
   });
 

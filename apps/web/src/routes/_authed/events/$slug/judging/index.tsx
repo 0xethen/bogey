@@ -21,13 +21,22 @@ import { StatusDot } from "@bogey/ui/components/status-dot";
 import { Screen } from "@bogey/ui/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
-import { msg, useT } from "#/lib/translate.tsx";
+import { msg, useT, type T } from "#/lib/translate.tsx";
 import { setPanelNowFn } from "@bogey/db/queries/demos";
 import { useLiveInvalidate } from "@bogey/db/realtime";
 import { formatTime } from "@bogey/utils/time";
 import { Badge } from "@bogey/ui/components/badge";
 import { IconPlayerPlay } from "@tabler/icons-react";
 import { useViewerTimeFormat } from "#/lib/time.ts";
+import { settingsQueryOptions } from "@bogey/db/queries/settings";
+import {
+  afterSteps,
+  browsable,
+  judgingProgress,
+  judgingSteps,
+  type JudgingStep,
+} from "@bogey/db/queries/judging-flow";
+import { IconCircleCheck, IconMessages, IconLayoutGrid } from "@tabler/icons-react";
 
 const ALL = "all";
 
@@ -37,6 +46,9 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/")({
     Promise.all([
       context.query.ensureQueryData(judgeQueueQueryOptions(context.event.id)),
       context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
+      context.query.ensureQueryData(
+        settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
+      ),
     ]),
   component: RouteComponent,
 });
@@ -62,8 +74,23 @@ function RouteComponent() {
   const { data: exportAccess = "off" } = useQuery(projectExportAccessQueryOptions(event.id));
   const [track, setTrack] = useState(ALL);
   const visible = track === ALL ? queue : queue.filter((item) => item.trackIds.includes(track));
+  const { data: settings } = useSuspenseQuery(
+    settingsQueryOptions({ eventId: event.id }, ["judging"]),
+  );
+  const flow = {
+    queue,
+    deliberation: settings.judging.deliberation,
+    browseProjects: settings.judging.browseProjects,
+  };
+  const steps = judgingSteps(flow);
+  const progress = judgingProgress(steps);
+  const hasAssignments = queue.some((item) => item.assigned);
+  const browse = new Set(browsable(flow).map((item) => item.submissionId));
   const assigned = visible.filter((item) => item.assigned);
-  const others = visible.filter((item) => !item.assigned);
+  // judges with assignments see other projects only when organizers allow it
+  const others = visible.filter(
+    (item) => !item.assigned && (!hasAssignments || browse.has(item.submissionId)),
+  );
   const prizeNames = new Map(prizes.map((prize) => [prize.id, prize.name]));
   const done = assigned.filter((item) => item.status === "done").length;
 
@@ -186,7 +213,8 @@ function RouteComponent() {
           <AlertDescription>{t("judging.closedBody")}</AlertDescription>
         </Alert>
       )}
-      {next && (
+      {progress.finished && <Finished steps={steps} />}
+      {next && !progress.finished && (
         <div>
           <Button
             nativeButton={false}
@@ -267,5 +295,63 @@ function RouteComponent() {
         </Screen.Section>
       )}
     </Screen>
+  );
+}
+
+// how each step after the queue is offered
+const afterCopy = (t: T, step: JudgingStep) =>
+  step.kind === "deliberate"
+    ? {
+        icon: IconMessages,
+        title: t("judging.after.deliberate"),
+        help: t("judging.after.deliberateHelp", { count: step.count }),
+        hash: undefined,
+      }
+    : {
+        icon: IconLayoutGrid,
+        title: t("judging.after.browse"),
+        help: t("judging.after.browseHelp", { count: step.count }),
+        hash: "everything-else",
+      };
+
+/** Shown once a judge's queue is done: what they can do next. */
+function Finished({ steps }: { steps: readonly JudgingStep[] }) {
+  const t = useT();
+  const { event } = Route.useRouteContext();
+  const after = afterSteps(steps).map((step) => ({ step, ...afterCopy(t, step) }));
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-border p-5">
+      <div className="flex items-start gap-3">
+        <IconCircleCheck className="mt-0.5 size-5 shrink-0 text-success" />
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-lg font-semibold">{t("judging.finishedTitle")}</h2>
+          <p className="text-sm text-muted-fg">{t("judging.finishedBody")}</p>
+        </div>
+      </div>
+      {after.length ? (
+        <DisclosureList>
+          {after.map(({ step, icon: Icon, title, help, hash }) => (
+            <LinkRow
+              key={step.kind}
+              render={
+                hash ? (
+                  <Link to="/events/$slug/judging" params={{ slug: event.slug }} hash={hash} />
+                ) : (
+                  <Link
+                    to="/events/$slug/judging/$submissionId"
+                    params={{ slug: event.slug, submissionId: step.submissionId! }}
+                  />
+                )
+              }
+              leading={<Icon className="size-4 text-muted-fg" />}
+              title={title}
+              meta={help}
+            />
+          ))}
+        </DisclosureList>
+      ) : (
+        <p className="text-sm text-muted-fg">{t("judging.after.none")}</p>
+      )}
+    </div>
   );
 }

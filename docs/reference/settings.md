@@ -329,6 +329,7 @@ Set at: instance, org, event.
 | `holdFlagged` | on / off | `true` | Results can't be published while a project is flagged |
 | `judgeExport` | `off` · `projects` · `results` | `off` | What judges can download in the projects spreadsheet |
 | `demoJudges` | on / off | — | Show teams which judges sit on the panel they present their demo to |
+| `browseProjects` | on / off | — | Judges with assignments can also open and score projects outside them |
 | `assignment` | group | `{"perProject":1,"rules":[],"exclude":[]}` | How Assign judges picks: judges per project, rules asking for judges with a tag, and tags kept out |
 
 ## Tags (`tags`)
