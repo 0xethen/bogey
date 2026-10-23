@@ -6,7 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@bogey/ui/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./collapsible.tsx";
 
-// Rows in a divided list; see docs/contributing/ui-conventions.md#rows
+// rows in a divided list; see docs/architecture/ui-conventions.md#rows
 
 const rowListVariants = cva("flex flex-col divide-y divide-border", {
   variants: {

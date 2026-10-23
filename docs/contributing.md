@@ -118,7 +118,8 @@ are listed in its README.
 - **Comments are short and plain.** A few words saying what or why, like
   `// loops through KV`. Rationale that needs a paragraph goes in the docs.
 - **UI primitives live in `@bogey/ui`.** Apps compose them. Reuse a pattern
-  before inventing one.
+  before inventing one. [UI conventions](architecture/ui-conventions.md) says
+  which row, button variant, picker and color to use.
 - **Forms use the form kit** (`@bogey/ui/lib/form`): Zod schemas for what the
   browser can check, server results for the rest. Submit buttons are never
   disabled for field errors, only while pending. Required fields show `*`.

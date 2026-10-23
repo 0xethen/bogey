@@ -24,6 +24,12 @@ advisory (see docs/contributing.md#security-releases). -->
 - Fixed a hydration warning from plugin buttons in the menubar (event sounds' mute button).
 - Fixed a crash ("Cannot read properties of undefined (reading 'id')") when the server couldn't be reached while viewing an event: the page now shows Bogey's retryable error inside the app shell, and an unreachable suspension check no longer takes down the whole app.
 - The public gallery has a Grid / List toggle for viewers, remembered in their browser (or set with `?view=`). Grid uses CSS grid-lanes where the browser supports it and a normal grid elsewhere. Project cards end in a footer with votes, likes and comments, the same in both views. The gallery "Layout" and "Visitors can switch the layout" settings are gone; stored values are ignored.
+- Lists across the app share one row style: devices, passkeys, notification and shortcut settings, blocked people, hostnames, certificates, templates, the event schedule and the danger zone now look like the other lists instead of stacks of bordered cards.
+- The theme's accent is fainter, and the brand color is kept for main buttons and things that are on: page links, hovers, icon chips, drop targets and selected tiles no longer turn orange. The home page's Information list is a plain list of links.
+- Following a link to a setting or section (like `#sessions`) flashes it in the faint accent instead of the brand color.
+- Agenda time slots are separated by a rule instead of a box around each, so sessions are the only cards on the page.
+- Timezone pickers (preferences, new event, event details) and the audit log's event filter are searchable.
+- Button styles are consistent: one main button per group, outline for row and toolbar actions, and quiet red buttons for removing things.
 
 **Upgrade notes:** run `bogey db migrate` (migrations `20261024090000_certificate_designs` and `20261024110000_gallery_view_modes`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them. Manage links moved under their parent pages (for example `/manage/review` is now `/manage/people/review`); the old addresses redirect.
 

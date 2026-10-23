@@ -44,6 +44,7 @@
 - [Security model](../architecture/security-model.md)
 - [Plugin system](../architecture/plugin-system.md)
 - [Tables](../architecture/tables.md)
+- [UI conventions](../architecture/ui-conventions.md)
 - [How Bogey compares](../architecture/comparison.md)
 - [CLI plan](../architecture/cli.md)
 - [Decisions](../adr/README.md)

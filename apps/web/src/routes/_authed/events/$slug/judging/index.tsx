@@ -25,6 +25,7 @@ import { setPanelNowFn } from "@bogey/db/queries/demos";
 import { useLiveInvalidate } from "@bogey/db/realtime";
 import { formatTime } from "@bogey/utils/time";
 import { Badge } from "@bogey/ui/components/badge";
+import { Panel } from "@bogey/ui/components/panel";
 import { IconPlayerPlay, IconPresentation } from "@tabler/icons-react";
 import { useViewerTimeFormat } from "#/lib/time.ts";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
@@ -334,14 +335,11 @@ function Finished({ steps }: { steps: readonly JudgingStep[] }) {
   const { event } = Route.useRouteContext();
   const after = afterSteps(steps).map((step) => ({ step, ...afterCopy(t, step) }));
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-border p-5">
-      <div className="flex items-start gap-3">
-        <IconCircleCheck className="mt-0.5 size-5 shrink-0 text-success" />
-        <div className="flex flex-col gap-1">
-          <h2 className="font-heading text-lg font-semibold">{t("judging.finishedTitle")}</h2>
-          <p className="text-sm text-muted-fg">{t("judging.finishedBody")}</p>
-        </div>
-      </div>
+    <Panel
+      icon={<IconCircleCheck className="size-5 text-success" />}
+      title={t("judging.finishedTitle")}
+      description={t("judging.finishedBody")}
+    >
       {after.length ? (
         <RowList>
           {after.map(({ step, icon: Icon, title, help, hash }) => (
@@ -366,6 +364,6 @@ function Finished({ steps }: { steps: readonly JudgingStep[] }) {
       ) : (
         <p className="text-sm text-muted-fg">{t("judging.after.none")}</p>
       )}
-    </div>
+    </Panel>
   );
 }

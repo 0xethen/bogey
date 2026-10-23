@@ -17,6 +17,7 @@ import {
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { OptSelect } from "@bogey/ui/components/opt-select";
+import { Panel } from "@bogey/ui/components/panel";
 import { cn } from "@bogey/ui/lib/utils";
 import { useT, type PlainKey } from "#/lib/translate.tsx";
 
@@ -91,8 +92,7 @@ export function GalleryLook({
   const changed = banner !== saved || size !== cardSize(submission.card_size);
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-border p-4">
-      <h2 className="font-heading text-sm font-medium">{t("sub.galleryLook")}</h2>
+    <Panel size="sm" title={t("sub.galleryLook")}>
       {bannersOn && (
         <div className="flex flex-col gap-1.5">
           <span className="text-sm text-muted-fg">{t("sub.galleryBanner")}</span>
@@ -146,6 +146,6 @@ export function GalleryLook({
       >
         {t("sub.gallerySave")}
       </Button>
-    </section>
+    </Panel>
   );
 }
