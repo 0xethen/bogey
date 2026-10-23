@@ -46,7 +46,7 @@ function Tables() {
             nativeButton={false}
             render={
               <Link
-                to="/events/$slug/manage/demos"
+                to="/events/$slug/manage/judging/demos"
                 hash="expo-tables"
                 params={{ slug: event.slug }}
               />

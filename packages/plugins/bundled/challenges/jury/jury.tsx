@@ -196,7 +196,7 @@ export function JuryHome({
                         variant="ghost"
                         aria-label={`Edit ${problem.title}`}
                         title="Edit"
-                        render={<Link to="/problems" splat={problem.slug} />}
+                        render={<Link to="/jury" splat={problem.slug} />}
                         nativeButton={false}
                       >
                         <IconEdit />

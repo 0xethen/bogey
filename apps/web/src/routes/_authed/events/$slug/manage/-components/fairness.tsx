@@ -340,7 +340,7 @@ export function Calibration({ eventId }: { eventId: string }) {
           links={[
             <SettingLink
               key="normalize"
-              to={`/events/${slug}/manage/results`}
+              to={`/events/${slug}/manage/judging/results`}
               hash="judging.normalize"
             >
               {t("path.judgingNormalize")}

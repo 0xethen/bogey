@@ -595,7 +595,7 @@ export function HomeBlockView({
               links={[
                 <SettingLink
                   key="agenda"
-                  to={`/events/${event.slug}/manage/agenda-windows`}
+                  to={`/events/${event.slug}/manage/agenda/windows`}
                   hash="windows"
                 >
                   {t("path.manageAgenda")}

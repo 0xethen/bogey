@@ -36,7 +36,7 @@ import {
 import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/divisions")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/divisions/")({
   staticData: {
     title: msg("manageNav.divisions"),
     settings: (t) => [

@@ -145,7 +145,7 @@ function Attendance() {
   );
 }
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/agenda-attendance")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/agenda/attendance")({
   staticData: {
     title: msg("manageAgenda.attendance"),
     settings: (t) => [

@@ -16,7 +16,7 @@ import { searchSection, searchSettings } from "#/components/settings/layout/sear
 import { msg, useT } from "#/lib/translate.tsx";
 import { FormEditor } from "./-components/form-editor.tsx";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/forms/")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/forms/")({
   staticData: {
     title: msg("manageNav.forms"),
     settings: (t) => [
@@ -65,7 +65,9 @@ function RouteComponent() {
         <Button
           size="sm"
           variant="outline"
-          render={<Link to="/events/$slug/manage/forms/new" params={{ slug: event.slug }} />}
+          render={
+            <Link to="/events/$slug/manage/submissions/forms/new" params={{ slug: event.slug }} />
+          }
           nativeButton={false}
         >
           <IconPlus />

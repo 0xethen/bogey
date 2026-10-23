@@ -272,7 +272,7 @@ function RoundRow({
         {round.format === "demos" && (
           <p className="text-sm text-muted-fg">
             {t("rounds.demosNext")}{" "}
-            <Link to="/events/$slug/manage/demos" params={{ slug }}>
+            <Link to="/events/$slug/manage/judging/demos" params={{ slug }}>
               {t("rounds.openDemos")}
             </Link>
           </p>
@@ -280,7 +280,7 @@ function RoundRow({
         {round.format === "offline" && (
           <p className="text-sm text-muted-fg">
             {t("rounds.offlineNext")}{" "}
-            <Link to="/events/$slug/manage/results" hash="offline-scores" params={{ slug }}>
+            <Link to="/events/$slug/manage/judging/results" hash="offline-scores" params={{ slug }}>
               {t("rounds.openOffline")}
             </Link>
           </p>

@@ -5,7 +5,7 @@ import { Screen } from "@bogey/ui/components/screen";
 import { msg, useT } from "#/lib/translate.tsx";
 import { FormEditor } from "./-components/form-editor.tsx";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/forms/new")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/forms/new")({
   staticData: { title: msg("manageForms.newTitle") },
   loader: ({ context }) =>
     Promise.all([
@@ -29,7 +29,10 @@ function RouteComponent() {
       <FormEditor
         form={null}
         onDone={() =>
-          void navigate({ to: "/events/$slug/manage/forms", params: { slug: event.slug } })
+          void navigate({
+            to: "/events/$slug/manage/submissions/forms",
+            params: { slug: event.slug },
+          })
         }
       />
     </Screen>

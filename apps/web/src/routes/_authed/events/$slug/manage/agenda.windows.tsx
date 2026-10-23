@@ -291,7 +291,7 @@ function WindowEditor({
               </form.Subscribe>
               <FieldDescription>
                 <SettingLink
-                  to={`/events/${eventSlug}/manage/agenda-windows`}
+                  to={`/events/${eventSlug}/manage/agenda/windows`}
                   hash="agenda.reminderMinutes"
                 >
                   {t("manageAgenda.reminderDefaultLink")}
@@ -390,7 +390,7 @@ function ParticipantView() {
   );
 }
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/agenda-windows")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/agenda/windows")({
   staticData: {
     title: msg("manageAgenda.windows"),
     settings: (t) => [

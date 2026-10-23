@@ -12,7 +12,7 @@ const MANAGE = [
   "/teams",
   "/divisions",
   "/submissions",
-  "/forms",
+  "/submissions/forms",
   "/prizes",
   "/judging",
   "/announcements",
@@ -75,7 +75,7 @@ test.describe("organizer", () => {
   });
 
   test("forms, judging and results are reachable and publishing is offered", async ({ page }) => {
-    await page.goto(`/events/${env.event}/manage/forms`);
+    await page.goto(`/events/${env.event}/manage/submissions/forms`);
     await expectHealthy(page);
     await page.goto(`/events/${env.event}/manage/judging`);
     await expectHealthy(page);

@@ -24,7 +24,7 @@ import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type PlainKey, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/registration-form")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/registration/form")({
   staticData: {
     title: msg("manageNav.registrationForm"),
     settings: (t) => [

@@ -65,7 +65,7 @@ import { tagHoldersQueryOptions, tagsQueryOptions, type Tag } from "@bogey/db/qu
 import { TagPicker } from "#/components/tags/tags.tsx";
 import { isOrgAdmin } from "@bogey/db/auth";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/people")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/people/")({
   staticData: {
     title: msg("adminTab.people"),
     settings: (t) => [

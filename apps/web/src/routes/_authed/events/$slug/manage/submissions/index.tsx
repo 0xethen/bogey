@@ -53,7 +53,7 @@ const GALLERY_KEYS = [
   "slideshow",
 ] as const;
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/submissions")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/")({
   staticData: {
     title: msg("window.submissions"),
     settings: (t) => [
@@ -144,7 +144,7 @@ function RouteComponent() {
         size="sm"
         variant="outline"
         nativeButton={false}
-        render={<Link to="/events/$slug/manage/forms" params={{ slug: event.slug }} />}
+        render={<Link to="/events/$slug/manage/submissions/forms" params={{ slug: event.slug }} />}
       >
         <IconForms />
         {t("manageSubs.forms")}
@@ -179,7 +179,7 @@ function RouteComponent() {
             links={[
               <SettingLink
                 key="agenda"
-                to={`/events/${event.slug}/manage/agenda-windows`}
+                to={`/events/${event.slug}/manage/agenda/windows`}
                 hash="windows"
               >
                 {t("path.agenda")}
@@ -192,7 +192,7 @@ function RouteComponent() {
           <>
             {t("manageSubs.isClosed", { form: form.title })}{" "}
             <Route.Link
-              to="/events/$slug/manage/agenda-windows"
+              to="/events/$slug/manage/agenda/windows"
               params={{ slug: event.slug }}
               className="link"
             >

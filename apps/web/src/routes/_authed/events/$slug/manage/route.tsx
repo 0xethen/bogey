@@ -111,24 +111,25 @@ function RouteComponent() {
           label: t("eventTab.agenda"),
           icon: IconCalendarEvent,
           to: `${base}/agenda`,
+          exact: true,
           sub: [
             {
               key: "agenda-types",
               label: t("manageAgenda.types"),
               icon: IconTags,
-              to: `${base}/agenda-types`,
+              to: `${base}/agenda/types`,
             },
             {
               key: "agenda-windows",
               label: t("manageAgenda.windows"),
               icon: IconCalendarTime,
-              to: `${base}/agenda-windows`,
+              to: `${base}/agenda/windows`,
             },
             {
               key: "agenda-attendance",
               label: t("manageAgenda.attendance"),
               icon: IconUserCheck,
-              to: `${base}/agenda-attendance`,
+              to: `${base}/agenda/attendance`,
             },
           ],
         },
@@ -154,12 +155,13 @@ function RouteComponent() {
           label: t("manageNav.registration"),
           icon: IconClipboardList,
           to: `${base}/registration`,
+          exact: true,
           sub: [
             {
               key: "registration-form",
               label: t("manageNav.registrationForm"),
               icon: IconForms,
-              to: `${base}/registration-form`,
+              to: `${base}/registration/form`,
             },
           ],
         },
@@ -168,12 +170,13 @@ function RouteComponent() {
           label: t("adminTab.people"),
           icon: IconUsers,
           to: `${base}/people`,
+          exact: true,
           sub: [
             {
               key: "review",
               label: t("manageNav.review"),
               icon: IconUserCheck,
-              to: `${base}/review`,
+              to: `${base}/people/review`,
               badge: summary.data?.pending,
               // registrations waiting on a decision need you, like unanswered messages
               badgeVariant: summary.data?.pending ? "default" : "text",
@@ -188,8 +191,11 @@ function RouteComponent() {
           label: t("manageNav.divisions"),
           icon: IconCategory,
           to: `${base}/divisions`,
+          exact: true,
+          sub: [
+            { key: "tags", label: t("tags.title"), icon: IconTags, to: `${base}/divisions/tags` },
+          ],
         },
-        { key: "tags", label: t("tags.title"), icon: IconTags, to: `${base}/tags` },
       ],
     },
     {
@@ -200,8 +206,14 @@ function RouteComponent() {
           label: t("window.submissions"),
           icon: IconInbox,
           to: `${base}/submissions`,
+          exact: true,
           sub: [
-            { key: "forms", label: t("manageNav.forms"), icon: IconForms, to: `${base}/forms` },
+            {
+              key: "forms",
+              label: t("manageNav.forms"),
+              icon: IconForms,
+              to: `${base}/submissions/forms`,
+            },
           ],
         },
         {
@@ -227,13 +239,13 @@ function RouteComponent() {
               key: "demos",
               label: t("manageNav.demos"),
               icon: IconPresentation,
-              to: `${base}/demos`,
+              to: `${base}/judging/demos`,
             },
             {
               key: "results",
               label: t("manageNav.results"),
               icon: IconTrophy,
-              to: `${base}/results`,
+              to: `${base}/judging/results`,
             },
           ],
         },

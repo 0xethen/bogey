@@ -43,7 +43,7 @@ import { searchSection, searchSettings } from "#/components/settings/layout/sear
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/registration")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/registration/")({
   staticData: {
     title: msg("manageNav.registration"),
     settings: (t) => [

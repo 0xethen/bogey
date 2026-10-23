@@ -138,7 +138,7 @@ function RouteComponent() {
             aria-label={t("present.back")}
             render={
               <Link
-                to={manages ? "/events/$slug/manage/demos" : "/events/$slug/judging"}
+                to={manages ? "/events/$slug/manage/judging/demos" : "/events/$slug/judging"}
                 params={{ slug: event.slug }}
               />
             }

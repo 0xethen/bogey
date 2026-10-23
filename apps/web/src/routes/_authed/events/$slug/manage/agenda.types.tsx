@@ -302,7 +302,7 @@ function SessionTypes() {
   );
 }
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/agenda-types")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/agenda/types")({
   staticData: {
     title: msg("manageAgenda.types"),
     settings: (t) => [

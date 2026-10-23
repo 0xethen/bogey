@@ -55,14 +55,14 @@ const MOVED: Record<string, "agenda-types" | "agenda-windows" | "agenda-attendan
   attendance: "agenda-attendance",
 };
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/agenda/")({
   // a session's page links here with its id to open it for editing
   validateSearch: z.object({ session: z.string().optional() }),
   beforeLoad: ({ params, location }) => {
     const moved = MOVED[decodeURIComponent(location.hash)];
     if (moved === "agenda-types") {
       throw redirect({
-        to: "/events/$slug/manage/agenda-types",
+        to: "/events/$slug/manage/agenda/types",
         params,
         hash: location.hash,
         replace: true,
@@ -70,7 +70,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
     }
     if (moved === "agenda-windows") {
       throw redirect({
-        to: "/events/$slug/manage/agenda-windows",
+        to: "/events/$slug/manage/agenda/windows",
         params,
         hash: location.hash,
         replace: true,
@@ -78,7 +78,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda")({
     }
     if (moved === "agenda-attendance") {
       throw redirect({
-        to: "/events/$slug/manage/agenda-attendance",
+        to: "/events/$slug/manage/agenda/attendance",
         params,
         hash: location.hash,
         replace: true,
