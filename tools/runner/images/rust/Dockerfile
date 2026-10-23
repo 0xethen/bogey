@@ -1,2 +1,2 @@
-FROM rust:1.85-slim
+FROM rust:1.85-slim@sha256:9f841bbe9e7d8e37ceb96ed907265a3a0df7f44e3737d0b100e7907a679acb36
 ENV HOME=/tmp
