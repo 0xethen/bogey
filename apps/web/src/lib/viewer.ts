@@ -8,6 +8,7 @@ import { isWindowOpen, windowByKey, type EventWindow } from "@bogey/db/queries/w
 import type { PluginManifest } from "@bogey/plugins";
 import type { ResolvedValue } from "@bogey/config/settings";
 import { isSubmissionWindow } from "#/lib/windows.ts";
+import { loadedContext } from "#/lib/routing.ts";
 
 export interface EventViewer {
   event: Event;
@@ -59,7 +60,7 @@ export function useEventViewer(): EventViewer | undefined {
   const context = useMatch({
     from: "/_authed/events/$slug",
     shouldThrow: false,
-    select: (match) => (match.status === "success" ? match.context : undefined),
+    select: (match) => loadedContext(match, "event"),
   });
   const previewing = useViewAs();
   if (!context) return undefined;
@@ -95,10 +96,10 @@ export function useRealEventAccess(): { event: Event; access: EventAccess } | un
   return useMatch({
     from: "/_authed/events/$slug",
     shouldThrow: false,
-    select: (match) =>
-      match.status === "success"
-        ? { event: match.context.event, access: match.context.access }
-        : undefined,
+    select: (match) => {
+      const context = loadedContext(match, "event");
+      return context && { event: context.event, access: context.access };
+    },
   });
 }
 

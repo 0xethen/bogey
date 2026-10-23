@@ -18,6 +18,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - The tabs under the menubar are one navigation menu: tabs with a menu open a dropdown on hover, and moving between them slides one dropdown from tab to tab instead of closing and reopening. It doesn't animate with reduced motion.
 - Hovering Agenda lists each session with its **Main page**, and **Attendance** for those who take it.
 - Fixed a hydration warning from plugin buttons in the menubar (event sounds' mute button).
+- Fixed a crash ("Cannot read properties of undefined (reading 'id')") when the server couldn't be reached while viewing an event: the page now shows Bogey's retryable error inside the app shell, and an unreachable suspension check no longer takes down the whole app.
 - The public gallery has a Grid / List toggle for viewers, remembered in their browser (or set with `?view=`). Grid uses CSS grid-lanes where the browser supports it and a normal grid elsewhere. Project cards end in a footer with votes, likes and comments, the same in both views. The gallery "Layout" and "Visitors can switch the layout" settings are gone; stored values are ignored.
 
 **Upgrade notes:** run `bogey db migrate` (migrations `20261024090000_certificate_designs` and `20261024110000_gallery_view_modes`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them. Manage links moved under their parent pages (for example `/manage/review` is now `/manage/people/review`); the old addresses redirect.

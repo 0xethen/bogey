@@ -14,6 +14,7 @@ import { localizationQueryOptions } from "#/lib/i18n.ts";
 import { I18nProvider, sayWith, translatorFor } from "#/lib/translate.tsx";
 import { consumeRedirectFn, exchangeCodeForSessionFn } from "@bogey/db/auth";
 import { suspensionQueryOptions } from "@bogey/db/tenant";
+import { isUnreachable } from "#/lib/connection.ts";
 import { getPublicEnv, publicEnvScript } from "@bogey/db/env";
 import { classNamesOf, makeTitle } from "#/lib/routing";
 import { loadSeo, seoMeta } from "#/lib/seo.ts";
@@ -53,7 +54,13 @@ export const Route = createRootRouteWithContext<Context>()({
     const search: Record<string, unknown> = location.search;
 
     if (location.pathname !== "/suspended") {
-      const suspension = await context.query.ensureQueryData(suspensionQueryOptions());
+      // unreachable: the page below shows the error in the app shell; org_for_host hides a suspended org anyway
+      const suspension = await context.query
+        .ensureQueryData(suspensionQueryOptions())
+        .catch((error: unknown) => {
+          if (isUnreachable(error)) return null;
+          throw error;
+        });
       if (suspension) throw redirect({ to: "/suspended", replace: true });
     }
 

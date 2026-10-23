@@ -21,7 +21,7 @@ import { eventAccessQueryOptions, eventGateQueryOptions } from "@bogey/db/permis
 import { useLiveBroadcast, useLiveInvalidate } from "@bogey/db/realtime";
 import { SectionTabs } from "#/components/navigation/header/SectionTabs.tsx";
 import { arrangeTabs, eventTabs, visibleTabs } from "#/lib/event-tabs.ts";
-import { orNotFound } from "#/lib/routing.ts";
+import { loadedContext, orNotFound } from "#/lib/routing.ts";
 import { agendaMilestones } from "#/lib/windows.ts";
 import { useTakesAttendance } from "#/lib/attendance.ts";
 import { manages, useEventViewer } from "#/lib/viewer.ts";
@@ -219,7 +219,7 @@ function EventTabs() {
   const viewer = useEventViewer();
   const loaded = Route.useMatch({
     shouldThrow: false,
-    select: (match) => (match.status === "success" ? match.context.tabs : undefined),
+    select: (match) => loadedContext(match, "tabs")?.tabs,
   });
   // the query follows Manage → Tabs as it saves; the loaded value covers the first paint
   const saved = useQuery({

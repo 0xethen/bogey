@@ -29,6 +29,14 @@ export function titleOf(match: Match, say: Say): { page: string; breadcrumb: str
   return { page: say(title.page), breadcrumb: say(title.breadcrumb ?? title.page) };
 }
 
+// An ancestor's failed beforeLoad leaves this match "success" with an empty context.
+export function loadedContext<C extends object>(
+  match: { status: string; context: C },
+  key: keyof C,
+): C | undefined {
+  return match.status === "success" && key in match.context ? match.context : undefined;
+}
+
 function isFailed(match: Match): boolean {
   return match.status === "notFound" || match.status === "error";
 }
