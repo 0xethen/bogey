@@ -542,7 +542,7 @@ function RouteComponent() {
             <form.FormAlert title={t("newEvent.failed")} />
             <div className="flex flex-wrap gap-2">
               {step > 0 && (
-                <Button type="button" variant="secondary" onClick={() => setStep(step - 1)}>
+                <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
                   {t("common.back")}
                 </Button>
               )}

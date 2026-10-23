@@ -586,8 +586,8 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
           )}
           {form && (
             <Button
-              variant="ghost"
-              className="ml-auto text-destructive"
+              variant="ghost-destructive"
+              className="ml-auto"
               disabled={remove.isPending}
               confirm={{
                 title: t("manageForms.deleteTitle", { name: form.title }),

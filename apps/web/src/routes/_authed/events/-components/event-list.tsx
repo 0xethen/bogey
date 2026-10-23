@@ -74,7 +74,7 @@ export function EventList({
               </Item.Content>
               <Item.Actions>
                 {live ? (
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-primary-text">
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-fg">
                     <span className="size-2 animate-pulse rounded-pill bg-primary" />
                     <span>
                       <span className="hidden lg:inline">{t("events.happeningNow")}</span>
@@ -137,7 +137,7 @@ function DateBlock({ value, className }: { value: string | null; className?: str
         className,
       )}
     >
-      <span className="text-[0.625rem] font-semibold tracking-wider text-primary-text uppercase">
+      <span className="text-[0.625rem] font-semibold tracking-wider text-muted-fg uppercase">
         {month}
       </span>
       <span className="font-heading text-lg font-semibold tabular-nums">{day}</span>

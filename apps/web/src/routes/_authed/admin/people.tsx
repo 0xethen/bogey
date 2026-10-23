@@ -213,8 +213,7 @@ function peopleColumns(options: {
             {person.admin ? (
               <Button
                 size="sm"
-                variant="ghost"
-                className="text-destructive"
+                variant="ghost-destructive"
                 disabled={options.pending}
                 confirm={{
                   title: you
@@ -273,8 +272,7 @@ function PasswordLogin({ person }: { person: InstancePerson }) {
           (person.passwordLogin ? (
             <Button
               size="sm"
-              variant="ghost"
-              className="text-destructive"
+              variant="ghost-destructive"
               disabled={change.isPending}
               confirm={{
                 title: t("adminPeople.passwordOffTitle", { name: person.name }),

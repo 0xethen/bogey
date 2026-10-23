@@ -56,7 +56,12 @@ function CertificateRow({ option, eventId }: { option: CertificateOption; eventI
             {t("certificates.open")}
           </Button>
         ) : (
-          <Button size="sm" disabled={claim.isPending} onClick={() => claim.mutate()}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={claim.isPending}
+            onClick={() => claim.mutate()}
+          >
             {t("certificates.get")}
           </Button>
         )

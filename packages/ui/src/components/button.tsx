@@ -34,10 +34,11 @@ const buttonVariants = cva(
           "border-border bg-background hover:bg-muted hover:text-fg aria-expanded:bg-muted aria-expanded:text-fg dark:bg-transparent dark:hover:bg-input/30",
         ghost:
           "hover:bg-muted hover:text-fg aria-expanded:bg-muted aria-expanded:text-fg dark:hover:bg-muted/50",
+        "ghost-destructive":
+          "text-destructive hover:bg-destructive/10 aria-expanded:bg-destructive/10 dark:hover:bg-destructive/20",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30",
         link: "link px-0",
-        underline: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default:

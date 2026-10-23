@@ -909,8 +909,7 @@ function DeleteSubmission({
     <div className="flex flex-col gap-2">
       {policy === "allow" ? (
         <Button
-          variant="ghost"
-          className="text-destructive"
+          variant="ghost-destructive"
           disabled={remove.isPending}
           confirm={{
             title: t("sub.deleteTitle", { name: title }),
@@ -923,8 +922,7 @@ function DeleteSubmission({
         </Button>
       ) : (
         <Button
-          variant="ghost"
-          className="text-destructive"
+          variant="ghost-destructive"
           disabled={remove.isPending}
           confirm={{
             title: t("sub.askTitle", { name: title }),

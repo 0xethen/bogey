@@ -405,8 +405,7 @@ function SubmissionTable({
             </Button>
           ) : (
             <Button
-              variant="ghost"
-              className="text-destructive"
+              variant="ghost-destructive"
               size="sm"
               disabled={busy.disqualify}
               confirm={{

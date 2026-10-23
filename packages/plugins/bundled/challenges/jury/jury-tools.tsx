@@ -503,8 +503,7 @@ export function JurySolutions({ eventId, problem }: { eventId: string; problem: 
                 )}
                 <Button
                   size="icon-sm"
-                  variant="ghost"
-                  className="text-destructive"
+                  variant="ghost-destructive"
                   aria-label={`Remove ${each.label || each.language}...`}
                   tooltip="Remove..."
                   disabled={remove.isPending}

@@ -560,7 +560,7 @@ function Moderation({ conversation }: { conversation: Conversation }) {
     <div className="flex gap-1">
       <Button
         size="sm"
-        variant="secondary"
+        variant="outline"
         onClick={() =>
           void update({ status: conversation.status === "closed" ? "open" : "closed" })
         }
@@ -642,7 +642,7 @@ function BlockButton({ conversation }: { conversation: Conversation }) {
   });
   return (
     <>
-      <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setOpen(true)}>
+      <Button size="sm" variant="ghost-destructive" onClick={() => setOpen(true)}>
         {t("conv.block")}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>

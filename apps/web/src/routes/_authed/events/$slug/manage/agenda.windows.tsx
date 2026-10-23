@@ -301,8 +301,7 @@ function WindowEditor({
           </Popover>
           <Button
             size="sm"
-            variant="outline"
-            className="text-destructive"
+            variant="destructive"
             disabled={remove.isPending}
             confirm={{
               title: t("manageAgenda.removeWindowTitle", { name: windowLabel(window, t) }),

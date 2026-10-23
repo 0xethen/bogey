@@ -588,8 +588,8 @@ function EditorBody({
                 <Button
                   type="button"
                   size="icon-sm"
-                  variant="ghost"
-                  className="mb-1 text-destructive"
+                  variant="ghost-destructive"
+                  className="mb-1"
                   aria-label="Remove this range"
                   tooltip="Remove this range"
                   onClick={() => list.removeValue(index)}

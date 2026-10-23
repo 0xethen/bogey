@@ -118,10 +118,14 @@ function SecretNotice({ secret, onDone }: { secret: string; onDone: () => void }
         <Button size="sm" onClick={onDone}>
           {t("webhooks.savedIt")}
         </Button>
-        <Button size="sm" onClick={() => copy(secret, t)}>
+        <Button size="sm" variant="outline" onClick={() => copy(secret, t)}>
           {t("common.copy")}
         </Button>
-        <Button size="sm" onClick={() => download("bogey-webhook-secret.txt", `${secret}\n`)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => download("bogey-webhook-secret.txt", `${secret}\n`)}
+        >
           {t("webhooks.downloadSecret")}
         </Button>
       </span>

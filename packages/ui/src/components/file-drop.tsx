@@ -67,7 +67,7 @@ export function FileDrop({
         aria-invalid={invalid || undefined}
         className={cn(
           "flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm transition-colors",
-          over && "border-primary bg-primary/5",
+          over && "border-ring bg-accent",
           invalid && "border-destructive",
           disabled && "opacity-60",
         )}

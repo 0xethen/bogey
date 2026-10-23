@@ -982,8 +982,7 @@ export function Files({ eventId, problem }: { eventId: string; problem: Problem 
               <span className="flex-1 truncate">{file.name}</span>
               <Button
                 size="icon-sm"
-                variant="ghost"
-                className="text-destructive"
+                variant="ghost-destructive"
                 aria-label={`Remove ${file.name}...`}
                 tooltip={`Remove ${file.name}...`}
                 disabled={remove.isPending}

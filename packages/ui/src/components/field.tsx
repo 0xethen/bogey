@@ -145,7 +145,7 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
         "last:mt-0 nth-last-2:-mt-1",
         // sit right under a legend, cancelling its margin and the fieldset gap
         "[[data-variant=legend]+&]:mt-[calc(-0.5rem-var(--field-set-gap,0px))]!",
-        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
+        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-fg",
         className,
       )}
       {...props}

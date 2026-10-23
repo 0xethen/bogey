@@ -248,7 +248,7 @@ export function HomeEditor({
                       }
                       className="inline-flex items-center gap-1.5 rounded-pill bg-muted/40 py-1 pr-3 pl-1.5 text-sm"
                     >
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-pill bg-primary/10 text-primary-text">
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-pill bg-muted text-muted-fg">
                         <template.icon className="size-3.5" />
                       </span>
                       <span className="font-medium">{template.label}</span>

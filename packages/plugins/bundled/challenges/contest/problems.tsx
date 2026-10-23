@@ -96,7 +96,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
               <Link
                 to="/problems"
                 splat={problem.slug}
-                className="group flex h-full flex-col gap-3 rounded-2xl p-5 no-underline transition-colors border border-border hocus:border-accent/10 hocus:bg-accent/30"
+                className="group flex h-full flex-col gap-3 rounded-2xl p-5 no-underline transition-colors border border-border hocus:bg-accent"
               >
                 <span className="flex items-start justify-between gap-3">
                   <span className="flex size-10 items-center justify-center rounded-xl bg-muted font-mono text-lg font-semibold">
@@ -114,9 +114,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
                     </span>
                   ) : null}
                 </span>
-                <span className="font-heading text-lg font-semibold text-fg group-hover:text-primary-text">
-                  {problem.title}
-                </span>
+                <span className="font-heading text-lg font-semibold text-fg">{problem.title}</span>
                 <span className="mt-auto flex flex-wrap items-center gap-2 text-sm text-muted-fg">
                   <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
                   {points(problem.points)}

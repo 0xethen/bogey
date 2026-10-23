@@ -594,7 +594,7 @@ function SessionsEditor() {
                       <section
                         key={slot.uid}
                         aria-label={heading}
-                        className="flex flex-col gap-3 rounded-3xl border border-border p-4"
+                        className="flex flex-col gap-3 border-t border-border pt-5"
                       >
                         <div className="relative flex items-center gap-2">
                           {editingSlot ? (
@@ -614,7 +614,6 @@ function SessionsEditor() {
                               type="button"
                               size="icon-sm"
                               variant="ghost"
-                              className="text-primary-text"
                               aria-label={t("manageAgenda.doneSlot")}
                               tooltip={t("judging.done")}
                               onClick={() => setActiveSlot(null)}
@@ -625,8 +624,7 @@ function SessionsEditor() {
                           <Button
                             type="button"
                             size="icon-sm"
-                            variant="ghost"
-                            className="text-destructive"
+                            variant="ghost-destructive"
                             aria-label={t("manageAgenda.removeSlot")}
                             tooltip={t("manageAgenda.removeSlot")}
                             confirm={{

@@ -161,7 +161,7 @@ function RouteComponent() {
           <>
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               disabled={sameLayout(layout, DEFAULT_HOME_LAYOUT)}
               confirm={{
                 title: t("home.resetTitle"),

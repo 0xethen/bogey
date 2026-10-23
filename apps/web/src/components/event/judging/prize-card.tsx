@@ -89,7 +89,7 @@ export function AwardCard({ award, highlight }: { award: Award; highlight?: bool
     <div
       className={cn(
         "flex gap-3 rounded-2xl border border-border p-4",
-        highlight && "border-primary bg-primary/5",
+        highlight && "border-fg/20 bg-accent",
       )}
     >
       <SponsorLogo url={award.sponsorLogoUrl} name={award.sponsorName} />

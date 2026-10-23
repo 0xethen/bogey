@@ -193,8 +193,7 @@ export function BankPage({ orgId, settings }: PluginPageContext<"org", Settings>
                           </Button>
                           <Button
                             size="icon-sm"
-                            variant="ghost"
-                            className="text-destructive"
+                            variant="ghost-destructive"
                             aria-label={`Remove ${problem.title} from the bank...`}
                             tooltip="Remove..."
                             disabled={remove.isPending}

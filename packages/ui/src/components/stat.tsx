@@ -7,7 +7,7 @@ const statVariants = cva("", {
   variants: {
     variant: {
       default: "",
-      urgent: "border-primary/40",
+      urgent: "border-warning/50",
     },
   },
   defaultVariants: {
@@ -41,7 +41,7 @@ export function Stat({
       render={render}
     >
       {Icon && (
-        <ItemMedia variant="icon" className={urgent ? "text-primary" : "text-muted-fg"}>
+        <ItemMedia variant="icon" className={urgent ? "text-warning" : "text-muted-fg"}>
           <Icon />
         </ItemMedia>
       )}

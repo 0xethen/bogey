@@ -6,16 +6,9 @@ import {
   unblockFromChatFn,
 } from "@bogey/db/queries/messages";
 import { IconMessageQuestion } from "@tabler/icons-react";
-import { LinkRow } from "@bogey/ui/components/row";
+import { LinkRow, Row, RowList } from "@bogey/ui/components/row";
 import { unwrap } from "@bogey/db/errors";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemTitle,
-} from "@bogey/ui/components/item";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Button } from "@bogey/ui/components/button";
 import { Screen } from "@bogey/ui/components/screen";
@@ -134,31 +127,31 @@ function Blocked({ eventId }: { eventId: string }) {
       {blocks.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("messages.noneBlocked")}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <RowList render={<ul />}>
           {blocks.map((block) => (
-            <li key={block.id}>
-              <Item variant="outline">
-                <ItemContent>
-                  <ItemTitle>{block.name}</ItemTitle>
-                  <ItemDescription className="line-clamp-none">
-                    {block.reason ? `${block.reason} · ` : ""}
-                    <RelativeTime value={block.createdAt} />
-                  </ItemDescription>
-                </ItemContent>
-                <ItemActions>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={unblock.isPending}
-                    onClick={() => unblock.mutate(block.id)}
-                  >
-                    {t("messages.unblock")}
-                  </Button>
-                </ItemActions>
-              </Item>
-            </li>
+            <Row
+              key={block.id}
+              render={<li />}
+              title={block.name}
+              meta={
+                <>
+                  {block.reason ? `${block.reason} · ` : ""}
+                  <RelativeTime value={block.createdAt} />
+                </>
+              }
+              actions={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={unblock.isPending}
+                  onClick={() => unblock.mutate(block.id)}
+                >
+                  {t("messages.unblock")}
+                </Button>
+              }
+            />
           ))}
-        </ul>
+        </RowList>
       )}
     </Screen.Section>
   );

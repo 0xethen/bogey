@@ -254,7 +254,7 @@ function SessionTypes() {
                                         onClick={() => field.handleChange(icon)}
                                         className={cn(
                                           "flex size-9 items-center justify-center rounded-xl text-muted-fg hocus:bg-muted hocus:text-fg",
-                                          "aria-checked:bg-primary/10 aria-checked:text-primary-text aria-checked:ring-1 aria-checked:ring-primary/40",
+                                          "aria-checked:bg-muted aria-checked:text-fg aria-checked:ring-1 aria-checked:ring-fg/20",
                                         )}
                                       >
                                         <Icon className="size-4.5" />

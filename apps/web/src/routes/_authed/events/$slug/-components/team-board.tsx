@@ -104,6 +104,7 @@ function Requests({ eventId, rows }: { eventId: string; rows: readonly TeamReque
                 <span className="flex gap-2">
                   <Button
                     size="sm"
+                    variant="secondary"
                     disabled={answer.isPending}
                     onClick={() => answer.mutate({ requestId: row.id, accept: true })}
                   >

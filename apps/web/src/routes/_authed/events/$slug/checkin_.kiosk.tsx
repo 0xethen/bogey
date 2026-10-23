@@ -139,7 +139,7 @@ function Kiosk() {
     >
       {done ? (
         <div role="status" className="flex flex-col items-center gap-4 py-12 text-center">
-          <IconCircleCheck className="size-16 text-primary-text" />
+          <IconCircleCheck className="size-16 text-emerald-600 dark:text-emerald-400" />
           <h2 className="font-heading text-2xl font-semibold">
             {done.checkedIn
               ? t("kiosk.checkedIn", { name: done.name })

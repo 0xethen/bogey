@@ -264,8 +264,8 @@ function GroupedList({
           data-over={over || undefined}
           className={cn(
             "flex flex-col gap-3 rounded-3xl transition-[background-color,box-shadow,padding,margin] duration-200 ease-out",
-            "data-adding:-m-3 data-adding:bg-primary/4 data-adding:p-3 data-adding:ring-1 data-adding:ring-primary/10",
-            "data-over:bg-primary/10 data-over:ring-primary/30",
+            "data-adding:-m-3 data-adding:bg-accent/50 data-adding:p-3 data-adding:ring-1 data-adding:ring-border",
+            "data-over:bg-accent data-over:ring-ring/40",
           )}
         >
           {children}
@@ -283,7 +283,7 @@ function DropZone({ id, children }: { id: string; children: ReactNode }) {
     <li
       ref={ref}
       data-over={isDropTarget || undefined}
-      className="flex min-h-12 items-center rounded-2xl border border-dashed border-border px-4 text-sm text-muted-fg transition-colors duration-200 data-over:border-primary/50 data-over:bg-primary/10 data-over:text-primary-text"
+      className="flex min-h-12 items-center rounded-2xl border border-dashed border-border px-4 text-sm text-muted-fg transition-colors duration-200 data-over:border-ring data-over:bg-accent data-over:text-fg"
     >
       {children}
     </li>
@@ -297,7 +297,7 @@ function EndZone({ id }: { id: string }) {
       ref={ref}
       aria-hidden
       data-over={isDropTarget || undefined}
-      className="relative min-h-16 flex-1 rounded-2xl transition-colors duration-200 data-over:bg-primary/10"
+      className="relative min-h-16 flex-1 rounded-2xl transition-colors duration-200 data-over:bg-accent"
     >
       {isDropTarget && <DropLine className="top-0" />}
     </li>
@@ -421,8 +421,7 @@ export function EditableListItem({
         <Button
           type="button"
           size="icon-sm"
-          variant="ghost"
-          className="text-destructive"
+          variant="ghost-destructive"
           aria-label={t("ui.removeNamed", { name: label })}
           tooltip={t("ui.removeNamed", { name: label })}
           confirm={

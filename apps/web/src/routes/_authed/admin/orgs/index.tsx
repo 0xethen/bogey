@@ -23,7 +23,7 @@ import {
   ContextMenuTrigger,
 } from "@bogey/ui/components/context-menu";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { Item, ItemActions, ItemContent, ItemTitle } from "@bogey/ui/components/item";
+import { Row, RowList } from "@bogey/ui/components/row";
 import { DataTable, dataColumns, type DataTableFilter } from "@bogey/ui/components/data-table";
 import {
   createDialogHandle,
@@ -296,43 +296,44 @@ function HostnameList({ org }: { org: InstanceOrg }) {
   return (
     <>
       <ErrorAlert error={remove.error} title={t("adminOrgs.removeHostnameFailed")} />
-      <ul className="flex flex-col gap-2">
+      <RowList variant="boxed" render={<ul />}>
         {org.hostnames.map((hostname, index) => (
-          <li key={hostname}>
-            <Item variant="outline" size="sm">
-              <ItemContent>
-                <ItemTitle>
-                  <code>{hostname}</code>
-                  {index === 0 && <Badge variant="secondary">{t("adminOrgs.primary")}</Badge>}
-                </ItemTitle>
-              </ItemContent>
-              <ItemActions>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={t("adminOrgs.removeHostnameOf", { hostname })}
-                  disabled={remove.isPending}
-                  confirm={{
-                    title: t("adminOrgs.removeHostnameTitle", { hostname }),
-                    description: [
-                      t("adminOrgs.removeHostnameBody", { org: org.name }),
-                      typeof window !== "undefined" && window.location.host === hostname
-                        ? t("adminOrgs.removeHostnameHere")
-                        : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" "),
-                    label: t("adminOrgs.removeHostname"),
-                  }}
-                  onClick={() => remove.mutate(hostname)}
-                >
-                  <IconTrash />
-                </Button>
-              </ItemActions>
-            </Item>
-          </li>
+          <Row
+            key={hostname}
+            render={<li />}
+            size="sm"
+            title={
+              <>
+                <code>{hostname}</code>
+                {index === 0 && <Badge variant="secondary">{t("adminOrgs.primary")}</Badge>}
+              </>
+            }
+            actions={
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={t("adminOrgs.removeHostnameOf", { hostname })}
+                disabled={remove.isPending}
+                confirm={{
+                  title: t("adminOrgs.removeHostnameTitle", { hostname }),
+                  description: [
+                    t("adminOrgs.removeHostnameBody", { org: org.name }),
+                    typeof window !== "undefined" && window.location.host === hostname
+                      ? t("adminOrgs.removeHostnameHere")
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                  label: t("adminOrgs.removeHostname"),
+                }}
+                onClick={() => remove.mutate(hostname)}
+              >
+                <IconTrash />
+              </Button>
+            }
+          />
         ))}
-      </ul>
+      </RowList>
     </>
   );
 }

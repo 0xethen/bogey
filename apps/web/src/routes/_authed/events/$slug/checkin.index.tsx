@@ -215,6 +215,7 @@ function Desk() {
         ) : (
           <Button
             size="sm"
+            variant="outline"
             disabled={checkIn.isPending}
             onClick={() => checkIn.mutate({ userId: entry.userId, method: "desk" })}
           >

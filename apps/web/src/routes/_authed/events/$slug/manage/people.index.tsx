@@ -801,9 +801,8 @@ function RemoveCell({
   return (
     <div className="flex justify-end">
       <Button
-        variant="ghost"
+        variant="ghost-destructive"
         size="sm"
-        className="text-destructive"
         disabled={busy}
         confirm={{
           title: you

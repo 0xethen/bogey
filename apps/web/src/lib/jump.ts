@@ -3,9 +3,8 @@ import { useLocation } from "@tanstack/react-router";
 
 const FLASH_MS = 2400;
 
-// The page a `#namespace.key` link lands on scrolls to that setting and washes it in a faint
-// accent that fades. The spread shadow pads the wash past the row's edges without moving it;
-// `.jump-target` (packages/ui utilities.css) rounds both.
+// Scrolls to the `#id` a link lands on and washes it in the accent; see
+// docs/architecture/ui-conventions.md#color
 export function useJumpHighlight() {
   const hash = useLocation({ select: (location) => location.hash });
   useEffect(() => {
@@ -36,12 +35,8 @@ export function jumpTo(id: string): void {
 
 function flash(target: HTMLElement): Animation {
   const style = getComputedStyle(target);
-  const accent = style.getPropertyValue("--color-primary").trim() || "currentColor";
-  // whole sections get a neutral wash instead of the primary one
-  const wash =
-    target.offsetHeight > 160
-      ? "color-mix(in oklch, var(--color-muted-fg) 10%, transparent)"
-      : `color-mix(in oklch, ${accent} 12%, transparent)`;
+  const wash = style.getPropertyValue("--color-accent").trim() || "transparent";
+  // the spread shadow pads the wash past the row's edges without moving it
   const pad = `calc(${style.getPropertyValue("--spacing").trim() || "0.25rem"} * 2)`;
   return target.animate(
     [

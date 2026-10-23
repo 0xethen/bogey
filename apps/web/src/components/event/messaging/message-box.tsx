@@ -96,7 +96,7 @@ export function MessageBox({
       <form.Form
         className={cn(
           "flex flex-col gap-2 border-t border-border p-3 transition-colors",
-          dragging && "bg-primary/5",
+          dragging && "bg-accent",
         )}
         onDragOver={(event) => {
           if (!event.dataTransfer.types.includes("Files")) return;

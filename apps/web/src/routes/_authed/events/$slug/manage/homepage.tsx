@@ -124,7 +124,7 @@ function RouteComponent() {
                         key={type}
                         className="flex items-start gap-3 rounded-2xl border border-border px-3 py-2.5"
                       >
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-text">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-fg">
                           <info.icon className="size-4" />
                         </span>
                         <span className="flex min-w-0 flex-col gap-0.5">

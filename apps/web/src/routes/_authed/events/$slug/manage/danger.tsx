@@ -25,13 +25,7 @@ import {
   DialogTitle,
 } from "@bogey/ui/components/dialog";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@bogey/ui/components/field";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemTitle,
-} from "@bogey/ui/components/item";
+import { Row, RowList } from "@bogey/ui/components/row";
 import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
@@ -86,7 +80,7 @@ function RouteComponent() {
           />
         }
       >
-        <div className="flex flex-col gap-2">
+        <RowList variant="boxed">
           <PruneParticipants event={event} />
           <ClearAction
             event={event}
@@ -109,7 +103,7 @@ function RouteComponent() {
             help={t("danger.participantsHelp")}
             body={(count) => t("danger.participantsBody", { count })}
           />
-        </div>
+        </RowList>
       </Screen.Section>
       {eventDeletion && (
         <Screen.Section id="delete" title={t("danger.delete")} description={t("danger.deleteHelp")}>
@@ -137,17 +131,15 @@ function DangerRow({
   onOpen: () => void;
 }) {
   return (
-    <Item variant="outline">
-      <ItemContent>
-        <ItemTitle>{title}</ItemTitle>
-        <ItemDescription className="line-clamp-none">{help}</ItemDescription>
-      </ItemContent>
-      <ItemActions>
+    <Row
+      title={title}
+      meta={help}
+      actions={
         <Button size="sm" variant="destructive" onClick={onOpen}>
           {button}
         </Button>
-      </ItemActions>
-    </Item>
+      }
+    />
   );
 }
 

@@ -6,7 +6,6 @@ import { myRegistrationQueryOptions } from "@bogey/db/queries/registration";
 import { PrizeCard, usePrizeImage } from "#/components/event/judging/prize-card.tsx";
 import {
   IconAlertTriangle,
-  IconArrowUpRight,
   IconBell,
   IconCalendarEvent,
   IconChecks,
@@ -49,7 +48,7 @@ import { formatDateRange, type FormatOptions } from "@bogey/utils/time";
 import { Button } from "@bogey/ui/components/button";
 import { Countdown } from "@bogey/ui/components/countdown";
 import { DialogTrigger } from "@bogey/ui/components/dialog";
-import { DisclosureRow, RowList } from "@bogey/ui/components/row";
+import { DisclosureRow, LinkRow, RowList } from "@bogey/ui/components/row";
 import { Facts, type Fact } from "@bogey/ui/components/facts";
 import { Markdown } from "@bogey/ui/components/markdown";
 import { Screen } from "@bogey/ui/components/screen";
@@ -237,8 +236,12 @@ function defaultTitle(block: HomeBlock, t: T): string {
 }
 
 const CALLOUT_STYLE: Record<CalloutTone, { icon: Icon; box: string; mark: string }> = {
-  default: { icon: IconSpeakerphone, box: "border-border bg-accent", mark: "text-accent-fg" },
-  info: { icon: IconInfoCircle, box: "border-primary/30 bg-primary/5", mark: "text-primary-text" },
+  default: { icon: IconSpeakerphone, box: "border-border bg-accent", mark: "text-muted-fg" },
+  info: {
+    icon: IconInfoCircle,
+    box: "border-sky-500/40 bg-sky-500/10",
+    mark: "text-sky-600 dark:text-sky-400",
+  },
   success: {
     icon: IconChecks,
     box: "border-emerald-500/40 bg-emerald-500/10",
@@ -620,15 +623,16 @@ export function HomeBlockView({
         <Screen.Section title={title}>
           <RowList>
             {data.pages.map((page) => (
-              <Link
+              <LinkRow
                 key={page.id}
-                to="/events/$slug/pages/$page"
-                params={{ slug: event.slug, page: page.slug }}
-                className="flex items-center justify-between py-3 text-sm font-medium no-underline hocus:text-primary-text"
-              >
-                {page.title}
-                <IconArrowUpRight className="size-4 text-muted-fg" />
-              </Link>
+                render={
+                  <Link
+                    to="/events/$slug/pages/$page"
+                    params={{ slug: event.slug, page: page.slug }}
+                  />
+                }
+                title={page.title}
+              />
             ))}
           </RowList>
         </Screen.Section>
@@ -767,7 +771,7 @@ export function HomeBlockView({
                         target="_blank"
                         rel="noreferrer noopener"
                         title={sponsor.name}
-                        className={cn(tile, "hocus:border-primary/40 hocus:shadow-md")}
+                        className={cn(tile, "hocus:border-fg/20 hocus:shadow-md")}
                       >
                         {logo}
                       </a>
