@@ -426,7 +426,7 @@ export type Database = {
           event_id: string | null;
           id: string;
           kind: string;
-          layout: Json;
+          layout: NonNullable<Json>;
           org_id: string;
           orientation: string;
           updated_at: string;
@@ -436,7 +436,7 @@ export type Database = {
           event_id?: string | null;
           id?: string;
           kind: string;
-          layout: Json;
+          layout: NonNullable<Json>;
           org_id: string;
           orientation?: string;
           updated_at?: string;
@@ -445,7 +445,7 @@ export type Database = {
           event_id?: string | null;
           id?: string;
           kind?: string;
-          layout?: Json;
+          layout?: NonNullable<Json>;
           org_id?: string;
           orientation?: string;
           updated_at?: string;
@@ -4439,10 +4439,7 @@ export type Database = {
         Returns: Json;
       };
       complete_identity_setup: { Args: { p_event: string }; Returns: undefined };
-      copy_certificate_template: {
-        Args: { p_event: string; p_kind: string };
-        Returns: Json;
-      };
+      copy_certificate_template: { Args: { p_event: string; p_kind: string }; Returns: Json };
       create_calendar_token: { Args: Record<PropertyKey, never>; Returns: string };
       create_event: {
         Args: {
