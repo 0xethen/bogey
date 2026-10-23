@@ -133,19 +133,27 @@ export function Workspace({
             size="icon-xs"
             variant="ghost"
             aria-label="About this problem"
-            title="About this problem"
+            tooltip="About this problem"
             onClick={() => setInfo(true)}
           >
             <IconInfoCircle />
           </Button>
         </span>
       }
+      leading={
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          tooltip="Back to problems"
+          aria-label="Back to problems"
+          nativeButton={false}
+          render={<Link to="/problems" />}
+        >
+          <IconArrowLeft />
+        </Button>
+      }
       actions={
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" nativeButton={false} render={<Link to="/problems" />}>
-            <IconArrowLeft />
-            Problems
-          </Button>
           {jury ? (
             <Button
               size="sm"
@@ -565,7 +573,7 @@ function Editor({
             <Button
               variant="outline"
               disabled={!previewable || !source.trim()}
-              title={previewable ? undefined : "This language can't run in the browser"}
+              tooltip={previewable ? undefined : "This language can't run in the browser"}
               onClick={() => void runOne()}
             >
               <IconPlayerPlay />
@@ -642,6 +650,7 @@ function Editor({
                 size="sm"
                 variant="ghost"
                 disabled={!previewable || running || !source.trim()}
+                tooltip={previewable ? undefined : "This language can't run in the browser"}
                 onClick={() => void runAll()}
               >
                 <IconPlayerPlayFilled />

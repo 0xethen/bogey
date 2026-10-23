@@ -388,7 +388,7 @@ export function EditableListItem({
           size="icon-sm"
           variant="ghost"
           aria-label={t("ui.editNamed", { name: label })}
-          title={t("ui.edit")}
+          tooltip={t("ui.edit")}
           onClick={onEdit}
         >
           <IconPencil />
@@ -399,7 +399,7 @@ export function EditableListItem({
           type="button"
           size="icon-sm"
           aria-label={t("ui.doneEditing", { name: label })}
-          title={t("judging.done")}
+          tooltip={t("judging.done")}
           onClick={onDone}
         >
           <IconCheck />
@@ -411,7 +411,7 @@ export function EditableListItem({
           size="icon-sm"
           variant="ghost"
           aria-label={t("ui.duplicate", { name: label })}
-          title={t("ui.duplicate", { name: label })}
+          tooltip={t("ui.duplicate", { name: label })}
           onClick={onDuplicate}
         >
           <IconCopy />
@@ -424,7 +424,7 @@ export function EditableListItem({
           variant="ghost"
           className="text-destructive"
           aria-label={t("ui.removeNamed", { name: label })}
-          title={t("ui.removeNamed", { name: label })}
+          tooltip={t("ui.removeNamed", { name: label })}
           confirm={
             confirmRemove
               ? {

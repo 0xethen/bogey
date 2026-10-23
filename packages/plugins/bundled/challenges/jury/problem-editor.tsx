@@ -36,6 +36,7 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@bogey/ui/components/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { Switch } from "@bogey/ui/components/switch";
 import {
   appFormOptions,
@@ -590,7 +591,7 @@ function EditorBody({
                   variant="ghost"
                   className="mb-1 text-destructive"
                   aria-label="Remove this range"
-                  title="Remove this range"
+                  tooltip="Remove this range"
                   onClick={() => list.removeValue(index)}
                 >
                   <IconTrash />
@@ -878,13 +879,17 @@ function EditorBody({
           title={title}
           width="embedded"
           description={TABS.find((each) => each.key === shown)?.label}
-          actions={
-            <div className="flex gap-2">
-              <Button size="sm" variant="ghost" render={<Link to="/jury" />} nativeButton={false}>
-                <IconArrowLeft />
-                Jury
-              </Button>
-            </div>
+          leading={
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              tooltip="Back to jury"
+              aria-label="Back to jury"
+              render={<Link to="/jury" />}
+              nativeButton={false}
+            >
+              <IconArrowLeft />
+            </Button>
           }
         >
           <form.AppForm>
@@ -984,7 +989,7 @@ function EditorNav({
                   <SidebarMenuButton
                     isActive={tab === each.key}
                     disabled={locked}
-                    title={locked ? "Add the problem first" : undefined}
+                    render={locked ? <LockedTab /> : undefined}
                     onClick={() => {
                       onTab(each.key);
                       if (isMobile) setOpenMobile(false);
@@ -1009,6 +1014,18 @@ function EditorNav({
   );
 }
 
+// a disabled button gets no pointer events, so the hint hangs off a span around it
+function LockedTab(props: React.ComponentProps<"button">) {
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className="block w-full" />}>
+        <button type="button" {...props} />
+      </TooltipTrigger>
+      <TooltipContent side="right">Add the problem first</TooltipContent>
+    </Tooltip>
+  );
+}
+
 // below lg the tabs are a row of buttons over the page instead of a sidebar
 function MobileNav({ tab, onTab, saved }: { tab: Tab; onTab: (tab: Tab) => void; saved: boolean }) {
   return (
@@ -1021,6 +1038,7 @@ function MobileNav({ tab, onTab, saved }: { tab: Tab; onTab: (tab: Tab) => void;
               size="sm"
               variant={tab === each.key ? "secondary" : "ghost"}
               disabled={!saved && !each.form}
+              tooltip={!saved && !each.form ? "Add the problem first" : undefined}
               onClick={() => onTab(each.key)}
             >
               {each.label}

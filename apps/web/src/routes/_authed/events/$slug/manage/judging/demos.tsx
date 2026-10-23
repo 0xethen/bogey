@@ -259,6 +259,7 @@ function DemoRound({ round, title }: { round: JudgingRound; title: string }) {
             <Button
               size="sm"
               disabled={busy || waiting.length === 0}
+              tooltip={waiting.length === 0 ? t("demos.nothingWaiting") : undefined}
               onClick={() => schedule.mutate(false)}
             >
               {t("demos.schedule", { count: waiting.length })}
@@ -267,6 +268,7 @@ function DemoRound({ round, title }: { round: JudgingRound; title: string }) {
               size="sm"
               variant="outline"
               disabled={busy || slotted.size === 0}
+              tooltip={slotted.size === 0 ? t("demos.nothingSlotted") : undefined}
               confirm={{
                 title: t("demos.reshuffleTitle"),
                 description: t("demos.reshuffleBody"),

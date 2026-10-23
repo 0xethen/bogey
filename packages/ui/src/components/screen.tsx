@@ -25,23 +25,29 @@ function ScreenRoot({
   title,
   description,
   actions,
+  leading,
   width = "default",
   children,
 }: {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Left of the title, e.g. an icon button back to the parent screen. */
+  leading?: ReactNode;
   width?: Width;
   children: ReactNode;
 }) {
   return (
     <main className={cn("mx-auto flex w-full flex-col gap-10", WIDTH[width], PADDING[width])}>
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <h1 className="font-heading text-3xl leading-tight font-semibold tracking-tight text-balance">
-            {title}
-          </h1>
-          {description && <p className="text-sm text-muted-fg">{description}</p>}
+        <div className="flex min-w-0 items-center gap-3">
+          {leading && <div className="shrink-0">{leading}</div>}
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <h1 className="font-heading text-3xl leading-tight font-semibold tracking-tight text-balance">
+              {title}
+            </h1>
+            {description && <p className="text-sm text-muted-fg">{description}</p>}
+          </div>
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </header>

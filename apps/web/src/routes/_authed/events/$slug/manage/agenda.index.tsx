@@ -616,7 +616,7 @@ function SessionsEditor() {
                               variant="ghost"
                               className="text-primary-text"
                               aria-label={t("manageAgenda.doneSlot")}
-                              title={t("judging.done")}
+                              tooltip={t("judging.done")}
                               onClick={() => setActiveSlot(null)}
                             >
                               <IconCheck />
@@ -628,7 +628,7 @@ function SessionsEditor() {
                             variant="ghost"
                             className="text-destructive"
                             aria-label={t("manageAgenda.removeSlot")}
-                            title={t("manageAgenda.removeSlot")}
+                            tooltip={t("manageAgenda.removeSlot")}
                             confirm={{
                               title: t("manageAgenda.removeSlotTitle"),
                               description: t("manageAgenda.removeSlotBody", {

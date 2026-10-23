@@ -98,7 +98,7 @@ export function SecurityNotice({ platformAdmin }: { platformAdmin: boolean }) {
           variant="ghost"
           size="icon-sm"
           aria-label={t("securityNotice.dismiss")}
-          title={t("securityNotice.dismiss")}
+          tooltip={t("securityNotice.dismiss")}
           onClick={dismiss}
         >
           <IconX />

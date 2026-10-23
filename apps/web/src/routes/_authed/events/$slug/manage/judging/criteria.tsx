@@ -694,6 +694,11 @@ function RouteComponent() {
                       type="button"
                       variant="outline"
                       disabled={list.value.length >= MAX_CRITERIA}
+                      tooltip={
+                        list.value.length >= MAX_CRITERIA
+                          ? t("common.limitReached", { max: MAX_CRITERIA })
+                          : undefined
+                      }
                       onClick={() => {
                         const uid = crypto.randomUUID();
                         list.pushValue(blankCriterion(uid));

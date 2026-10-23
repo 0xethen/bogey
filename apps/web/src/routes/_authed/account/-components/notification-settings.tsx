@@ -9,6 +9,7 @@ import {
 import { installedPlugins, pluginNotificationKinds } from "@bogey/plugins";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Switch } from "@bogey/ui/components/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { sayOr, useT, type T } from "#/lib/translate.tsx";
 
 function isChannels(raw: unknown): raw is NotificationChannels {
@@ -49,14 +50,20 @@ function KindRow({
           <Switch checked={inApp} onCheckedChange={(checked) => set("inApp", checked)} />
           {t("notifications.bell")}
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <Switch
-            checked={email}
-            disabled={row.transactional}
-            onCheckedChange={(checked) => set("email", checked)}
-          />
-          {t("notifications.email")}
-        </label>
+        <Tooltip>
+          <TooltipTrigger
+            disabled={!row.transactional}
+            render={<label className="flex items-center gap-2 text-sm" />}
+          >
+            <Switch
+              checked={email}
+              disabled={row.transactional}
+              onCheckedChange={(checked) => set("email", checked)}
+            />
+            {t("notifications.email")}
+          </TooltipTrigger>
+          {row.transactional && <TooltipContent>{t("notifications.emailRequired")}</TooltipContent>}
+        </Tooltip>
       </div>
     </li>
   );

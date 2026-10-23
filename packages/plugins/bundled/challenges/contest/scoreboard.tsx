@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { useCan } from "@bogey/db/permissions";
 import { useNow } from "@bogey/ui/hooks/now";
@@ -27,6 +27,7 @@ import {
   useLiveContest,
   type Settings,
 } from "../shared.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
 import type { View } from "./view-tabs.tsx";
 
@@ -127,12 +128,26 @@ function ScoreTable({
           <TableRow>
             <TableHead className="w-12">#</TableHead>
             <TableHead>Team</TableHead>
-            <TableHead className="text-right">{solvedFirst ? "Solved" : "Score"}</TableHead>
-            {icpc && <TableHead className="text-right">Penalty</TableHead>}
-            {lengths && <TableHead className="text-right">Length</TableHead>}
+            <TableHead className="text-right">
+              <Tip text={solvedFirst ? "Problems solved" : "Total points across all problems"}>
+                {solvedFirst ? "Solved" : "Score"}
+              </Tip>
+            </TableHead>
+            {icpc && (
+              <TableHead className="text-right">
+                <Tip text="Minutes until each solve, plus a penalty for each wrong attempt before it">
+                  Penalty
+                </Tip>
+              </TableHead>
+            )}
+            {lengths && (
+              <TableHead className="text-right">
+                <Tip text="Total length of the shortest-solution problems you solved">Length</Tip>
+              </TableHead>
+            )}
             {board.problems.map((problem) => (
-              <TableHead key={problem.id} className="text-center font-mono" title={problem.title}>
-                {problem.label}
+              <TableHead key={problem.id} className="text-center font-mono">
+                <Tip text={problem.title}>{problem.label}</Tip>
               </TableHead>
             ))}
           </TableRow>
@@ -160,7 +175,8 @@ function ScoreTable({
                 return (
                   <TableCell key={problem.id} className="p-1 text-center">
                     {cell && (cell.attempts > 0 || cell.pending > 0) ? (
-                      <span
+                      <Tip
+                        text={cell.first ? "First to solve it" : undefined}
                         className={cn(
                           "inline-flex min-w-12 flex-col items-center rounded-lg px-2 py-1 font-mono text-xs tabular-nums",
                           cellTone(
@@ -174,7 +190,6 @@ function ScoreTable({
                                 : "tried",
                           ),
                         )}
-                        title={cell.first ? "First to solve it" : undefined}
                       >
                         {icpc ? (
                           <>
@@ -202,7 +217,7 @@ function ScoreTable({
                         ) : (
                           (cell.score ?? 0)
                         )}
-                      </span>
+                      </Tip>
                     ) : null}
                   </TableCell>
                 );
@@ -252,5 +267,24 @@ export function ContestPanel({ eventId, settings }: PluginContext<Settings>) {
         )}
       </p>
     </Screen.Section>
+  );
+}
+
+// no tooltip when there is no text
+function Tip({
+  text,
+  className,
+  children,
+}: {
+  text?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  if (!text) return <span className={className}>{children}</span>;
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className={className} />}>{children}</TooltipTrigger>
+      <TooltipContent>{text}</TooltipContent>
+    </Tooltip>
   );
 }

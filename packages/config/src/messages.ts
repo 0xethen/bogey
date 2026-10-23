@@ -1,6 +1,7 @@
 export const en = {
   "common.save": "Save",
   "common.cancel": "Cancel",
+  "common.limitReached": "That's the most you can add: {max}",
 
   "title.notFound": "Not found",
   "title.wentWrong": "Something went wrong",
@@ -449,6 +450,7 @@ export const en = {
     "What reaches you in the bell and by email. Emails about your registration can't be turned off.",
   "notifications.bell": "Bell",
   "notifications.email": "Email",
+  "notifications.emailRequired": "Always sent; it's about your account or an event you're in",
   "notifications.saveFailed": "Couldn't save that",
   "notifGroup.Registration": "Registration",
   "notifGroup.Teams": "Teams",
@@ -559,6 +561,7 @@ export const en = {
   "devices.signedIn": "signed in",
   "devices.signOut": "Sign out",
   "devices.others": "Sign out other devices",
+  "devices.noOthers": "No other devices are signed in",
   "devices.othersTitle": "Sign out everywhere else?",
   "devices.othersBody": "Every other browser and device signs out. This one stays signed in.",
   "devices.othersConfirm": "Sign them out",
@@ -2580,6 +2583,7 @@ export const en = {
     "Everyone who qualifies gets one and a notification. Publish results before issuing awards.",
   "manageCerts.issueLabel": "Issue certificates",
   "manageCerts.issueAll": "Issue all...",
+  "manageCerts.noneIssued": "No certificates have been issued yet",
   "manageCerts.printAll": "Print all...",
   "certDesign.title": "Design",
   "certDesign.heading": "{kind} certificate",
@@ -2635,6 +2639,7 @@ export const en = {
   "certDesign.duplicate": "Duplicate",
   "certDesign.remove": "Remove",
   "certDesign.tooMany": "A certificate holds up to {max} layers.",
+  "certDesign.qrOnce": "A certificate has one QR code",
   "certDesign.saved": "Design saved",
   "certDesign.standardHint":
     "This is the standard design. Change anything and save to make it your own.",
@@ -3205,6 +3210,8 @@ export const en = {
   "demos.reshuffleBody":
     "Every team is placed again, spread evenly across the panels, away from judges they conflict with and toward judges pinned to them. Scores already given stay.",
   "demos.reshuffle": "Reshuffle",
+  "demos.nothingWaiting": "Every project already has a slot",
+  "demos.nothingSlotted": "No projects have been slotted yet",
   "demos.emptyPanel": "No teams on this panel yet.",
   "demos.start": "Start",
   "demos.next": "Next team",
@@ -3740,6 +3747,7 @@ export const en = {
   "ui.pickDate": "Pick a date",
   "ui.preview": "Preview",
   "ui.removeNamed": "Remove {name}",
+  "ui.keepOne": "Keep at least one",
   "ui.removeTitle": "Remove {name}...",
   "ui.stageHint":
     "Drag to move, or use the handles to resize. Arrow keys nudge (Shift for more), Alt with arrows resizes, Delete removes. Hold Alt while dragging to place freely.",

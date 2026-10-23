@@ -237,6 +237,7 @@ export function CertificateEditor({
           <ToolbarButton
             size="sm"
             disabled={full}
+            tooltip={full ? t("certDesign.tooMany", { max: CERTIFICATE_MAX_LAYERS }) : undefined}
             onClick={() =>
               addLayer({
                 id: newId(),
@@ -261,6 +262,7 @@ export function CertificateEditor({
           <ToolbarButton
             size="sm"
             disabled={full || upload.isPending}
+            tooltip={full ? t("certDesign.tooMany", { max: CERTIFICATE_MAX_LAYERS }) : undefined}
             onClick={() => picker.current?.click()}
           >
             <IconPhotoPlus />
@@ -269,6 +271,13 @@ export function CertificateEditor({
           <ToolbarButton
             size="sm"
             disabled={full || hasQr}
+            tooltip={
+              full
+                ? t("certDesign.tooMany", { max: CERTIFICATE_MAX_LAYERS })
+                : hasQr
+                  ? t("certDesign.qrOnce")
+                  : undefined
+            }
             onClick={() =>
               addLayer({
                 id: "qr",
@@ -430,6 +439,9 @@ export function CertificateEditor({
                       size="sm"
                       variant="ghost"
                       disabled={full}
+                      tooltip={
+                        full ? t("certDesign.tooMany", { max: CERTIFICATE_MAX_LAYERS }) : undefined
+                      }
                       onClick={() =>
                         addLayer({
                           ...current,

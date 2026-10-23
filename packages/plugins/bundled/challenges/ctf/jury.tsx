@@ -136,7 +136,7 @@ function CtfJuryHome({ eventId }: { eventId: string }) {
                           size="sm-icon-on-phones"
                           variant="ghost"
                           aria-label={`Edit ${challenge.title}`}
-                          title="Edit"
+                          tooltip="Edit"
                           render={<Link to="/jury" splat={challenge.id} />}
                           nativeButton={false}
                         >
@@ -147,7 +147,7 @@ function CtfJuryHome({ eventId }: { eventId: string }) {
                           size="sm-icon-on-phones"
                           variant="destructive"
                           aria-label={`Delete ${challenge.title}...`}
-                          title="Delete..."
+                          tooltip="Delete..."
                           confirm={{
                             title: `Delete ${challenge.title}?`,
                             description: "Its solves are deleted with it and scores change.",
@@ -385,7 +385,7 @@ function ChallengeEditor({
                       variant="ghost"
                       className="mt-6"
                       aria-label={`Remove hint ${index + 1}`}
-                      title="Remove"
+                      tooltip="Remove"
                       onClick={() => hints.removeValue(index)}
                     >
                       <IconTrash />

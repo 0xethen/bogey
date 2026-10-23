@@ -398,7 +398,7 @@ function Rows<T>({
             size="icon"
             variant="ghost"
             aria-label={t("homeEditor.removeRow", { noun, n: index + 1 })}
-            title={t("homeEditor.removeNoun", { noun })}
+            tooltip={t("homeEditor.removeNoun", { noun })}
             onClick={() => onChange(rows.filter((_, at) => at !== index))}
           >
             <IconX />
@@ -411,6 +411,7 @@ function Rows<T>({
           size="sm"
           variant="outline"
           disabled={rows.length >= max}
+          tooltip={rows.length >= max ? t("common.limitReached", { max }) : undefined}
           onClick={() => onChange([...rows, blank])}
         >
           <IconPlus />

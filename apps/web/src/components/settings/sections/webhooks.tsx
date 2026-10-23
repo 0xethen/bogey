@@ -142,7 +142,7 @@ function WebhookAddress({ url }: { url: string }) {
         size="icon-sm"
         variant="ghost"
         aria-label={toggle}
-        title={toggle}
+        tooltip={toggle}
         onClick={() => setShown((value) => !value)}
       >
         {shown ? <IconEyeOff /> : <IconEye />}
@@ -151,7 +151,7 @@ function WebhookAddress({ url }: { url: string }) {
         size="icon-sm"
         variant="ghost"
         aria-label={t("webhooks.copyAddress")}
-        title={t("webhooks.copyAddress")}
+        tooltip={t("webhooks.copyAddress")}
         onClick={() => copy(url, t)}
       >
         <IconCopy />

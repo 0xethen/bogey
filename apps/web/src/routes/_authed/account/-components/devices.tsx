@@ -66,6 +66,7 @@ export function DevicesSection() {
               size="sm"
               variant="outline"
               disabled={busy || list.filter((device) => !device.current).length === 0}
+              tooltip={list.some((device) => !device.current) ? undefined : t("devices.noOthers")}
               confirm={{
                 title: t("devices.othersTitle"),
                 description: t("devices.othersBody"),

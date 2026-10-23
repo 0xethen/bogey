@@ -195,7 +195,7 @@ export function JuryHome({
                         size="sm-icon-on-phones"
                         variant="ghost"
                         aria-label={`Edit ${problem.title}`}
-                        title="Edit"
+                        tooltip="Edit"
                         render={<Link to="/jury" splat={problem.slug} />}
                         nativeButton={false}
                       >
@@ -206,7 +206,7 @@ export function JuryHome({
                         size="sm-icon-on-phones"
                         variant="ghost"
                         aria-label={`Rejudge every solution to ${problem.label}...`}
-                        title="Rejudge..."
+                        tooltip="Rejudge..."
                         disabled={again.isPending}
                         confirm={{
                           title: `Rejudge every solution to ${problem.label}?`,
@@ -288,7 +288,7 @@ export function JuryHome({
                       size="icon-sm"
                       variant="ghost"
                       aria-label="Rejudge this solution..."
-                      title="Rejudge..."
+                      tooltip="Rejudge..."
                       disabled={again.isPending}
                       onClick={() =>
                         again.mutate({
@@ -308,7 +308,7 @@ export function JuryHome({
                           ? "Stop ignoring this solution..."
                           : "Ignore this solution..."
                       }
-                      title={attempt.ignored ? "Stop ignoring..." : "Ignore..."}
+                      tooltip={attempt.ignored ? "Stop ignoring..." : "Ignore..."}
                       disabled={ignore.isPending}
                       confirm={{
                         title: attempt.ignored
@@ -539,6 +539,7 @@ function DifficultiesForm({
                     size="sm"
                     variant="outline"
                     disabled={list.value.length >= 12}
+                    tooltip={list.value.length >= 12 ? "At most 12" : undefined}
                     onClick={() => {
                       const uid = crypto.randomUUID();
                       list.pushValue({ uid, key: "", label: "", tone: "gray" });
@@ -847,6 +848,13 @@ export function TrySolution({ problem, settings }: { problem: Problem; settings:
           <Button
             className="ml-auto"
             disabled={!previewable || !source.trim() || (cases.data?.length ?? 0) === 0}
+            tooltip={
+              !previewable
+                ? "This language can't run in the browser"
+                : (cases.data?.length ?? 0) === 0
+                  ? "Add a test case first"
+                  : undefined
+            }
             onClick={() => void runAll()}
           >
             <IconPlayerPlay />
@@ -977,7 +985,7 @@ export function Files({ eventId, problem }: { eventId: string; problem: Problem 
                 variant="ghost"
                 className="text-destructive"
                 aria-label={`Remove ${file.name}...`}
-                title={`Remove ${file.name}...`}
+                tooltip={`Remove ${file.name}...`}
                 disabled={remove.isPending}
                 confirm={{
                   title: `Remove ${file.name}?`,

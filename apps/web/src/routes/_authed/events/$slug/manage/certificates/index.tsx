@@ -205,6 +205,7 @@ function RouteComponent() {
             size="sm"
             variant="outline"
             disabled={issued.length === 0}
+            tooltip={issued.length === 0 ? t("manageCerts.noneIssued") : undefined}
             onClick={() => {
               setPrinting(true);
               setTimeout(() => {

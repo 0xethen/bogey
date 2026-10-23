@@ -499,7 +499,7 @@ function ArchiveButton({ conversation }: { conversation: Conversation }) {
       size="icon-sm"
       variant="ghost"
       aria-label={label}
-      title={archive.error ? t("conv.couldnt", { error: archive.error.message }) : label}
+      tooltip={archive.error ? t("conv.couldnt", { error: archive.error.message }) : label}
       disabled={archive.isPending}
       onClick={() => archive.mutate(!conversation.archived)}
     >

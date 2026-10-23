@@ -185,7 +185,7 @@ export function BankPage({ orgId, settings }: PluginPageContext<"org", Settings>
                             size="sm-icon-on-phones"
                             variant="ghost"
                             aria-label={`Edit ${problem.title}`}
-                            title="Edit"
+                            tooltip="Edit"
                             onClick={() => setEditing(problem)}
                           >
                             <IconEdit />
@@ -196,7 +196,7 @@ export function BankPage({ orgId, settings }: PluginPageContext<"org", Settings>
                             variant="ghost"
                             className="text-destructive"
                             aria-label={`Remove ${problem.title} from the bank...`}
-                            title="Remove..."
+                            tooltip="Remove..."
                             disabled={remove.isPending}
                             confirm={{
                               title: `Remove ${problem.title} from the bank?`,

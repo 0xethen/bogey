@@ -2,6 +2,8 @@ import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
 import { cn } from "@bogey/ui/lib/utils";
 import { buttonVariants } from "./button.tsx";
 import type { VariantProps } from "class-variance-authority";
+import type { ReactNode } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip.tsx";
 
 function Toolbar({ className, ...props }: ToolbarPrimitive.Root.Props) {
   return (
@@ -30,9 +32,14 @@ function ToolbarButton({
   className,
   variant = "ghost",
   size = "icon-sm",
+  tooltip,
   ...props
-}: ToolbarPrimitive.Button.Props & VariantProps<typeof buttonVariants>) {
-  return (
+}: ToolbarPrimitive.Button.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** Shown on hover and focus, and on hover while the button is disabled. */
+    tooltip?: ReactNode;
+  }) {
+  const button = (
     <ToolbarPrimitive.Button
       data-slot="toolbar-button"
       className={cn(
@@ -43,6 +50,14 @@ function ToolbarButton({
       )}
       {...props}
     />
+  );
+  if (!tooltip) return button;
+  // a disabled button gets no pointer events, so the tooltip hangs off a span around it
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className="inline-flex" />}>{button}</TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
   );
 }
 

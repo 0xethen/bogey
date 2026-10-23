@@ -64,6 +64,7 @@ export function OptionsInput({
                 name: option || `${noun.toLowerCase()} ${index + 1}`,
               })}
               disabled={value.length === 1}
+              tooltip={value.length === 1 ? t("ui.keepOne") : undefined}
               onClick={() => onChange(value.filter((_, i) => i !== index))}
             >
               <IconX />

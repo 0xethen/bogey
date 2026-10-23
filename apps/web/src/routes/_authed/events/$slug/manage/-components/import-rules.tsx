@@ -181,7 +181,7 @@ function RuleCards({
                     size="icon-xs"
                     variant="ghost"
                     aria-label={t("importRules.removeRule")}
-                    title={t("importRules.removeRule")}
+                    tooltip={t("importRules.removeRule")}
                     onClick={() => onChange(rules.filter((each) => each.id !== rule.id))}
                   >
                     <IconTrash />
@@ -281,7 +281,7 @@ function ConditionRow({
         size="icon-xs"
         variant="ghost"
         aria-label={t("importRules.removeCondition")}
-        title={t("importRules.removeCondition")}
+        tooltip={t("importRules.removeCondition")}
         onClick={onRemove}
       >
         <IconTrash />

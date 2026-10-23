@@ -72,15 +72,16 @@ function Project({ gallery, project }: { gallery: Gallery; project: TeamSubmissi
     <Screen
       title={project.title || t("judging.untitled")}
       description={[project.teamName, gallery.event.name].join(" · ")}
-      actions={
+      leading={
         <Button
-          size="sm"
+          size="icon-sm"
           variant="ghost"
+          tooltip={t("gallery.backToProjects")}
+          aria-label={t("gallery.backToProjects")}
           nativeButton={false}
           render={<Link to="/gallery/$slug" params={{ slug: gallery.event.slug }} />}
         >
           <IconArrowLeft />
-          {t("gallery.all")}
         </Button>
       }
     >

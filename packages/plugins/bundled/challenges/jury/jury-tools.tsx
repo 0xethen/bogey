@@ -506,7 +506,7 @@ export function JurySolutions({ eventId, problem }: { eventId: string; problem: 
                   variant="ghost"
                   className="text-destructive"
                   aria-label={`Remove ${each.label || each.language}...`}
-                  title="Remove..."
+                  tooltip="Remove..."
                   disabled={remove.isPending}
                   confirm={{
                     title: "Remove this solution?",

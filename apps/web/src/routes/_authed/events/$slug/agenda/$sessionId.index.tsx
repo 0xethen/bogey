@@ -76,7 +76,7 @@ function RouteComponent() {
                 variant="ghost"
                 nativeButton={false}
                 aria-label={t("agenda.editSession")}
-                title={t("agenda.editSession")}
+                tooltip={t("agenda.editSession")}
                 render={
                   <Link
                     to="/events/$slug/manage/agenda"

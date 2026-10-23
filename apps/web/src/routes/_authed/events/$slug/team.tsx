@@ -353,7 +353,8 @@ function InviteCode({ code, eventId, renew }: { code: string; eventId: string; r
           onClick={() => {
             void navigator.clipboard.writeText(code).then(() => setCopied(true));
           }}
-          title={copied ? t("team.copied") : t("team.copyCode")}
+          tooltip={copied ? t("team.copied") : t("team.copyCode")}
+          aria-label={copied ? t("team.copied") : t("team.copyCode")}
         >
           {copied ? <IconCopyCheck className="size-4" /> : <IconCopy className="size-4" />}
         </Button>
@@ -362,7 +363,8 @@ function InviteCode({ code, eventId, renew }: { code: string; eventId: string; r
             variant="ghost"
             size="icon-sm"
             disabled={renewCode.isPending}
-            title={renewCode.error ? renewCode.error.message : t("team.newCode")}
+            tooltip={renewCode.error ? renewCode.error.message : t("team.newCode")}
+            aria-label={renewCode.error ? renewCode.error.message : t("team.newCode")}
             confirm={{
               title: t("team.newCodeTitle"),
               description: t("team.newCodeBody"),
