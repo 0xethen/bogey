@@ -443,36 +443,10 @@ function UseInContestForm({
   );
 }
 
-// ── Jury → Add from the bank ──────────────────────────────────────────
+// ── Add a problem → From the bank ─────────────────────────────────────
 
-/** The jury home's way into the bank: pick a problem and add a copy to this contest. */
-export function AddFromBank({
-  eventId,
-  orgId,
-  settings,
-}: {
-  eventId: string;
-  orgId: string | null;
-  settings: Settings;
-}) {
-  const [open, setOpen] = useState(false);
-  if (!orgId) return null;
-  return (
-    <>
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-        <IconDatabase />
-        From the bank...
-      </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          {open && <AddFromBankList eventId={eventId} orgId={orgId} settings={settings} />}
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-function AddFromBankList({
+/** The new-problem page's other start: pick a problem in the bank and add a copy to this contest. */
+export function FromBank({
   eventId,
   orgId,
   settings,
@@ -493,21 +467,17 @@ function AddFromBankList({
     onSuccess: async (id) => {
       const fresh = await queryClient.fetchQuery(problemsQueryOptions(eventId));
       const added = fresh.find((each) => each.id === id);
-      if (added) await goTo("/jury", { splat: added.slug });
+      if (added) await goTo("/jury", { splat: added.slug, replace: true });
     },
   });
   const rows = bank.data ?? [];
   const used = new Set((problems.data ?? []).map((each) => each.bank_problem_id));
 
   return (
-    <div className="flex min-h-0 flex-col gap-4">
-      <DialogHeader>
-        <DialogTitle>Add from the problem bank</DialogTitle>
-        <DialogDescription>
-          A copy comes into this contest as {next || "the next ID"}, with its tests and jury
-          solutions.
-        </DialogDescription>
-      </DialogHeader>
+    <Screen.Section
+      title="From the problem bank"
+      description={`A copy comes into this contest as ${next || "the next ID"}, with its tests and jury solutions.`}
+    >
       <ErrorAlert
         error={bank.error instanceof Error ? bank.error : add.error}
         title="Couldn't add it"
@@ -519,7 +489,7 @@ function AddFromBankList({
           The bank is empty. Save a problem to it from its Reuse tab.
         </p>
       ) : (
-        <>
+        <div className="flex flex-col gap-4">
           <BankFilters
             bank={rows}
             search={search}
@@ -527,7 +497,7 @@ function AddFromBankList({
             category={category}
             onCategory={setCategory}
           />
-          <div className="-mx-2 flex max-h-[50vh] flex-col gap-4 overflow-y-auto px-2">
+          <div className="flex flex-col gap-4">
             {grouped(rows, search, category).map(([group, list]) => (
               <section key={group || NONE} className="flex flex-col gap-1">
                 <h3 className="text-xs font-medium text-muted-fg">{group || "No category"}</h3>
@@ -554,8 +524,8 @@ function AddFromBankList({
               </section>
             ))}
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </Screen.Section>
   );
 }

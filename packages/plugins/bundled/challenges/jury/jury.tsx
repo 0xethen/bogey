@@ -79,7 +79,6 @@ import {
   type Testcase,
 } from "../db.ts";
 import { Rejudgings, Verification } from "./jury-tools.tsx";
-import { AddFromBank } from "../bank/bank.tsx";
 import { SolutionChart } from "./solution-chart.tsx";
 import { ContestExport, ImportPackage } from "./package-tools.tsx";
 import { isPreviewSupported, runClientPreview, sameOutput } from "../preview-runner.ts";
@@ -99,15 +98,7 @@ import {
   type Settings,
 } from "../shared.tsx";
 
-export function JuryHome({
-  eventId,
-  orgId,
-  settings,
-}: {
-  eventId: string;
-  orgId: string | null;
-  settings: Settings;
-}) {
+export function JuryHome({ eventId, settings }: { eventId: string; settings: Settings }) {
   const queryClient = useQueryClient();
   const problems = useProblems(eventId, settings.problemOrder);
   const recent = useQuery({
@@ -146,7 +137,6 @@ export function JuryHome({
           >
             Scoreboard
           </Button>
-          <AddFromBank eventId={eventId} orgId={orgId} settings={settings} />
           <Button size="sm" render={<Link to="/jury" splat="new" />} nativeButton={false}>
             <IconPlus />
             Add a problem

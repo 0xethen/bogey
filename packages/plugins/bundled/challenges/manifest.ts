@@ -136,6 +136,8 @@ export const manifest = definePlugin({
       page: "contest",
       settings: [
         "scoring",
+        "defaultKind",
+        "scoreFrom",
         "golfMeasure",
         "golfPoints",
         "golfRankStep",
@@ -272,6 +274,32 @@ export const manifest = definePlugin({
         { value: "golf", label: "Code golf: the shortest accepted solution scores most" },
       ],
     },
+    defaultKind: {
+      type: "select",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Type of new problems",
+      description:
+        "What a problem is scored by when it's added. Each problem's own type can still be changed on its page.",
+      default: "style",
+      options: [
+        { value: "style", label: "Whatever suits the contest style" },
+        { value: "pass_fail", label: "Pass/fail: solved when every test passes" },
+        { value: "partial", label: "Partial credit: points for each test or subtask passed" },
+        { value: "shortest", label: "Shortest code: solved solutions compete on length" },
+      ],
+    },
+    scoreFrom: {
+      type: "select",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Which solution a partial-credit problem scores",
+      description:
+        "Only for problems of the partial credit type. A compile error never replaces a judged solution.",
+      default: "best",
+      options: [
+        { value: "best", label: "The team's best solution" },
+        { value: "last", label: "The team's last judged solution" },
+      ],
+    },
     golfMeasure: {
       type: "select",
       label: "Length is counted in",
@@ -321,8 +349,8 @@ export const manifest = definePlugin({
     penaltyMinutes: {
       type: "number",
       label: "Penalty per wrong answer (minutes)",
-      description: "Added for each rejected try before a solve.",
-      default: 2,
+      description: "Added for each rejected try before a solve. ICPC uses 20.",
+      default: 20,
       min: 0,
       max: 240,
       showWhen: [

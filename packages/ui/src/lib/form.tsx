@@ -904,13 +904,14 @@ function FormAlert({ title }: { title?: string }) {
   );
 }
 
-function SaveBarEntry() {
+function SaveBarEntry({ within }: { within?: string }) {
   const form = useFormContext();
   return (
     <form.Subscribe selector={(state) => !state.isDefaultValue}>
       {(dirty) => (
         <UnsavedEntry
           dirty={dirty}
+          within={within}
           save={async () => {
             try {
               await form.handleSubmit();
@@ -928,11 +929,11 @@ function SaveBarEntry() {
   );
 }
 
-function DraftGuard() {
+function DraftGuard({ within }: { within?: string }) {
   const form = useFormContext();
   return (
     <form.Subscribe selector={(state) => !state.isDefaultValue && !state.isSubmitting}>
-      {(dirty) => <UnsavedEntry dirty={dirty} reset={() => form.reset()} />}
+      {(dirty) => <UnsavedEntry dirty={dirty} within={within} reset={() => form.reset()} />}
     </form.Subscribe>
   );
 }

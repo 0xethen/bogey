@@ -80,7 +80,9 @@ function describe(settings: Settings, board: ScoreboardData | undefined): string
       ? `Problems solved, then the fewest ${noun} in total across accepted solutions. Each cell shows its length; ★ is the shortest.`
       : `Shortest accepted solution wins, counted in ${noun}. Each cell shows its length and the points it earned.`;
   }
-  return "Points from each problem's best solution.";
+  return settings.scoreFrom === "last"
+    ? "Points from each problem's last judged solution."
+    : "Points from each problem's best solution.";
 }
 
 function Standings({

@@ -14,7 +14,7 @@ export interface UnsavedState {
   dirty: boolean;
   save: () => Promise<boolean>;
   attention: () => void;
-  entries: Tuple<{ id: string; dirty: boolean; draft: boolean }>;
+  entries: Tuple<{ id: string; dirty: boolean; draft: boolean; within?: string }>;
 }
 
 const StateContext = createContext<UnsavedState | null>(null);
@@ -55,7 +55,12 @@ export function UnsavedChanges({ children }: { children: ReactNode }) {
     dirty: dirty.length > 0,
     save,
     attention: () => setAttention((count) => count + 1),
-    entries: [...entries].map(([id, entry]) => ({ id, dirty: entry.dirty, draft: !entry.save })),
+    entries: [...entries].map(([id, entry]) => ({
+      id,
+      dirty: entry.dirty,
+      draft: !entry.save,
+      ...(entry.within === undefined ? {} : { within: entry.within }),
+    })),
   };
 
   return (
@@ -97,6 +102,11 @@ function LeaveGuard() {
   useBlocker({
     shouldBlockFn: ({ current, next }) => {
       if (!dirty || current.pathname === next.pathname) return false;
+      // a draft whose page stays mounted at the next address isn't left behind
+      const kept = (within: string | undefined) =>
+        within !== undefined &&
+        (next.pathname === within || next.pathname.startsWith(`${within}/`));
+      if (unsaved?.entries.every((entry) => !entry.dirty || kept(entry.within))) return false;
       unsaved?.attention();
       return true;
     },

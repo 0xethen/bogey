@@ -6,7 +6,14 @@ import { Screen } from "@bogey/ui/components/screen";
 import { JuryHome } from "./jury.tsx";
 import { ProblemEditor } from "./problem-editor.tsx";
 import { Workspace } from "../contest/problem.tsx";
-import { Link, problemSlug, useLiveContest, useProblems, type Settings } from "../shared.tsx";
+import {
+  Link,
+  problemSlug,
+  splatTab,
+  useLiveContest,
+  useProblems,
+  type Settings,
+} from "../shared.tsx";
 
 type Context = PluginRouteContext<Settings>;
 
@@ -17,18 +24,12 @@ export function ProblemPage(context: Context) {
 export function JuryPage(context: Context) {
   useLiveContest(context.eventId);
   if (!problemSlug(context.splat)) {
-    return (
-      <JuryHome
-        eventId={context.eventId}
-        orgId={context.session.org?.id ?? null}
-        settings={context.settings}
-      />
-    );
+    return <JuryHome eventId={context.eventId} settings={context.settings} />;
   }
   return <ProblemRoute {...context} view="jury" />;
 }
 
-// /problem/<slug> is what participants see; /jury/<slug> edits it. Each links to the other.
+// /problems/<slug> is what participants see; /jury/<slug>/<tab> edits it. Each links to the other.
 function ProblemRoute({
   eventId,
   settings,
@@ -69,6 +70,7 @@ function ProblemRoute({
       orgId={session.org?.id ?? null}
       settings={settings}
       problem={problem}
+      tab={splatTab(splat)}
     />
   );
 }

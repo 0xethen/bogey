@@ -323,7 +323,8 @@ routes: [
   `href(path, { slug })` gives the URL as a string. `SettingsLink` goes to Manage → Plugins and shows
   only to people who can manage the event.
 - `{ path: "/problem", splat: true }` also serves `/problem/<anything>`, and the page gets the rest as
-  `splat`. Pass it to links as `<Link to="/problem" splat="sum">`. Public pages always get the rest.
+  `splat`. Pass it to links as `<Link to="/problem" splat="sum">`; a splat with slashes (`splat="sum/tests"`) is a
+  deeper path, `/problem/sum/tests`, which is how a page gives its own tabs addresses. Public pages always get the rest.
 - A route can be `{ component, loader, title }`. The loader gets the page's context plus `queryClient`
   and runs before the page renders, so prefetch what the page needs there. `title(...)` names the page
   in the tab title and breadcrumbs when that depends on data; it runs after `loader`.

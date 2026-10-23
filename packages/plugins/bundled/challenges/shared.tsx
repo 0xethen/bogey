@@ -33,7 +33,7 @@ import { manifest } from "./manifest.ts";
 
 export type Settings = SettingsOf<typeof manifest>;
 
-export const { Link, useGoTo } = createPluginNav(manifest);
+export const { Link, useGoTo, useHref } = createPluginNav(manifest);
 
 export const signals = createPluginSignals(manifest);
 
@@ -264,6 +264,13 @@ export const KIND_FOR_SCORING: Record<Settings["scoring"], ProblemKind> = {
   golf: "shortest",
 };
 
+// the contest's "Type of new problems" setting, or what its style suggests
+export function defaultKind(settings: Pick<Settings, "scoring" | "defaultKind">): ProblemKind {
+  return settings.defaultKind === "style"
+    ? KIND_FOR_SCORING[settings.scoring]
+    : settings.defaultKind;
+}
+
 export function ProblemKindBadge({ kind }: { kind: ProblemKind }) {
   return (
     <Badge variant="outline" title={PROBLEM_KIND[kind].description}>
@@ -312,12 +319,22 @@ export function allowedLanguages(languages: Tuple<Language>, setting: string): L
   return keys.length ? languages.filter((language) => keys.includes(language.key)) : [...languages];
 }
 
-export function problemSlug(splat: string): string {
+function decoded(segment: string): string {
   try {
-    return decodeURIComponent(splat);
+    return decodeURIComponent(segment);
   } catch {
-    return splat;
+    return segment;
   }
+}
+
+// `/jury/two-sum/tests`: the splat's first segment names the problem
+export function problemSlug(splat: string): string {
+  return decoded(splat.split("/")[0] ?? "");
+}
+
+// and the second one the page's tab
+export function splatTab(splat: string): string {
+  return decoded(splat.split("/")[1] ?? "");
 }
 
 export const topics = {

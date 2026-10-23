@@ -4,6 +4,8 @@ export interface UnsavedEntry {
   dirty: boolean;
   save?: () => Promise<boolean>;
   reset: () => void;
+  /** A path the draft stays open within, like a page whose tabs have their own addresses. */
+  within?: string;
 }
 
 export interface UnsavedRegistry {
@@ -16,10 +18,12 @@ export function useUnsavedEntry({
   dirty,
   save,
   reset,
+  within,
 }: {
   dirty: boolean;
   save?: () => Promise<boolean>;
   reset: () => void;
+  within?: string;
 }) {
   const registry = use(UnsavedRegistryContext);
   const id = useId();
@@ -34,7 +38,8 @@ export function useUnsavedEntry({
       dirty,
       save: savable ? async () => (await latest.current.save?.()) ?? false : undefined,
       reset: () => latest.current.reset(),
+      ...(within === undefined ? {} : { within }),
     });
     return () => registry.set(id, null);
-  }, [registry, id, dirty, savable]);
+  }, [registry, id, dirty, savable, within]);
 }

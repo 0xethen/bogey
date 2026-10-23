@@ -283,7 +283,7 @@ function scoringRule(settings: Settings, problem: Problem): string {
     case "shortest":
       return `Your shortest accepted solution counts, measured in ${MEASURE_NOUN[settings.golfMeasure]}. ${golfRule(settings, problem)}${board}`;
     case "partial":
-      return `Each test or group of tests that passes adds to the problem's points; your best solution counts.${board}`;
+      return `Each test or group of tests that passes adds to the problem's points; your ${settings.scoreFrom === "last" ? "last judged" : "best"} solution counts.${board}`;
     default:
       return `Solving it, every test passing, earns its points; anything less earns none.${board}`;
   }

@@ -26,7 +26,10 @@ export function createPluginNav<const M extends PluginManifest>(manifest: M) {
 
   function href(path: Path, options?: { slug?: string; splat?: string }): string {
     const area = areaOf(path);
-    const below = options?.splat ? `/${encodeURIComponent(options.splat)}` : "";
+    // a splat with slashes is a deeper path, so each segment is encoded on its own
+    const below = options?.splat
+      ? `/${options.splat.split("/").map(encodeURIComponent).join("/")}`
+      : "";
     return `${pluginPageUrl(manifest, area, path, options?.slug)}${below}`;
   }
 
@@ -52,6 +55,11 @@ export function createPluginNav<const M extends PluginManifest>(manifest: M) {
       navigate({ to: href(path, { slug, splat: options?.splat }), replace: options?.replace });
   }
 
+  function useHref(path: Path, options?: { splat?: string }): string {
+    const slug = useSlug();
+    return href(path, { slug, splat: options?.splat });
+  }
+
   function SettingsLink(props: PluginLinkProps) {
     const slug = useSlug();
     const access = useEventAccess();
@@ -59,5 +67,5 @@ export function createPluginNav<const M extends PluginManifest>(manifest: M) {
     return <RouterLink {...props} to="/events/$slug/manage/plugins" params={{ slug }} />;
   }
 
-  return { Link, SettingsLink, href, useGoTo };
+  return { Link, SettingsLink, href, useGoTo, useHref };
 }

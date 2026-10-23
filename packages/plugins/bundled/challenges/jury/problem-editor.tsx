@@ -1,12 +1,20 @@
-import { useRef, useState, type ComponentType, type ReactNode, type SVGProps } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+  type SVGProps,
+} from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import { z } from "zod";
 import {
   IconAlertTriangle,
   IconArrowLeft,
   IconCode,
   IconCopy,
+  IconDatabase,
   IconEye,
   IconFileText,
   IconGauge,
@@ -63,17 +71,19 @@ import { Files, RemoveProblem, Tests, TrySolution } from "./jury.tsx";
 import { JurySolutions } from "./jury-tools.tsx";
 import { ProblemPackage } from "./package-tools.tsx";
 import { ReuseProblem } from "./reuse.tsx";
+import { FromBank } from "../bank/bank.tsx";
 import {
   editorLanguage,
   idProblem,
   ID_KINDS,
-  KIND_FOR_SCORING,
+  defaultKind,
   Link,
   MEASURE_NOUN,
   nextId,
   PROBLEM_KIND,
   useDifficulties,
   useGoTo,
+  useHref,
   useProblems,
   type Settings,
 } from "../shared.tsx";
@@ -81,6 +91,7 @@ import {
 // ── tabs ───────────────────────────────────────────────────────────────
 
 type Tab =
+  | "bank"
   | "details"
   | "statement"
   | "limits"
@@ -99,6 +110,8 @@ interface TabDef {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   /** Saved with the problem's form; the others need the problem to exist first. */
   form?: boolean;
+  /** Only while adding a problem. */
+  adding?: boolean;
 }
 
 const GROUPS: Tuple<{ label: string; tabs: Tuple<TabDef> }> = [
@@ -109,6 +122,10 @@ const GROUPS: Tuple<{ label: string; tabs: Tuple<TabDef> }> = [
       { key: "statement", label: "Statement", icon: IconFileText, form: true },
       { key: "limits", label: "Limits", icon: IconGauge, form: true },
     ],
+  },
+  {
+    label: "Or start from",
+    tabs: [{ key: "bank", label: "The problem bank", icon: IconDatabase, adding: true }],
   },
   {
     label: "Judging",
@@ -133,18 +150,30 @@ const GROUPS: Tuple<{ label: string; tabs: Tuple<TabDef> }> = [
 const TABS = GROUPS.flatMap((group) => group.tabs);
 const isTab = (value: string): value is Tab => TABS.some((tab) => tab.key === value);
 
-/** The open tab is the address's hash (`/jury/two-sum#tests`), so a tab can be linked to. */
-function useTab(): [Tab, (tab: Tab) => void] {
+// what a tab can show: a new problem has its form and the bank, a saved one everything else
+function opens(tab: TabDef, saved: boolean): boolean {
+  return saved ? !tab.adding : !!tab.form || !!tab.adding;
+}
+
+/** A tab's address: `/jury/two-sum/tests`, `/jury/new/limits`; Details is the problem's own. */
+function tabSplat(slug: string, tab: Tab): string {
+  return tab === "details" ? slug : `${slug}/${tab}`;
+}
+
+// an address naming a tab the problem can't show, or an old `#tests` link, goes to the right one
+function useTabAddress(slug: string, requested: string, saved: boolean): Tab {
   const hash = useLocation({ select: (location) => location.hash });
-  const navigate = useNavigate();
-  const tab = isTab(hash) ? hash : "details";
-  return [
-    tab,
-    (next) => {
-      void navigate({ to: ".", hash: next, replace: true, resetScroll: false });
-      window.scrollTo({ top: 0 });
-    },
-  ];
+  const goTo = useGoTo();
+  const asked = requested || hash || "details";
+  const def = TABS.find((each) => each.key === asked);
+  const tab: Tab = def && opens(def, saved) ? def.key : "details";
+  const canonical = tabSplat(slug, tab);
+  const current = requested ? `${slug}/${requested}` : slug;
+  const stale = canonical !== current || hash !== "";
+  useEffect(() => {
+    if (stale) void goTo("/jury", { splat: canonical, replace: true });
+  }, [stale, canonical, goTo]);
+  return tab;
 }
 
 // ── the form ───────────────────────────────────────────────────────────
@@ -334,7 +363,7 @@ function valuesOf(
     difficulty: problem?.difficulty ?? "none",
     points: problem?.points ?? 100,
     golfBrackets: problem?.golf_brackets ?? [],
-    kind: problem?.kind ?? KIND_FOR_SCORING[settings.scoring],
+    kind: problem?.kind ?? defaultKind(settings),
     timeLimitMs: problem?.time_limit_ms ?? 2000,
     memoryLimitMb: problem?.memory_limit_mb ?? 256,
     outputLimitKb: problem?.output_limit_kb ?? 8192,
@@ -380,11 +409,14 @@ export function ProblemEditor({
   orgId,
   settings,
   problem,
+  tab,
 }: {
   eventId: string;
   orgId: string | null;
   settings: Settings;
   problem: Problem | undefined;
+  /** The address's tab, after the problem: `tests` in `/jury/two-sum/tests`. */
+  tab: string;
 }) {
   const problems = useProblems(eventId, settings.problemOrder);
   // the scripts aren't selectable, so the form waits for them before it starts its draft
@@ -397,6 +429,7 @@ export function ProblemEditor({
       orgId={orgId}
       settings={settings}
       problem={problem}
+      requested={tab}
       scripts={scripts.data ?? null}
       next={nextId(settings.idKind, problems.data ?? [])}
     />
@@ -408,6 +441,7 @@ function EditorBody({
   orgId,
   settings,
   problem,
+  requested,
   scripts,
   next,
 }: {
@@ -415,10 +449,14 @@ function EditorBody({
   orgId: string | null;
   settings: Settings;
   problem: Problem | undefined;
+  requested: string;
   scripts: Scripts | null;
   next: string;
 }) {
-  const [tab, setTab] = useTab();
+  const slug = problem?.slug ?? "new";
+  const tab = useTabAddress(slug, requested, !!problem);
+  // the draft stays while moving between the problem's tabs
+  const within = useHref("/jury", { splat: slug });
   const [invalid, setInvalid] = useState<ReadonlySet<Tab>>(new Set());
   const panes = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
@@ -427,6 +465,7 @@ function EditorBody({
   const enabled = languages.data ?? [];
   const editorSettings = { ...DEFAULT_EDITOR_SETTINGS, tabSize: settings.editorTabSize };
   const goTo = useGoTo();
+  const setTab = (next: Tab) => void goTo("/jury", { splat: tabSplat(slug, next) });
   const pdfPath = problem?.statement_pdf_path ?? null;
   const schema = problemSchema(settings, pdfPath);
   const form = useAppForm({
@@ -483,7 +522,7 @@ function EditorBody({
       }
       await queryClient.invalidateQueries({ queryKey: problemsQueryOptions(eventId).queryKey });
       if (!problem || problem.slug !== slug) {
-        await goTo("/jury", { splat: slug, replace: true });
+        await goTo("/jury", { splat: tabSplat(slug, tab), replace: true });
       }
       return undefined;
     },
@@ -858,10 +897,9 @@ function EditorBody({
     );
   };
 
-  const current = TABS.find((each) => each.key === tab) ?? TABS[0];
-  // a new problem has only its form until it's added
-  const shown = !problem && !current?.form ? "details" : tab;
+  const shown = tab;
   const title = problem ? `${problem.label}. ${problem.title}` : "New problem";
+  const banked = !!orgId;
 
   return (
     <SidebarProvider className="mx-auto max-w-6xl px-4 sm:px-6 lg:gap-8">
@@ -871,10 +909,10 @@ function EditorBody({
         collapsible="none"
         className="hidden lg:flex lg:py-6"
       >
-        <EditorNav tab={shown} onTab={setTab} slug={problem?.slug} invalid={invalid} />
+        <EditorNav tab={shown} slug={problem?.slug} banked={banked} invalid={invalid} />
       </Sidebar>
       <SidebarInset>
-        <MobileNav tab={shown} onTab={setTab} saved={!!problem} />
+        <MobileNav tab={shown} slug={problem?.slug} banked={banked} />
         <Screen
           title={title}
           width="embedded"
@@ -893,7 +931,7 @@ function EditorBody({
           }
         >
           <form.AppForm>
-            {problem ? <form.SaveBarEntry /> : <form.DraftGuard />}
+            {problem ? <form.SaveBarEntry within={within} /> : <form.DraftGuard within={within} />}
             <form.Form
               ref={panes}
               className={cn(
@@ -919,11 +957,24 @@ function EditorBody({
                   <form.Submit pending="Adding...">Add the problem</form.Submit>
                   <span className="text-sm text-muted-fg">
                     Tests, jury solutions and files come once it's added.
+                    {banked && (
+                      <>
+                        {" "}
+                        Or{" "}
+                        <Link to="/jury" splat={tabSplat(slug, "bank")} className="link">
+                          start from the problem bank
+                        </Link>
+                        .
+                      </>
+                    )}
                   </span>
                 </div>
               )}
             </form.Form>
           </form.AppForm>
+          {!problem && shown === "bank" && orgId && (
+            <FromBank eventId={eventId} orgId={orgId} settings={settings} />
+          )}
           {problem && shown === "tests" && <Tests eventId={eventId} problem={problem} />}
           {problem && shown === "solutions" && (
             <JurySolutions eventId={eventId} problem={problem} />
@@ -950,15 +1001,20 @@ function Pane({ tab, shown, children }: { tab: Tab; shown: Tab; children: ReactN
   );
 }
 
+// the tabs a problem lists: a saved one hides the ways to start one, a new one greys out the rest
+function listed(tabs: Tuple<TabDef>, saved: boolean, banked: boolean): TabDef[] {
+  return tabs.filter((each) => (each.adding ? !saved && banked : true));
+}
+
 function EditorNav({
   tab,
-  onTab,
   slug,
+  banked,
   invalid,
 }: {
   tab: Tab;
-  onTab: (tab: Tab) => void;
   slug: string | undefined;
+  banked: boolean;
   invalid: ReadonlySet<Tab>;
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
@@ -977,24 +1033,18 @@ function EditorNav({
           </SidebarMenu>
         </SidebarGroup>
       )}
-      {GROUPS.map((group) => (
-        <SidebarGroup key={group.label} className="lg:px-0">
-          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-          <SidebarMenu>
-            {group.tabs.map((each) => {
-              const Icon = each.icon;
-              const locked = !saved && !each.form;
-              return (
-                <SidebarMenuItem key={each.key}>
-                  <SidebarMenuButton
-                    isActive={tab === each.key}
-                    disabled={locked}
-                    render={locked ? <LockedTab /> : undefined}
-                    onClick={() => {
-                      onTab(each.key);
-                      if (isMobile) setOpenMobile(false);
-                    }}
-                  >
+      {GROUPS.map((group) => {
+        const tabs = listed(group.tabs, saved, banked);
+        if (tabs.length === 0) return null;
+        return (
+          <SidebarGroup key={group.label} className="lg:px-0">
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarMenu>
+              {tabs.map((each) => {
+                const Icon = each.icon;
+                const locked = !opens(each, saved);
+                const label = (
+                  <>
                     <Icon />
                     <span>{each.label}</span>
                     {invalid.has(each.key) && (
@@ -1003,13 +1053,32 @@ function EditorNav({
                         className="ml-auto text-destructive"
                       />
                     )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
-      ))}
+                  </>
+                );
+                return (
+                  <SidebarMenuItem key={each.key}>
+                    {locked ? (
+                      <SidebarMenuButton disabled render={<LockedTab />}>
+                        {label}
+                      </SidebarMenuButton>
+                    ) : (
+                      <SidebarMenuButton
+                        isActive={tab === each.key}
+                        render={<Link to="/jury" splat={tabSplat(slug ?? "new", each.key)} />}
+                        onClick={() => {
+                          if (isMobile) setOpenMobile(false);
+                        }}
+                      >
+                        {label}
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+        );
+      })}
     </SidebarContent>
   );
 }
@@ -1026,23 +1095,34 @@ function LockedTab(props: React.ComponentProps<"button">) {
   );
 }
 
-// below lg the tabs are a row of buttons over the page instead of a sidebar
-function MobileNav({ tab, onTab, saved }: { tab: Tab; onTab: (tab: Tab) => void; saved: boolean }) {
+// below lg the tabs are a row of links over the page instead of a sidebar
+function MobileNav({ tab, slug, banked }: { tab: Tab; slug: string | undefined; banked: boolean }) {
+  const saved = slug !== undefined;
   return (
     <nav aria-label="Problem" className="-mx-4 overflow-x-auto px-4 pt-4 lg:hidden">
       <ul className="flex w-max gap-1">
-        {TABS.map((each) => (
+        {listed(TABS, saved, banked).map((each) => (
           <li key={each.key}>
-            <Button
-              type="button"
-              size="sm"
-              variant={tab === each.key ? "secondary" : "ghost"}
-              disabled={!saved && !each.form}
-              tooltip={!saved && !each.form ? "Add the problem first" : undefined}
-              onClick={() => onTab(each.key)}
-            >
-              {each.label}
-            </Button>
+            {opens(each, saved) ? (
+              <Button
+                size="sm"
+                variant={tab === each.key ? "secondary" : "ghost"}
+                nativeButton={false}
+                render={<Link to="/jury" splat={tabSplat(slug ?? "new", each.key)} />}
+              >
+                {each.label}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled
+                tooltip="Add the problem first"
+              >
+                {each.label}
+              </Button>
+            )}
           </li>
         ))}
       </ul>
