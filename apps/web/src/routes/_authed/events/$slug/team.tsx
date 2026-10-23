@@ -25,7 +25,7 @@ import { Button } from "@bogey/ui/components/button";
 import { Badge } from "@bogey/ui/components/badge";
 import { Roster } from "#/components/event/team/roster.tsx";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { Screen } from "@bogey/ui/components/screen";
 import {
   StartOrJoinTeam,
@@ -245,7 +245,7 @@ function YourTeam({
 
       {editable && (
         <Screen.Section title={t("team.settings")}>
-          <DisclosureList>
+          <RowList>
             {isCaptain && (
               <DisclosureRow title={t("team.rename")} meta={mine.team.name}>
                 <RenameTeam mine={mine} eventId={eventId} />
@@ -328,7 +328,7 @@ function YourTeam({
                 </div>
               </DisclosureRow>
             )}
-          </DisclosureList>
+          </RowList>
         </Screen.Section>
       )}
     </>

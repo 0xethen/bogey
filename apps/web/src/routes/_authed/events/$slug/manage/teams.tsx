@@ -19,7 +19,7 @@ import { requestFailure, unwrap } from "@bogey/db/errors";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { DataTable, dataColumns, type DataTableFilter } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { OptSelect } from "@bogey/ui/components/opt-select";
@@ -302,7 +302,7 @@ function RouteComponent() {
               </Button>
             }
           >
-            <DisclosureList>
+            <RowList>
               {unassigned.shown.map((person) => (
                 <DisclosureRow
                   key={person.userId}
@@ -311,7 +311,7 @@ function RouteComponent() {
                   actions={actions.moveSelect(person.userId, person.name, null)}
                 />
               ))}
-            </DisclosureList>
+            </RowList>
             <PageControls paging={unassigned.paging} />
           </Screen.Section>
         )}

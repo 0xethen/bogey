@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow } from "@bogey/ui/components/row";
 import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
 import { Input } from "@bogey/ui/components/input";
 import { NativeSelect, NativeSelectOption } from "@bogey/ui/components/native-select";

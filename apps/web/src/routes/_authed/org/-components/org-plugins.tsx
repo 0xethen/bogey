@@ -14,7 +14,7 @@ import {
   EmptyTitle,
 } from "@bogey/ui/components/empty";
 import { IconPuzzle } from "@tabler/icons-react";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import { Switch } from "@bogey/ui/components/switch";
@@ -71,7 +71,7 @@ export function OrgPlugins({ orgId }: { orgId: string }) {
       description={t("orgExt.offeredHelp")}
     >
       <ErrorAlert error={save.error} title={t("orgExt.changeFailed")} />
-      <DisclosureList>
+      <RowList>
         {plugins.map((manifest) => (
           <DisclosureRow
             key={manifest.key}
@@ -98,7 +98,7 @@ export function OrgPlugins({ orgId }: { orgId: string }) {
             )}
           </DisclosureRow>
         ))}
-      </DisclosureList>
+      </RowList>
     </Screen.Section>
   );
 }

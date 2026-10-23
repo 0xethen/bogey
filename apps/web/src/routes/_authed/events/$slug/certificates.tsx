@@ -18,6 +18,7 @@ import {
   EmptyTitle,
 } from "@bogey/ui/components/empty";
 import { Screen } from "@bogey/ui/components/screen";
+import { Row, RowList } from "@bogey/ui/components/row";
 import { msg, sayOr, useT } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/certificates")({
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authed/events/$slug/certificates")({
   component: RouteComponent,
 });
 
-function Row({ option, eventId }: { option: CertificateOption; eventId: string }) {
+function CertificateRow({ option, eventId }: { option: CertificateOption; eventId: string }) {
   const t = useT();
   const queryClient = useQueryClient();
   const claim = useMutation({
@@ -41,27 +42,29 @@ function Row({ option, eventId }: { option: CertificateOption; eventId: string }
   const kind = sayOr(t, `certKind.${option.kind}`, CERTIFICATE_LABELS[option.kind]);
   const title = option.label ? t("certificates.kindLabel", { kind, label: option.label }) : kind;
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 py-3">
-      <span>{title}</span>
-      {option.code ? (
-        <Button
-          size="sm"
-          variant="outline"
-          nativeButton={false}
-          render={<Link to="/certificates/$code" params={{ code: option.code }} />}
-        >
-          {t("certificates.open")}
-        </Button>
-      ) : (
-        <span className="flex items-center gap-2">
-          <ErrorAlert error={claim.error} />
+    <Row
+      render={<li />}
+      title={title}
+      actions={
+        option.code ? (
+          <Button
+            size="sm"
+            variant="outline"
+            nativeButton={false}
+            render={<Link to="/certificates/$code" params={{ code: option.code }} />}
+          >
+            {t("certificates.open")}
+          </Button>
+        ) : (
           <Button size="sm" disabled={claim.isPending} onClick={() => claim.mutate()}>
             {t("certificates.get")}
           </Button>
-        </span>
-      )}
-      <span className="sr-only">{option.code ? verificationPath(option.code) : ""}</span>
-    </li>
+        )
+      }
+    >
+      {claim.error && <ErrorAlert error={claim.error} />}
+      {option.code && <span className="sr-only">{verificationPath(option.code)}</span>}
+    </Row>
   );
 }
 
@@ -86,15 +89,15 @@ function RouteComponent() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <ul className="divide-y divide-border">
+        <RowList render={<ul />}>
           {options.map((option) => (
-            <Row
+            <CertificateRow
               key={`${option.kind}:${option.awardId ?? ""}`}
               option={option}
               eventId={event.id}
             />
           ))}
-        </ul>
+        </RowList>
       )}
     </Screen>
   );

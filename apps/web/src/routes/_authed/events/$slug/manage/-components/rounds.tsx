@@ -15,7 +15,7 @@ import { submissionFormsQueryOptions } from "@bogey/db/queries/submissions";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { requestFailure } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { Screen } from "@bogey/ui/components/screen";
 import {
   appFormOptions,
@@ -371,7 +371,7 @@ export function Rounds({
             {(judged.length > 1 || several) && (
               <h3 className="text-sm font-medium">{form.title}</h3>
             )}
-            <DisclosureList>
+            <RowList>
               {rounds.map((round, index) => (
                 <RoundRow
                   key={round.id}
@@ -387,7 +387,7 @@ export function Rounds({
                   plugins={plugins}
                 />
               ))}
-            </DisclosureList>
+            </RowList>
           </div>
         );
       })}

@@ -46,7 +46,7 @@ import {
   AlertDialogTitle,
 } from "@bogey/ui/components/alert-dialog";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import {
   DataTable,
   dataColumns,
@@ -960,7 +960,7 @@ function Overlaps({ eventId }: { eventId: string }) {
       title={t("managePeople.overlaps")}
       description={t("managePeople.overlapsHelp")}
     >
-      <DisclosureList>
+      <RowList>
         {[...byEmail].map(([email, others]) => {
           const differs = others.some((other) => other.nameDiffers);
           return (
@@ -991,7 +991,7 @@ function Overlaps({ eventId }: { eventId: string }) {
             </DisclosureRow>
           );
         })}
-      </DisclosureList>
+      </RowList>
     </Screen.Section>
   );
 }

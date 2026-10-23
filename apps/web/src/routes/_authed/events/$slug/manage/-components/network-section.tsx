@@ -13,6 +13,7 @@ import {
 } from "@bogey/db/queries/settings";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
+import { Row, RowList } from "@bogey/ui/components/row";
 import {
   appFormOptions,
   errorVisibility,
@@ -144,17 +145,22 @@ export function NetworkSection({ eventId }: { eventId: string }) {
       {blocked.length > 0 && (
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-medium">{t("netSection.blocked")}</h3>
-          <ul className="flex flex-col divide-y divide-border text-sm">
+          <RowList variant="flush" render={<ul />}>
             {blocked.map((attempt) => (
-              <li key={attempt.at} className="flex flex-wrap items-baseline gap-x-2 py-2">
-                <span className="font-medium">{attempt.name ?? t("netSection.someone")}</span>
-                {attempt.ip && <span className="font-mono text-muted-fg">{attempt.ip}</span>}
-                <span className="ml-auto text-muted-fg">
-                  <RelativeTime value={attempt.at} />
-                </span>
-              </li>
+              <Row
+                key={attempt.at}
+                render={<li />}
+                size="sm"
+                title={attempt.name ?? t("netSection.someone")}
+                meta={attempt.ip && <span className="font-mono">{attempt.ip}</span>}
+                actions={
+                  <span className="text-sm text-muted-fg">
+                    <RelativeTime value={attempt.at} />
+                  </span>
+                }
+              />
             ))}
-          </ul>
+          </RowList>
         </div>
       )}
     </Screen.Section>

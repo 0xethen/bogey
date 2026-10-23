@@ -3,6 +3,7 @@ import { formatForDisplay, useHotkeyRecorder } from "@tanstack/react-hotkeys";
 import { Button } from "@bogey/ui/components/button";
 import { FieldError } from "@bogey/ui/components/field";
 import { Kbd } from "@bogey/ui/components/kbd";
+import { Row, RowList } from "@bogey/ui/components/row";
 import { installedPlugins, type PluginHotkeyDeclaration } from "@bogey/plugins";
 import { bindingProblem, type Binding } from "#/lib/shortcut-conflicts.ts";
 import {
@@ -20,19 +21,19 @@ export function ShortcutSettings() {
   const all = useBindings();
   return (
     <div className="flex flex-col gap-4">
-      <ul className="flex flex-col divide-y divide-border">
+      <RowList variant="flush" render={<ul />}>
         {SHORTCUT_IDS.map((id) => (
           <CoreShortcutRow key={id} id={id} all={all} />
         ))}
-      </ul>
+      </RowList>
       {plugins.map((manifest) => (
         <div key={manifest.key} className="flex flex-col gap-1">
           <h3 className="text-sm font-medium text-muted-fg">{manifest.name}</h3>
-          <ul className="flex flex-col divide-y divide-border">
+          <RowList variant="flush" render={<ul />}>
             {manifest.hotkeys?.map((hotkey) => (
               <PluginShortcutRow key={hotkey.id} plugin={manifest.key} hotkey={hotkey} all={all} />
             ))}
-          </ul>
+          </RowList>
         </div>
       ))}
     </div>
@@ -106,40 +107,42 @@ function ShortcutRow({
   const problem = refusal ?? (error instanceof Error ? error.message : null);
 
   return (
-    <li className="flex flex-wrap items-center gap-3 py-3">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-sm font-medium">{name}</span>
-        <span className="text-xs text-muted-fg">{description}</span>
-        {problem && <FieldError>{problem}</FieldError>}
-      </div>
-      {recorder.isRecording ? (
-        <>
-          <span className="text-sm text-muted-fg" aria-live="polite">
-            {recorder.recordedHotkey
-              ? formatForDisplay(recorder.recordedHotkey)
-              : t("shortcuts.recording")}
-          </span>
-          <Button size="sm" variant="ghost" onClick={recorder.cancelRecording}>
-            {t("common.cancel")}
-          </Button>
-        </>
-      ) : (
-        <>
-          {keys ? (
-            <Kbd>{formatForDisplay(keys)}</Kbd>
-          ) : (
-            <span className="text-sm text-muted-fg">{t("shortcuts.off")}</span>
-          )}
-          <Button size="sm" variant="outline" onClick={recorder.startRecording}>
-            {t("shortcuts.change")}
-          </Button>
-          {custom && (
-            <Button size="sm" variant="ghost" onClick={() => set(fallback)}>
-              {t("shortcuts.reset")}
+    <Row
+      render={<li />}
+      title={name}
+      meta={description}
+      actions={
+        recorder.isRecording ? (
+          <>
+            <span className="text-sm text-muted-fg" aria-live="polite">
+              {recorder.recordedHotkey
+                ? formatForDisplay(recorder.recordedHotkey)
+                : t("shortcuts.recording")}
+            </span>
+            <Button size="sm" variant="ghost" onClick={recorder.cancelRecording}>
+              {t("common.cancel")}
             </Button>
-          )}
-        </>
-      )}
-    </li>
+          </>
+        ) : (
+          <>
+            {keys ? (
+              <Kbd>{formatForDisplay(keys)}</Kbd>
+            ) : (
+              <span className="text-sm text-muted-fg">{t("shortcuts.off")}</span>
+            )}
+            <Button size="sm" variant="outline" onClick={recorder.startRecording}>
+              {t("shortcuts.change")}
+            </Button>
+            {custom && (
+              <Button size="sm" variant="ghost" onClick={() => set(fallback)}>
+                {t("shortcuts.reset")}
+              </Button>
+            )}
+          </>
+        )
+      }
+    >
+      {problem && <FieldError>{problem}</FieldError>}
+    </Row>
   );
 }

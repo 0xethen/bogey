@@ -4,7 +4,7 @@ import { submissionFormsQueryOptions } from "@bogey/db/queries/submissions";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { Screen } from "@bogey/ui/components/screen";
 import { IconPlus } from "@tabler/icons-react";
 import { windowLabel } from "#/lib/windows.ts";
@@ -78,7 +78,7 @@ function RouteComponent() {
       {forms.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("manageForms.none")}</p>
       ) : (
-        <DisclosureList>
+        <RowList>
           {forms.map((form) => (
             <DisclosureRow
               key={form.id}
@@ -88,7 +88,7 @@ function RouteComponent() {
               <FormEditor form={form} />
             </DisclosureRow>
           ))}
-        </DisclosureList>
+        </RowList>
       )}
       <Screen.Section id="submitting-and-deleting" title={t("manageForms.submitting")}>
         <SettingFields

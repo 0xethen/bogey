@@ -49,7 +49,7 @@ import { formatDateRange, type FormatOptions } from "@bogey/utils/time";
 import { Button } from "@bogey/ui/components/button";
 import { Countdown } from "@bogey/ui/components/countdown";
 import { DialogTrigger } from "@bogey/ui/components/dialog";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { Facts, type Fact } from "@bogey/ui/components/facts";
 import { Markdown } from "@bogey/ui/components/markdown";
 import { Screen } from "@bogey/ui/components/screen";
@@ -618,7 +618,7 @@ export function HomeBlockView({
       }
       return (
         <Screen.Section title={title}>
-          <DisclosureList>
+          <RowList>
             {data.pages.map((page) => (
               <Link
                 key={page.id}
@@ -630,7 +630,7 @@ export function HomeBlockView({
                 <IconArrowUpRight className="size-4 text-muted-fg" />
               </Link>
             ))}
-          </DisclosureList>
+          </RowList>
         </Screen.Section>
       );
 
@@ -712,13 +712,13 @@ export function HomeBlockView({
       }
       return (
         <Screen.Section title={title}>
-          <DisclosureList>
+          <RowList>
             {block.questions.map((item, index) => (
               <DisclosureRow key={`${item.question}-${index}`} title={item.question}>
                 <Markdown>{item.answer}</Markdown>
               </DisclosureRow>
             ))}
-          </DisclosureList>
+          </RowList>
         </Screen.Section>
       );
 

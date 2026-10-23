@@ -16,7 +16,7 @@ import {
   IconUser,
   IconUsersGroup,
 } from "@tabler/icons-react";
-import { LinkRow } from "@bogey/ui/components/link-row";
+import { LinkRow } from "@bogey/ui/components/row";
 import { eventConversationsQueryOptions } from "@bogey/db/queries/messages";
 // import { newAnnouncement } from "#/components/event/messaging/announcement-composer.tsx";
 // import { DialogTrigger } from "@bogey/ui/components/dialog";

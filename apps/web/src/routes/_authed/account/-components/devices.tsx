@@ -11,14 +11,7 @@ import { describeUserAgent } from "@bogey/utils/user-agent";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from "@bogey/ui/components/item";
+import { Row, RowList } from "@bogey/ui/components/row";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { Skeleton } from "@bogey/ui/components/skeleton";
@@ -105,50 +98,51 @@ export function DevicesSection() {
       {devices.isPending ? (
         <Skeleton className="h-24 w-full" />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <RowList render={<ul />}>
           {list.map((device) => {
             const Icon = describeUserAgent(device.userAgent).mobile
               ? IconDeviceMobile
               : IconDeviceDesktop;
             return (
-              <li key={device.id}>
-                <Item variant="outline">
-                  <ItemMedia>
-                    <Icon className="size-5 text-muted-fg" />
-                  </ItemMedia>
-                  <ItemContent>
-                    <ItemTitle>
-                      {deviceName(device, t)}
-                      {device.current && <Badge variant="secondary">{t("devices.this")}</Badge>}
-                    </ItemTitle>
-                    <ItemDescription className="line-clamp-none">
-                      {device.ip && (
-                        <>
-                          <Blurred>{device.ip}</Blurred> ·{" "}
-                        </>
-                      )}
-                      {t("devices.active")} <RelativeTime value={device.lastActive} />
-                      {" · "}
-                      {t("devices.signedIn")} <RelativeTime value={device.createdAt} />
-                    </ItemDescription>
-                  </ItemContent>
-                  {signOutOthers && !device.current && (
-                    <ItemActions>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        disabled={busy}
-                        onClick={() => one.mutate(device.id)}
-                      >
-                        {t("devices.signOut")}
-                      </Button>
-                    </ItemActions>
-                  )}
-                </Item>
-              </li>
+              <Row
+                key={device.id}
+                render={<li />}
+                leading={<Icon />}
+                title={
+                  <>
+                    {deviceName(device, t)}
+                    {device.current && <Badge variant="secondary">{t("devices.this")}</Badge>}
+                  </>
+                }
+                meta={
+                  <>
+                    {device.ip && (
+                      <>
+                        <Blurred>{device.ip}</Blurred> ·{" "}
+                      </>
+                    )}
+                    {t("devices.active")} <RelativeTime value={device.lastActive} />
+                    {" · "}
+                    {t("devices.signedIn")} <RelativeTime value={device.createdAt} />
+                  </>
+                }
+                actions={
+                  signOutOthers &&
+                  !device.current && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => one.mutate(device.id)}
+                    >
+                      {t("devices.signOut")}
+                    </Button>
+                  )
+                }
+              />
             );
           })}
-        </ul>
+        </RowList>
       )}
     </Screen.Section>
   );

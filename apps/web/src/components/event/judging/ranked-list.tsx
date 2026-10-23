@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { RowList } from "@bogey/ui/components/row";
 import { cn } from "@bogey/ui/lib/utils";
 
 export interface RankedEntry {
@@ -13,12 +14,12 @@ export interface RankedEntry {
 
 export function RankedList({ entries, label }: { entries: Tuple<RankedEntry>; label: string }) {
   return (
-    <ol aria-label={label} className="flex flex-col divide-y divide-border border-y border-border">
+    <RowList render={<ol aria-label={label} />}>
       {entries.map((entry) => (
         <li
           key={entry.key}
           aria-current={entry.highlight || undefined}
-          className={cn("flex items-center gap-4 px-2 py-2.5", entry.highlight && "bg-primary/5")}
+          className={cn("flex items-center gap-4 px-2 py-2.5", entry.highlight && "bg-accent")}
         >
           <span
             className={cn(
@@ -40,6 +41,6 @@ export function RankedList({ entries, label }: { entries: Tuple<RankedEntry>; la
           </span>
         </li>
       ))}
-    </ol>
+    </RowList>
   );
 }

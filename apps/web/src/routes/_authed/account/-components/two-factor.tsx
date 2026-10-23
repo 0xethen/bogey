@@ -13,6 +13,7 @@ import { Field, FieldLabel } from "@bogey/ui/components/field";
 import { OTPField, OTPFieldGroup, OTPFieldInput } from "@bogey/ui/components/otp-field";
 import { Screen } from "@bogey/ui/components/screen";
 import { Spinner } from "@bogey/ui/components/spinner";
+import { Row } from "@bogey/ui/components/row";
 import { useSessionRefresh } from "#/lib/refresh.ts";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
 import { formatDate } from "@bogey/utils/time";
@@ -441,20 +442,7 @@ function FactorRow({
   status: string;
   children: ReactNode;
 }) {
-  return (
-    <div className="flex flex-wrap items-center gap-3">
-      {icon && <span className="text-muted-fg [&_svg]:size-5">{icon}</span>}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {typeof name === "string" ? (
-          <span className="truncate text-sm font-medium">{name}</span>
-        ) : (
-          name
-        )}
-        <span className="text-xs text-muted-fg">{status}</span>
-      </div>
-      {children}
-    </div>
-  );
+  return <Row size="sm" leading={icon} title={name} meta={status} actions={children} />;
 }
 
 // the name as text until clicked; Enter or leaving it saves, Escape puts it back

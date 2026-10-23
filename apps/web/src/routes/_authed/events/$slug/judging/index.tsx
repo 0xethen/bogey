@@ -15,8 +15,7 @@ import {
 } from "@bogey/db/queries/judging";
 import { ProjectExport } from "#/components/event/project-export.tsx";
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
-import { DisclosureList } from "@bogey/ui/components/disclosure-row";
-import { LinkRow } from "@bogey/ui/components/link-row";
+import { LinkRow, RowList } from "@bogey/ui/components/row";
 import { StatusDot } from "@bogey/ui/components/status-dot";
 import { Screen } from "@bogey/ui/components/screen";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
@@ -292,14 +291,12 @@ function RouteComponent() {
           title={t("deliberation.title")}
           description={t("deliberation.queueHelp")}
         >
-          <DisclosureList className="border-y-0">
-            {queue.filter((item) => item.flagged).map(row)}
-          </DisclosureList>
+          <RowList variant="flush">{queue.filter((item) => item.flagged).map(row)}</RowList>
         </Screen.Section>
       )}
       {assigned.length > 0 && (
         <Screen.Section id="assigned-to-you" title={t("judging.assigned")}>
-          <DisclosureList className="border-y-0">{assigned.map(row)}</DisclosureList>
+          <RowList variant="flush">{assigned.map(row)}</RowList>
         </Screen.Section>
       )}
       {others.length > 0 && (
@@ -308,7 +305,7 @@ function RouteComponent() {
           title={assigned.length ? t("judging.everythingElse") : t("judging.projects")}
           description={assigned.length ? t("judging.scoreThemToo") : undefined}
         >
-          <DisclosureList className="border-y-0">{others.map(row)}</DisclosureList>
+          <RowList variant="flush">{others.map(row)}</RowList>
         </Screen.Section>
       )}
     </Screen>
@@ -346,7 +343,7 @@ function Finished({ steps }: { steps: readonly JudgingStep[] }) {
         </div>
       </div>
       {after.length ? (
-        <DisclosureList>
+        <RowList>
           {after.map(({ step, icon: Icon, title, help, hash }) => (
             <LinkRow
               key={step.kind}
@@ -365,7 +362,7 @@ function Finished({ steps }: { steps: readonly JudgingStep[] }) {
               meta={help}
             />
           ))}
-        </DisclosureList>
+        </RowList>
       ) : (
         <p className="text-sm text-muted-fg">{t("judging.after.none")}</p>
       )}

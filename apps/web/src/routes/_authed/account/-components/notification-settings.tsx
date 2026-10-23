@@ -8,6 +8,7 @@ import {
 } from "@bogey/config/notifications";
 import { installedPlugins, pluginNotificationKinds } from "@bogey/plugins";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import { Row, RowList } from "@bogey/ui/components/row";
 import { Switch } from "@bogey/ui/components/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { sayOr, useT, type T } from "#/lib/translate.tsx";
@@ -16,7 +17,7 @@ function isChannels(raw: unknown): raw is NotificationChannels {
   return !!raw && typeof raw === "object" && !Array.isArray(raw);
 }
 
-interface Row {
+interface KindInfo {
   key: string;
   label: string;
   description?: string;
@@ -29,7 +30,7 @@ function KindRow({
   channels,
   onChange,
 }: {
-  row: Row;
+  row: KindInfo;
   channels: NotificationChannels;
   onChange: (channels: NotificationChannels) => void;
 }) {
@@ -40,36 +41,39 @@ function KindRow({
   const set = (channel: "inApp" | "email", value: boolean) =>
     onChange({ ...channels, [row.key]: { ...own, [channel]: value } });
   return (
-    <li className="flex items-center justify-between gap-4 py-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium">{row.label}</p>
-        {row.description && <p className="text-sm text-muted-fg">{row.description}</p>}
-      </div>
-      <div className="flex shrink-0 items-center gap-5">
-        <label className="flex items-center gap-2 text-sm">
-          <Switch checked={inApp} onCheckedChange={(checked) => set("inApp", checked)} />
-          {t("notifications.bell")}
-        </label>
-        <Tooltip>
-          <TooltipTrigger
-            disabled={!row.transactional}
-            render={<label className="flex items-center gap-2 text-sm" />}
-          >
-            <Switch
-              checked={email}
-              disabled={row.transactional}
-              onCheckedChange={(checked) => set("email", checked)}
-            />
-            {t("notifications.email")}
-          </TooltipTrigger>
-          {row.transactional && <TooltipContent>{t("notifications.emailRequired")}</TooltipContent>}
-        </Tooltip>
-      </div>
-    </li>
+    <Row
+      render={<li />}
+      title={row.label}
+      meta={row.description}
+      actions={
+        <div className="flex items-center gap-5">
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={inApp} onCheckedChange={(checked) => set("inApp", checked)} />
+            {t("notifications.bell")}
+          </label>
+          <Tooltip>
+            <TooltipTrigger
+              disabled={!row.transactional}
+              render={<label className="flex items-center gap-2 text-sm" />}
+            >
+              <Switch
+                checked={email}
+                disabled={row.transactional}
+                onCheckedChange={(checked) => set("email", checked)}
+              />
+              {t("notifications.email")}
+            </TooltipTrigger>
+            {row.transactional && (
+              <TooltipContent>{t("notifications.emailRequired")}</TooltipContent>
+            )}
+          </Tooltip>
+        </div>
+      }
+    />
   );
 }
 
-function coreRow(key: (typeof NOTIFICATION_KIND_KEYS)[number], t: T): Row & { group: string } {
+function coreRow(key: (typeof NOTIFICATION_KIND_KEYS)[number], t: T): KindInfo & { group: string } {
   const kind: NotificationKind = NOTIFICATION_KINDS[key];
   return {
     key,
@@ -101,7 +105,7 @@ export function NotificationSettings() {
             <h3 className="text-sm font-medium text-muted-fg">
               {sayOr(t, `notifGroup.${group}`, group)}
             </h3>
-            <ul className="flex flex-col divide-y divide-border">
+            <RowList variant="flush" render={<ul />}>
               {rows.map((row) => (
                 <KindRow
                   key={row.key}
@@ -110,14 +114,14 @@ export function NotificationSettings() {
                   onChange={preference.set}
                 />
               ))}
-            </ul>
+            </RowList>
           </div>
         );
       })}
       {plugins.length > 0 && (
         <div className="flex flex-col gap-1">
           <h3 className="text-sm font-medium text-muted-fg">{t("accountNav.plugins")}</h3>
-          <ul className="flex flex-col divide-y divide-border">
+          <RowList variant="flush" render={<ul />}>
             {plugins.map((plugin) => (
               <KindRow
                 key={plugin.key}
@@ -131,7 +135,7 @@ export function NotificationSettings() {
                 onChange={preference.set}
               />
             ))}
-          </ul>
+          </RowList>
         </div>
       )}
       <ErrorAlert

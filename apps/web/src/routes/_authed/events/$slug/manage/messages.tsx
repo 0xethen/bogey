@@ -6,7 +6,7 @@ import {
   unblockFromChatFn,
 } from "@bogey/db/queries/messages";
 import { IconMessageQuestion } from "@tabler/icons-react";
-import { LinkRow } from "@bogey/ui/components/link-row";
+import { LinkRow } from "@bogey/ui/components/row";
 import { unwrap } from "@bogey/db/errors";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import {

@@ -18,7 +18,7 @@ import { useLiveInvalidate } from "@bogey/db/realtime";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Input } from "@bogey/ui/components/input";
 import { NameAvatar } from "@bogey/ui/components/avatar";
@@ -300,13 +300,13 @@ function Desk() {
           onChange={(changed) => setQuery(changed.target.value)}
         />
         {query.trim() && (
-          <DisclosureList>
+          <RowList>
             {people.length > 0 ? (
               people.map(row)
             ) : (
               <p className="py-3 text-sm text-muted-fg">{t("checkin.noMatch")}</p>
             )}
-          </DisclosureList>
+          </RowList>
         )}
       </Screen.Section>
 
@@ -385,7 +385,7 @@ function Desk() {
 
       {recent.length > 0 && (
         <Screen.Section id="just-checked-in" title={t("checkin.recent")}>
-          <DisclosureList>
+          <RowList>
             {recent.map((entry) => (
               <DisclosureRow
                 key={entry.userId}
@@ -414,7 +414,7 @@ function Desk() {
                 }
               />
             ))}
-          </DisclosureList>
+          </RowList>
         </Screen.Section>
       )}
     </Screen>

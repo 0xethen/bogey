@@ -26,7 +26,7 @@ import { NameAvatar } from "@bogey/ui/components/avatar";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Badge } from "@bogey/ui/components/badge";
 import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@bogey/ui/components/input-group";
 import { Screen } from "@bogey/ui/components/screen";
@@ -95,7 +95,7 @@ function RouteComponent() {
         id="platform-admins"
         title={t("adminPeople.admins", { count: admins.length })}
       >
-        <DisclosureList>
+        <RowList>
           {admins.map((admin) => (
             <DisclosureRow
               key={admin.userId}
@@ -111,7 +111,7 @@ function RouteComponent() {
               meta={`${admin.email}, ${t("adminPeople.since", { date: formatDate(admin.since, time) })}${admin.grantedBy ? `, ${t("adminPeople.addedBy", { name: admin.grantedBy })}` : ""}`}
             />
           ))}
-        </DisclosureList>
+        </RowList>
       </Screen.Section>
 
       <Screen.Section

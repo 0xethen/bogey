@@ -12,6 +12,7 @@ import { EventList } from "./-components/event-list.tsx";
 import { useViewerSession } from "#/lib/viewer.ts";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@bogey/ui/components/empty";
 import { Screen } from "@bogey/ui/components/screen";
+import { Row, RowList } from "@bogey/ui/components/row";
 
 export const Route = createFileRoute("/_authed/events/")({
   beforeLoad: ({ context }) => {
@@ -115,27 +116,34 @@ function RouteComponent() {
       )}
       {admin && templates.length > 0 && (
         <Screen.Section title={t("events.templates")} description={t("events.templatesBody")}>
-          <ul className="flex flex-col divide-y divide-border border-y border-border">
+          <RowList render={<ul />}>
             {templates.map((template) => (
-              <li key={template.id} className="flex flex-wrap items-center gap-3 py-2.5">
-                <Link
-                  to="/events/$slug/manage"
-                  params={{ slug: template.slug }}
-                  className="min-w-0 flex-1 truncate font-medium"
-                >
-                  {template.name}
-                </Link>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  nativeButton={false}
-                  render={<Link to="/events/copy" search={{ from: template.id }} />}
-                >
-                  {t("events.useTemplate")}
-                </Button>
-              </li>
+              <Row
+                key={template.id}
+                render={<li />}
+                size="sm"
+                title={
+                  <Link
+                    to="/events/$slug/manage"
+                    params={{ slug: template.slug }}
+                    className="truncate no-underline hover:underline"
+                  >
+                    {template.name}
+                  </Link>
+                }
+                actions={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    nativeButton={false}
+                    render={<Link to="/events/copy" search={{ from: template.id }} />}
+                  >
+                    {t("events.useTemplate")}
+                  </Button>
+                }
+              />
             ))}
-          </ul>
+          </RowList>
         </Screen.Section>
       )}
     </Screen>

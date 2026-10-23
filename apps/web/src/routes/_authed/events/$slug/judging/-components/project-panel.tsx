@@ -2,7 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { judgeProjectQueryOptions, type JudgeQueueItem } from "@bogey/db/queries/judging";
 import { submissionFormsQueryOptions, type SubmissionForm } from "@bogey/db/queries/submissions";
 import { Badge } from "@bogey/ui/components/badge";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { Facts, type Fact } from "@bogey/ui/components/facts";
 import { formatDateTime, formatTime } from "@bogey/utils/time";
 import { IconExternalLink } from "@tabler/icons-react";
@@ -106,7 +106,7 @@ export function ProjectPanel({
       )}
       <section className="flex flex-col gap-1">
         <h2 className="text-sm font-medium">{t("judging.entries")}</h2>
-        <DisclosureList>
+        <RowList>
           {project.submissions.map((entry) => {
             const form: SubmissionForm | undefined = formOf.get(entry.form_id);
             return (
@@ -138,7 +138,7 @@ export function ProjectPanel({
               </DisclosureRow>
             );
           })}
-        </DisclosureList>
+        </RowList>
       </section>
     </div>
   );

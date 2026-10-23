@@ -5,7 +5,7 @@ import { deletionRequestsQueryOptions, resolveDeletionRequestFn } from "@bogey/d
 import { unwrap } from "@bogey/db/errors";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import {
   Empty,
@@ -59,7 +59,7 @@ function RouteComponent() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <DisclosureList>
+        <RowList>
           {requests.map((request) => (
             <DisclosureRow
               key={request.userId}
@@ -105,7 +105,7 @@ function RouteComponent() {
               </div>
             </DisclosureRow>
           ))}
-        </DisclosureList>
+        </RowList>
       )}
     </Screen>
   );

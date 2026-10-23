@@ -17,7 +17,7 @@ import { requestFailure, unwrap } from "@bogey/db/errors";
 import { calibrationFlags, parseConflicts } from "@bogey/utils/fairness";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import {
@@ -266,7 +266,7 @@ export function ManualAssignments({ eventId }: { eventId: string }) {
       {rows.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("manualAssign.none")}</p>
       ) : (
-        <DisclosureList>
+        <RowList>
           {rows.map((row) => (
             <DisclosureRow
               key={`${row.kind}:${row.judgeId}:${row.teamId}`}
@@ -312,7 +312,7 @@ export function ManualAssignments({ eventId }: { eventId: string }) {
               }
             />
           ))}
-        </DisclosureList>
+        </RowList>
       )}
     </Screen.Section>
   );
@@ -349,7 +349,7 @@ export function Calibration({ eventId }: { eventId: string }) {
         />
       }
     >
-      <DisclosureList>
+      <RowList>
         {judges.map((judge) => {
           const flag = flags.get(judge.judgeId);
           return (
@@ -374,7 +374,7 @@ export function Calibration({ eventId }: { eventId: string }) {
             />
           );
         })}
-      </DisclosureList>
+      </RowList>
     </Screen.Section>
   );
 }

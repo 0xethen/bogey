@@ -14,7 +14,7 @@ import { unwrap } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
 import { Badge } from "@bogey/ui/components/badge";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import {
   createDialogHandle,
@@ -186,7 +186,7 @@ function RouteComponent() {
           title={t("managePeople.invited")}
           description={t("managePeople.invitedHelp", { count: waiting.length, event: event.name })}
         >
-          <DisclosureList>
+          <RowList>
             {waiting.map((row) => (
               <DisclosureRow
                 key={row.id}
@@ -200,7 +200,7 @@ function RouteComponent() {
                 actions={<Badge variant="outline">{roleLabel(row.role)}</Badge>}
               />
             ))}
-          </DisclosureList>
+          </RowList>
         </Screen.Section>
       )}
 

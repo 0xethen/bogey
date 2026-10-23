@@ -22,7 +22,7 @@ import {
 } from "@bogey/ui/components/empty";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { FieldGroup } from "@bogey/ui/components/field";
 import { Screen } from "@bogey/ui/components/screen";
@@ -109,7 +109,7 @@ function RouteComponent() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <DisclosureList>
+        <RowList>
           {plugins.map(({ manifest, status, detail }) => {
             const repository = pluginRepositoryUrl(manifest);
             const check = update(manifest.key);
@@ -174,7 +174,7 @@ function RouteComponent() {
               </DisclosureRow>
             );
           })}
-        </DisclosureList>
+        </RowList>
       )}
     </Screen>
   );

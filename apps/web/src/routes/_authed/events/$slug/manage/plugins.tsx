@@ -21,7 +21,7 @@ import {
   EmptyTitle,
 } from "@bogey/ui/components/empty";
 import { IconPuzzle } from "@tabler/icons-react";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import { Switch } from "@bogey/ui/components/switch";
@@ -91,7 +91,7 @@ function RouteComponent() {
           title={t("eventExt.notRunning")}
           description={t("eventExt.notRunningHelp")}
         >
-          <DisclosureList>
+          <RowList>
             {missingPlugins(settings.plugins).map((each) => (
               <DisclosureRow
                 key={each.key}
@@ -114,7 +114,7 @@ function RouteComponent() {
                 }
               />
             ))}
-          </DisclosureList>
+          </RowList>
         </Screen.Section>
       )}
       {offered.length === 0 ? (
@@ -128,7 +128,7 @@ function RouteComponent() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <DisclosureList>
+        <RowList>
           {offered.map((manifest) => {
             const on = enabled.includes(manifest.key);
             const repository = pluginRepositoryUrl(manifest);
@@ -186,7 +186,7 @@ function RouteComponent() {
               </DisclosureRow>
             );
           })}
-        </DisclosureList>
+        </RowList>
       )}
     </Screen>
   );

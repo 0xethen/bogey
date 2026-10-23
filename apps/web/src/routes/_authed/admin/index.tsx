@@ -2,8 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { instanceOrgsQueryOptions, instanceOverviewQueryOptions } from "@bogey/db/queries/instance";
 import { Badge } from "@bogey/ui/components/badge";
-import { DisclosureList } from "@bogey/ui/components/disclosure-row";
-import { LinkRow } from "@bogey/ui/components/link-row";
+import { LinkRow, RowList } from "@bogey/ui/components/row";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Stat, StatGroup } from "@bogey/ui/components/stat";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
@@ -109,7 +108,7 @@ function RouteComponent() {
       />
 
       <Screen.Section id="organizations" title={t("adminTab.orgs")}>
-        <DisclosureList className="border-y-0">
+        <RowList variant="flush">
           {orgs.slice(0, 8).map((org) => (
             <LinkRow
               key={org.id}
@@ -130,7 +129,7 @@ function RouteComponent() {
               ].join(" · ")}
             />
           ))}
-        </DisclosureList>
+        </RowList>
       </Screen.Section>
     </Screen>
   );

@@ -20,7 +20,7 @@ import {
 import { joinLabels, parseLabels } from "@bogey/utils/team-matcher";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
@@ -87,7 +87,7 @@ function Requests({ eventId, rows }: { eventId: string; rows: readonly TeamReque
   return (
     <Screen.Section id="requests" title={t("teamBoard.requests")}>
       <ErrorAlert error={answer.error ?? withdraw.error} title={t("teamBoard.answerFailed")} />
-      <DisclosureList>
+      <RowList>
         {rows.map((row) => (
           <DisclosureRow
             key={row.id}
@@ -133,7 +133,7 @@ function Requests({ eventId, rows }: { eventId: string; rows: readonly TeamReque
             }
           />
         ))}
-      </DisclosureList>
+      </RowList>
     </Screen.Section>
   );
 }
@@ -251,7 +251,7 @@ function FindATeam({ eventId }: { eventId: string }) {
           <p className="text-sm text-muted-fg">{t("teamBoard.noTeams")}</p>
         )}
         {teams.length > 0 && (
-          <DisclosureList>
+          <RowList>
             {teams.map((row: TeamOpening) => (
               <DisclosureRow
                 key={row.team_id}
@@ -274,7 +274,7 @@ function FindATeam({ eventId }: { eventId: string }) {
                 </div>
               </DisclosureRow>
             ))}
-          </DisclosureList>
+          </RowList>
         )}
       </Screen.Section>
     </>
@@ -365,7 +365,7 @@ function FindTeammates({ eventId }: { eventId: string }) {
           <p className="text-sm text-muted-fg">{t("teamBoard.noPeople")}</p>
         )}
         {others.length > 0 && (
-          <DisclosureList>
+          <RowList>
             {others.map((row) => (
               <DisclosureRow
                 key={row.user_id}
@@ -389,7 +389,7 @@ function FindTeammates({ eventId }: { eventId: string }) {
                 </div>
               </DisclosureRow>
             ))}
-          </DisclosureList>
+          </RowList>
         )}
       </Screen.Section>
     </>
