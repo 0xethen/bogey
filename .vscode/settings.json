@@ -1,5 +1,7 @@
 {
   "npm.scriptRunner": "vp",
+  "typescript.validate.enable": false,
+  "javascript.validate.enable": false,
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "[javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
