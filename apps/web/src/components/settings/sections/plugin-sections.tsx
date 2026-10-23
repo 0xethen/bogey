@@ -1,7 +1,13 @@
 import { getRouteApi, Link } from "@tanstack/react-router";
-import { pluginPageUrl, settingsSectionsOn, type PluginManifest } from "@bogey/plugins";
+import {
+  pluginPageUrl,
+  settingsPresetsOn,
+  settingsSectionsOn,
+  type PluginManifest,
+} from "@bogey/plugins";
 import { Badge } from "@bogey/ui/components/badge";
 import { Screen } from "@bogey/ui/components/screen";
+import { PluginPresets } from "./plugin-presets.tsx";
 import { PluginSettings } from "./plugin-settings.tsx";
 import { useT } from "#/lib/translate.tsx";
 
@@ -11,21 +17,27 @@ export function PluginSettingSections({ page }: { page: string }) {
   const { event, plugins } = eventRoute.useRouteContext();
   const eventId = event.id;
   const sections = settingsSectionsOn(plugins, page);
-  return sections.map(({ manifest, section }) => (
-    <Screen.Section
-      key={`${manifest.key}-${section.key}`}
-      id={`${manifest.key}-${section.key}`}
-      title={section.title}
-      description={section.description}
-      actions={<Badge variant="outline">{manifest.name}</Badge>}
-    >
-      <PluginSettings
-        scope={{ scope: "event", eventId }}
-        manifest={manifest}
-        only={section.settings}
-      />
-    </Screen.Section>
+  const presets = settingsPresetsOn(plugins, page).map(({ manifest, presets }) => (
+    <PluginPresets key={`${manifest.key}-presets`} manifest={manifest} presets={presets} />
   ));
+  return [
+    ...presets,
+    ...sections.map(({ manifest, section }) => (
+      <Screen.Section
+        key={`${manifest.key}-${section.key}`}
+        id={`${manifest.key}-${section.key}`}
+        title={section.title}
+        description={section.description}
+        actions={<Badge variant="outline">{manifest.name}</Badge>}
+      >
+        <PluginSettings
+          scope={{ scope: "event", eventId }}
+          manifest={manifest}
+          only={section.settings}
+        />
+      </Screen.Section>
+    )),
+  ];
 }
 
 export function PluginSectionLinks({

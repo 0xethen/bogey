@@ -158,6 +158,20 @@ export function PluginSettings({
     : editable;
   const current: Record<string, Value> = readPluginSettings(manifest, own);
   const [draft, setDraft] = useState<Record<string, Value>>(current);
+  // saved values that change elsewhere (a preset, another section) replace the ones not being edited
+  const [base, setBase] = useState<Record<string, Value>>(current);
+  const moved = fields.filter(([name]) => !Object.is(base[name], current[name]));
+  if (moved.length > 0) {
+    setBase(current);
+    setDraft({
+      ...draft,
+      ...Object.fromEntries(
+        moved
+          .filter(([name]) => Object.is(draft[name], base[name]))
+          .map(([name]) => [name, current[name]]),
+      ),
+    });
+  }
   const changes = () =>
     Object.fromEntries(
       fields

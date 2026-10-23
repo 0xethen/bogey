@@ -35,6 +35,7 @@ import type {
   PluginSetting,
   PluginSettingScope,
   PluginSettingsSection,
+  PluginSettingsPreset,
   PluginWindowDeclaration,
   SettingsOf,
 } from "./types.ts";
@@ -759,6 +760,55 @@ function checkSettingsSections(manifest: PluginManifest): void {
       throw new Error(`Plugin "${manifest.key}" settings page "${page}" has no sections.`);
     }
   }
+  checkSettingsPresets(manifest, pages);
+}
+
+function checkSettingsPresets(manifest: PluginManifest, pages: ReadonlySet<string>): void {
+  const core: Tuple<string> = MANAGE_SETTINGS_PAGES;
+  const keys = new Set<string>();
+  for (const preset of manifest.settingsPresets ?? []) {
+    const name = `Plugin "${manifest.key}" settings preset "${preset.key}"`;
+    if (!ROLE_KEY.test(preset.key) || keys.has(preset.key)) {
+      throw new Error(`${name} must be a unique lowercase kebab-case key.`);
+    }
+    keys.add(preset.key);
+    if (!core.includes(preset.page) && !pages.has(preset.page)) {
+      throw new Error(
+        `${name} names page "${preset.page}", which isn't a Manage page or one of its settingsPages.`,
+      );
+    }
+    if (!preset.label.trim()) throw new Error(`${name} needs a label.`);
+    const entries = Object.entries(preset.values);
+    if (entries.length === 0 && !preset.teamSize) throw new Error(`${name} sets nothing.`);
+    for (const [setting, value] of entries) {
+      const declared = manifest.settings?.[setting];
+      if (!declared || !matches(declared, value)) {
+        throw new Error(
+          `${name} sets "${setting}" to a value that isn't one of the plugin's settings, or doesn't fit it.`,
+        );
+      }
+    }
+    if (preset.teamSize) {
+      const [min, max] = preset.teamSize;
+      if (!Number.isInteger(min) || !Number.isInteger(max) || min < 1 || max < min || max > 50) {
+        throw new Error(`${name} teamSize must be whole numbers, 1 to 50, smallest first.`);
+      }
+    }
+  }
+}
+
+/** The presets offered on a settings page, named as `settingsSectionsOn` names it. */
+export function settingsPresetsOn(
+  plugins: Tuple<PluginManifest>,
+  page: string,
+): Array<{ manifest: PluginManifest; presets: PluginSettingsPreset[] }> {
+  return plugins.flatMap((manifest) => {
+    const presets = (manifest.settingsPresets ?? []).filter((preset) => {
+      const own = (manifest.settingsPages ?? []).some((each) => each.key === preset.page);
+      return own ? `${manifest.key}:${preset.page}` === page : preset.page === page;
+    });
+    return presets.length > 0 ? [{ manifest, presets }] : [];
+  });
 }
 
 export function generalSettingNames(manifest: PluginManifest): string[] {

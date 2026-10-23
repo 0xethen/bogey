@@ -244,6 +244,18 @@ export interface PluginSettingsPage {
   route?: string;
 }
 
+/** A named set of values for some of the plugin's settings, offered on one settings page. */
+export interface PluginSettingsPreset {
+  key: string;
+  label: string;
+  description?: string;
+  /** A Manage page or one of the plugin's `settingsPages`, like a section's. */
+  page: string;
+  values: Readonly<Record<string, PluginSettingValue>>;
+  /** Also sets the event's team size, smallest first, as an event type's does. */
+  teamSize?: readonly [min: number, max: number];
+}
+
 export interface PluginSource {
   repository: string;
   directory?: string;
@@ -265,6 +277,7 @@ export interface PluginManifest {
   settings?: Record<string, PluginSetting>;
   settingsSections?: Tuple<PluginSettingsSection>;
   settingsPages?: Tuple<PluginSettingsPage>;
+  settingsPresets?: Tuple<PluginSettingsPreset>;
   routes?: Tuple<PluginRouteDeclaration>;
   permissions?: Tuple<string>;
   roles?: Tuple<PluginRoleDeclaration>;

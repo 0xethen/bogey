@@ -4563,6 +4563,23 @@ export const en = {
   "security.privacyHelp":
     "What applicants, the waitlist and anyone else with the link can see before they're approved. About is always shown; keep the rest in {about}.",
   "eventExt.moreSettings": "More of its settings are with the rest of their kind:",
+  "pluginPresets.title": "Start from a style",
+  "pluginPresets.help":
+    "A style fills in the settings below. Any of them can still be changed afterwards.",
+  "pluginPresets.current": "Current",
+  "pluginPresets.changes": "{name} changes:",
+  "pluginPresets.nothing": "Everything {name} sets already matches.",
+  "pluginPresets.apply": "Apply {name}",
+  "pluginPresets.applying": "Applying...",
+  "pluginPresets.failed": "Couldn't apply it",
+  "pluginPresets.on": "On",
+  "pluginPresets.off": "Off",
+  "pluginPresets.empty": "(empty)",
+  "pluginPresets.teamSize": "Team size",
+  "pluginPresets.teamSizeHelp": "Also on Details",
+  "pluginPresets.teamOne": "One person",
+  "pluginPresets.teamExact": "{count} people",
+  "pluginPresets.teamRange": "{min} to {max} people",
 
   "cmdGroup.Conversations": "Conversations",
 } as const;

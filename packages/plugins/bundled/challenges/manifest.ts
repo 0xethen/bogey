@@ -129,6 +129,61 @@ export const manifest = definePlugin({
       description: "How the contest is scored, what teams can use, and the scoreboard.",
     },
   ],
+  settingsPresets: [
+    {
+      key: "icpc",
+      label: "ICPC style",
+      description:
+        "Teams of up to three share one computer. Pass/fail problems, ranked by problems solved, then time plus 20 minutes for each wrong try. Teams see only verdicts, and the scoreboard freezes for the last hour.",
+      page: "contest",
+      teamSize: [1, 3],
+      values: {
+        scoring: "icpc",
+        defaultKind: "pass_fail",
+        penaltyMinutes: 20,
+        countCompileErrors: false,
+        attemptLimit: 0,
+        idKind: "letter",
+        allowUpload: true,
+        waitForJudging: false,
+        resultDetail: "verdict",
+        freezeMinutes: 60,
+      },
+    },
+    {
+      key: "ioi",
+      label: "IOI style",
+      description:
+        "Everyone competes on their own. Problems give points for each test or subtask passed, the best solution counts, and up to 50 tries a problem. Participants see each test's result, and nothing freezes.",
+      page: "contest",
+      teamSize: [1, 1],
+      values: {
+        scoring: "ioi",
+        defaultKind: "partial",
+        scoreFrom: "best",
+        attemptLimit: 50,
+        waitForJudging: true,
+        resultDetail: "tests",
+        freezeMinutes: 0,
+      },
+    },
+    {
+      key: "golf",
+      label: "Code golf",
+      description:
+        "Everyone competes on their own. Solved solutions compete on length: problems solved first, then the fewest characters in total.",
+      page: "contest",
+      teamSize: [1, 1],
+      values: {
+        scoring: "golf",
+        defaultKind: "shortest",
+        golfPoints: "length",
+        attemptLimit: 0,
+        resultDetail: "tests",
+        freezeMinutes: 0,
+      },
+    },
+  ],
   settingsSections: [
     {
       key: "scoring",

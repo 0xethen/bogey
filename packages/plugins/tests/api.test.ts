@@ -34,6 +34,7 @@ import {
   routeArea,
   generalSettingNames,
   settingsSectionsOn,
+  settingsPresetsOn,
 } from "../src/api.ts";
 
 const META = {
@@ -987,6 +988,63 @@ describe("settings sections", () => {
         { key: "y", title: "Y", page: "judging", settings: ["a"] },
       ]),
     ).toThrow(/two sections/);
+  });
+});
+
+describe("settings presets", () => {
+  const settings = {
+    mode: {
+      type: "select",
+      label: "Mode",
+      default: "a",
+      options: [
+        { value: "a", label: "A" },
+        { value: "b", label: "B" },
+      ],
+    },
+    limit: { type: "number", label: "Limit", min: 0, max: 10 },
+  } as const;
+  const base = {
+    key: "preset",
+    name: "Preset",
+    ...META,
+    settings,
+    settingsPages: [{ key: "rules", label: "Rules" }],
+    settingsSections: [{ key: "all", title: "All", page: "rules", settings: ["mode", "limit"] }],
+  } as const;
+
+  test("are found on their page", () => {
+    const plugin = definePlugin({
+      ...base,
+      settingsPresets: [
+        { key: "strict", label: "Strict", page: "rules", values: { mode: "b", limit: 1 } },
+        { key: "solo", label: "Solo", page: "judging", values: {}, teamSize: [1, 1] },
+      ],
+    });
+    expect(settingsPresetsOn([plugin], "preset:rules")[0]?.presets.map((each) => each.key)).toEqual(
+      ["strict"],
+    );
+    expect(settingsPresetsOn([plugin], "judging")[0]?.presets.map((each) => each.key)).toEqual([
+      "solo",
+    ]);
+    expect(settingsPresetsOn([plugin], "rules")).toEqual([]);
+  });
+
+  test("set values that fit the plugin's settings", () => {
+    const make =
+      (values: Record<string, string | number | boolean>, teamSize?: [number, number]) => () =>
+        definePlugin({
+          ...base,
+          settingsPresets: [
+            { key: "x", label: "X", page: "rules", values, ...(teamSize ? { teamSize } : {}) },
+          ],
+        });
+    expect(make({ mode: "c" })).toThrow(/doesn't fit/);
+    expect(make({ limit: 11 })).toThrow(/doesn't fit/);
+    expect(make({ other: true })).toThrow(/doesn't fit/);
+    expect(make({})).toThrow(/sets nothing/);
+    expect(make({ mode: "a" }, [3, 1])).toThrow(/teamSize/);
+    expect(make({ mode: "a" }, [1, 3])).not.toThrow();
   });
 });
 
