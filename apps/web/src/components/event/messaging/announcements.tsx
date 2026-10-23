@@ -10,6 +10,16 @@ import { unwrap } from "@bogey/db/errors";
 import { formatDateTime } from "@bogey/utils/time";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@bogey/ui/components/alert-dialog";
+import { DropdownMenuItem } from "@bogey/ui/components/dropdown-menu";
 import { DialogTrigger } from "@bogey/ui/components/dialog";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
@@ -23,11 +33,11 @@ export const ANNOUNCEMENTS = "announcements";
 export function AnnouncementMessage({
   announcement,
   meta,
-  sideActions,
+  menu,
 }: {
   announcement: Announcement;
   meta?: ReactNode;
-  sideActions?: ReactNode;
+  menu?: ReactNode;
 }) {
   const t = useT();
   return (
@@ -38,7 +48,7 @@ export function AnnouncementMessage({
       tone={announcement.severity}
       title={announcement.title}
       meta={meta}
-      sideActions={sideActions}
+      menu={menu}
       attachments={
         announcement.attachments.length > 0 && (
           <MessageAttachments attachments={announcement.attachments} />
@@ -69,6 +79,7 @@ export function AnnouncementChannel({
   const ordered = announcements.toReversed();
   const firstNew = ordered.find((announcement) => fresh.has(announcement.id))?.id;
   const remove = useDeleteAnnouncement(eventId);
+  const [deleting, setDeleting] = useState<string>();
 
   return (
     <div ref={ref} className="flex min-h-0 flex-1 flex-col">
@@ -109,30 +120,43 @@ export function AnnouncementChannel({
                   </>
                 )
               }
-              sideActions={
+              menu={
                 manage && (
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    className="text-destructive"
-                    aria-label={t("announcements.delete")}
-                    title={t("announcements.delete")}
+                  <DropdownMenuItem
+                    variant="destructive"
                     disabled={remove.isPending}
-                    confirm={{
-                      title: t("announcements.deleteTitle"),
-                      description: t("announcements.deleteBody"),
-                      label: t("common.delete"),
-                    }}
-                    onClick={() => remove.mutate(announcement.id)}
+                    onClick={() => setDeleting(announcement.id)}
                   >
                     <IconTrash />
-                  </Button>
+                    {t("announcements.delete")}
+                  </DropdownMenuItem>
                 )
               }
             />
           )}
         </ChatFeed>
       )}
+      <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(undefined)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("announcements.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("announcements.deleteBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel autoFocus>{t("common.cancel")}</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (deleting) remove.mutate(deleting);
+                setDeleting(undefined);
+              }}
+            >
+              {t("common.delete")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {post && <AnnouncementBox />}
     </div>
   );

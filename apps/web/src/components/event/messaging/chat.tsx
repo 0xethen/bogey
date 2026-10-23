@@ -1,4 +1,14 @@
 import type { ReactNode } from "react";
+import { IconCopy, IconDots } from "@tabler/icons-react";
+import { Button } from "@bogey/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@bogey/ui/components/dropdown-menu";
+import { toast } from "@bogey/ui/components/toast";
 import { formatDate, formatDateTime } from "@bogey/utils/time";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Bubble, BubbleContent } from "@bogey/ui/components/chat/bubble";
@@ -25,7 +35,7 @@ import { cn } from "@bogey/ui/lib/utils";
 import { useT } from "#/lib/translate.tsx";
 
 const SIDE_ACTIONS =
-  "flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100 pointer-coarse:opacity-100";
+  "flex shrink-0 items-center opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100 pointer-coarse:opacity-100";
 
 const TONE_BUBBLE = {
   info: "",
@@ -43,7 +53,7 @@ export function ChatMessage({
   title,
   meta,
   actions,
-  sideActions,
+  menu,
   attachments,
   children,
 }: {
@@ -57,11 +67,15 @@ export function ChatMessage({
   title?: string;
   meta?: ReactNode;
   actions?: ReactNode;
-  sideActions?: ReactNode;
+  /** Extra items for the message actions menu; Copy text is always there. */
+  menu?: ReactNode;
   attachments?: ReactNode;
   children?: string | null;
 }) {
   const time = useTimeFormat();
+  const actionsMenu = (children || menu) && (
+    <MessageMenu text={children ?? null}>{menu}</MessageMenu>
+  );
   return (
     <Message align={own ? "end" : "start"}>
       {!own && !avatarInHeader && (
@@ -84,10 +98,7 @@ export function ChatMessage({
           >
             <Bubble
               variant={own ? "default" : "muted"}
-              className={cn(
-                title && (sideActions ? "max-w-[calc(100%-2.5rem)]" : "max-w-full"),
-                TONE_BUBBLE[tone],
-              )}
+              className={cn(title && "max-w-[calc(100%-2.5rem)]", TONE_BUBBLE[tone])}
             >
               <BubbleContent className={cn(title && "flex flex-col gap-1")}>
                 {title && <p className="font-medium">{title}</p>}
@@ -98,7 +109,7 @@ export function ChatMessage({
                 )}
               </BubbleContent>
             </Bubble>
-            {sideActions && <div className={SIDE_ACTIONS}>{sideActions}</div>}
+            {actionsMenu}
           </div>
         )}
         {attachments && (
@@ -107,9 +118,7 @@ export function ChatMessage({
             className={cn("flex w-full min-w-0 items-center gap-1.5", own && "flex-row-reverse")}
           >
             <div className="min-w-0 max-w-[80%]">{attachments}</div>
-            {!(title || children) && sideActions && (
-              <div className={SIDE_ACTIONS}>{sideActions}</div>
-            )}
+            {!(title || children) && actionsMenu}
           </div>
         )}
         <MessageFooter className="flex-wrap gap-1.5">
@@ -121,6 +130,47 @@ export function ChatMessage({
         </MessageFooter>
       </MessageContent>
     </Message>
+  );
+}
+
+/** One ghost button holding every message action; shown on hover, focus and touch. */
+function MessageMenu({ text, children }: { text: string | null; children?: ReactNode }) {
+  const t = useT();
+  return (
+    <div className={SIDE_ACTIONS}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              className="rounded-pill"
+              aria-label={t("chat.actions")}
+              title={t("chat.actions")}
+            />
+          }
+        >
+          <IconDots />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            {text && (
+              <DropdownMenuItem
+                onClick={() =>
+                  void navigator.clipboard
+                    .writeText(text)
+                    .then(() => toast.add({ title: t("common.copied") }))
+                }
+              >
+                <IconCopy />
+                {t("chat.copyText")}
+              </DropdownMenuItem>
+            )}
+            {children}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }
 

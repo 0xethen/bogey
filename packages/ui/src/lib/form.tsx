@@ -28,7 +28,7 @@ import { OptSelect, type SelectOption } from "../components/opt-select";
 import { DateTimeInput } from "../components/date-time-field";
 import { ErrorAlert } from "../components/error-alert";
 import { OptionsInput } from "../components/options-input";
-import { MultiSelect, type SearchSelectOption } from "../components/search-select";
+import { MultiSelect, SearchSelect, type SearchSelectOption } from "../components/search-select";
 import {
   MarkdownEditor,
   MarkdownLabel,
@@ -328,6 +328,32 @@ export function FieldSelect<T extends string>({
         field.handleBlur();
         onValueChange?.(value);
       }}
+    />
+  );
+}
+
+export function FieldCombobox({
+  field,
+  options,
+  placeholder,
+  empty,
+}: {
+  field: FieldWithValue<string>;
+  options: Tuple<SearchSelectOption>;
+  placeholder?: string;
+  empty?: string;
+}) {
+  return (
+    <SearchSelect
+      id={field.name}
+      options={options}
+      value={field.value || undefined}
+      onValueChange={(next) => {
+        field.handleChange(next ?? "");
+        field.handleBlur();
+      }}
+      placeholder={placeholder ?? schemaMetaOf(field).placeholder}
+      empty={empty}
     />
   );
 }

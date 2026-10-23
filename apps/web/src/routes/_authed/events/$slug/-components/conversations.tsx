@@ -40,6 +40,8 @@ import {
   CollapsibleTrigger,
 } from "@bogey/ui/components/collapsible";
 import { Button } from "@bogey/ui/components/button";
+import { DropdownMenuItem } from "@bogey/ui/components/dropdown-menu";
+import { toast } from "@bogey/ui/components/toast";
 import {
   createDialogHandle,
   Dialog,
@@ -56,6 +58,7 @@ import { cn } from "@bogey/ui/lib/utils";
 import {
   appFormOptions,
   errorVisibility,
+  FieldCombobox,
   FieldSelect,
   rewardEarlyPunishLate,
   useAppForm,
@@ -410,7 +413,7 @@ function OpenConversation({
                 <MessageAttachments attachments={message.attachments} />
               )
             }
-            sideActions={forward && <ForwardButton conversation={conversation} message={message} />}
+            menu={forward && <ForwardItem conversation={conversation} message={message} />}
           >
             {message.bodyMd || null}
           </ChatMessage>
@@ -505,7 +508,7 @@ function ArchiveButton({ conversation }: { conversation: Conversation }) {
   );
 }
 
-function ForwardButton({
+function ForwardItem({
   conversation,
   message,
 }: {
@@ -513,7 +516,7 @@ function ForwardButton({
   message: ConversationMessage;
 }) {
   const t = useT();
-  const open = useMutation({
+  const forward = useMutation({
     mutationFn: async () => {
       const storage = browserClient().storage.from(ATTACHMENTS_BUCKET);
       const texts = await Promise.all(
@@ -530,21 +533,14 @@ function ForwardButton({
         body: [message.bodyMd, ...texts].filter(Boolean).join("\n\n"),
       });
     },
+    onError: (error) =>
+      toast.add({ title: t("conv.forwardFailed", { error: error.message }), type: "error" }),
   });
   return (
-    <Button
-      size="icon-sm"
-      variant="ghost"
-      className="rounded-pill"
-      aria-label={t("conv.forward")}
-      title={
-        open.error ? t("conv.forwardFailed", { error: open.error.message }) : t("conv.forward")
-      }
-      disabled={open.isPending}
-      onClick={() => open.mutate()}
-    >
+    <DropdownMenuItem disabled={forward.isPending} onClick={() => forward.mutate()}>
       <IconShare3 />
-    </Button>
+      {t("conv.forward")}
+    </DropdownMenuItem>
   );
 }
 
@@ -863,14 +859,15 @@ function MessageTeamDialog({
                 {(field) => (
                   <field.Field>
                     <field.Label />
-                    <FieldSelect
+                    <FieldCombobox
                       field={field}
                       options={options}
+                      empty={teams.isPending ? t("common.loading") : t("conv.noTeams")}
                       placeholder={
                         teams.isPending
                           ? t("common.loading")
                           : options.length
-                            ? t("conv.needTeam")
+                            ? t("conv.searchTeams")
                             : t("conv.noTeams")
                       }
                     />
