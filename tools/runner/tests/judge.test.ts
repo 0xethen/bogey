@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, test } from "vite-plus/test";
-import { judge, type JudgeDeps } from "../src/judge.ts";
+import { judge, removeDirs, type JudgeDeps } from "../src/judge.ts";
 import type { ExecResult, ExecSpec, Sandbox } from "../src/sandbox.ts";
 import { InfraError, type Claim, type Language, type Testcase } from "../src/types.ts";
 
@@ -419,4 +419,21 @@ test("a NUL byte in the output can't stop the verdict being stored", async () =>
   );
   assert.equal(outcome.runs[0]?.output_excerpt, "a�b");
   assert.equal(outcome.runs[0]?.stderr_excerpt, "�");
+});
+
+test("a folder the runner can't empty is emptied by a container as the sandbox user", async () => {
+  const dir = join(workDir, "o-left");
+  await mkdir(join(dir, "kept"), { recursive: true });
+  await writeFile(join(dir, "kept", "file"), "x");
+  await chmod(join(dir, "kept"), 0o500);
+  const sandbox = new FakeSandbox(async (spec) => {
+    const mount = spec.mounts[0];
+    assert.equal(mount?.container, "/x");
+    assert.equal(mount?.writable, true);
+    await chmod(join(mount?.host ?? "", "kept"), 0o700);
+    return ran("");
+  });
+  await removeDirs(sandbox, "bogey-runner-python:3.13", [dir]);
+  assert.equal(sandbox.calls.length, 1);
+  assert.deepEqual(await readdir(workDir), []);
 });

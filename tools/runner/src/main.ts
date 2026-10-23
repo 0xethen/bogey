@@ -23,8 +23,10 @@ async function main() {
   });
 
   await prepareWorkDir(config.workDir);
-  await clearWorkDir(config.workDir);
   await sandbox.cleanup();
+  for (const left of await clearWorkDir(config.workDir)) {
+    log.error(`warning: couldn't remove ${left}, which a sandbox left; remove it as root`);
+  }
 
   if (testing) {
     const only = process.argv

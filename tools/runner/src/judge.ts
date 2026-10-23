@@ -54,6 +54,40 @@ function exec(step: Step, spec: ExecSpec): Promise<ExecResult> {
   return step.deps.sandbox.exec(spec, step.signal);
 }
 
+// a sandbox can leave folders the runner's user can't empty; a container as the sandbox user can
+export async function removeDirs(
+  sandbox: Sandbox,
+  image: string,
+  dirs: Tuple<string>,
+): Promise<void> {
+  await Promise.all(
+    dirs.map(async (dir) => {
+      try {
+        await rm(dir, { recursive: true, force: true });
+        return;
+      } catch {}
+      await sandbox
+        .exec({
+          image,
+          command: "chmod -R u+rwx /x 2>/dev/null; rm -rf /x/* /x/.[!.]* /x/..?* 2>/dev/null; true",
+          cwd: "/x",
+          mounts: [{ host: dir, container: "/x", writable: true }],
+          stdin: "",
+          timeMs: 30_000,
+          memoryMb: 64,
+          cpus: 1,
+          pids: 16,
+          maxOutputBytes: 4_096,
+          tmpfsMb: 1,
+          fileSizeMb: 1,
+        })
+        .catch(() => undefined);
+      // what still won't go is left for the next start's cleanup, never lost as a verdict
+      await rm(dir, { recursive: true, force: true }).catch(() => undefined);
+    }),
+  );
+}
+
 async function compile(
   step: Step,
   language: Language,
@@ -149,7 +183,7 @@ async function check(
       score: score !== null && Number.isFinite(score) && score >= 0 ? score : null,
     };
   } finally {
-    await Promise.all([caseDir, feedback].map((dir) => rm(dir, { recursive: true, force: true })));
+    await removeDirs(step.deps.sandbox, language.image, [caseDir, feedback]);
   }
 }
 
@@ -206,7 +240,7 @@ async function runTest(
     if (output?.truncated) return { ...result, stdout: "", outputExceeded: true };
     return { ...result, stdout: output?.text ?? "" };
   } finally {
-    await Promise.all([inDir, ioDir].map((dir) => rm(dir, { recursive: true, force: true })));
+    await removeDirs(deps.sandbox, language.image, [inDir, ioDir]);
   }
 }
 
@@ -354,6 +388,6 @@ export async function judge(claim: Claim, deps: JudgeDeps): Promise<Outcome> {
     }
     throw error;
   } finally {
-    await Promise.all(made.map((path) => rm(path, { recursive: true, force: true })));
+    await removeDirs(deps.sandbox, language.image, made);
   }
 }

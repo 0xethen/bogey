@@ -45,10 +45,18 @@ export async function prepareWorkDir(dir: string): Promise<string> {
   return dir;
 }
 
-/** Removes what an earlier run left in the work folder. */
-export async function clearWorkDir(dir: string): Promise<void> {
+/** Removes what an earlier run left in the work folder; returns what it couldn't. */
+export async function clearWorkDir(dir: string): Promise<string[]> {
   const entries = await readdir(dir).catch(() => [] as string[]);
-  await Promise.all(entries.map((entry) => rm(join(dir, entry), { recursive: true, force: true })));
+  const left = await Promise.all(
+    entries.map((entry) =>
+      rm(join(dir, entry), { recursive: true, force: true }).then(
+        () => null,
+        () => join(dir, entry),
+      ),
+    ),
+  );
+  return left.filter((path): path is string => path !== null);
 }
 
 /**
