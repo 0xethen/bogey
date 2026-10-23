@@ -2380,6 +2380,12 @@ export const en = {
   "manageTeams.lockHelp": "Locking stops the team's own changes.",
   "manageTeams.renameFailed": "Couldn't rename the team",
   "manageTeams.startsEmpty": "Starts empty. Add people from their row below.",
+  "manageTeams.search": "Search teams or members...",
+  "manageTeams.nameColumn": "Team",
+  "manageTeams.membersColumn": "Members",
+  "manageTeams.divisionFor": "Division for {team}",
+  "manageTeams.divisionHelp":
+    "A team's division is its members' division. People without a team keep their own.",
   "manageSubs.deletion": "Deletion requests",
   "manageSubs.drafts": "Drafts",
   "manageSubs.gallery": "Public gallery",
@@ -2988,10 +2994,17 @@ export const en = {
   "managePeople.roleTeamBody":
     "Only participants are on teams. Making {name} a {role} removes them from {team}.",
   "managePeople.divisionTeamTitle": "Change {name}'s division?",
-  "managePeople.divisionTeamMoves":
-    "They're the only one on {team}, so the team moves to {division} with them.",
-  "managePeople.divisionTeamBlocked":
-    "{team} has {count, plural, one {# other member} other {# other members}} and competes in its current division, so this is refused. Move the team or take them off it first.",
+  "managePeople.divisionTeamAsk":
+    "{name} is on {team}, and a team competes in one division. Move all of {team} to {division}, or take {name} off the team and move only them.",
+  "managePeople.divisionWholeTeam": "Move all of {team}",
+  "managePeople.divisionOnlyThem": "Only {name}",
+  "managePeople.divisionTeamsTitle":
+    "Change the division of {count, plural, one {# person} other {# people}}?",
+  "managePeople.divisionTeamsAsk":
+    "Some of them share a team with people you didn't pick, and a team competes in one division. Move their {teams, plural, one {whole team} other {# whole teams}} to {division}, or take only the picked people off their teams.",
+  "managePeople.divisionWholeTeams":
+    "{count, plural, one {Move the whole team} other {Move # whole teams}}",
+  "managePeople.divisionOnlyPicked": "Only the picked people",
   "managePeople.nothingToReview": "Nobody is waiting on a decision.",
   "managePeople.viewAnswers": "View answers...",
   "managePeople.viewAnswersFor": "See {name}'s answers",

@@ -66,7 +66,7 @@ begin
     raise exception 'only active participants can be on a team' using errcode = '23514';
   end if;
   if v_team.division_id is not null and v_member.division_id is not null
-     and v_team.division_id <> v_member.division_id then
+     and v_team.division_id <> v_member.division_id and not private.can_manage(new.event_id) then
     raise exception 'this team competes in a different division' using errcode = '23514';
   end if;
   if (select count(*) from public.team_members where team_id = new.team_id) >= v_max then
@@ -78,6 +78,77 @@ $$;
 
 create trigger team_members_check before insert on public.team_members
   for each row execute function private.check_team_member();
+
+-- A team's division is the source of truth for its members; people without a team keep their own.
+create function private.sync_team_division()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.event_members m set division_id = new.division_id
+  from public.team_members tm
+  where tm.team_id = new.id and m.event_id = tm.event_id and m.user_id = tm.user_id
+    and m.division_id is distinct from new.division_id;
+  return new;
+end;
+$$;
+
+create trigger teams_sync_division after update of division_id on public.teams
+  for each row execute function private.sync_team_division();
+
+-- joining a team takes its division; a team without one takes the first joiner's
+create function private.team_member_division()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_team uuid;
+  v_mine uuid;
+begin
+  select division_id into v_team from public.teams where id = new.team_id;
+  select division_id into v_mine from public.event_members
+  where event_id = new.event_id and user_id = new.user_id;
+  if v_team is null and v_mine is not null then
+    update public.teams set division_id = v_mine where id = new.team_id;
+  elsif v_team is distinct from v_mine then
+    update public.event_members set division_id = v_team
+    where event_id = new.event_id and user_id = new.user_id;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger team_members_division after insert on public.team_members
+  for each row execute function private.team_member_division();
+
+-- a member on a team always carries the team's division
+create function private.keep_team_division()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_team public.teams;
+begin
+  select t.* into v_team from public.teams t
+  join public.team_members tm on tm.team_id = t.id
+  where tm.event_id = new.event_id and tm.user_id = new.user_id;
+  -- skipped while a deleted division is being cleared from the team too
+  if v_team.id is not null and (v_team.division_id is null
+     or exists (select 1 from public.divisions where id = v_team.division_id)) then
+    new.division_id := v_team.division_id;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger event_members_team_division before update of division_id on public.event_members
+  for each row execute function private.keep_team_division();
 
 create function private.ensure_solo_team()
 returns trigger
@@ -593,8 +664,44 @@ begin
 end;
 $$;
 
+-- Organizers place whole teams in a division (or none); their members follow.
+create function public.set_teams_division(p_event uuid, p_teams uuid[], p_division uuid default null)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_team public.teams;
+  v_moved integer := 0;
+begin
+  if not private.can_manage(p_event) then
+    raise exception 'only organizers place teams in divisions' using errcode = '42501';
+  end if;
+  if cardinality(p_teams) > 1000 then
+    raise exception 'send up to 1000 teams' using errcode = '22023';
+  end if;
+  if p_division is not null
+     and not exists (select 1 from public.divisions where id = p_division and event_id = p_event) then
+    raise exception 'no such division' using errcode = 'P0002';
+  end if;
+  for v_team in
+    select * from public.teams
+    where event_id = p_event and id = any (p_teams) and division_id is distinct from p_division
+    for update
+  loop
+    update public.teams set division_id = p_division where id = v_team.id;
+    perform private.audit(p_event, 'division.assigned', 'division', p_division,
+      jsonb_build_object('team', v_team.id, 'from', v_team.division_id));
+    v_moved := v_moved + 1;
+  end loop;
+  return v_moved;
+end;
+$$;
+
 grant execute on function
   public.create_team(uuid, text),
+  public.set_teams_division(uuid, uuid[], uuid),
   public.join_team(text),
   public.team_preview(text),
   public.leave_team(uuid),

@@ -269,7 +269,10 @@ there is".
   - The composite foreign key `(event_id, user_id) → event_members` means
     only members can join.
   - A trigger enforces `team_size_max`, and also that the member's division
-    matches when the team has one.
+    matches when the team has one (organizers can move anyone; the member takes the team's division).
+  - The team's `division_id` is the source of truth: triggers copy it to every member's
+    `event_members.division_id`, a team without one takes its first joiner's, and a member on a team can't
+    hold another. People without a team keep their own. `set_teams_division` places teams in bulk.
 - **Solo events** (`team_size_max = 1`) get a team of one, created when the
   participant becomes an event member. Every competing table references
   `team_id`, so solo and team contests share one code path.

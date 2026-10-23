@@ -28,8 +28,11 @@ advisory (see docs/contributing.md#security-releases). -->
 - Organizers can add a message to the not-found and error pages: Manage → Details → "Error pages" for an event, Organization settings → "Error pages" for an organization, and Instance settings for the whole instance (`branding.fallbackMessage`, Markdown). The most specific one shows under the page's own text.
 - A session's attendance page works on a phone: the check-in code shows with its QR code, and "Copy link to check-in" and "New code..." are labelled buttons sharing the full width. The code on the full-screen QR is larger. The roster only renders the rows on screen, so long rosters stay quick.
 - The check-in kiosk's full screen button turns into "Exit full screen" (with its own icon) while in full screen, including when you leave with Esc.
+- Divisions belong to teams: a team's division is its members' division, and people without a team keep their own. Manage → Teams is now a table (search, sort, filter by division, pages) with a **Division** column per team, and checking teams offers **Set division...** for all of them. On Manage → People, changing the division of someone who shares a team (or several picked people) asks whether to move their whole team or only them.
+- **Match teams...** on Manage → Teams opens in a dialog.
+- Copying an event keeps which divisions each submission form is for.
 
-**Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions` and `20261022130000_access_default`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only.
+**Upgrade notes:** run `bogey db migrate` (migrations `20261022100000_criteria_guidance`, `20261022110000_form_divisions`, `20261022130000_access_default` and `20261023090000_team_divisions`). Links to Manage → Judging#criteria now land on Manage → Judging; criteria are at Manage → Judging → Criteria. Events with no stored registration mode keep "Organizers approve"; new events default to invite-only. Each team takes its members' most common division and its members follow it; teams whose members disagreed are listed as notices while migrating.
 
 ## 2.3.0 (2026-10-22)
 

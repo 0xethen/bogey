@@ -253,8 +253,11 @@ per import. None uses only exact column and division, session and team names; so
 adds common headers and near matches; as much as possible also guesses from
 contents and shared words and merges similar team names.
 
-**Manage → People → Teams**: rename, lock, move people between teams, or add
-people straight to a team.
+**Manage → Teams** lists the teams in a table you can search, sort and filter by division. Open a team to
+rename, lock or disband it and move people between teams. A team's division belongs to the team: set it in the
+**Division** column, or check several teams and use **Set division...**, and everyone on the team follows.
+People without a team keep their own division. Changing the division of someone on Manage → People who shares
+a team asks whether to move the whole team or only them (they leave the team).
 
 **Manage → Teams → What teams can do** sets the rules participants can't get
 around:
@@ -279,7 +282,7 @@ can do** → **Team board**). People without a team say what they're good at and
 looking; teams say what they need and invite people. The captain answers requests and the invited person
 answers invitations, and both hear about it in the bell (and by email unless they turn it off).
 
-Before the event starts, **Manage → Teams → Match teams...** places everyone still without a team. Pick the
+Before the event starts, **Manage → Teams → Match teams...** opens a dialog that places everyone still without a team. Pick the
 team size to aim for and **Propose teams**: it fills teams that have room first, then makes new ones per
 division, spreading skills and keeping time zones close, and lists anyone it can't place. Nothing changes
 until **Apply...**, which makes the teams and moves people in one audited step. It uses what people wrote on

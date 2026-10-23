@@ -358,6 +358,10 @@ begin
       select v_new.id, v_id, key, label, help, kind, required, options, config, sort
       from public.submission_items where form_id = r.id;
     end loop;
+    insert into public.submission_form_divisions (event_id, form_id, division_id)
+    select v_new.id, (v_forms ->> fd.form_id::text)::uuid, (v_divisions ->> fd.division_id::text)::uuid
+    from public.submission_form_divisions fd
+    where fd.event_id = p_source and v_divisions ? fd.division_id::text;
   end if;
 
   if 'tracks' = any (p_include) then

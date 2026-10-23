@@ -133,6 +133,8 @@ const SIGNED_IN = {
   choose_team_division:
     "a participant moves their whole team between divisions the event lets them pick and leave",
   set_division: "organizers move someone, and a team of just them, between divisions",
+  set_teams_division:
+    "organizers place whole teams in a division; their members follow, and it's audited",
   post_announcement: "posts with its audience rows in one transaction and audits it",
   my_sessions: "the caller's own signed-in sessions, which live in the auth schema",
   end_my_session: "signs one of the caller's own sessions out of the auth schema",

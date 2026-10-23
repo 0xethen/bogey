@@ -16,11 +16,50 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@bogey/ui/components/number-field";
-import { Panel } from "@bogey/ui/components/panel";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@bogey/ui/components/dialog";
 import { Label } from "@bogey/ui/components/label";
 import { useT } from "#/lib/translate.tsx";
 
-export function TeamMatcher({ eventId, onDone }: { eventId: string; onDone: () => void }) {
+export function TeamMatcher({
+  eventId,
+  open,
+  onOpenChange,
+}: {
+  eventId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const t = useT();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t("teamMatch.title")}</DialogTitle>
+          <TeamMatcherDescription eventId={eventId} />
+        </DialogHeader>
+        {open && <Matcher eventId={eventId} onDone={() => onOpenChange(false)} />}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TeamMatcherDescription({ eventId }: { eventId: string }) {
+  const t = useT();
+  const overview = useQuery(teamMatchingOverviewQueryOptions(eventId));
+  return (
+    <DialogDescription>
+      {t("teamMatch.help", { count: overview.data?.people.length ?? 0 })}
+    </DialogDescription>
+  );
+}
+
+function Matcher({ eventId, onDone }: { eventId: string; onDone: () => void }) {
   const t = useT();
   const queryClient = useQueryClient();
   const overview = useQuery(teamMatchingOverviewQueryOptions(eventId));
@@ -55,15 +94,7 @@ export function TeamMatcher({ eventId, onDone }: { eventId: string; onDone: () =
   const nameOf = (id: string) => names.get(id) ?? id;
 
   return (
-    <Panel
-      title={t("teamMatch.title")}
-      description={t("teamMatch.help", { count: data.people.length })}
-      action={
-        <Button size="sm" variant="ghost" onClick={onDone}>
-          {t("common.cancel")}
-        </Button>
-      }
-    >
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="match-size">{t("teamMatch.aimFor")}</Label>
@@ -145,6 +176,6 @@ export function TeamMatcher({ eventId, onDone }: { eventId: string; onDone: () =
           </div>
         </div>
       )}
-    </Panel>
+    </div>
   );
 }

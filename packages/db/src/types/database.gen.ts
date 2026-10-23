@@ -5104,6 +5104,10 @@ export type Database = {
         Args: { p_event: string; p_team?: string; p_user: string };
         Returns: undefined;
       };
+      set_teams_division: {
+        Args: { p_division?: string; p_event: string; p_teams: string[] };
+        Returns: number;
+      };
       set_windows: {
         Args: { p_event: string; p_label?: string; p_windows: Json };
         Returns: undefined;

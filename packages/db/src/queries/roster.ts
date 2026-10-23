@@ -5,7 +5,7 @@ import type { RosterRole } from "@bogey/utils/roster";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Json, Tables } from "../types.ts";
-import { requireId, requireText } from "./validate.ts";
+import { optionalId, requireId, requireText } from "./validate.ts";
 import { profileNames } from "./profile-names.ts";
 
 const ROLES: Tuple<RosterRole> = ["participant", "judge", "staff", "organizer"];
@@ -20,6 +20,7 @@ export interface RosterTeam {
   id: string;
   name: string;
   locked: boolean;
+  divisionId: string | null;
   members: TeamMember[];
 }
 
@@ -33,7 +34,11 @@ export const eventTeamsFn = createServerFn({ method: "GET" })
   .handler(async ({ data: eventId }): Promise<DbResult<EventTeams>> => {
     const supabase = createServerClient();
     const [teams, members, participants] = await Promise.all([
-      supabase.from("teams").select("id, name, locked_at").eq("event_id", eventId).order("name"),
+      supabase
+        .from("teams")
+        .select("id, name, locked_at, division_id")
+        .eq("event_id", eventId)
+        .order("name"),
       supabase
         .from("team_members")
         .select("team_id, user_id, role, joined_at")
@@ -58,6 +63,7 @@ export const eventTeamsFn = createServerFn({ method: "GET" })
         id: team.id,
         name: team.name,
         locked: !!team.locked_at,
+        divisionId: team.division_id,
         members: (members.data ?? [])
           .filter((row) => row.team_id === team.id)
           .sort((a, b) => a.joined_at.localeCompare(b.joined_at))
@@ -151,6 +157,29 @@ export const updateTeamFn = createServerFn({ method: "POST" })
     }
     if (!rows.length) return fail("forbidden", "Only organizers can change this team.");
     return ok(null);
+  });
+
+export const setTeamsDivisionFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as { eventId?: unknown; teamIds?: unknown; divisionId?: unknown };
+    if (!Array.isArray(raw.teamIds) || raw.teamIds.length > 1000) {
+      throw new Error("Pick up to 1000 teams.");
+    }
+    return {
+      eventId: requireId(raw.eventId, "eventId"),
+      teamIds: raw.teamIds.map((id) => requireId(id, "teamId")),
+      divisionId: optionalId(raw.divisionId, "divisionId"),
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<number>> => {
+    const supabase = createServerClient();
+    const { data: moved, error } = await supabase.rpc("set_teams_division", {
+      p_event: data.eventId,
+      p_teams: data.teamIds,
+      p_division: data.divisionId,
+    });
+    if (error) return toFailure(error, "placing the teams");
+    return ok(moved);
   });
 
 export const disbandTeamFn = createServerFn({ method: "POST" })

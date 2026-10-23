@@ -1,9 +1,14 @@
 import { useRoleLabel } from "#/lib/roles.ts";
 import { IconDownload } from "@tabler/icons-react";
 import { exportHref } from "#/lib/exports.ts";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { fromLink, usePeopleMutation } from "./-components/people-shared.ts";
+import {
+  fromLink,
+  moveDivision,
+  splitsTeam,
+  usePeopleMutation,
+} from "./-components/people-shared.ts";
 import { eventInviteLinksQueryOptions } from "@bogey/db/queries/invites";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -22,7 +27,7 @@ import {
   type RosterEntry,
 } from "@bogey/db/queries/checkin";
 import { useLiveInvalidate } from "@bogey/db/realtime";
-import { eventDivisionsQueryOptions, setDivisionFn } from "@bogey/db/queries/divisions";
+import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { rosterOverlapsQueryOptions, type RosterOverlap } from "@bogey/db/queries/roster";
 import { RosterImport } from "./-components/roster-import.tsx";
 import { StatusDot } from "@bogey/ui/components/status-dot";
@@ -134,8 +139,15 @@ function RouteComponent() {
   const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(event.id));
   const place = usePeopleMutation(
     event.id,
-    async (input: { userId: string; divisionId: string | undefined }) =>
-      unwrap(await setDivisionFn({ data: { eventId: event.id, ...input } })),
+    async (input: { members: Member[]; divisionId: string | undefined; wholeTeams: boolean }) => {
+      const failed = await moveDivision(
+        event.id,
+        input.members,
+        input.divisionId,
+        input.wholeTeams,
+      );
+      if (failed > 0) throw new Error(t("managePeople.bulkFailed", { count: failed }));
+    },
   );
   const { data: tags } = useSuspenseQuery(tagScopeQueries(event).tags);
   const { data: holders } = useSuspenseQuery(tagScopeQueries(event).holders);
@@ -160,6 +172,9 @@ function RouteComponent() {
     title: string;
     description: string;
     run: () => void;
+    label?: string;
+    // a second way forward, next to the main one
+    alternative?: { label: string; run: () => void };
   } | null>(null);
 
   const [pickedMembers, setPickedMembers] = useState<ReadonlySet<string>>(new Set());
@@ -170,6 +185,48 @@ function RouteComponent() {
   // the mutation objects are new every render; their mutate functions and flags aren't
   const { mutate: changeRole, isPending: changingRole } = setRole;
   const { mutate: placeIn, isPending: placing } = place;
+  // a team shares one division, so splitting one asks whether the whole team moves
+  const askDivision = useCallback(
+    (members: Member[], divisionId: string | undefined, onSuccess?: () => void) => {
+      const moving = members.filter((member) => (member.divisionId ?? undefined) !== divisionId);
+      if (moving.length === 0) return;
+      const run = (wholeTeams: boolean) =>
+        placeIn({ members: moving, divisionId, wholeTeams }, { onSuccess });
+      if (!splitsTeam(moving)) return run(true);
+      const division =
+        divisions.find((each) => each.id === divisionId)?.name ?? t("checkin.noDivision");
+      const [one] = moving;
+      const teams = new Set(moving.map((member) => member.teamId).filter(Boolean)).size;
+      setConfirming(
+        moving.length === 1 && one
+          ? {
+              title: t("managePeople.divisionTeamTitle", { name: one.name }),
+              description: t("managePeople.divisionTeamAsk", {
+                name: one.name,
+                team: one.team ?? "",
+                division,
+              }),
+              label: t("managePeople.divisionWholeTeam", { team: one.team ?? "" }),
+              run: () => run(true),
+              alternative: {
+                label: t("managePeople.divisionOnlyThem", { name: one.name }),
+                run: () => run(false),
+              },
+            }
+          : {
+              title: t("managePeople.divisionTeamsTitle", { count: moving.length }),
+              description: t("managePeople.divisionTeamsAsk", { teams, division }),
+              label: t("managePeople.divisionWholeTeams", { count: teams }),
+              run: () => run(true),
+              alternative: {
+                label: t("managePeople.divisionOnlyPicked"),
+                run: () => run(false),
+              },
+            },
+      );
+    },
+    [placeIn, divisions, t],
+  );
   const { mutate: changeExtraRoles } = setExtraRoles;
   const { mutate: removeMember, isPending: removing } = remove;
   const you = session.user.id;
@@ -197,26 +254,7 @@ function RouteComponent() {
             });
           } else change();
         },
-        onDivision: (member, divisionId) => {
-          const change = () => placeIn({ userId: member.userId, divisionId });
-          const name = divisions.find((each) => each.id === divisionId)?.name;
-          if (member.teamId && divisionId !== (member.divisionId ?? undefined)) {
-            setConfirming({
-              title: t("managePeople.divisionTeamTitle", { name: member.name }),
-              description:
-                member.teamSize > 1
-                  ? t("managePeople.divisionTeamBlocked", {
-                      team: member.team ?? "",
-                      count: member.teamSize - 1,
-                    })
-                  : t("managePeople.divisionTeamMoves", {
-                      team: member.team ?? "",
-                      division: name ?? t("checkin.noDivision"),
-                    }),
-              run: change,
-            });
-          } else change();
-        },
+        onDivision: (member, divisionId) => askDivision([member], divisionId),
         onExtraRoles: (userId, roles) => changeExtraRoles({ userId, roles }),
         tags: {
           orgId: event.org_id,
@@ -235,7 +273,7 @@ function RouteComponent() {
       pluginRoleOptions,
       event.slug,
       changeRole,
-      placeIn,
+      askDivision,
       changeExtraRoles,
       removeMember,
       event.org_id,
@@ -312,13 +350,24 @@ function RouteComponent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel autoFocus>{t("common.cancel")}</AlertDialogCancel>
+            {confirming?.alternative && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  confirming.alternative?.run();
+                  setConfirming(null);
+                }}
+              >
+                {confirming.alternative.label}
+              </Button>
+            )}
             <Button
               onClick={() => {
                 confirming?.run();
                 setConfirming(null);
               }}
             >
-              {t("common.continue")}
+              {confirming?.label ?? t("common.continue")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -365,6 +414,15 @@ function RouteComponent() {
                 you={session.user.id}
                 userIds={picked}
                 divisions={divisions}
+                onDivision={(divisionId) =>
+                  askDivision(
+                    people.members.filter(
+                      (member) => pickedMembers.has(member.userId) && member.userId !== you,
+                    ),
+                    divisionId,
+                    () => setPickedMembers(new Set()),
+                  )
+                }
                 onDone={() => setPickedMembers(new Set())}
               />
             )}
@@ -772,12 +830,14 @@ function BulkMembers({
   you,
   userIds,
   divisions,
+  onDivision,
   onDone,
 }: {
   eventId: string;
   you: string;
   userIds: Tuple<string>;
   divisions: Tuple<Division>;
+  onDivision: (divisionId: string | undefined) => void;
   onDone: () => void;
 }) {
   const t = useT();
@@ -849,18 +909,7 @@ function BulkMembers({
               ...divisions.map((division) => ({ value: division.id, label: division.name })),
             ]}
             onChange={(next) => {
-              if (next === KEEP) return;
-              run.mutate(async (userId) =>
-                unwrap(
-                  await setDivisionFn({
-                    data: {
-                      eventId,
-                      userId,
-                      divisionId: next === NO_DIVISION ? undefined : next,
-                    },
-                  }),
-                ),
-              );
+              if (next !== KEEP) onDivision(next === NO_DIVISION ? undefined : next);
             }}
           />
         )}
