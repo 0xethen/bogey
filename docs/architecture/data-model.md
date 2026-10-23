@@ -485,13 +485,15 @@ ones.
   `save_offline_scores`, kept in `ranking_inputs` under the provider `offline`.
   `assign_round_robin` and `pin_judge` only hand out online rounds.
 - **`judging_panels`** (`round_id`, `name`, `location`, `starts_at?`, `slot_minutes`,
-  `now_position?`), **`panel_judges`** (one panel a judge a round) and **`panel_slots`**
+  `now_position?`, `now_started_at?`), **`panel_judges`** (one panel a judge a round) and **`panel_slots`**
   (`panel_id`, `submission_id`, `position`; an entry presents once a round): a demo round's run of
   show. Slots run back to back from `starts_at`. `save_panels`, `schedule_demos` and `move_demo`
   (organizers) keep `judge_assignments` in line with the panels: every panel judge without a
   conflict gets the panel's entries, and leaves the ones they haven't scored when they move.
-  `set_panel_now` (the panel's judges, organizers) marks who's presenting; teams read their slot
-  with `my_demo_slots`.
+  `set_panel_now` (the panel's judges, organizers) marks who's presenting and restarts its timer;
+  `panel_presentation` (organizers, judges) gives the presentation screen each slot's team,
+  division, members and tracks (team and members hidden from judges while judging is blind);
+  teams read their slot with `my_demo_slots`.
 - **`judging_rounds`**: `event_id`, `form_id`, `ordinal`, `name`, `window_key?`. Round 1 is
   created with the form and holds every submitted entry. **`round_entries`**
   (`round_id`, `submission_id`) lists the entries advanced into later rounds, written by

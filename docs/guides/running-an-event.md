@@ -436,6 +436,15 @@ sets one aside (it stays at the end, and **Restore** brings it back). If the con
 while a judge saves scores, the scores wait on their device ("N scores waiting to send") and go
 out when it's back.
 
+### Live demo screen
+
+For a demo round, **Present** on a panel (Manage → Demos, or the judge's queue) opens a
+full-screen view for the room: the team presenting with its division, members, prize tracks and
+table, a timer for its slot that turns to a warning near the end and counts overtime, and who's up
+next. The panel's judges and organizers move it along with **Next team** (or the arrow keys);
+**Restart the timer** starts the current slot over. Every screen showing the panel follows along.
+The settings button picks what shows, and each device remembers its own choice.
+
 ### What teams see from judges
 
 **What teams see from judges** (Judging settings) decides, once results are published, whether a team
@@ -478,7 +487,8 @@ cards, winner markers once results are published, likes and comments for
 signed-in visitors (both off by default), the default sort, and the slideshow.
 Teams pick their card's banner from their project's images, and its size if you
 allow that, under **Gallery card** on their Submission page. The slideshow
-doesn't loop unless the viewer turns that on in its settings.
+doesn't loop unless the viewer turns that on in its settings, which also choose what each slide
+shows (division and prize tracks among them) and whether a seconds-left timer runs while playing.
 
 ## 8. Talking to participants
 

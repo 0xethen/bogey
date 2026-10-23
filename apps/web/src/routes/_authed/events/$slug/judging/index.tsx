@@ -26,7 +26,7 @@ import { setPanelNowFn } from "@bogey/db/queries/demos";
 import { useLiveInvalidate } from "@bogey/db/realtime";
 import { formatTime } from "@bogey/utils/time";
 import { Badge } from "@bogey/ui/components/badge";
-import { IconPlayerPlay } from "@tabler/icons-react";
+import { IconPlayerPlay, IconPresentation } from "@tabler/icons-react";
 import { useViewerTimeFormat } from "#/lib/time.ts";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import {
@@ -240,20 +240,37 @@ function RouteComponent() {
             <span className="font-medium">{panel.panelName}</span>
             {panel.location && <span className="text-muted-fg"> · {panel.location}</span>}
           </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={advance.isPending || (panel.nowPosition ?? -1) >= panelSize(panel.panelId)}
-            onClick={() =>
-              advance.mutate({
-                panelId: panel.panelId,
-                position: panel.nowPosition === null ? 0 : panel.nowPosition + 1,
-              })
-            }
-          >
-            <IconPlayerPlay />
-            {panel.nowPosition === null ? t("demos.start") : t("demos.next")}
-          </Button>
+          <span className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              tooltip={t("present.openHelp")}
+              render={
+                <Link
+                  to="/events/$slug/demos/$panelId"
+                  params={{ slug: event.slug, panelId: panel.panelId }}
+                />
+              }
+              nativeButton={false}
+            >
+              <IconPresentation />
+              {t("present.open")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={advance.isPending || (panel.nowPosition ?? -1) >= panelSize(panel.panelId)}
+              onClick={() =>
+                advance.mutate({
+                  panelId: panel.panelId,
+                  position: panel.nowPosition === null ? 0 : panel.nowPosition + 1,
+                })
+              }
+            >
+              <IconPlayerPlay />
+              {panel.nowPosition === null ? t("demos.start") : t("demos.next")}
+            </Button>
+          </span>
         </div>
       ))}
       <ErrorAlert error={skip.error ?? advance.error} title={t("judging.updateFailed")} />

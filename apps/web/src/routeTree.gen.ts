@@ -106,6 +106,7 @@ import { Route as AuthedAdminXKeySplatRouteImport } from './routes/_authed/admin
 import { Route as AuthedEventsSlugAgendaIndexRouteImport } from './routes/_authed/events/$slug/agenda/index'
 import { Route as AuthedEventsSlugCheckinIndexRouteImport } from './routes/_authed/events/$slug/checkin.index'
 import { Route as AuthedEventsSlugCheckinKioskRouteImport } from './routes/_authed/events/$slug/checkin_.kiosk'
+import { Route as AuthedEventsSlugDemosPanelIdRouteImport } from './routes/_authed/events/$slug/demos.$panelId'
 import { Route as AuthedEventsSlugJudgingIndexRouteImport } from './routes/_authed/events/$slug/judging/index'
 import { Route as AuthedEventsSlugJudgingSubmissionIdRouteImport } from './routes/_authed/events/$slug/judging/$submissionId'
 import { Route as AuthedEventsSlugManageIndexRouteImport } from './routes/_authed/events/$slug/manage/index'
@@ -673,6 +674,12 @@ const AuthedEventsSlugCheckinKioskRoute =
     path: '/checkin/kiosk',
     getParentRoute: () => AuthedEventsSlugRouteRoute,
   } as any)
+const AuthedEventsSlugDemosPanelIdRoute =
+  AuthedEventsSlugDemosPanelIdRouteImport.update({
+    id: '/demos/$panelId',
+    path: '/demos/$panelId',
+    getParentRoute: () => AuthedEventsSlugRouteRoute,
+  } as any)
 const AuthedEventsSlugJudgingIndexRoute =
   AuthedEventsSlugJudgingIndexRouteImport.update({
     id: '/',
@@ -1079,6 +1086,7 @@ export interface FileRoutesByFullPath {
   '/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/events/$slug/checkin/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
+  '/events/$slug/demos/$panelId': typeof AuthedEventsSlugDemosPanelIdRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
   '/events/$slug/manage/agenda-attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
@@ -1215,6 +1223,7 @@ export interface FileRoutesByTo {
   '/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/events/$slug/checkin/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
+  '/events/$slug/demos/$panelId': typeof AuthedEventsSlugDemosPanelIdRoute
   '/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
   '/events/$slug/manage/agenda-attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
@@ -1368,6 +1377,7 @@ export interface FileRoutesById {
   '/_authed/admin/orgs/$slug/limits': typeof AuthedAdminOrgsSlugLimitsRoute
   '/_authed/admin/x/$key/$': typeof AuthedAdminXKeySplatRoute
   '/_authed/events/$slug/checkin_/kiosk': typeof AuthedEventsSlugCheckinKioskRoute
+  '/_authed/events/$slug/demos/$panelId': typeof AuthedEventsSlugDemosPanelIdRoute
   '/_authed/events/$slug/judging/$submissionId': typeof AuthedEventsSlugJudgingSubmissionIdRoute
   '/_authed/events/$slug/manage/agenda': typeof AuthedEventsSlugManageAgendaRoute
   '/_authed/events/$slug/manage/agenda-attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
@@ -1520,6 +1530,7 @@ export interface FileRouteTypes {
     | '/admin/orgs/$slug/limits'
     | '/admin/x/$key/$'
     | '/events/$slug/checkin/kiosk'
+    | '/events/$slug/demos/$panelId'
     | '/events/$slug/judging/$submissionId'
     | '/events/$slug/manage/agenda'
     | '/events/$slug/manage/agenda-attendance'
@@ -1656,6 +1667,7 @@ export interface FileRouteTypes {
     | '/admin/orgs/$slug/limits'
     | '/admin/x/$key/$'
     | '/events/$slug/checkin/kiosk'
+    | '/events/$slug/demos/$panelId'
     | '/events/$slug/judging/$submissionId'
     | '/events/$slug/manage/agenda'
     | '/events/$slug/manage/agenda-attendance'
@@ -1808,6 +1820,7 @@ export interface FileRouteTypes {
     | '/_authed/admin/orgs/$slug/limits'
     | '/_authed/admin/x/$key/$'
     | '/_authed/events/$slug/checkin_/kiosk'
+    | '/_authed/events/$slug/demos/$panelId'
     | '/_authed/events/$slug/judging/$submissionId'
     | '/_authed/events/$slug/manage/agenda'
     | '/_authed/events/$slug/manage/agenda-attendance'
@@ -2580,6 +2593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugCheckinKioskRouteImport
       parentRoute: typeof AuthedEventsSlugRouteRoute
     }
+    '/_authed/events/$slug/demos/$panelId': {
+      id: '/_authed/events/$slug/demos/$panelId'
+      path: '/demos/$panelId'
+      fullPath: '/events/$slug/demos/$panelId'
+      preLoaderRoute: typeof AuthedEventsSlugDemosPanelIdRouteImport
+      parentRoute: typeof AuthedEventsSlugRouteRoute
+    }
     '/_authed/events/$slug/judging/': {
       id: '/_authed/events/$slug/judging/'
       path: '/'
@@ -3222,6 +3242,7 @@ interface AuthedEventsSlugRouteRouteChildren {
   AuthedEventsSlugWelcomeRoute: typeof AuthedEventsSlugWelcomeRoute
   AuthedEventsSlugIndexRoute: typeof AuthedEventsSlugIndexRoute
   AuthedEventsSlugCheckinKioskRoute: typeof AuthedEventsSlugCheckinKioskRoute
+  AuthedEventsSlugDemosPanelIdRoute: typeof AuthedEventsSlugDemosPanelIdRoute
   AuthedEventsSlugPagesPageRoute: typeof AuthedEventsSlugPagesPageRoute
   AuthedEventsSlugResultsPresentRoute: typeof AuthedEventsSlugResultsPresentRoute
   AuthedEventsSlugPagesIndexRoute: typeof AuthedEventsSlugPagesIndexRoute
@@ -3249,6 +3270,7 @@ const AuthedEventsSlugRouteRouteChildren: AuthedEventsSlugRouteRouteChildren = {
   AuthedEventsSlugWelcomeRoute: AuthedEventsSlugWelcomeRoute,
   AuthedEventsSlugIndexRoute: AuthedEventsSlugIndexRoute,
   AuthedEventsSlugCheckinKioskRoute: AuthedEventsSlugCheckinKioskRoute,
+  AuthedEventsSlugDemosPanelIdRoute: AuthedEventsSlugDemosPanelIdRoute,
   AuthedEventsSlugPagesPageRoute: AuthedEventsSlugPagesPageRoute,
   AuthedEventsSlugResultsPresentRoute: AuthedEventsSlugResultsPresentRoute,
   AuthedEventsSlugPagesIndexRoute: AuthedEventsSlugPagesIndexRoute,

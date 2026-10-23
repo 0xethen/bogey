@@ -47,6 +47,7 @@ import { windowByKey, type EventWindow } from "@bogey/db/queries/windows";
 import type { PluginManifest } from "@bogey/plugins";
 import { formatDateRange, type FormatOptions } from "@bogey/utils/time";
 import { Button } from "@bogey/ui/components/button";
+import { Countdown } from "@bogey/ui/components/countdown";
 import { DialogTrigger } from "@bogey/ui/components/dialog";
 import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
 import { Facts, type Fact } from "@bogey/ui/components/facts";
@@ -262,31 +263,24 @@ function Picture({ image, className }: { image: HomeImage; className?: string })
   );
 }
 
-function Countdown({ to }: { to: string }) {
+const COUNTDOWN_UNITS = ["days", "hours", "minutes", "seconds"] as const;
+
+function EventCountdown({ to }: { to: string }) {
   const t = useT();
   const now = useNow(1000);
   if (now === null) return <div className="h-20" />;
-  const left = Math.max(0, new Date(to).getTime() - now);
-  const parts = [
-    { label: t("countdown.days"), value: Math.floor(left / 86_400_000) },
-    { label: t("countdown.hours"), value: Math.floor(left / 3_600_000) % 24 },
-    { label: t("countdown.minutes"), value: Math.floor(left / 60_000) % 60 },
-    { label: t("countdown.seconds"), value: Math.floor(left / 1000) % 60 },
-  ];
   return (
-    <div role="timer" aria-live="off" className="grid grid-cols-4 gap-2">
-      {parts.map((part) => (
-        <div
-          key={part.label}
-          className="flex flex-col items-center rounded-2xl border border-border bg-muted/40 py-3"
-        >
-          <span className="font-heading text-2xl font-semibold tabular-nums">
-            {String(part.value).padStart(2, "0")}
-          </span>
-          <span className="text-xs text-muted-fg">{part.label}</span>
-        </div>
-      ))}
-    </div>
+    <Countdown
+      layout="blocks"
+      ms={Math.max(0, new Date(to).getTime() - now)}
+      units={COUNTDOWN_UNITS}
+      labels={{
+        days: t("countdown.days"),
+        hours: t("countdown.hours"),
+        minutes: t("countdown.minutes"),
+        seconds: t("countdown.seconds"),
+      }}
+    />
   );
 }
 
@@ -818,7 +812,7 @@ export function HomeBlockView({
         <Screen.Section
           title={title || (block.to === "start" ? t("home.startsIn") : t("home.endsIn"))}
         >
-          <Countdown to={at} />
+          <EventCountdown to={at} />
         </Screen.Section>
       );
     }

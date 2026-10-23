@@ -152,7 +152,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="drawer-header"
       className={cn(
-        "flex shrink-0 flex-col gap-0.5 p-4 pb-0 group-data-[swipe-axis=y]/drawer-popup:text-center md:gap-1.5 md:text-left",
+        "flex shrink-0 flex-col gap-1 border-b border-border px-5 pt-5 pb-4 group-data-[swipe-axis=y]/drawer-popup:text-center md:text-left",
         className,
       )}
       {...props}
@@ -160,11 +160,58 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+/** The scrollable middle between a DrawerHeader and DrawerFooter. */
+function DrawerBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="drawer-body"
+      className={cn(
+        "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-5 py-5",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/** A titled group of controls inside a DrawerBody. */
+function DrawerSection({
+  title,
+  description,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<"section">, "title"> & {
+  title: React.ReactNode;
+  description?: React.ReactNode;
+}) {
+  const id = React.useId();
+  return (
+    <section
+      data-slot="drawer-section"
+      aria-labelledby={id}
+      className={cn("flex flex-col gap-3", className)}
+      {...props}
+    >
+      <div className="flex flex-col gap-0.5">
+        <h3 id={id} className="text-xs font-medium tracking-wide text-muted-fg uppercase">
+          {title}
+        </h3>
+        {description && <p className="text-xs text-muted-fg">{description}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="drawer-footer"
-      className={cn("mt-auto flex shrink-0 flex-col gap-2 p-4 pt-0", className)}
+      className={cn(
+        "mt-auto flex shrink-0 flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end",
+        className,
+      )}
       {...props}
     />
   );
@@ -199,6 +246,8 @@ export {
   DrawerClose,
   DrawerContent,
   DrawerHeader,
+  DrawerBody,
+  DrawerSection,
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,

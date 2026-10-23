@@ -220,6 +220,60 @@ export const setPanelNowFn = createServerFn({ method: "POST" })
     return ok(null);
   });
 
+const presentationSlot = z.object({
+  submissionId: z.string(),
+  position: z.number(),
+  title: z.string().catch(""),
+  table: z.string().nullable().catch(null),
+  /** Null for judges while judging is blind. */
+  teamName: z.string().nullable().catch(null),
+  division: z.string().nullable().catch(null),
+  members: z.array(z.string()).catch([]),
+  tracks: z.array(z.string()).catch([]),
+});
+
+const presentation = z.object({
+  id: z.string(),
+  roundName: z.string().catch(""),
+  name: z.string(),
+  location: z.string().catch(""),
+  startsAt: z.string().nullable().catch(null),
+  slotMinutes: z.number(),
+  nowPosition: z.number().nullable().catch(null),
+  /** When the presenter now started; null before the first. */
+  nowStartedAt: z.string().nullable().catch(null),
+  /** The database's clock, to line the timer up with every other screen's. */
+  serverNow: z.string(),
+  /** Whether the caller can move the presenter along: organizers and the panel's judges. */
+  canAdvance: z.boolean().catch(false),
+  judges: z.array(z.string()).catch([]),
+  slots: z.array(presentationSlot).catch([]),
+});
+
+export type PanelPresentation = z.infer<typeof presentation>;
+export type PresentationSlot = z.infer<typeof presentationSlot>;
+
+export const panelPresentationFn = createServerFn({ method: "GET" })
+  .validator((panelId: unknown) => requireId(panelId, "panelId"))
+  .handler(async ({ data: panelId }): Promise<DbResult<PanelPresentation>> => {
+    const supabase = createServerClient();
+    const { data, error } = await supabase.rpc("panel_presentation", { p_panel: panelId });
+    if (error) return toFailure(error, "loading the presentation");
+    return ok(presentation.parse(data));
+  });
+
+export const panelPresentationQueryOptions = (panelId: string) =>
+  queryOptions({
+    queryKey: ["panel-presentation", panelId] as const,
+    queryFn: async () => {
+      const sent = Date.now();
+      const panel = unwrap(await panelPresentationFn({ data: panelId }));
+      // how far this device's clock is behind the database's, give or take half the round trip
+      return { ...panel, offset: Date.parse(panel.serverNow) - (sent + Date.now()) / 2 };
+    },
+    retry: retryPolicy,
+  });
+
 const mySlot = z.object({
   submissionId: z.string(),
   title: z.string(),

@@ -15,11 +15,16 @@ import {
 } from "@tabler/icons-react";
 import { galleryQueryOptions, type GalleryProject } from "@bogey/db/queries/gallery";
 import { Button } from "@bogey/ui/components/button";
+import { Badge } from "@bogey/ui/components/badge";
+import { Countdown } from "@bogey/ui/components/countdown";
 import {
   Drawer,
+  DrawerBody,
+  DrawerClose,
   DrawerContent,
-  // DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
+  DrawerSection,
   DrawerTitle,
 } from "@bogey/ui/components/drawer";
 import { OptSelect } from "@bogey/ui/components/opt-select";
@@ -94,12 +99,27 @@ function RouteComponent() {
     setStarted(!playing);
   }, [playing, atEnd, settings.loop]);
 
+  // seconds left on the shown slide, tagged with the slide it's for
+  const [left, setLeft] = useState({ at: -1, seconds: 0 });
   // advance while playing; without a loop it stops on the last project
   useEffect(() => {
     if (!playing || projects.length === 0) return;
+    const ends = Date.now() + settings.seconds * 1000;
     const timer = window.setTimeout(next, settings.seconds * 1000);
-    return () => window.clearTimeout(timer);
+    const tick = window.setInterval(
+      () => setLeft({ at, seconds: Math.max(0, Math.ceil((ends - Date.now()) / 1000)) }),
+      250,
+    );
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(tick);
+    };
   }, [playing, at, settings.seconds, projects.length, next]);
+  const secondsLeft = playing ? (left.at === at ? left.seconds : settings.seconds) : null;
+  const divisionName = (id: string | null) =>
+    gallery?.divisions.find((each) => each.id === id)?.name ?? null;
+  const trackNames = (ids: string[]) =>
+    (gallery?.tracks ?? []).filter((each) => ids.includes(each.id)).map((each) => each.name);
 
   // the controls fade out once the pointer and keys have been still
   useEffect(() => {
@@ -185,6 +205,19 @@ function RouteComponent() {
               />
             )}
             {settings.winners && <WinnerBadges project={project} className="justify-center" />}
+            {settings.details &&
+              (divisionName(project.divisionId) || project.trackIds.length > 0) && (
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {divisionName(project.divisionId) && (
+                    <Badge variant="secondary">{divisionName(project.divisionId)}</Badge>
+                  )}
+                  {trackNames(project.trackIds).map((name) => (
+                    <Badge key={name} variant="outline">
+                      {name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             <h1 className="font-heading text-5xl font-semibold text-balance sm:text-6xl">
               {project.title}
             </h1>
@@ -253,6 +286,11 @@ function RouteComponent() {
           >
             <IconChevronRight />
           </Button>
+          {settings.timer && secondsLeft !== null && (
+            <span className="px-2 text-sm" title={t("gallery.secondsLeft")}>
+              <Countdown ms={secondsLeft * 1000} units={["seconds"]} padStart={2} />
+            </span>
+          )}
           {settings.counter && projects.length > 0 && (
             <span className="px-2 text-sm text-muted-fg tabular-nums">
               {t("gallery.at", { at: at + 1, total: projects.length })}
@@ -274,79 +312,99 @@ function RouteComponent() {
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>{t("gallery.slideshowSettings")}</DrawerTitle>
-            {/* <DrawerDescription>{t("gallery.slideshowSettingsHelp")}</DrawerDescription> */}
           </DrawerHeader>
-          <div className="flex flex-col gap-5 overflow-y-auto p-4 pt-0">
-            <Row label={t("gallery.showFor", { seconds: settings.seconds })}>
-              <Slider
-                min={3}
-                max={60}
-                step={1}
-                value={[settings.seconds]}
-                aria-label={t("gallery.showSeconds")}
-                onValueChange={(value) =>
-                  change({
-                    seconds: Array.isArray(value) ? (value[0] ?? SHOW_DEFAULTS.seconds) : value,
-                  })
-                }
+          <DrawerBody>
+            <DrawerSection title={t("gallery.playback")}>
+              <Row label={t("gallery.showFor", { seconds: settings.seconds })}>
+                <Slider
+                  min={3}
+                  max={60}
+                  step={1}
+                  value={[settings.seconds]}
+                  aria-label={t("gallery.showSeconds")}
+                  onValueChange={(value) =>
+                    change({
+                      seconds: Array.isArray(value) ? (value[0] ?? SHOW_DEFAULTS.seconds) : value,
+                    })
+                  }
+                />
+              </Row>
+              <Row label={t("gallery.order")}>
+                <OptSelect
+                  ariaLabel={t("gallery.order")}
+                  value={settings.sort ?? filter.sort ?? gallery?.settings.sort ?? "newest"}
+                  options={GALLERY_SORTS.filter((each) => sorts.includes(each.key)).map((each) => ({
+                    value: each.key,
+                    label: t(each.label),
+                  }))}
+                  onChange={(sort) => {
+                    change({ sort });
+                    setIndex(0);
+                  }}
+                />
+              </Row>
+              <Toggle
+                label={t("gallery.loop")}
+                checked={settings.loop}
+                onChange={(loop) => change({ loop })}
               />
-            </Row>
-            <Row label={t("gallery.order")}>
-              <OptSelect
-                ariaLabel={t("gallery.order")}
-                value={settings.sort ?? filter.sort ?? gallery?.settings.sort ?? "newest"}
-                options={GALLERY_SORTS.filter((each) => sorts.includes(each.key)).map((each) => ({
-                  value: each.key,
-                  label: t(each.label),
-                }))}
-                onChange={(sort) => {
-                  change({ sort });
-                  setIndex(0);
-                }}
+              <Toggle
+                label={t("gallery.autoplay")}
+                checked={settings.autoplay}
+                onChange={(autoplay) => change({ autoplay })}
               />
-            </Row>
-            <Toggle
-              label={t("gallery.loop")}
-              checked={settings.loop}
-              onChange={(loop) => change({ loop })}
-            />
-            <Toggle
-              label={t("gallery.autoplay")}
-              checked={settings.autoplay}
-              onChange={(autoplay) => change({ autoplay })}
-            />
-            <p className="-mb-2 text-sm font-medium">{t("gallery.onSlides")}</p>
-            <Toggle
-              label={t("gallery.slideBanner")}
-              checked={settings.banner}
-              onChange={(banner) => change({ banner })}
-            />
-            <Toggle
-              label={t("gallery.slideTeam")}
-              checked={settings.team}
-              onChange={(team) => change({ team })}
-            />
-            <Toggle
-              label={t("gallery.slideBlurb")}
-              checked={settings.blurb}
-              onChange={(blurb) => change({ blurb })}
-            />
-            <Toggle
-              label={t("gallery.slideWinners")}
-              checked={settings.winners}
-              onChange={(winners) => change({ winners })}
-            />
-            <Toggle
-              label={t("gallery.slideCounter")}
-              checked={settings.counter}
-              onChange={(counter) => change({ counter })}
-            />
-            <Toggle
-              label={t("gallery.slideProgress")}
-              checked={settings.progress}
-              onChange={(progress) => change({ progress })}
-            />
-          </div>
+            </DrawerSection>
+            <DrawerSection title={t("gallery.onSlides")}>
+              <Toggle
+                label={t("gallery.slideBanner")}
+                checked={settings.banner}
+                onChange={(banner) => change({ banner })}
+              />
+              <Toggle
+                label={t("gallery.slideTeam")}
+                checked={settings.team}
+                onChange={(team) => change({ team })}
+              />
+              <Toggle
+                label={t("gallery.slideBlurb")}
+                checked={settings.blurb}
+                onChange={(blurb) => change({ blurb })}
+              />
+              <Toggle
+                label={t("gallery.slideDetails")}
+                checked={settings.details}
+                onChange={(details) => change({ details })}
+              />
+              <Toggle
+                label={t("gallery.slideWinners")}
+                checked={settings.winners}
+                onChange={(winners) => change({ winners })}
+              />
+            </DrawerSection>
+            <DrawerSection title={t("gallery.showControls")}>
+              <Toggle
+                label={t("gallery.slideCounter")}
+                checked={settings.counter}
+                onChange={(counter) => change({ counter })}
+              />
+              <Toggle
+                label={t("gallery.slideTimer")}
+                checked={settings.timer}
+                onChange={(timer) => change({ timer })}
+              />
+              <Toggle
+                label={t("gallery.slideProgress")}
+                checked={settings.progress}
+                onChange={(progress) => change({ progress })}
+              />
+            </DrawerSection>
+          </DrawerBody>
+          <DrawerFooter>
+            <Button variant="ghost" onClick={() => change({ ...SHOW_DEFAULTS })}>
+              {t("gallery.resetSettings")}
+            </Button>
+            <DrawerClose render={<Button />}>{t("common.close")}</DrawerClose>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     </div>

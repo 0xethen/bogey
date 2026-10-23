@@ -2,7 +2,13 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { IconArrowDown, IconArrowUp, IconPlayerPlay, IconPlus } from "@tabler/icons-react";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconPlayerPlay,
+  IconPlus,
+  IconPresentation,
+} from "@tabler/icons-react";
 import { activeRound } from "@bogey/utils/rounds";
 import { isoToWallTime, wallTimeToIso, formatTime } from "@bogey/utils/time";
 import {
@@ -404,6 +410,21 @@ function DemoRound({ round, title }: { round: JudgingRound; title: string }) {
             </h4>
             {panel.slots.length > 0 && (
               <span className="flex items-center gap-2">
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  tooltip={t("present.openHelp")}
+                  render={
+                    <Link
+                      to="/events/$slug/demos/$panelId"
+                      params={{ slug: event.slug, panelId: panel.id }}
+                    />
+                  }
+                  nativeButton={false}
+                >
+                  <IconPresentation />
+                  {t("present.open")}
+                </Button>
                 {panel.nowPosition !== null && (
                   <Button
                     size="xs"

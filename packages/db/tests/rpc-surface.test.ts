@@ -63,6 +63,8 @@ const SIGNED_IN = {
     "organizers put a demo round's entries into panel order; syncs assignments and audits it",
   move_demo: "organizers move an entry in the demo schedule; syncs assignments and audits it",
   set_panel_now: "a panel's judges or organizers mark which team is presenting",
+  panel_presentation:
+    "organizers and judges read a panel's run of show for its presentation screen",
   my_demo_slots: "a team reads when and where it presents",
   save_offline_scores: "organizers enter an offline round's scores and audit it",
   judge_calibration: "organizers read every judge's scoring pattern",

@@ -1937,6 +1937,7 @@ export type Database = {
           location: string;
           name: string;
           now_position: number | null;
+          now_started_at: string | null;
           round_id: string;
           slot_minutes: number;
           sort: number;
@@ -1950,6 +1951,7 @@ export type Database = {
           location?: string;
           name: string;
           now_position?: number | null;
+          now_started_at?: string | null;
           round_id: string;
           slot_minutes?: number;
           sort?: number;
@@ -1962,6 +1964,7 @@ export type Database = {
           location?: string;
           name?: string;
           now_position?: number | null;
+          now_started_at?: string | null;
           round_id?: string;
           slot_minutes?: number;
           sort?: number;
@@ -4836,6 +4839,7 @@ export type Database = {
         }[];
       };
       org_limits: { Args: { p_org: string; p_plugin_limits?: string[] }; Returns: Json };
+      panel_presentation: { Args: { p_panel: string }; Returns: Json };
       pin_judge: { Args: { p_event: string; p_judge: string; p_team: string }; Returns: number };
       portfolios_enabled: { Args: Record<PropertyKey, never>; Returns: boolean };
       post_announcement: {

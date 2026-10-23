@@ -12,8 +12,12 @@ export interface ShowSettings {
   team: boolean;
   blurb: boolean;
   winners: boolean;
+  /** Division and prize tracks. */
+  details: boolean;
   counter: boolean;
   progress: boolean;
+  /** Seconds left on the slide while playing. */
+  timer: boolean;
   sort: GallerySort | null;
 }
 
@@ -25,8 +29,10 @@ export const SHOW_DEFAULTS: ShowSettings = {
   team: true,
   blurb: true,
   winners: true,
+  details: true,
   counter: true,
   progress: true,
+  timer: false,
   sort: null,
 };
 
@@ -52,8 +58,10 @@ function loadSettings(): ShowSettings {
         team: pick("team"),
         blurb: pick("blurb"),
         winners: pick("winners"),
+        details: pick("details"),
         counter: pick("counter"),
         progress: pick("progress"),
+        timer: pick("timer"),
         sort,
       };
     }
