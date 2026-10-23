@@ -52,20 +52,40 @@ test("an unknown scoring is ICPC, and a malformed claim is refused", () => {
   assert.throws(() => parseClaim({ ...payload, testcases: "none" }), /testcases/);
 });
 
-test("the API calls the plugin's functions with the service key and the runner's id", async () => {
-  const seen: { url: string; body: string; auth: string | null }[] = [];
+const KEY = `bogey_runner_${"a".repeat(43)}`;
+const keyed = {
+  supabaseUrl: "https://x.co",
+  credential: { kind: "key" as const, runnerKey: KEY, apiKey: "anon" },
+  runnerId: "r1",
+  leaseSeconds: 90,
+};
+const legacy = {
+  ...keyed,
+  credential: { kind: "service" as const, serviceKey: "svc" },
+};
+
+interface Seen {
+  url: string;
+  body: string;
+  headers: Headers;
+}
+
+function recording(answer: (url: string) => string) {
+  const seen: Seen[] = [];
   const fetcher: typeof fetch = async (input, init) => {
     seen.push({
       url: String(input),
       body: String(init?.body ?? ""),
-      auth: new Headers(init?.headers).get("authorization"),
+      headers: new Headers(init?.headers),
     });
-    return new Response(String(input).includes("claim") ? "null" : "true", { status: 200 });
+    return new Response(answer(String(input)), { status: 200 });
   };
-  const api = createApi(
-    { supabaseUrl: "https://x.co", serviceKey: "svc", runnerId: "r1", leaseSeconds: 90 },
-    fetcher,
-  );
+  return { seen, fetcher };
+}
+
+test("with a runner key the API calls only the runner's functions, and never sends a service key", async () => {
+  const { seen, fetcher } = recording((url) => (url.includes("claim") ? "null" : "true"));
+  const api = createApi(keyed, fetcher);
   assert.equal(await api.claim(), null);
   assert.equal(await api.heartbeat("j1"), true);
   assert.equal(
@@ -79,29 +99,58 @@ test("the API calls the plugin's functions with the service key and the runner's
     }),
     true,
   );
-  assert.equal(seen[0]?.url, "https://x.co/rest/v1/rpc/challenges_claim_judging");
+  await api.requeue("j1", "x");
+  await api.release("j1");
+  assert.deepEqual(
+    seen.map((call) => call.url.replace("https://x.co/rest/v1/rpc/", "")),
+    [
+      "challenges_runner_claim",
+      "challenges_runner_heartbeat",
+      "challenges_runner_record",
+      "challenges_runner_requeue",
+      "challenges_runner_release",
+    ],
+  );
   assert.deepEqual(JSON.parse(seen[0]?.body ?? ""), { p_runner: "r1", p_lease_seconds: 90 });
-  assert.equal(seen[0]?.auth, "Bearer svc");
+  for (const call of seen) {
+    assert.equal(call.headers.get("x-bogey-runner-key"), KEY);
+    assert.equal(call.headers.get("apikey"), "anon", "the anon key only passes the gateway");
+    assert.equal(call.headers.get("authorization"), null);
+  }
   assert.equal(JSON.parse(seen[2]?.body ?? "").p_verdict, "AC");
 });
 
-test("an error from the database is an error, with the path", async () => {
-  const api = createApi(
-    { supabaseUrl: "https://x.co", serviceKey: "svc", runnerId: "r1", leaseSeconds: 90 },
-    async () => new Response('{"message":"no"}', { status: 401 }),
-  );
-  await assert.rejects(api.claim(), /challenges_claim_judging: HTTP 401/);
+test("with a runner key, test data comes from the judging it holds", async () => {
+  const { seen, fetcher } = recording(() => JSON.stringify({ input: "1 2", answer: "3" }));
+  const api = createApi(keyed, fetcher);
+  assert.deepEqual(await api.testData("j1", "t1"), { input: "1 2", answer: "3" });
+  assert.equal(seen[0]?.url, "https://x.co/rest/v1/rpc/challenges_runner_test_data");
+  assert.deepEqual(JSON.parse(seen[0]?.body ?? ""), {
+    p_judging: "j1",
+    p_runner: "r1",
+    p_testcase: "t1",
+  });
 });
 
-test("test data is read one test at a time", async () => {
-  let asked = "";
-  const api = createApi(
-    { supabaseUrl: "https://x.co", serviceKey: "svc", runnerId: "r1", leaseSeconds: 90 },
-    async (input) => {
-      asked = String(input);
-      return new Response(JSON.stringify([{ input: "1 2", answer: "3" }]), { status: 200 });
-    },
+test("behind the runner gateway no API key is sent at all", async () => {
+  const { seen, fetcher } = recording(() => "null");
+  await createApi({ ...keyed, credential: { ...keyed.credential, apiKey: null } }, fetcher).claim();
+  assert.equal(seen[0]?.headers.get("apikey"), null);
+});
+
+test("the old service key still works, through the old functions", async () => {
+  const { seen, fetcher } = recording((url) =>
+    url.includes("testcases") ? JSON.stringify([{ input: "1 2", answer: "3" }]) : "null",
   );
-  assert.deepEqual(await api.testData("t 1"), { input: "1 2", answer: "3" });
-  assert.match(asked, /challenges_testcases\?id=eq\.t%201&select=input,answer/);
+  const api = createApi(legacy, fetcher);
+  await api.claim();
+  assert.equal(seen[0]?.url, "https://x.co/rest/v1/rpc/challenges_claim_judging");
+  assert.equal(seen[0]?.headers.get("authorization"), "Bearer svc");
+  assert.deepEqual(await api.testData("j1", "t 1"), { input: "1 2", answer: "3" });
+  assert.match(seen[1]?.url ?? "", /challenges_testcases\?id=eq\.t%201&select=input,answer/);
+});
+
+test("an error from the database is an error, with the path", async () => {
+  const api = createApi(keyed, async () => new Response('{"message":"no"}', { status: 403 }));
+  await assert.rejects(api.claim(), /challenges_runner_claim: HTTP 403/);
 });

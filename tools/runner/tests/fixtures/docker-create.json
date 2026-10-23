@@ -1,0 +1,132 @@
+{
+  "Hostname": "sandbox",
+  "Domainname": "",
+  "User": "65534:65534",
+  "AttachStdin": true,
+  "AttachStdout": true,
+  "AttachStderr": true,
+  "Tty": false,
+  "OpenStdin": true,
+  "StdinOnce": true,
+  "Env": ["HOME=/tmp"],
+  "Cmd": ["-c", "python3 main.py"],
+  "Healthcheck": {
+    "Test": ["NONE"]
+  },
+  "Image": "bogey-runner-python:3.13",
+  "Volumes": {},
+  "WorkingDir": "/work",
+  "Entrypoint": ["/bin/sh"],
+  "OnBuild": null,
+  "Labels": {
+    "bogey-runner": "runner"
+  },
+  "HostConfig": {
+    "Binds": null,
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "none",
+      "Config": {}
+    },
+    "NetworkMode": "none",
+    "PortBindings": {},
+    "RestartPolicy": {
+      "Name": "no",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": true,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [0, 0],
+    "CapAdd": null,
+    "CapDrop": ["ALL"],
+    "CgroupnsMode": "private",
+    "Dns": [],
+    "DnsOptions": [],
+    "DnsSearch": [],
+    "ExtraHosts": null,
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 1000,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": true,
+    "SecurityOpt": ["no-new-privileges"],
+    "Tmpfs": {
+      "/tmp": "rw,nosuid,nodev,noexec,size=64m"
+    },
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 0,
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 268435456,
+    "NanoCpus": 1000000000,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": [],
+    "BlkioDeviceReadBps": [],
+    "BlkioDeviceWriteBps": [],
+    "BlkioDeviceReadIOps": [],
+    "BlkioDeviceWriteIOps": [],
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": [],
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 268435456,
+    "MemorySwappiness": -1,
+    "OomKillDisable": false,
+    "PidsLimit": 128,
+    "Ulimits": [
+      {
+        "Name": "core",
+        "Hard": 0,
+        "Soft": 0
+      },
+      {
+        "Name": "fsize",
+        "Hard": 2097152,
+        "Soft": 2097152
+      },
+      {
+        "Name": "nofile",
+        "Hard": 1024,
+        "Soft": 1024
+      },
+      {
+        "Name": "nproc",
+        "Hard": 2048,
+        "Soft": 2048
+      }
+    ],
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "Mounts": [
+      {
+        "Type": "bind",
+        "Source": "/var/lib/bogey-runner/runner/j-avX8oL",
+        "Target": "/work",
+        "ReadOnly": true,
+        "BindOptions": {
+          "Propagation": "rprivate"
+        }
+      }
+    ],
+    "MaskedPaths": null,
+    "ReadonlyPaths": null
+  },
+  "NetworkingConfig": {
+    "EndpointsConfig": {}
+  }
+}

@@ -1,4 +1,4 @@
-import type { Config } from "./config.ts";
+import type { Config, Credential } from "./config.ts";
 import {
   VERDICTS,
   type Checker,
@@ -129,7 +129,7 @@ export interface Api {
   record(judgingId: string, result: RecordedResult): Promise<boolean>;
   requeue(judgingId: string, reason: string): Promise<void>;
   release(judgingId: string): Promise<void>;
-  testData(testcaseId: string): Promise<TestData>;
+  testData(judgingId: string, testcaseId: string): Promise<TestData>;
 }
 
 export interface RecordedResult {
@@ -141,19 +141,52 @@ export interface RecordedResult {
   runs: Tuple<Run>;
 }
 
+// the database functions each credential calls; a runner key only reaches the `challenges_runner_*` ones
+const FUNCTIONS = {
+  key: {
+    claim: "challenges_runner_claim",
+    heartbeat: "challenges_runner_heartbeat",
+    record: "challenges_runner_record",
+    requeue: "challenges_runner_requeue",
+    release: "challenges_runner_release",
+  },
+  service: {
+    claim: "challenges_claim_judging",
+    heartbeat: "challenges_heartbeat",
+    record: "challenges_record_judging",
+    requeue: "challenges_requeue_judging",
+    release: "challenges_release_judging",
+  },
+} as const;
+
+export const RUNNER_KEY_HEADER = "x-bogey-runner-key";
+
+function headersFor(credential: Credential): Record<string, string> {
+  if (credential.kind === "service") {
+    return {
+      apikey: credential.serviceKey,
+      authorization: `Bearer ${credential.serviceKey}`,
+    };
+  }
+  // the anon key only gets the request through the gateway; the runner key is what the database checks
+  return {
+    [RUNNER_KEY_HEADER]: credential.runnerKey,
+    ...(credential.apiKey ? { apikey: credential.apiKey } : {}),
+  };
+}
+
 export function createApi(
-  config: Pick<Config, "supabaseUrl" | "serviceKey" | "runnerId" | "leaseSeconds">,
+  config: Pick<Config, "supabaseUrl" | "credential" | "runnerId" | "leaseSeconds">,
   fetcher: typeof fetch = fetch,
 ): Api {
-  const headers = {
-    apikey: config.serviceKey,
-    authorization: `Bearer ${config.serviceKey}`,
-    "content-type": "application/json",
-  };
+  const headers = { ...headersFor(config.credential), "content-type": "application/json" };
+  const names = FUNCTIONS[config.credential.kind];
 
   async function call(path: string, init: RequestInit): Promise<unknown> {
     const response = await fetcher(`${config.supabaseUrl}/rest/v1/${path}`, {
       ...init,
+      redirect: "error",
+      signal: AbortSignal.timeout(30_000),
       headers: { ...headers, ...init.headers },
     });
     const body = await response.text();
@@ -166,14 +199,14 @@ export function createApi(
 
   return {
     async claim() {
-      const result = await rpc("challenges_claim_judging", {
+      const result = await rpc(names.claim, {
         p_runner: config.runnerId,
         p_lease_seconds: config.leaseSeconds,
       });
       return result === null ? null : parseClaim(result);
     },
     async heartbeat(judgingId) {
-      const result = await rpc("challenges_heartbeat", {
+      const result = await rpc(names.heartbeat, {
         p_judging: judgingId,
         p_runner: config.runnerId,
         p_lease_seconds: config.leaseSeconds,
@@ -181,7 +214,7 @@ export function createApi(
       return result === true;
     },
     async record(judgingId, result) {
-      const recorded = await rpc("challenges_record_judging", {
+      const recorded = await rpc(names.record, {
         p_judging: judgingId,
         p_runner: config.runnerId,
         p_verdict: result.verdict,
@@ -194,16 +227,27 @@ export function createApi(
       return recorded === true;
     },
     async requeue(judgingId, reason) {
-      await rpc("challenges_requeue_judging", {
+      await rpc(names.requeue, {
         p_judging: judgingId,
         p_runner: config.runnerId,
         p_reason: reason.slice(0, 4000),
       });
     },
     async release(judgingId) {
-      await rpc("challenges_release_judging", { p_judging: judgingId, p_runner: config.runnerId });
+      await rpc(names.release, { p_judging: judgingId, p_runner: config.runnerId });
     },
-    async testData(testcaseId) {
+    async testData(judgingId, testcaseId) {
+      if (config.credential.kind === "key") {
+        const row = obj(
+          await rpc("challenges_runner_test_data", {
+            p_judging: judgingId,
+            p_runner: config.runnerId,
+            p_testcase: testcaseId,
+          }),
+          `test ${testcaseId}`,
+        );
+        return { input: text(row.input, "input"), answer: text(row.answer, "answer") };
+      }
       const rows = await call(
         `challenges_testcases?id=eq.${encodeURIComponent(testcaseId)}&select=input,answer`,
         { method: "GET" },

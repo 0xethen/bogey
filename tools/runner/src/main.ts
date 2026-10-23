@@ -1,5 +1,6 @@
 import { createApi } from "./api.ts";
 import { loadConfig } from "./config.ts";
+import { clearWorkDir, prepareWorkDir } from "./paths.ts";
 import { worker, type Logger } from "./runner.ts";
 import { DockerSandbox } from "./sandbox.ts";
 import { selfTest } from "./self-test.ts";
@@ -10,10 +11,22 @@ const log: Logger = {
 };
 
 async function main() {
-  const config = loadConfig();
-  const sandbox = new DockerSandbox(config.dockerBin, config.runnerId);
+  const testing = process.argv.includes("--self-test");
+  const config = loadConfig(process.env, { selfTest: testing });
+  for (const warning of config.warnings) log.error(`warning: ${warning}`);
+  const sandbox = new DockerSandbox({
+    docker: config.dockerBin,
+    label: config.runnerId,
+    runtime: config.runtime,
+    nproc: config.nproc,
+    images: config.images,
+  });
 
-  if (process.argv.includes("--self-test")) {
+  await prepareWorkDir(config.workDir);
+  await clearWorkDir(config.workDir);
+  await sandbox.cleanup();
+
+  if (testing) {
     const only = process.argv
       .find((arg) => arg.startsWith("--language="))
       ?.slice("--language=".length);
@@ -21,7 +34,6 @@ async function main() {
     return;
   }
 
-  await sandbox.cleanup();
   const api = createApi(config);
   const stop = new AbortController();
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
@@ -31,7 +43,7 @@ async function main() {
     });
   }
   log.info(
-    `runner ${config.runnerId} starting: ${config.concurrency} at a time, work in ${config.workDir}`,
+    `runner ${config.runnerId} starting: ${config.concurrency} at a time, work in ${config.workDir}, ${config.credential.kind === "key" ? "runner key" : "service key"}, runtime ${config.runtime || "default"}`,
   );
   await Promise.all(
     Array.from({ length: config.concurrency }, (_, index) =>
@@ -39,6 +51,7 @@ async function main() {
     ),
   );
   await sandbox.cleanup();
+  await clearWorkDir(config.workDir);
   log.info("stopped");
 }
 

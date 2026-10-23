@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, test } from "vite-plus/test";
@@ -108,10 +108,11 @@ const LIMITS = {
   compileMemoryMb: 512,
   compileCpus: 2,
   compilePids: 256,
+  judgingTimeMs: 60_000,
 };
 
 const answers = (map: Record<string, string>): JudgeDeps["api"] => ({
-  testData: async (id) => ({ input: `in-${id}`, answer: map[id] ?? "1" }),
+  testData: async (_judging, id) => ({ input: `in-${id}`, answer: map[id] ?? "1" }),
 });
 
 function deps(sandbox: Sandbox, api: JudgeDeps["api"] = answers({})): JudgeDeps {
@@ -270,9 +271,10 @@ test("a custom checker decides with the Kattis exit codes and may give partial p
   const sandbox = new FakeSandbox(async (spec) => {
     seen.push(spec);
     if (spec.cwd === "/checker") {
-      await import("node:fs/promises").then(({ writeFile }) =>
-        writeFile(join(spec.mounts[1]?.host ?? "", "feedback", "score.txt"), "35\n"),
-      );
+      const files = spec.mounts.find((mount) => mount.container === "/case");
+      const feedback = spec.mounts.find((mount) => mount.container === "/feedback");
+      assert.equal(await readFile(join(files?.host ?? "", "output"), "utf-8"), "some output");
+      await writeFile(join(feedback?.host ?? "", "score.txt"), "35\n");
       return ran("", { exitCode: 43 });
     }
     return ran("some output");
@@ -281,11 +283,61 @@ test("a custom checker decides with the Kattis exit codes and may give partial p
   assert.equal(outcome.runs[0]?.verdict, "WA");
   assert.equal(outcome.score, 35, "the checker's score.txt counts for a wrong-but-partial answer");
   const check = seen.find((spec) => spec.cwd === "/checker");
-  assert.match(
-    check?.command ?? "",
-    /\/case\/input \/case\/answer \/case\/feedback < \/case\/output/,
+  assert.match(check?.command ?? "", /\/case\/input \/case\/answer \/feedback\/ < \/case\/output/);
+  assert.deepEqual(
+    check?.mounts.map((mount) => `${mount.container}:${mount.writable ? "rw" : "ro"}`),
+    ["/checker:ro", "/case:ro", "/feedback:rw"],
+    "the checker can write only its feedback folder",
   );
-  assert.equal(check?.mounts[0]?.writable, false, "the checker is read-only");
+});
+
+test("a checker's score.txt that is a link to another file is ignored", async () => {
+  const c = claim({ scoring: "ioi" }, [tc("a", { points: 100 })]);
+  c.problem.checker = "custom";
+  c.problem.checker_source = "x";
+  c.problem.checker_language = python;
+  const secret = join(workDir, "..", `secret-${Date.now()}`);
+  await writeFile(secret, "77");
+  try {
+    const sandbox = new FakeSandbox(async (spec) => {
+      const feedback = spec.mounts.find((mount) => mount.container === "/feedback");
+      if (feedback) {
+        await symlink(secret, join(feedback.host, "score.txt"));
+        return ran("", { exitCode: 43 });
+      }
+      return ran("out");
+    });
+    const outcome = await judge(c, deps(sandbox));
+    assert.equal(outcome.score, 0);
+  } finally {
+    await rm(secret, { force: true });
+  }
+});
+
+test("the whole judging has a deadline, and past it the judging goes back", async () => {
+  const sandbox = new FakeSandbox(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    return ran("1");
+  });
+  await assert.rejects(
+    judge(claim(), { ...deps(sandbox), limits: { ...LIMITS, judgingTimeMs: 40 } }),
+    /took longer than/,
+  );
+});
+
+test("test data is asked for by the judging and the test", async () => {
+  const asked: string[] = [];
+  const sandbox = new FakeSandbox(() => ran("1"));
+  await judge(claim({}, [tc("t1")]), {
+    ...deps(sandbox),
+    api: {
+      testData: async (judging, id) => {
+        asked.push(`${judging}/${id}`);
+        return { input: "", answer: "1" };
+      },
+    },
+  });
+  assert.deepEqual(asked, ["j/t1"]);
 });
 
 test("a custom checker that crashes is the host's problem", async () => {
@@ -312,12 +364,14 @@ test("an aborted judging stops before the next test", async () => {
 test("a run script runs the solution, and what it writes to its output file is the output", async () => {
   const sandbox = new FakeSandbox(async (spec) => {
     const io = spec.mounts.find((mount) => mount.container === "/io");
+    const inDir = spec.mounts.find((mount) => mount.container === "/in");
     const script = spec.mounts.find((mount) => mount.container === "/script");
-    assert.ok(io && script, "the script and the test's files are mounted");
+    assert.ok(io && inDir && script, "the script and the test's files are mounted");
     assert.equal(io.writable, true);
+    assert.equal(inDir.writable, false, "the input can't be swapped for a link");
     assert.equal(script.writable, false);
     assert.equal(await readFile(join(script.host, "run"), "utf-8"), 'exec "$@" < "$1" > "$2"');
-    const input = await readFile(join(io.host, "input"), "utf-8");
+    const input = await readFile(join(inDir.host, "input"), "utf-8");
     await writeFile(join(io.host, "output"), input === "in-t2" ? "2\n" : "1\n");
     return ran("ignored\n");
   });
@@ -325,7 +379,7 @@ test("a run script runs the solution, and what it writes to its output file is t
     claim({ problem: { ...claim().problem, run_script: 'exec "$@" < "$1" > "$2"' } }),
     deps(sandbox),
   );
-  assert.equal(sandbox.calls[0]?.command, "sh /script/run /io/input /io/output python3 main.py");
+  assert.equal(sandbox.calls[0]?.command, "sh /script/run /in/input /io/output python3 main.py");
   assert.equal(sandbox.calls[0]?.stdin, "");
   assert.equal(outcome.verdict, "WA", "the second test's output came from the file");
   assert.equal(outcome.runs[0]?.output_excerpt, "1\n");
@@ -342,4 +396,18 @@ test("a run script writing more than the output limit is too much output", async
     deps(sandbox),
   );
   assert.equal(outcome.verdict, "OLE");
+});
+
+test("a run script's output that is a link reads as no output, never the link's target", async () => {
+  const sandbox = new FakeSandbox(async (spec) => {
+    const io = spec.mounts.find((mount) => mount.container === "/io");
+    if (io) await symlink("/etc/hosts", join(io.host, "output"));
+    return ran("");
+  });
+  const outcome = await judge(
+    claim({ problem: { ...claim().problem, run_script: "true" } }, [tc("t1")]),
+    deps(sandbox),
+  );
+  assert.equal(outcome.runs[0]?.output_excerpt, "");
+  assert.equal(outcome.verdict, "WA");
 });
