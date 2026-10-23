@@ -13,15 +13,13 @@ advisory (see docs/contributing.md#security-releases). -->
 - Certificates have a design editor: Manage → Certificates → **Edit design** on each kind opens an A4 page (landscape or portrait) where text boxes, pictures (logos, signatures), a background and the verification QR code are dragged, resized and snapped to guides, with a preview for a sample recipient beside it. Text boxes take `{{name}}`, `{{award}}`, `{{event}}`, `{{date}}`, `{{org}}`, `{{code}}` and `{{link}}`, and **bold** and _italic_. The verification page, **Print all...** and the preview all draw from the same layout, so what prints matches what you saw.
 - Organization → Settings → Certificates holds the organization's designs, which events use until they customize their own. **Customize for this event** copies the organization's design and its pictures into the event, so changing or deleting either never breaks the other.
 - Pictures for a design upload to the event's (or organization's) folder. Removing a picture or swapping the background deletes the old file once the design is saved, not while you edit, so discarding is safe; going back to the standard design deletes its pictures, and an organization's files go with it.
-
-**Upgrade notes:** run `bogey db migrate` (migration `20261024090000_certificate_designs`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them.
 - The menubar's right side is two groups: icon buttons (plugins' buttons, like event sounds, then notifications) and menus (the account menu), the same height and spacing. The account menu's trigger reads "Account menu for <name>" to screen readers.
 - The tabs under the menubar are one navigation menu: tabs with a menu open a dropdown on hover, and moving between them slides one dropdown from tab to tab instead of closing and reopening. It doesn't animate with reduced motion.
 - Hovering Agenda lists each session with its **Main page**, and **Attendance** for those who take it.
 - Fixed a hydration warning from plugin buttons in the menubar (event sounds' mute button).
 - The public gallery has a Grid / List toggle for viewers, remembered in their browser (or set with `?view=`). Grid uses CSS grid-lanes where the browser supports it and a normal grid elsewhere. Project cards end in a footer with votes, likes and comments, the same in both views. The gallery "Layout" and "Visitors can switch the layout" settings are gone; stored values are ignored.
 
-**Upgrade notes:** run `bogey db migrate` (migration `20261024110000_gallery_view_modes`).
+**Upgrade notes:** run `bogey db migrate` (migrations `20261024090000_certificate_designs` and `20261024110000_gallery_view_modes`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them. Manage links moved under their parent pages (for example `/manage/review` is now `/manage/people/review`); the old addresses redirect.
 
 ## 2.4.0-beta.0 (2026-10-23)
 
