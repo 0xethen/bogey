@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, readdirSync, watch, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { watchInputs } from "../lib/watch-inputs.ts";
 import { findRepoRoot } from "../lib/repo-root.ts";
 import type { CliResult } from "../cli.ts";
 
@@ -89,13 +90,10 @@ export function generateThemes(root: string): CliResult {
 }
 
 export function watchThemes(root: string, log: (line: string) => void): () => void {
-  const dir = join(root, "packages", "ui", "src", "styles", "themes");
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const watcher = watch(dir, () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => log(generateThemes(root).output), 100);
+  return watchInputs(root, ["packages/ui/src/styles/themes"], () => {
+    const result = generateThemes(root);
+    if (result.exitCode !== 0 || result.output.endsWith("(updated)")) log(result.output);
   });
-  return () => watcher.close();
 }
 
 export function runThemes(cwd: string, args: string[]): CliResult {

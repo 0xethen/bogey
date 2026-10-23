@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, readdirSync, watch, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { watchInputs } from "./watch-inputs.ts";
 
 // Types read straight from supabase/schemas, with no database: the permissions the core checks,
 // the audit actions it writes, and the values a text column's `check (column in (...))` allows.
@@ -210,13 +211,8 @@ export function generateSchemaTypes(
 }
 
 export function watchSchemaTypes(root: string, log: (line: string) => void): () => void {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const watcher = watch(join(root, "supabase", "schemas"), () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      const result = generateSchemaTypes(root);
-      if (result.changed || !result.ok) log(result.output);
-    }, 200);
+  return watchInputs(root, ["supabase/schemas"], () => {
+    const result = generateSchemaTypes(root);
+    if (result.changed || !result.ok) log(result.output);
   });
-  return () => watcher.close();
 }

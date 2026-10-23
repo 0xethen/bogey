@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { watch } from "node:fs";
 import { join } from "node:path";
 import { findRepoRoot } from "../lib/repo-root.ts";
 import type { CliResult } from "../cli.ts";
 import { generateThemes, watchThemes } from "./themes.ts";
+import { watchInputs } from "../lib/watch-inputs.ts";
 import { generateSchemaTypes, watchSchemaTypes } from "../lib/schema-types.ts";
 
 interface Watcher {
@@ -12,22 +12,31 @@ interface Watcher {
   start: (root: string, log: (line: string) => void) => () => void;
 }
 
-function regenerateSettings(root: string, log: (line: string) => void): void {
+function bogey(root: string, args: string[]) {
   const bin = join(root, "tools", "cli", "src", "bin.ts");
-  for (const args of [["db", "baseline"], ["docs"]]) {
-    const result = spawnSync(process.execPath, [bin, ...args], { cwd: root, encoding: "utf-8" });
+  return spawnSync(process.execPath, [bin, ...args], { cwd: root, encoding: "utf-8" });
+}
+
+// Runs a generator only when its --check says the output is stale, and prints only then.
+function regenerate(root: string, log: (line: string) => void, commands: string[][]): void {
+  for (const args of commands) {
+    if (bogey(root, [...args, "--check"]).status === 0) continue;
+    const result = bogey(root, args);
     log((result.stdout || result.stderr).trim());
   }
 }
 
-function regenerateEmail(root: string, log: (line: string) => void): void {
-  const bin = join(root, "tools", "cli", "src", "bin.ts");
-  const result = spawnSync(process.execPath, [bin, "email", "templates"], {
-    cwd: root,
-    encoding: "utf-8",
-  });
-  log((result.stdout || result.stderr).trim());
-}
+const SETTINGS_INPUTS = [
+  "packages/config/src/settings.ts",
+  "packages/config/src/notifications.ts",
+  "packages/config/src/windows.ts",
+  "packages/config/src/email.ts",
+  "supabase/schemas",
+  "tools/cli/src/commands",
+  "tools/cli/src/commands.ts",
+];
+
+const EMAIL_INPUTS = ["packages/utils/templates", "packages/config/src/email.ts"];
 
 const WATCHERS: Tuple<Watcher> = [
   {
@@ -50,33 +59,18 @@ const WATCHERS: Tuple<Watcher> = [
   {
     flag: "--settings",
     description: "packages/config/src/settings.ts → SQL defaults, baseline, docs/reference",
-    start: (root, log) => {
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const watcher = watch(join(root, "packages", "config", "src", "settings.ts"), () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => regenerateSettings(root, log), 200);
-      });
-      return () => watcher.close();
-    },
+    start: (root, log) =>
+      watchInputs(root, SETTINGS_INPUTS, () =>
+        regenerate(root, log, [["db", "baseline"], ["docs"]]),
+      ),
   },
   {
     flag: "--email",
     description:
       "packages/utils/templates/layout.html, packages/config/src/email.ts → layout.gen.ts, supabase/templates",
     start: (root, log) => {
-      regenerateEmail(root, log);
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const onChange = () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => regenerateEmail(root, log), 200);
-      };
-      const watchers = [
-        watch(join(root, "packages", "utils", "templates"), onChange),
-        watch(join(root, "packages", "config", "src", "email.ts"), onChange),
-      ];
-      return () => {
-        for (const watcher of watchers) watcher.close();
-      };
+      regenerate(root, log, [["email", "templates"]]);
+      return watchInputs(root, EMAIL_INPUTS, () => regenerate(root, log, [["email", "templates"]]));
     },
   },
 ];

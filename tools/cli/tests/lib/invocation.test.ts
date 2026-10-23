@@ -42,6 +42,12 @@ test("directions follow it; program names and other words don't", () => {
   ]);
 });
 
+test("a command already prefixed with vpr isn't prefixed twice", () => {
+  expect(withInvocation("To undo: vpr bogey db migrate", "vpr bogey", COMMANDS)).toBe(
+    "To undo: vpr bogey db migrate",
+  );
+});
+
 test("presenting leaves the words alone without color", () => {
   setColor(false);
   const output = "✓ Done.\nSign in: bogey login a@b.co";

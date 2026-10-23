@@ -513,7 +513,7 @@ export async function runRelease(
     if (choice === "undo") return undo(pending);
     return {
       exitCode: 1,
-      output: `${pending} is committed and tagged but not pushed.\nTo publish: git push --atomic origin main ${pending}\nTo undo: vpr bogey release undo`,
+      output: `${pending} is committed and tagged but not pushed.\nTo publish: git push --atomic origin main ${pending}\nTo undo: bogey release undo`,
     };
   }
 
@@ -632,7 +632,7 @@ export async function runRelease(
     log.push(
       "",
       `Not pushed. To publish: git push --atomic origin main ${tag}`,
-      "To undo: vpr bogey release undo",
+      "To undo: bogey release undo",
     );
     return { exitCode: 0, output: log.join("\n") };
   }

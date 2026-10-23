@@ -21,6 +21,6 @@ export function withInvocation(text: string, prefix: string, commands: Tuple<Sug
   const names = [...commands.map((entry) => entry.name), "<command>"]
     .map((name) => name.replace(/[\\<>]/g, "\\$&"))
     .join("|");
-  const pattern = new RegExp(`(?<![\\w@/.-])bogey (?=(?:${names})(?![\\w:-]))`, "g");
+  const pattern = new RegExp(`(?<![\\w@/.-])(?<!vpr )bogey (?=(?:${names})(?![\\w:-]))`, "g");
   return text.replace(pattern, prefix ? `${prefix} ` : "");
 }
