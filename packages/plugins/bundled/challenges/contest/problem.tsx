@@ -153,7 +153,7 @@ export function Workspace({
               nativeButton={false}
               render={<Link to="/jury" splat={problem.slug} />}
             >
-              Jury view
+              Edit
             </Button>
           ) : (
             <Button

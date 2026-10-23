@@ -7,6 +7,7 @@ import {
   IconArrowLeft,
   IconCode,
   IconCopy,
+  IconEye,
   IconFileText,
   IconGauge,
   IconId,
@@ -869,7 +870,7 @@ function EditorBody({
         collapsible="none"
         className="hidden lg:flex lg:py-6"
       >
-        <EditorNav tab={shown} onTab={setTab} saved={!!problem} invalid={invalid} />
+        <EditorNav tab={shown} onTab={setTab} slug={problem?.slug} invalid={invalid} />
       </Sidebar>
       <SidebarInset>
         <MobileNav tab={shown} onTab={setTab} saved={!!problem} />
@@ -883,16 +884,6 @@ function EditorBody({
                 <IconArrowLeft />
                 Jury
               </Button>
-              {problem && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  render={<Link to="/problems" splat={problem.slug} />}
-                  nativeButton={false}
-                >
-                  Participant view
-                </Button>
-              )}
             </div>
           }
         >
@@ -957,17 +948,30 @@ function Pane({ tab, shown, children }: { tab: Tab; shown: Tab; children: ReactN
 function EditorNav({
   tab,
   onTab,
-  saved,
+  slug,
   invalid,
 }: {
   tab: Tab;
   onTab: (tab: Tab) => void;
-  saved: boolean;
+  slug: string | undefined;
   invalid: ReadonlySet<Tab>;
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
+  const saved = slug !== undefined;
   return (
     <SidebarContent>
+      {slug && (
+        <SidebarGroup className="lg:px-0">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton render={<Link to="/problems" splat={slug} />}>
+                <IconEye />
+                <span>Participant view</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      )}
       {GROUPS.map((group) => (
         <SidebarGroup key={group.label} className="lg:px-0">
           <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
