@@ -495,6 +495,7 @@ function BlockSettings({
               id={`${block.id}-body`}
               mode={mode}
               rows={3}
+              features="short"
               value={block.body}
               placeholder={t("homeEditor.notePlaceholder")}
               onValueChange={(body) => onChange({ ...block, body })}

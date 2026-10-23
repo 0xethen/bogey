@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { IconPaperclip } from "@tabler/icons-react";
 import { z } from "zod";
 import {
   AUDIENCE_ROLES,
@@ -180,10 +181,17 @@ export function NewAnnouncementDialog({
                 <form.Field name="body">
                   {(field) => (
                     <field.BodyField
-                      onAttach={async () => {
-                        uploads.add(await pickFiles());
-                        return undefined;
-                      }}
+                      features="full"
+                      items={[
+                        {
+                          id: "attach",
+                          label: t("ui.attach"),
+                          icon: <IconPaperclip />,
+                          run: async () => {
+                            uploads.add(await pickFiles());
+                          },
+                        },
+                      ]}
                     />
                   )}
                 </form.Field>

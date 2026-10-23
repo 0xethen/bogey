@@ -286,3 +286,17 @@ describe("emails in other languages", () => {
     expect(rendered.text).toContain("Sent by Acme.");
   });
 });
+
+test("email markdown follows a feature set and underlines ++text++", () => {
+  expect(markdownToEmailHtml("a ++b++ c")).toContain("<u>b</u>");
+  const html = markdownToEmailHtml("# Hi\n\n[x](https://x.test)", {
+    headings: false,
+    links: false,
+    lists: true,
+    code: true,
+    images: false,
+  });
+  expect(html).not.toContain("<h1");
+  expect(html).not.toContain("<a ");
+  expect(html).toContain("# Hi");
+});

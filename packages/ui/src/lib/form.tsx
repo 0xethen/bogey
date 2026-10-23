@@ -34,7 +34,9 @@ import {
   MarkdownLabel,
   MarkdownModeSwitch,
   useMarkdownMode,
+  type MarkdownToolbarItem,
 } from "../components/markdown-input";
+import type { MarkdownFeatureSet } from "@bogey/utils/markdown";
 import { CreateDialogHeadline } from "../components/create-dialog";
 import { RangeInput, type Range } from "../components/range-input";
 import {
@@ -577,12 +579,16 @@ function MarkdownField({
   required,
   preview = true,
   actions,
+  features,
+  items,
   ...props
 }: WrapperProps & {
   field: FieldWithValue<string>;
   rows?: number;
   preview?: boolean;
   actions?: ReactNode;
+  features?: MarkdownFeatureSet;
+  items?: Tuple<MarkdownToolbarItem>;
 }) {
   const { label, description, placeholder } = resolve(field, props);
   const [mode, setMode] = useMarkdownMode();
@@ -609,6 +615,8 @@ function MarkdownField({
         mode={mode}
         value={field.value}
         rows={rows}
+        features={features}
+        items={items}
         placeholder={placeholder}
         onValueChange={(next) => field.handleChange(next)}
         onBlur={field.handleBlur}
@@ -674,11 +682,13 @@ function HeadlineField({
 function BodyField({
   field,
   required,
-  onAttach,
+  features,
+  items,
   ...props
 }: Omit<WrapperProps, "description"> & {
   field: FieldWithValue<string>;
-  onAttach?: () => Promise<string | undefined>;
+  features?: MarkdownFeatureSet;
+  items?: Tuple<MarkdownToolbarItem>;
 }) {
   const { label, placeholder } = resolve(field, props);
   const [mode, setMode] = useMarkdownMode();
@@ -693,7 +703,8 @@ function BodyField({
         placeholder={placeholder}
         onValueChange={(next) => field.handleChange(next)}
         onBlur={field.handleBlur}
-        onAttach={onAttach}
+        features={features}
+        items={items}
         trailing={<MarkdownModeSwitch mode={mode} onModeChange={setMode} />}
         aria-invalid={field.meta.isInvalid || undefined}
         aria-required={required || undefined}

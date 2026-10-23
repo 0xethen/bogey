@@ -230,10 +230,14 @@ export function PrizesSections({ eventId }: { eventId: string }) {
                           {(field) => <field.TextField required />}
                         </form.Field>
                         <form.Field name={`prizes[${index}].description`}>
-                          {(field) => <field.MarkdownField rows={3} preview={false} />}
+                          {(field) => (
+                            <field.MarkdownField rows={3} preview={false} features="short" />
+                          )}
                         </form.Field>
                         <form.Field name={`prizes[${index}].prize`}>
-                          {(field) => <field.MarkdownField rows={2} preview={false} />}
+                          {(field) => (
+                            <field.MarkdownField rows={2} preview={false} features="plain" />
+                          )}
                         </form.Field>
                         <form.Field name={`prizes[${index}].sponsorName`}>
                           {(field) => <field.TextField />}

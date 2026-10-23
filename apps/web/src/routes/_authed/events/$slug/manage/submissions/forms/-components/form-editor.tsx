@@ -410,7 +410,7 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
             </editor.Field>
           </div>
           <editor.Field name="description">
-            {(field) => <field.MarkdownField rows={3} />}
+            {(field) => <field.MarkdownField rows={3} features="short" />}
           </editor.Field>
           <editor.Field name="judged">{(field) => <field.SwitchField />}</editor.Field>
           {divisions.length > 0 && (

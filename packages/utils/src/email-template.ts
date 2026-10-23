@@ -1,4 +1,5 @@
 import { formatMessage, type Messages } from "./messages.ts";
+import { MARKDOWN_PRESETS, type MarkdownFeatures } from "./markdown.ts";
 
 export type TemplateValues = Readonly<Record<string, string>>;
 
@@ -45,23 +46,32 @@ const MD_LINK = new RegExp(String.raw`\[([^\]]+)\]\(${URL_SOURCE}\)`, "g");
 const BUTTON = new RegExp(String.raw`^\*\*\[([^\]]+)\]\(${URL_SOURCE}\)\*\*$`);
 const BARE_URL = /(^|[\s(])(https?:\/\/[^\s<)]+)/g;
 
-function inline(source: string): string {
+const UNDERLINE = /(^|[^+\p{L}\p{N}])\+\+(\S(?:[^\n]*?\S)?)\+\+/gu;
+
+function inlineHtml(source: string, features: MarkdownFeatures): string {
   const parts: string[] = [];
   const stash = (html: string) => `\uE000${parts.push(html) - 1}\uE000`;
-  const escaped = escapeHtml(source)
-    .replace(/`([^`\n]+)`/g, (_, code: string) =>
+  let escaped = escapeHtml(source);
+  if (features.code) {
+    escaped = escaped.replace(/`([^`\n]+)`/g, (_, code: string) =>
       stash(`<code class="mono" style="${STYLE.inlineCode}">${code}</code>`),
-    )
-    .replace(MD_LINK, (_, label: string, href: string) =>
-      stash(`<a class="link" href="${href}" style="${STYLE.link}">${label}</a>`),
-    )
-    .replace(BARE_URL, (_, before: string, href: string) =>
-      stash(`${before}<a class="link" href="${href}" style="${STYLE.link}">${href}</a>`),
-    )
+    );
+  }
+  if (features.links) {
+    escaped = escaped
+      .replace(MD_LINK, (_, label: string, href: string) =>
+        stash(`<a class="link" href="${href}" style="${STYLE.link}">${label}</a>`),
+      )
+      .replace(BARE_URL, (_, before: string, href: string) =>
+        stash(`${before}<a class="link" href="${href}" style="${STYLE.link}">${href}</a>`),
+      );
+  }
+  escaped = escaped
     .replace(/\{\{\s*link\s*\}\}/g, () =>
       stash(`<a class="link" href="{{link}}" style="${STYLE.link}">{{link}}</a>`),
     )
     .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(UNDERLINE, "$1<u>$2</u>")
     .replace(/(^|[^*\w])\*([^*\n]+)\*(?![*\w])/g, "$1<em>$2</em>")
     .replace(/(^|[^_\w])_([^_\n]+)_(?![_\w])/g, "$1<em>$2</em>")
     .replace(/\n/g, "<br>");
@@ -72,19 +82,20 @@ function lines(block: string): string[] {
   return block.split("\n");
 }
 
-function blockHtml(block: string): string {
-  const heading = /^(#{1,3})\s+(.+)$/.exec(block);
+function blockHtml(block: string, features: MarkdownFeatures): string {
+  const inline = (source: string) => inlineHtml(source, features);
+  const heading = features.headings ? /^(#{1,3})\s+(.+)$/.exec(block) : null;
   if (heading) {
     const level = heading[1]?.length === 3 ? 3 : heading[1]?.length === 2 ? 2 : 1;
     const style = level === 1 ? STYLE.h1 : level === 2 ? STYLE.h2 : STYLE.h3;
     return `<h${level} class="heading" style="${style}">${inline(heading[2] ?? "")}</h${level}>`;
   }
   if (/^(-{3,}|\*{3,})$/.test(block)) return `<hr class="rule" style="${STYLE.hr}">`;
-  if (lines(block).every((line) => /^[-*]\s+/.test(line))) {
+  if (features.lists && lines(block).every((line) => /^[-*]\s+/.test(line))) {
     const items = lines(block).map((line) => `<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`);
     return `<ul style="${STYLE.list}">${items.join("")}</ul>`;
   }
-  if (lines(block).every((line) => /^\d+[.)]\s+/.test(line))) {
+  if (features.lists && lines(block).every((line) => /^\d+[.)]\s+/.test(line))) {
     const items = lines(block).map((line) => `<li>${inline(line.replace(/^\d+[.)]\s+/, ""))}</li>`);
     return `<ol style="${STYLE.list}">${items.join("")}</ol>`;
   }
@@ -92,23 +103,26 @@ function blockHtml(block: string): string {
     const quoted = lines(block).map((line) => line.replace(/^>\s?/, ""));
     return `<blockquote class="quote" style="${STYLE.quote}">${inline(quoted.join("\n"))}</blockquote>`;
   }
-  const button = BUTTON.exec(block);
+  const button = features.links ? BUTTON.exec(block) : null;
   if (button) {
     return `<p style="margin:0"><a class="button" href="${escapeHtml(button[2] ?? "")}" style="${STYLE.button}">${escapeHtml(button[1] ?? "")}</a></p>`;
   }
-  const code = /^`([^`\n]+)`$/.exec(block);
+  const code = features.code ? /^`([^`\n]+)`$/.exec(block) : null;
   if (code) return `<p class="codebox" style="${STYLE.code}">${escapeHtml(code[1] ?? "")}</p>`;
   return `<p style="${STYLE.p}">${inline(block)}</p>`;
 }
 
-export function markdownToEmailHtml(source: string): string {
+export function markdownToEmailHtml(
+  source: string,
+  features: MarkdownFeatures = MARKDOWN_PRESETS.email,
+): string {
   return source
     .replace(/\r\n?/g, "\n")
     .trim()
     .split(/\n\s*\n/)
     .map((block) => block.trim())
     .filter(Boolean)
-    .map(blockHtml)
+    .map((block) => blockHtml(block, features))
     .join("\n");
 }
 
@@ -128,6 +142,7 @@ export function markdownToEmailText(source: string): string {
         .replace(MD_LINK, (_, label: string, href: string) => `${label} (${href})`)
         .replace(/`([^`\n]+)`/g, "$1")
         .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+        .replace(UNDERLINE, "$1$2")
         .replace(/(^|[^*\w])\*([^*\n]+)\*(?![*\w])/g, "$1$2")
         .replace(/(^|[^_\w])_([^_\n]+)_(?![_\w])/g, "$1$2");
     })

@@ -426,6 +426,7 @@ function EmailSettingsForm({
                   <field.MarkdownField
                     rows={9}
                     preview={false}
+                    features="email"
                     placeholder={fallback.body}
                     description={t("email.bodyHelp", {
                       variables: kind.variables

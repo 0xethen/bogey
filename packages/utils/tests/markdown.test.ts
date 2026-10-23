@@ -1,12 +1,15 @@
 import { describe, expect, test } from "vite-plus/test";
-import { activeFormats, applyEdit, formatMarkdown, insertMarkdown } from "../src/markdown.ts";
+import {
+  activeFormats,
+  applyEdit,
+  formatAllowed,
+  formatMarkdown,
+  insertMarkdown,
+  markdownFeatures,
+  type MarkdownFormat,
+} from "../src/markdown.ts";
 
-function run(
-  value: string,
-  start: number,
-  end: number,
-  format: "bold" | "italic" | "spoiler" | "link",
-) {
+function run(value: string, start: number, end: number, format: MarkdownFormat) {
   const edit = formatMarkdown(value, start, end, format);
   const next = applyEdit(value, edit);
   return { next, selected: next.slice(edit.start, edit.end) };
@@ -56,5 +59,37 @@ describe("activeFormats", () => {
     expect([...activeFormats(text, 1, 1)]).toEqual([]);
     expect([...activeFormats("x ||secret|| y", 6, 6)]).toEqual(["spoiler"]);
     expect([...activeFormats("[a](https://b.c)", 2, 2)]).toEqual(["link"]);
+  });
+});
+
+describe("underline and headings", () => {
+  test("underline wraps with ++", () => {
+    expect(run("say hi now", 4, 6, "underline")).toEqual({
+      next: "say ++hi++ now",
+      selected: "hi",
+    });
+    expect([...activeFormats("a ++u++ b", 4, 4)]).toEqual(["underline"]);
+  });
+
+  test("headings toggle the line prefix", () => {
+    expect(run("one\ntitle\nthree", 6, 6, "h1").next).toBe("one\n# title\nthree");
+    expect(run("# title", 4, 4, "h1").next).toBe("title");
+    expect(run("# title", 4, 4, "h2").next).toBe("## title");
+    expect([...activeFormats("## title", 5, 5)]).toEqual(["h2"]);
+  });
+});
+
+describe("markdownFeatures", () => {
+  test("presets and partial sets", () => {
+    expect(markdownFeatures().headings).toBe(true);
+    expect(markdownFeatures("message").headings).toBe(false);
+    expect(markdownFeatures({ links: false })).toMatchObject({ headings: true, links: false });
+  });
+
+  test("the toolbar hides formats a field rejects", () => {
+    const plain = markdownFeatures("plain");
+    expect(formatAllowed("link", plain)).toBe(false);
+    expect(formatAllowed("h1", plain)).toBe(false);
+    expect(formatAllowed("underline", plain)).toBe(true);
   });
 });

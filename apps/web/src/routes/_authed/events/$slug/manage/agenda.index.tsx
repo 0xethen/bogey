@@ -505,7 +505,7 @@ function SessionsEditor() {
           </form.Field>
         </div>
         <form.Field name={`${at}.description`}>
-          {(field) => <field.MarkdownField rows={3} />}
+          {(field) => <field.MarkdownField rows={3} features="short" />}
         </form.Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <form.Field name={`${at}.location`}>{(field) => <field.TextField />}</form.Field>

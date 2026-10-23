@@ -779,7 +779,7 @@ function NewConversationDialog({
               )}
               <form.Field name="subject">{(field) => <field.TextField required />}</form.Field>
               <form.Field name="body">
-                {(field) => <field.MarkdownField rows={4} required />}
+                {(field) => <field.MarkdownField rows={4} required features="message" />}
               </form.Field>
               <form.FormAlert title={t("conv.sendFailed")} />
               <form.Submit pending={t("onboarding.sending")}>{t("conv.send")}</form.Submit>
@@ -876,7 +876,7 @@ function MessageTeamDialog({
               </form.Field>
               <form.Field name="subject">{(field) => <field.TextField required />}</form.Field>
               <form.Field name="body">
-                {(field) => <field.MarkdownField rows={4} required />}
+                {(field) => <field.MarkdownField rows={4} required features="message" />}
               </form.Field>
               <form.FormAlert title={t("conv.sendFailed")} />
               <form.Submit pending={t("onboarding.sending")}>{t("conv.send")}</form.Submit>

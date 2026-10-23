@@ -266,7 +266,9 @@ function StartSubmission({
 
   return (
     <section className="flex max-w-2xl flex-col gap-4">
-      {entry.form.description_md && <Markdown>{entry.form.description_md}</Markdown>}
+      {entry.form.description_md && (
+        <Markdown features="short">{entry.form.description_md}</Markdown>
+      )}
       <p className="text-sm text-muted-fg">
         {open ? t("sub.itemsToFill", { count }) : t("sub.notOpen")}
       </p>
@@ -516,7 +518,9 @@ function SubmissionEditor({
               disabled={!editable}
               className={cn("flex min-w-0 flex-col gap-10", step !== "project" && "hidden")}
             >
-              {definition.description_md && <Markdown>{definition.description_md}</Markdown>}
+              {definition.description_md && (
+                <Markdown features="short">{definition.description_md}</Markdown>
+              )}
               {blind && (
                 <Alert>
                   <IconEyeOff />

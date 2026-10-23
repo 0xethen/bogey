@@ -13,6 +13,7 @@ import { formatDate, formatDateTime } from "@bogey/utils/time";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Bubble, BubbleContent } from "@bogey/ui/components/chat/bubble";
 import { Markdown } from "@bogey/ui/components/markdown";
+import type { MarkdownFeatureSet } from "@bogey/utils/markdown";
 import { Marker, MarkerContent } from "@bogey/ui/components/marker";
 import {
   Message,
@@ -55,6 +56,7 @@ export function ChatMessage({
   actions,
   menu,
   attachments,
+  features = "message",
   children,
 }: {
   authorName: string;
@@ -70,6 +72,8 @@ export function ChatMessage({
   /** Extra items for the message actions menu; Copy text is always there. */
   menu?: ReactNode;
   attachments?: ReactNode;
+  /** Messages reject headings; announcements pass "full". */
+  features?: MarkdownFeatureSet;
   children?: string | null;
 }) {
   const time = useTimeFormat();
@@ -103,7 +107,10 @@ export function ChatMessage({
               <BubbleContent className={cn(title && "flex flex-col gap-1")}>
                 {title && <p className="font-medium">{title}</p>}
                 {children && (
-                  <Markdown className="text-inherit [&>style+*]:mt-0 [&>*:last-child]:mb-0 [&_a]:text-inherit">
+                  <Markdown
+                    features={features}
+                    className="text-inherit [&>style+*]:mt-0 [&>*:last-child]:mb-0 [&_a]:text-inherit"
+                  >
                     {children}
                   </Markdown>
                 )}

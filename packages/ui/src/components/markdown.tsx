@@ -6,8 +6,12 @@ import { cn } from "@bogey/ui/lib/utils";
 import { highlightMarkdownCode, markdownHighlightCss } from "@bogey/ui/lib/highlight";
 import { SPOILER_TAG, spoilerExtension } from "@bogey/ui/lib/spoiler";
 import { useMarkdownPreferences } from "@bogey/ui/lib/markdown-preferences";
+import { featuresExtension, underlineExtension } from "@bogey/ui/lib/markdown-features";
+import { markdownFeatures, type MarkdownFeatureSet } from "@bogey/utils/markdown";
 
-const extensions = [spoilerExtension()];
+export function markdownExtensions(set?: MarkdownFeatureSet) {
+  return [spoilerExtension(), underlineExtension(), featuresExtension(markdownFeatures(set))];
+}
 
 const REVEALED = "rounded-sm bg-muted px-0.5";
 const HIDDEN =
@@ -102,9 +106,12 @@ const components = {
 export function Markdown({
   children,
   className,
+  features = "full",
 }: {
   children: string | null | undefined;
   className?: string;
+  /** What the field that wrote this accepts; anything else shows as plain text. */
+  features?: MarkdownFeatureSet;
 }) {
   const { codeLineNumbers } = useMarkdownPreferences();
   if (!children?.trim()) return null;
@@ -114,7 +121,7 @@ export function Markdown({
       <style>{markdownHighlightCss}</style>
       <MarkdownRenderer
         components={components}
-        extensions={extensions}
+        extensions={markdownExtensions(features)}
         highlighter={highlightMarkdownCode}
         codeLineNumbers={codeLineNumbers}
       >

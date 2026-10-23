@@ -72,11 +72,11 @@ export function PrizeCard({ prize, image = "icon" }: { prize: PrizeView; image?:
             .filter(Boolean)
             .join(" · ")}
         </p>
-        {prize.description && <Markdown>{prize.description}</Markdown>}
+        {prize.description && <Markdown features="short">{prize.description}</Markdown>}
         {prize.prize && (
           <div className="text-sm">
             <span className="font-medium">{t("prizes.prizeLabel")} </span>
-            <Markdown>{prize.prize}</Markdown>
+            <Markdown features="plain">{prize.prize}</Markdown>
           </div>
         )}
       </div>
@@ -101,8 +101,8 @@ export function AwardCard({ award, highlight }: { award: Award; highlight?: bool
         <h3 className="font-heading text-lg font-semibold">{award.title}</h3>
         <p className="text-sm text-muted-fg">{award.teamName}</p>
         {award.blurb && <p className="text-sm">{award.blurb}</p>}
-        {award.note && <Markdown>{award.note}</Markdown>}
-        {award.prize && <Markdown>{award.prize}</Markdown>}
+        {award.note && <Markdown features="short">{award.note}</Markdown>}
+        {award.prize && <Markdown features="plain">{award.prize}</Markdown>}
       </div>
     </div>
   );

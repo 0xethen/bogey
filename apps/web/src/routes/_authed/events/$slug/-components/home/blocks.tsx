@@ -700,7 +700,7 @@ export function HomeBlockView({
           <Mark className={cn("mt-0.5 size-5 shrink-0", style.mark)} aria-hidden />
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             {title && <h2 className="font-heading font-semibold">{title}</h2>}
-            <Markdown>{block.body}</Markdown>
+            <Markdown features="short">{block.body}</Markdown>
           </div>
         </div>
       );

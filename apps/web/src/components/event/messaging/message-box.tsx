@@ -123,6 +123,7 @@ export function MessageBox({
                 name={field.name}
                 mode={mode}
                 rows={2}
+                features="message"
                 placeholder={schemaMetaOf(field).placeholder}
                 value={field.value}
                 onValueChange={(next) => field.handleChange(next)}

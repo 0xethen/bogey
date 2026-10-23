@@ -41,7 +41,7 @@ function Slide({ award, step }: { award: Award | null; step: number }) {
       <h1 className="font-heading text-6xl font-semibold">{award.title}</h1>
       <p className="text-3xl">{award.teamName}</p>
       {award.blurb && <p className="text-xl text-muted-fg">{award.blurb}</p>}
-      {award.note && <Markdown>{award.note}</Markdown>}
+      {award.note && <Markdown features="short">{award.note}</Markdown>}
     </div>
   );
 }

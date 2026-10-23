@@ -47,6 +47,7 @@ export function AnnouncementMessage({
       at={announcement.publish_at}
       tone={announcement.severity}
       title={announcement.title}
+      features="full"
       meta={meta}
       menu={menu}
       attachments={

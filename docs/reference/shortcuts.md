@@ -11,7 +11,9 @@ shortcuts**; the choice follows them to every device.
 | Save changes | Mod+S   | Saves what the save bar is holding, from anywhere |
 
 Mod is ⌘ on a Mac and Ctrl elsewhere. Markdown fields add Mod+B (bold), Mod+I
-(italic) and Mod+K (link) while you're typing in them.
+(italic), Mod+U (underline), Mod+\ (spoiler) and, where the field accepts them,
+Mod+K (link) and Mod+Alt+1 / Mod+Alt+2 (heading 1 / 2) while you're typing in them.
+See [Markdown fields](../architecture/markdown.md).
 
 ## Adding one
 

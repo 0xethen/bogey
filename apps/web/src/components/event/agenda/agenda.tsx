@@ -161,7 +161,9 @@ export function SessionCard({
             <span>{left === 0 ? t("agenda.full") : t("agenda.seatsLeft", { count: left })}</span>
           )}
         </div>
-        <Markdown className="text-muted-fg">{session.descriptionMd}</Markdown>
+        <Markdown className="text-muted-fg" features="short">
+          {session.descriptionMd}
+        </Markdown>
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
