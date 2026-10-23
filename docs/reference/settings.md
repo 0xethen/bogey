@@ -287,8 +287,8 @@ Set at: instance, org, event.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `layout` | `grid` · `lanes` | `grid` | How the gallery lays out projects: an even grid, or lanes that pack tightly |
-| `switchLayout` | on / off | `true` | Whether visitors can switch the layout for themselves |
+| `layout` | `grid` · `lanes` | — | How the gallery lays out projects: an even grid, or lanes that pack tightly |
+| `switchLayout` | on / off | — | Whether visitors can switch the layout for themselves |
 | `banners` | on / off | `true` | Show a banner image on each project's card |
 | `teamBanners` | on / off | `true` | Whether teams choose their own banner from their project's images |
 | `teamSizes` | on / off | `false` | Whether teams choose how large their card is |

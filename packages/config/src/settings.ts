@@ -1344,8 +1344,6 @@ export const settingsRegistry = {
     label: "Gallery",
     scopes: ["instance", "org", "event"],
     defaults: {
-      layout: "grid",
-      switchLayout: true,
       banners: true,
       teamBanners: true,
       teamSizes: false,
@@ -1393,14 +1391,6 @@ export const settingsRegistry = {
       slideshow: z.boolean().optional().describe("Offer the slideshow"),
     }),
     fields: {
-      layout: {
-        label: say("setting.gallery.layout"),
-        options: [
-          { value: "grid", label: say("setting.gallery.layout.grid") },
-          { value: "lanes", label: say("setting.gallery.layout.lanes") },
-        ],
-      },
-      switchLayout: { label: say("setting.gallery.switchLayout") },
       banners: { label: say("setting.gallery.banners") },
       teamBanners: {
         label: say("setting.gallery.teamBanners"),

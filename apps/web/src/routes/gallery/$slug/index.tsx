@@ -20,10 +20,10 @@ import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Screen } from "@bogey/ui/components/screen";
 import { cn } from "@bogey/ui/lib/utils";
 import { localizationQueryOptions } from "#/lib/i18n.ts";
-import { availableSorts, gallerySearch, sortProjects } from "#/lib/gallery.ts";
+import { availableSorts, gallerySearch, sortProjects, useGalleryView } from "#/lib/gallery.ts";
 import { useShuffleSeed } from "#/lib/slideshow.ts";
 import { msg, translatorFor, useT } from "#/lib/translate.tsx";
-import { LayoutToggle, SortMenu } from "#/routes/gallery/$slug/-components/gallery-controls.tsx";
+import { ViewToggle, SortMenu } from "#/routes/gallery/$slug/-components/gallery-controls.tsx";
 import { ProjectCard } from "#/routes/gallery/$slug/-components/project-card.tsx";
 
 export const Route = createFileRoute("/gallery/$slug/")({
@@ -53,11 +53,10 @@ export const Route = createFileRoute("/gallery/$slug/")({
   component: RouteComponent,
 });
 
-const LAYOUT_CLASS = {
-  grid: "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
-  // columns everywhere, native grid-lanes where the browser has it
-  lanes:
-    "columns-1 gap-4 sm:columns-2 lg:columns-3 supports-[display:grid-lanes]:grid-lanes supports-[display:grid-lanes]:columns-auto supports-[display:grid-lanes]:[grid-template-columns:repeat(auto-fill,minmax(18rem,1fr))]",
+const VIEW_CLASS = {
+  // grid-lanes where the browser has it, a plain grid otherwise
+  grid: "grid-lanes gap-4 sm:grid-cols-2 lg:grid-cols-3",
+  list: "flex flex-col gap-3",
 } as const;
 
 function RouteComponent() {
@@ -70,13 +69,13 @@ function RouteComponent() {
   const engagement = useQuery({ ...galleryEngagementQueryOptions(eventId), enabled: !!gallery });
   const counts = useQuery({ ...voteCountsQueryOptions(eventId), enabled: !!gallery });
   const seed = useShuffleSeed();
+  const [view, setView] = useGalleryView(filter.view);
   if (!gallery) return null;
 
   const { settings } = gallery;
   const votes = new Map((counts.data ?? []).map((row) => [row.submissionId, row.count]));
   const sorts = availableSorts(settings, gallery.projects, { votes });
   const sort = filter.sort && sorts.includes(filter.sort) ? filter.sort : settings.sort;
-  const layout = settings.switchLayout ? (filter.layout ?? settings.layout) : settings.layout;
   const counted = new Map((engagement.data ?? []).map((row) => [row.submissionId, row]));
 
   const shown = sortProjects(
@@ -103,9 +102,13 @@ function RouteComponent() {
             <Filters gallery={gallery} filter={filter} onChange={set} />
             <div className="flex items-center gap-1">
               <SortMenu value={sort} options={sorts} onChange={(next) => set({ sort: next })} />
-              {settings.switchLayout && (
-                <LayoutToggle value={layout} onChange={(next) => set({ layout: next })} />
-              )}
+              <ViewToggle
+                value={view}
+                onChange={(next) => {
+                  setView(next);
+                  if (filter.view) set({ view: next });
+                }}
+              />
               {settings.slideshow && (
                 <Button
                   size="icon-sm"
@@ -144,17 +147,15 @@ function RouteComponent() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className={cn(LAYOUT_CLASS[layout])}>
+        <div className={VIEW_CLASS[view]}>
           {shown.map((project) => (
             <div
               key={project.id}
-              className={cn(
-                layout === "lanes" && "mb-4 break-inside-avoid supports-[display:grid-lanes]:mb-0",
-                layout === "grid" && project.cardSize === "large" && "lg:col-span-2",
-              )}
+              className={cn(view === "grid" && project.cardSize === "large" && "lg:col-span-2")}
             >
               <ProjectCard
                 gallery={gallery}
+                view={view}
                 project={project}
                 tracks={gallery.tracks.filter((track) => project.trackIds.includes(track.id))}
                 engagement={counted.get(project.id)}

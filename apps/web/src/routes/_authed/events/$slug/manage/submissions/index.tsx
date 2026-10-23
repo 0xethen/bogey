@@ -41,8 +41,6 @@ import { PluginSettingSections } from "#/components/settings/sections/plugin-sec
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
 const GALLERY_KEYS = [
-  "layout",
-  "switchLayout",
   "banners",
   "teamBanners",
   "teamSizes",

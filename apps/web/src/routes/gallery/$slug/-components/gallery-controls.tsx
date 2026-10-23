@@ -1,4 +1,4 @@
-import { IconArrowsSort, IconLayoutGrid, IconColumns3 } from "@tabler/icons-react";
+import { IconArrowsSort, IconLayoutGrid, IconList } from "@tabler/icons-react";
 import { Button } from "@bogey/ui/components/button";
 import {
   DropdownMenu,
@@ -7,7 +7,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@bogey/ui/components/dropdown-menu";
-import { GALLERY_SORTS, type GalleryLayout, type GallerySort } from "#/lib/gallery.ts";
+import { GALLERY_SORTS, type GalleryView, type GallerySort } from "#/lib/gallery.ts";
 import { useT } from "#/lib/translate.tsx";
 
 /** An icon that opens the sort orders; the one in force is checked. */
@@ -54,22 +54,22 @@ export function SortMenu({
   );
 }
 
-const LAYOUTS = [
-  { key: "grid", label: "gallery.layoutGrid", icon: IconLayoutGrid },
-  { key: "lanes", label: "gallery.layoutLanes", icon: IconColumns3 },
+const VIEWS = [
+  { key: "grid", label: "gallery.viewGrid", icon: IconLayoutGrid },
+  { key: "list", label: "gallery.viewList", icon: IconList },
 ] as const;
 
-export function LayoutToggle({
+export function ViewToggle({
   value,
   onChange,
 }: {
-  value: GalleryLayout;
-  onChange: (layout: GalleryLayout) => void;
+  value: GalleryView;
+  onChange: (view: GalleryView) => void;
 }) {
   const t = useT();
   return (
-    <div role="group" aria-label={t("gallery.layout")} className="flex gap-0.5">
-      {LAYOUTS.map(({ key, label, icon: Icon }) => (
+    <div role="group" aria-label={t("gallery.view")} className="flex gap-0.5">
+      {VIEWS.map(({ key, label, icon: Icon }) => (
         <Button
           key={key}
           size="icon-sm"

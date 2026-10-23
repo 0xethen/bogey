@@ -1,9 +1,10 @@
+import { useSyncExternalStore } from "react";
 import { z } from "zod";
 import type { GalleryEngagement, GalleryProject, GallerySettings } from "@bogey/db/queries/gallery";
 import type { PlainKey } from "#/lib/translate.tsx";
 
 export type GallerySort = NonNullable<GallerySettings["sort"]>;
-export type GalleryLayout = NonNullable<GallerySettings["layout"]>;
+export type GalleryView = "grid" | "list";
 
 export const GALLERY_SORTS = [
   { key: "newest", label: "gallery.sort.newest" },
@@ -104,5 +105,40 @@ export const gallerySearch = z.object({
     .enum(GALLERY_SORTS.map((sort) => sort.key))
     .optional()
     .catch(undefined),
-  layout: z.enum(["grid", "lanes"]).optional().catch(undefined),
+  view: z.enum(["grid", "list"]).optional().catch(undefined),
 });
+
+const VIEW_KEY = "bogey.gallery.view";
+const viewListeners = new Set<() => void>();
+
+function readView(): GalleryView | undefined {
+  try {
+    const value = localStorage.getItem(VIEW_KEY);
+    return value === "grid" || value === "list" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The viewer's view mode: the address wins, then what they last picked here. */
+export function useGalleryView(
+  fromUrl: GalleryView | undefined,
+): [GalleryView, (view: GalleryView) => void] {
+  const saved = useSyncExternalStore(
+    (listener) => {
+      viewListeners.add(listener);
+      return () => void viewListeners.delete(listener);
+    },
+    readView,
+    () => undefined,
+  );
+  const set = (view: GalleryView) => {
+    try {
+      localStorage.setItem(VIEW_KEY, view);
+    } catch {
+      // storage can be blocked
+    }
+    viewListeners.forEach((listener) => listener());
+  };
+  return [fromUrl ?? saved ?? "grid", set];
+}

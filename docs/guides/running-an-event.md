@@ -482,9 +482,10 @@ Disqualified projects never appear, and judges still don't see team names
 while judging is blind.
 
 Manage → Submissions → **Public gallery** sets how it looks and what visitors
-can do: a grid or lanes layout (and whether visitors can switch), banners on
+can do: banners on
 cards, winner markers once results are published, likes and comments for
 signed-in visitors (both off by default), the default sort, and the slideshow.
+Visitors choose a grid or list view for themselves with the toggle above the projects.
 Teams pick their card's banner from their project's images, and its size if you
 allow that, under **Gallery card** on their Submission page. The slideshow
 doesn't loop unless the viewer turns that on in its settings, which also choose what each slide

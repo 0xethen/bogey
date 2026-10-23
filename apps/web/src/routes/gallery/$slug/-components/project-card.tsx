@@ -4,7 +4,7 @@ import type { GalleryEngagement, GalleryProject, Gallery } from "@bogey/db/queri
 import { Badge } from "@bogey/ui/components/badge";
 import { cn } from "@bogey/ui/lib/utils";
 import { VoteButton } from "#/components/event/judging/vote-button.tsx";
-import { bannerGradient, placeKey } from "#/lib/gallery.ts";
+import { bannerGradient, placeKey, type GalleryView } from "#/lib/gallery.ts";
 import { useT } from "#/lib/translate.tsx";
 import { LikeButton } from "./likes.tsx";
 
@@ -73,8 +73,10 @@ export function ProjectCard({
   project,
   tracks,
   engagement,
+  view = "grid",
 }: {
   gallery: Gallery;
+  view?: GalleryView;
   project: GalleryProject;
   tracks: Tuple<{ id: string; name: string }>;
   engagement: GalleryEngagement | undefined;
@@ -83,17 +85,25 @@ export function ProjectCard({
   const { settings } = gallery;
   const banner = settings.banners;
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-fg">
+    <article
+      className={cn(
+        "flex overflow-hidden rounded-2xl border border-border bg-card text-card-fg",
+        view === "list" ? "flex-col sm:flex-row" : "flex-col",
+      )}
+    >
       <Link
         to="/gallery/$slug/$projectId"
         params={{ slug: gallery.event.slug, projectId: project.id }}
-        className="group flex flex-col no-underline"
+        className={cn("group flex flex-col no-underline", view === "list" && "min-w-0 sm:flex-1")}
       >
         {banner && (
-          <div className="relative">
+          <div className={cn("relative", view === "list" && "sm:w-64 sm:shrink-0")}>
             <Banner
               project={project}
-              className="transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none"
+              className={cn(
+                view === "list" && "sm:h-full sm:aspect-auto",
+                "transition-transform duration-300 group-hover:scale-[1.02] motion-reduce:transition-none",
+              )}
             />
             <WinnerBadges project={project} className="absolute top-2 left-2" />
           </div>
@@ -127,7 +137,14 @@ export function ProjectCard({
           )}
         </div>
       </Link>
-      <div className="mt-auto flex flex-wrap items-center gap-1 px-2 pb-2">
+      <footer
+        className={cn(
+          "flex flex-wrap items-center gap-1 border-t border-border px-2 py-1.5",
+          view === "list"
+            ? "sm:w-56 sm:shrink-0 sm:border-t-0 sm:border-l sm:flex-col sm:items-start sm:justify-center"
+            : "mt-auto",
+        )}
+      >
         <VoteButton eventId={gallery.event.id} submissionId={project.id} />
         {settings.likes && (
           <LikeButton
@@ -148,7 +165,7 @@ export function ProjectCard({
             <span className="tabular-nums">{engagement?.comments ?? 0}</span>
           </Link>
         )}
-      </div>
+      </footer>
     </article>
   );
 }

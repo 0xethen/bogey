@@ -19,6 +19,9 @@ advisory (see docs/contributing.md#security-releases). -->
 - The tabs under the menubar are one navigation menu: tabs with a menu open a dropdown on hover, and moving between them slides one dropdown from tab to tab instead of closing and reopening. It doesn't animate with reduced motion.
 - Hovering Agenda lists each session with its **Main page**, and **Attendance** for those who take it.
 - Fixed a hydration warning from plugin buttons in the menubar (event sounds' mute button).
+- The public gallery has a Grid / List toggle for viewers, remembered in their browser (or set with `?view=`). Grid uses CSS grid-lanes where the browser supports it and a normal grid elsewhere. Project cards end in a footer with votes, likes and comments, the same in both views. The gallery "Layout" and "Visitors can switch the layout" settings are gone; stored values are ignored.
+
+**Upgrade notes:** run `bogey db migrate` (migration `20261024110000_gallery_view_modes`).
 
 ## 2.4.0-beta.0 (2026-10-23)
 

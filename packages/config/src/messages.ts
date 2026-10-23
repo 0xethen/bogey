@@ -1752,9 +1752,9 @@ export const en = {
   "gallery.signInToComment": "Sign in to comment",
   "gallery.commentCount": "{count, plural, one {# comment} other {# comments}}",
   "gallery.sortBy": "Sort",
-  "gallery.layout": "Layout",
-  "gallery.layoutGrid": "Grid",
-  "gallery.layoutLanes": "Lanes",
+  "gallery.view": "View",
+  "gallery.viewGrid": "Grid",
+  "gallery.viewList": "List",
   "gallery.backToProjects": "Back to projects",
   "gallery.showSettings": "Slideshow settings",
   "gallery.pause": "Pause",
@@ -4028,10 +4028,6 @@ export const en = {
   "setting.checkin.requiredToCompete": "Check in before competing",
   "setting.checkin.requiredToCompete.help":
     "Best for in-person events. Participants who haven't checked in can't change teams, submit or vote.",
-  "setting.gallery.layout": "Layout",
-  "setting.gallery.layout.grid": "Grid",
-  "setting.gallery.layout.lanes": "Lanes",
-  "setting.gallery.switchLayout": "Visitors can switch the layout",
   "setting.gallery.banners": "Banners on project cards",
   "setting.gallery.teamBanners": "Teams choose their banner",
   "setting.gallery.teamBanners.help":
