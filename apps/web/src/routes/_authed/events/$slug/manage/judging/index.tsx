@@ -1,21 +1,25 @@
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { assignJudgesFn, judgingProgressQueryOptions } from "@bogey/db/queries/judging";
+import {
+  assignJudgesFn,
+  judgingProgressQueryOptions,
+  type JudgeProgress,
+} from "@bogey/db/queries/judging";
 import {
   eventConflictsQueryOptions,
   eventPinsQueryOptions,
   judgeCalibrationQueryOptions,
 } from "@bogey/db/queries/conflicts";
 import { eventTeamsQueryOptions } from "@bogey/db/queries/roster";
-import { eventFlagsQueryOptions } from "@bogey/db/queries/deliberation";
+import { eventFlagsQueryOptions, type JudgingFlag } from "@bogey/db/queries/deliberation";
 import { flagReason } from "#/components/event/judging/deliberation.tsx";
-import { LinkRow } from "@bogey/ui/components/link-row";
 import { StatusDot } from "@bogey/ui/components/status-dot";
 import { judgingRoundsQueryOptions } from "@bogey/db/queries/judging";
 import { submissionFormsQueryOptions } from "@bogey/db/queries/submissions";
 import { unwrap } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Stat, StatGroup } from "@bogey/ui/components/stat";
@@ -30,7 +34,7 @@ import { AssignmentRules, assignmentQueries } from "../-components/assignment-ru
 import { Rounds } from "../-components/rounds.tsx";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
-import { msg, useT } from "#/lib/translate.tsx";
+import { msg, useT, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/judging/")({
@@ -156,20 +160,7 @@ function Progress() {
       {progress.judges.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("manageJudging.noJudges")}</p>
       ) : (
-        <DisclosureList>
-          {progress.judges.map((judge) => (
-            <DisclosureRow
-              key={judge.userId}
-              leading={<NameAvatar name={judge.name} />}
-              title={judge.name}
-              meta={t("manageJudging.judgeMeta", {
-                done: judge.done,
-                assigned: judge.assigned,
-                scored: judge.scored,
-              })}
-            />
-          ))}
-        </DisclosureList>
+        <JudgeTable judges={progress.judges} />
       )}
     </Screen.Section>
   );
@@ -193,37 +184,116 @@ function Deliberation() {
       {flags.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("deliberation.none")}</p>
       ) : (
-        <DisclosureList>
-          {flags.map((flag) => (
-            <LinkRow
-              key={flag.id}
-              render={
-                <Link
-                  to="/events/$slug/judging/$submissionId"
-                  params={{ slug: event.slug, submissionId: flag.submissionId }}
-                />
-              }
-              leading={
-                <StatusDot
-                  tone={flag.resolvedAt ? "done" : "attention"}
-                  label={flag.resolvedAt ? t("deliberation.resolved") : t("deliberation.open")}
-                />
-              }
-              title={flag.title}
-              meta={[
-                flagReason(flag, t),
-                ...(flag.resolvedAt
-                  ? [
-                      flag.resolvedBy
-                        ? t("deliberation.resolvedBy", { name: flag.resolvedBy })
-                        : t("deliberation.resolvedPlain"),
-                    ]
-                  : []),
-              ].join(" · ")}
-            />
-          ))}
-        </DisclosureList>
+        <FlagTable flags={flags} slug={event.slug} />
       )}
     </Screen.Section>
+  );
+}
+
+const judgeColumn = dataColumns<JudgeProgress>();
+
+function judgeColumns(t: T) {
+  return judgeColumn.columns([
+    judgeColumn.accessor("name", {
+      header: t("checkin.name"),
+      enableHiding: false,
+      cell: (info) => (
+        <span className="flex items-center gap-2 font-medium">
+          <NameAvatar name={info.getValue()} />
+          {info.getValue()}
+        </span>
+      ),
+    }),
+    judgeColumn.accessor("assigned", { header: t("manageJudging.assignedColumn") }),
+    judgeColumn.accessor("done", { header: t("judging.done") }),
+    judgeColumn.accessor("scored", { header: t("manageJudging.scoredColumn") }),
+  ]);
+}
+
+const judgeSearch = { text: (judge: JudgeProgress) => judge.name };
+
+function JudgeTable({ judges }: { judges: JudgeProgress[] }) {
+  const t = useT();
+  const columns = useMemo(() => judgeColumns(t), [t]);
+  return (
+    <DataTable
+      columns={columns}
+      data={judges}
+      getRowId={(judge) => judge.userId}
+      search={judgeSearch}
+      pageSize={25}
+    />
+  );
+}
+
+const flagColumn = dataColumns<JudgingFlag>();
+
+function flagText(flag: JudgingFlag, t: T): string {
+  return [
+    flagReason(flag, t),
+    ...(flag.resolvedAt
+      ? [
+          flag.resolvedBy
+            ? t("deliberation.resolvedBy", { name: flag.resolvedBy })
+            : t("deliberation.resolvedPlain"),
+        ]
+      : []),
+  ].join(" · ");
+}
+
+function FlagTable({ flags, slug }: { flags: JudgingFlag[]; slug: string }) {
+  const t = useT();
+  const columns = useMemo(
+    () =>
+      flagColumn.columns([
+        flagColumn.accessor("title", {
+          header: t("tables.project"),
+          enableHiding: false,
+          cell: (info) => (
+            <Link
+              to="/events/$slug/judging/$submissionId"
+              params={{ slug, submissionId: info.row.original.submissionId }}
+              className="link font-medium"
+            >
+              {info.getValue()}
+            </Link>
+          ),
+        }),
+        flagColumn.accessor(
+          (flag) => (flag.resolvedAt ? t("deliberation.resolved") : t("deliberation.open")),
+          {
+            id: "status",
+            header: t("projectExport.field.status"),
+            cell: (info) => (
+              <span className="flex items-center gap-2">
+                <StatusDot
+                  tone={info.row.original.resolvedAt ? "done" : "attention"}
+                  label={info.getValue()}
+                />
+                {info.getValue()}
+              </span>
+            ),
+          },
+        ),
+        flagColumn.accessor((flag) => flagText(flag, t), {
+          id: "reason",
+          header: t("audit.details"),
+          cell: (info) => <span className="text-muted-fg">{info.getValue()}</span>,
+        }),
+      ]),
+    [t, slug],
+  );
+  const search = useMemo(
+    () => ({ text: (flag: JudgingFlag) => `${flag.title} ${flagText(flag, t)}` }),
+    [t],
+  );
+  return (
+    <DataTable
+      columns={columns}
+      data={flags}
+      getRowId={(flag) => flag.id}
+      search={search}
+      pageSize={25}
+    />
   );
 }

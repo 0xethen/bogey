@@ -64,6 +64,19 @@ export function AuditLog({
     [log.data],
   );
   const columns = useMemo(() => auditColumns(time, t, !eventId), [time, t, eventId]);
+  const search = useMemo(
+    () => ({
+      text: (entry: AuditEntry) =>
+        [
+          entry.actorName ?? t("audit.bogey"),
+          actionText(entry, t),
+          entry.targetName,
+          entry.event?.name,
+          describe(entry, t),
+        ].join(" "),
+    }),
+    [t],
+  );
   const set = (patch: AuditFilter) => onFilterChange({ ...filter, ...patch });
 
   return (
@@ -128,6 +141,8 @@ export function AuditLog({
           columns={columns}
           data={entries}
           getRowId={(entry) => String(entry.id)}
+          search={search}
+          pageSize={50}
           empty={t("audit.empty")}
         />
       )}
@@ -164,27 +179,19 @@ function auditColumns(time: FormatOptions, t: T, withEvent: boolean) {
       header: t("audit.admin"),
       cell: (info) => <span className="font-medium">{info.getValue()}</span>,
     }),
-    column.accessor(
-      (entry) =>
-        sayOr(
-          t,
-          `auditAction.${entry.action}`,
-          pluginActionLabel(installedPlugins(), entry.action) ?? actionLabel(entry.action),
-        ),
-      {
-        id: "what",
-        header: t("audit.action"),
-        cell: (info) => {
-          const entry = info.row.original;
-          return (
-            <span>
-              {info.getValue()}
-              {entry.targetName && <span className="font-medium"> {entry.targetName}</span>}
-            </span>
-          );
-        },
+    column.accessor((entry) => actionText(entry, t), {
+      id: "what",
+      header: t("audit.action"),
+      cell: (info) => {
+        const entry = info.row.original;
+        return (
+          <span>
+            {info.getValue()}
+            {entry.targetName && <span className="font-medium"> {entry.targetName}</span>}
+          </span>
+        );
       },
-    ),
+    }),
     ...(withEvent ? [eventColumn(t)] : []),
     column.display({
       id: "details",
@@ -194,6 +201,14 @@ function auditColumns(time: FormatOptions, t: T, withEvent: boolean) {
       ),
     }),
   ]);
+}
+
+function actionText(entry: AuditEntry, t: T): string {
+  return sayOr(
+    t,
+    `auditAction.${entry.action}`,
+    pluginActionLabel(installedPlugins(), entry.action) ?? actionLabel(entry.action),
+  );
 }
 
 function eventColumn(t: T) {

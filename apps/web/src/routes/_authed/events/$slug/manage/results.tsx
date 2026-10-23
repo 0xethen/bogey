@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { IconAlertTriangle, IconDownload } from "@tabler/icons-react";
@@ -7,6 +7,7 @@ import {
   judgingRoundsQueryOptions,
   previewResultsQueryOptions,
   publishResultsFn,
+  type ResultRow,
 } from "@bogey/db/queries/judging";
 import { eventFlagsQueryOptions } from "@bogey/db/queries/deliberation";
 import { voteCountsQueryOptions } from "@bogey/db/queries/votes";
@@ -21,11 +22,11 @@ import { unwrap } from "@bogey/db/errors";
 import { pluginRankingMethods } from "@bogey/plugins";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
+import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import { exportHref } from "#/lib/exports.ts";
 import { ProjectExport } from "#/components/event/project-export.tsx";
-import { RankedList } from "#/components/event/judging/ranked-list.tsx";
 import {
   prefetchSettingFields,
   SettingFields,
@@ -127,10 +128,7 @@ function RouteComponent() {
 
 function Results() {
   const t = useT();
-  const { event, plugins } = Route.useRouteContext();
-  const methods = pluginRankingMethods(plugins);
-  const methodLabel = (id: string) =>
-    id === OFFLINE ? t("rounds.offline") : (methods.find((each) => each.id === id)?.label ?? id);
+  const { event } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const { data: rows } = useSuspenseQuery(previewResultsQueryOptions(event.id));
   const { data: flags } = useSuspenseQuery(eventFlagsQueryOptions(event.id));
@@ -240,27 +238,10 @@ function Results() {
         groups.map(({ title: formTitle, rows: formRows }) => (
           <div key={formTitle} className="flex flex-col gap-2">
             {groups.length > 1 && <h4 className="text-sm font-medium">{formTitle}</h4>}
-            <RankedList
+            <ResultsTable
               label={t("results.rankingOf", { form: formTitle })}
-              entries={formRows.map((row) => ({
-                key: row.submissionId,
-                rank: row.rank,
-                title: row.title,
-                subtitle: row.teamName,
-                value: row.score ?? "–",
-                detail: [
-                  row.rubric,
-                  row.method === "rubric"
-                    ? t("manageJudging.judgeCount", { count: row.judges })
-                    : methodLabel(row.method),
-                  evened && row.method === "rubric" && row.rawScore !== null
-                    ? t("manageJudging.raw", { score: row.rawScore })
-                    : null,
-                  row.conflicted > 0 ? t("manageJudging.leftOut", { count: row.conflicted }) : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · "),
-              }))}
+              rows={formRows}
+              evened={evened}
             />
           </div>
         ))
@@ -268,3 +249,70 @@ function Results() {
     </Screen.Section>
   );
 }
+
+const column = dataColumns<ResultRow>();
+
+function ResultsTable({
+  label,
+  rows,
+  evened,
+}: {
+  label: string;
+  rows: ResultRow[];
+  evened: boolean;
+}) {
+  const t = useT();
+  const { plugins } = Route.useRouteContext();
+  const methodLabel = useMemo(() => {
+    const methods = pluginRankingMethods(plugins);
+    return (id: string) =>
+      id === OFFLINE ? t("rounds.offline") : (methods.find((each) => each.id === id)?.label ?? id);
+  }, [plugins, t]);
+  const columns = useMemo(() => {
+    const detail = (row: ResultRow) =>
+      [
+        row.rubric,
+        row.method === "rubric"
+          ? t("manageJudging.judgeCount", { count: row.judges })
+          : methodLabel(row.method),
+        evened && row.method === "rubric" && row.rawScore !== null
+          ? t("manageJudging.raw", { score: row.rawScore })
+          : null,
+        row.conflicted > 0 ? t("manageJudging.leftOut", { count: row.conflicted }) : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+    return column.columns([
+      column.accessor("rank", {
+        header: t("projectExport.field.rank"),
+        enableHiding: false,
+        cell: (info) => <span className="font-semibold tabular-nums">{info.getValue()}</span>,
+      }),
+      column.accessor("title", { header: t("tables.project"), enableHiding: false }),
+      column.accessor("teamName", { header: t("tables.team") }),
+      column.accessor((row) => row.score ?? -1, {
+        id: "score",
+        header: t("projectExport.field.score"),
+        cell: (info) => <span className="tabular-nums">{info.row.original.score ?? "–"}</span>,
+      }),
+      column.display({
+        id: "detail",
+        header: t("audit.details"),
+        cell: (info) => <span className="text-muted-fg">{detail(info.row.original)}</span>,
+      }),
+    ]);
+  }, [t, evened, methodLabel]);
+  return (
+    <div role="region" aria-label={label}>
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={(row) => row.submissionId}
+        search={searchResults}
+        pageSize={25}
+      />
+    </div>
+  );
+}
+
+const searchResults = { text: (row: ResultRow) => `${row.title} ${row.teamName}` };

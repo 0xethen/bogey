@@ -1,17 +1,16 @@
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { pageReportsQueryOptions, setReportHandledFn } from "@bogey/db/queries/instance";
+import {
+  pageReportsQueryOptions,
+  setReportHandledFn,
+  type PageReport,
+} from "@bogey/db/queries/instance";
 import { unwrap } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@bogey/ui/components/empty";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemTitle,
-} from "@bogey/ui/components/item";
+import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { msg, useT } from "#/lib/translate.tsx";
@@ -22,6 +21,13 @@ export const Route = createFileRoute("/_authed/admin/reports")({
   component: RouteComponent,
 });
 
+const column = dataColumns<PageReport>();
+
+const search = {
+  text: (report: PageReport) =>
+    `${report.orgName} ${report.path} ${report.reason} ${report.reporter ?? ""}`,
+};
+
 function RouteComponent() {
   const t = useT();
   const queryClient = useQueryClient();
@@ -31,6 +37,49 @@ function RouteComponent() {
       unwrap(await setReportHandledFn({ data: { id, handled: true } })),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["instance", "reports"] }),
   });
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.accessor("orgName", { header: t("reports.organization"), enableHiding: false }),
+        column.accessor("path", {
+          header: t("reports.page"),
+          cell: (info) => <code className="text-xs text-muted-fg">{info.getValue()}</code>,
+        }),
+        column.accessor("reason", {
+          header: t("report.reason"),
+          cell: (info) => <span className="whitespace-pre-wrap">{info.getValue()}</span>,
+        }),
+        column.accessor((report) => report.reporter ?? t("reports.anonymous"), {
+          id: "reporter",
+          header: t("reports.reporter"),
+        }),
+        column.accessor("createdAt", {
+          header: t("audit.date"),
+          cell: (info) => (
+            <span className="text-muted-fg">
+              <RelativeTime value={info.getValue()} />
+            </span>
+          ),
+        }),
+        column.display({
+          id: "close",
+          header: () => <span className="sr-only">{t("common.close")}</span>,
+          enableHiding: false,
+          cell: (info) => (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={close.isPending}
+              onClick={() => close.mutate(info.row.original.id)}
+            >
+              {t("common.close")}
+            </Button>
+          ),
+        }),
+      ]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, close.isPending],
+  );
 
   return (
     <Screen
@@ -43,7 +92,7 @@ function RouteComponent() {
           </Route.Link>
         </>
       }
-      width="narrow"
+      width="wide"
     >
       <ErrorAlert error={close.error} title={t("reports.failed")} />
       {reports.length === 0 ? (
@@ -54,36 +103,13 @@ function RouteComponent() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {reports.map((report) => (
-            <li key={report.id}>
-              <Item variant="outline">
-                <ItemContent>
-                  <ItemTitle>
-                    {report.orgName} <code className="text-xs text-muted-fg">{report.path}</code>
-                  </ItemTitle>
-                  <ItemDescription className="line-clamp-none whitespace-pre-wrap">
-                    {report.reason}
-                  </ItemDescription>
-                  <ItemDescription>
-                    {report.reporter ?? t("reports.anonymous")} ·{" "}
-                    <RelativeTime value={report.createdAt} />
-                  </ItemDescription>
-                </ItemContent>
-                <ItemActions>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={close.isPending}
-                    onClick={() => close.mutate(report.id)}
-                  >
-                    {t("common.close")}
-                  </Button>
-                </ItemActions>
-              </Item>
-            </li>
-          ))}
-        </ul>
+        <DataTable
+          columns={columns}
+          data={reports}
+          getRowId={(report) => report.id}
+          search={search}
+          pageSize={25}
+        />
       )}
     </Screen>
   );

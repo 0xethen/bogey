@@ -1869,6 +1869,7 @@ export const en = {
   "adminOrgs.slugTaken": "Another organization uses this address",
   "adminOrgs.createFailed": "Couldn't create the organization",
   "adminOrgs.create": "Create organization",
+  "adminOrgs.allStatuses": "All statuses",
   "hostname.rule": "A hostname like acme.example.com",
   "orgStatus.active": "Active",
   "orgStatus.activeHelp": "Everything works",
@@ -1970,6 +1971,9 @@ export const en = {
   "reports.none": "No open reports",
   "reports.noneHelp": "Nothing has been flagged.",
   "reports.anonymous": "Someone signed out",
+  "reports.organization": "Organization",
+  "reports.page": "Page",
+  "reports.reporter": "Reporter",
   "schema.untracked": "The database doesn't record its migrations",
   "schema.untrackedHelp": "It was probably set up manually. Once it matches this app, run",
   "schema.untrackedAfter": "so upgrades can tell what's applied.",
@@ -2522,6 +2526,8 @@ export const en = {
   "manageCerts.printAll": "Print all...",
   "manageCerts.wordingIntro":
     "Markdown. You can use {variables}. Each kind uses its own wording; the organization's wording applies where an event has none.",
+  "manageCerts.kindColumn": "Kind",
+  "manageCerts.labelColumn": "Label",
 
   "managePeople.extraRoles": "Additional roles",
   "managePeople.extraRolesFor": "Additional roles for {name}",
@@ -2705,6 +2711,8 @@ export const en = {
   "manageReg.savedAs": "Saved as",
   "manageReg.questionN": "Question {n}",
   "manageReg.saveFailed": "Couldn't save the onboarding questions",
+  "manageReg.stateColumn": "State",
+  "manageReg.usedColumn": "Used",
 
   "manageJudging.see": "What judges see",
   "manageJudging.rounds": "Rounds",
@@ -2897,6 +2905,8 @@ export const en = {
   "manageJudging.raw": "raw {score}",
   "manageJudging.leftOut":
     "{count, plural, one {# judge} other {# judges}} left out for a conflict",
+  "manageJudging.assignedColumn": "Assigned",
+  "manageJudging.scoredColumn": "Scored",
   "netSection.everyTeam": "Every team",
   "netSection.everyDivision": "Every division",
   "netSection.intro":

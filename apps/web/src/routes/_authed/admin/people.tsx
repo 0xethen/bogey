@@ -17,6 +17,7 @@ import {
   instanceAuditQueryOptions,
   setPasswordLoginFn,
   setPlatformAdminFn,
+  type InstanceChange,
   type InstancePerson,
 } from "@bogey/db/queries/instance";
 import { unwrap } from "@bogey/db/errors";
@@ -317,40 +318,56 @@ function isKnownChange(action: string): action is keyof typeof CHANGE_LABELS {
   return action in CHANGE_LABELS;
 }
 
+const changeColumn = dataColumns<InstanceChange>();
+
+function changeText(change: InstanceChange, t: T): string {
+  return t(
+    isKnownChange(change.action) ? CHANGE_LABELS[change.action] : "adminPeople.changeOther",
+    {
+      actor: change.actor ?? t("adminPeople.someone"),
+      target: change.target ?? t("adminPeople.someone"),
+      action: change.action,
+    },
+  );
+}
+
 function InstanceChanges() {
   const t = useT();
   const { data: changes } = useSuspenseQuery(instanceAuditQueryOptions());
+  const columns = useMemo(
+    () =>
+      changeColumn.columns([
+        changeColumn.accessor((change) => changeText(change, t), {
+          id: "what",
+          header: t("audit.action"),
+          enableHiding: false,
+        }),
+        changeColumn.accessor("createdAt", {
+          header: t("audit.date"),
+          cell: (info) => (
+            <span className="whitespace-nowrap text-muted-fg">
+              <RelativeTime value={info.getValue()} />
+            </span>
+          ),
+        }),
+      ]),
+    [t],
+  );
+  const search = useMemo(() => ({ text: (change: InstanceChange) => changeText(change, t) }), [t]);
   return (
     <Screen.Section
       id="changes"
       title={t("adminPeople.changes")}
       description={t("adminPeople.changesHelp")}
     >
-      {changes.length === 0 ? (
-        <p className="text-sm text-muted-fg">{t("adminPeople.noChanges")}</p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-border text-sm">
-          {changes.map((change) => (
-            <li key={change.id} className="flex flex-wrap items-baseline gap-x-2 py-2">
-              <span>
-                {t(
-                  isKnownChange(change.action)
-                    ? CHANGE_LABELS[change.action]
-                    : "adminPeople.changeOther",
-                  {
-                    actor: change.actor ?? t("adminPeople.someone"),
-                    target: change.target ?? t("adminPeople.someone"),
-                    action: change.action,
-                  },
-                )}
-              </span>
-              <span className="text-muted-fg">
-                <RelativeTime value={change.createdAt} />
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DataTable
+        columns={columns}
+        data={changes}
+        getRowId={(change) => String(change.id)}
+        search={search}
+        pageSize={25}
+        empty={t("adminPeople.noChanges")}
+      />
     </Screen.Section>
   );
 }

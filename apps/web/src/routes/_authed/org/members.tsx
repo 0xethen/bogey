@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react";
 import { Button } from "@bogey/ui/components/button";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -6,12 +7,13 @@ import {
   orgMembersQueryOptions,
   removeOrgMemberFn,
   setOrgRoleFn,
+  type OrgMember,
   type OrgRole,
 } from "@bogey/db/queries/org";
 import { unwrap } from "@bogey/db/errors";
 import { formatDate } from "@bogey/utils/time";
 import { OptSelect } from "@bogey/ui/components/opt-select";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import { NameAvatar } from "@bogey/ui/components/avatar";
 import { Screen } from "@bogey/ui/components/screen";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
@@ -48,6 +50,10 @@ const ROLES: Tuple<{ value: OrgRole; label: PlainKey; description: PlainKey }> =
   { value: "owner", label: "orgRole.owner", description: "orgRole.ownerHelp" },
 ];
 
+const column = dataColumns<OrgMember>();
+
+const search = { text: (member: OrgMember) => member.name };
+
 function RouteComponent() {
   const t = useT();
   const { org, session } = Route.useRouteContext();
@@ -70,6 +76,91 @@ function RouteComponent() {
     onSettled: refresh,
   });
   const error = setRole.error ?? remove.error;
+  const you = session.user.id;
+
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.accessor("name", {
+          header: t("checkin.name"),
+          enableHiding: false,
+          cell: (info) => (
+            <span className="flex items-center gap-2 font-medium">
+              <NameAvatar name={info.getValue()} />
+              {info.getValue()}
+              {info.row.original.userId === you && (
+                <span className="font-normal text-muted-fg"> {t("welcome.you")}</span>
+              )}
+            </span>
+          ),
+        }),
+        column.accessor("role", {
+          header: t("managePeople.roleColumn"),
+          cell: (info) => (
+            <OptSelect
+              size="sm"
+              ariaLabel={t("members.roleFor", { name: info.row.original.name })}
+              value={info.getValue()}
+              options={ROLES.map((role) => ({
+                ...role,
+                label: t(role.label),
+                description: t(role.description),
+              }))}
+              disabled={setRole.isPending}
+              onChange={(role) => setRole.mutate({ userId: info.row.original.userId, role })}
+            />
+          ),
+        }),
+        column.accessor("joinedAt", {
+          header: t("adminPeople.joined"),
+          cell: (info) => (
+            <span className="text-muted-fg">{formatDate(info.getValue(), time)}</span>
+          ),
+        }),
+      ]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, time, you, setRole.isPending],
+  );
+  const detail = useCallback(
+    (member: OrgMember) => {
+      const mine = member.userId === you;
+      return (
+        <div className="flex flex-col items-start gap-3 py-2">
+          {tags.length > 0 && (
+            <TagPicker
+              orgId={org.id}
+              userId={member.userId}
+              name={member.name}
+              tags={tags}
+              held={holders
+                .filter((each) => each.userId === member.userId)
+                .map((each) => each.tagId)}
+              editableScopes={{ org: true, event: false }}
+            />
+          )}
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={remove.isPending}
+            confirm={{
+              title: mine
+                ? t("members.leaveTitle", { org: org.name })
+                : t("members.removeTitle", { name: member.name }),
+              description: mine
+                ? t("members.leaveBody")
+                : t("members.removeBody", { name: member.name }),
+              label: mine ? t("members.leave") : t("twoFactor.remove"),
+            }}
+            onClick={() => remove.mutate(member.userId)}
+          >
+            {mine ? t("members.leaveButton") : t("members.removeButton")}
+          </Button>
+        </div>
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, you, tags, holders, org.id, org.name, remove.isPending],
+  );
 
   return (
     <Screen
@@ -85,70 +176,14 @@ function RouteComponent() {
       }
     >
       <ErrorAlert error={error} title={t("members.failed")} />
-      <DisclosureList>
-        {members.map((member) => {
-          const you = member.userId === session.user.id;
-          return (
-            <DisclosureRow
-              key={member.userId}
-              leading={<NameAvatar name={member.name} />}
-              title={
-                <>
-                  {member.name}
-                  {you && <span className="font-normal text-muted-fg"> {t("welcome.you")}</span>}
-                </>
-              }
-              meta={t("members.joined", { date: formatDate(member.joinedAt, time) })}
-              actions={
-                <OptSelect
-                  size="sm"
-                  ariaLabel={t("members.roleFor", { name: member.name })}
-                  value={member.role}
-                  options={ROLES.map((role) => ({
-                    ...role,
-                    label: t(role.label),
-                    description: t(role.description),
-                  }))}
-                  disabled={setRole.isPending}
-                  onChange={(role) => setRole.mutate({ userId: member.userId, role })}
-                />
-              }
-            >
-              <div className="flex flex-col items-start gap-3 pl-11">
-                {tags.length > 0 && (
-                  <TagPicker
-                    orgId={org.id}
-                    userId={member.userId}
-                    name={member.name}
-                    tags={tags}
-                    held={holders
-                      .filter((each) => each.userId === member.userId)
-                      .map((each) => each.tagId)}
-                    editableScopes={{ org: true, event: false }}
-                  />
-                )}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={remove.isPending}
-                  confirm={{
-                    title: you
-                      ? t("members.leaveTitle", { org: org.name })
-                      : t("members.removeTitle", { name: member.name }),
-                    description: you
-                      ? t("members.leaveBody")
-                      : t("members.removeBody", { name: member.name }),
-                    label: you ? t("members.leave") : t("twoFactor.remove"),
-                  }}
-                  onClick={() => remove.mutate(member.userId)}
-                >
-                  {you ? t("members.leaveButton") : t("members.removeButton")}
-                </Button>
-              </div>
-            </DisclosureRow>
-          );
-        })}
-      </DisclosureList>
+      <DataTable
+        columns={columns}
+        data={members}
+        getRowId={(member) => member.userId}
+        search={search}
+        detail={detail}
+        pageSize={25}
+      />
       <Screen.Section id="tags" title={t("tags.title")} description={t("tags.orgIntro")}>
         <TagsEditor scope={{ orgId: org.id }} />
         <SettingFields

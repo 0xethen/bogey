@@ -1,7 +1,13 @@
 import { exportHref } from "#/lib/exports.ts";
 import { ProjectExport } from "#/components/event/project-export.tsx";
+import { useCallback, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+  type UseMutationResult,
+} from "@tanstack/react-query";
 import { z } from "zod";
 import {
   cancelSubmissionDeletionFn,
@@ -9,6 +15,7 @@ import {
   eventSubmissionsQueryOptions,
   setDisqualifiedFn,
   submissionFormsQueryOptions,
+  type SubmissionForm,
   type TeamSubmission,
 } from "@bogey/db/queries/submissions";
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
@@ -19,7 +26,7 @@ import {
   SettingFields,
 } from "#/components/settings/fields/setting-fields.tsx";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { RelativeTime } from "@bogey/ui/components/relative-time";
 import { Stat, StatGroup } from "@bogey/ui/components/stat";
@@ -160,98 +167,7 @@ function RouteComponent() {
   const deletionRequests = submissions.filter((row) => row.deletion_requested_at);
   const formWindow = windowByKey(windows, form.window_key);
 
-  const row = (submission: TeamSubmission) => (
-    <DisclosureRow
-      key={submission.id}
-      leading={
-        <StatusDot
-          tone={
-            submission.status === "submitted"
-              ? "done"
-              : submission.status === "disqualified"
-                ? "attention"
-                : "idle"
-          }
-          label={t(STATUS_LABEL[submission.status])}
-        />
-      }
-      title={submission.title || t("judging.untitled")}
-      meta={
-        <>
-          {submission.teamName}
-          {submission.status === "submitted" && submission.submitted_at && (
-            <>
-              , {t("manageSubs.submittedAgo")} <RelativeTime value={submission.submitted_at} />
-            </>
-          )}
-          {submission.status === "draft" && (
-            <>
-              , {t("manageSubs.editedAgo")} <RelativeTime value={submission.updated_at} />
-            </>
-          )}
-          {submission.deletion_requested_at && `, ${t("manageSubs.deletionRequested")}`}
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4 pl-5">
-        <SubmissionAnswers form={form} submission={submission} files={submission.files} />
-        <div className="flex flex-wrap gap-2">
-          {submission.status === "disqualified" ? (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={disqualify.isPending}
-              onClick={() => disqualify.mutate({ id: submission.id, disqualified: false })}
-            >
-              {t("manageSubs.reinstate")}
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              className="text-destructive"
-              size="sm"
-              disabled={disqualify.isPending}
-              confirm={{
-                title: t("manageSubs.disqualifyTitle", {
-                  name: submission.title || t("manageSubs.thisSubmission"),
-                }),
-                description: t("manageSubs.disqualifyBody", { team: submission.teamName }),
-                label: t("manageSubs.disqualify"),
-              }}
-              onClick={() => disqualify.mutate({ id: submission.id, disqualified: true })}
-            >
-              {t("manageSubs.disqualifyButton")}
-            </Button>
-          )}
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={remove.isPending}
-            confirm={{
-              title: t("manageSubs.deleteTitle", {
-                name: submission.title || t("manageSubs.thisSubmission"),
-              }),
-              description: t("manageSubs.deleteBody", { team: submission.teamName }),
-              label: t("common.delete"),
-            }}
-            onClick={() => remove.mutate(submission.id)}
-          >
-            {submission.deletion_requested_at ? t("manageSubs.deleteAsked") : t("webhooks.delete")}
-          </Button>
-          {submission.deletion_requested_at && (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={decline.isPending}
-              onClick={() => decline.mutate(submission.id)}
-            >
-              {t("manageSubs.decline")}
-            </Button>
-          )}
-        </div>
-      </div>
-    </DisclosureRow>
-  );
+  const actions = { disqualify, remove, decline };
 
   return (
     <Screen
@@ -328,7 +244,7 @@ function RouteComponent() {
           title={t("manageSubs.deletion")}
           description={t("manageSubs.deletionHelp")}
         >
-          <DisclosureList>{deletionRequests.map(row)}</DisclosureList>
+          <SubmissionTable rows={deletionRequests} form={form} actions={actions} />
         </Screen.Section>
       )}
 
@@ -336,7 +252,7 @@ function RouteComponent() {
         {submitted.length === 0 ? (
           <p className="text-sm text-muted-fg">{t("manageSubs.nothing")}</p>
         ) : (
-          <DisclosureList>{submitted.map(row)}</DisclosureList>
+          <SubmissionTable rows={submitted} form={form} actions={actions} />
         )}
       </Screen.Section>
       {drafts.length > 0 && (
@@ -345,7 +261,7 @@ function RouteComponent() {
           title={t("manageSubs.drafts")}
           description={t("manageSubs.draftsHelp")}
         >
-          <DisclosureList>{drafts.map(row)}</DisclosureList>
+          <SubmissionTable rows={drafts} form={form} actions={actions} />
         </Screen.Section>
       )}
       <Screen.Section id="reminders" title={t("manageSubs.reminders")}>
@@ -372,10 +288,177 @@ function RouteComponent() {
           title={t("manageSubs.disqualified")}
           description={t("manageSubs.disqualifiedHelp")}
         >
-          <DisclosureList>{disqualified.map(row)}</DisclosureList>
+          <SubmissionTable rows={disqualified} form={form} actions={actions} />
         </Screen.Section>
       )}
       <PluginSettingSections page="submissions" />
     </Screen>
+  );
+}
+
+interface Actions {
+  disqualify: UseMutationResult<unknown, Error, { id: string; disqualified: boolean }>;
+  remove: UseMutationResult<unknown, Error, string>;
+  decline: UseMutationResult<unknown, Error, string>;
+}
+
+const column = dataColumns<TeamSubmission>();
+
+function submissionText(submission: TeamSubmission, untitled: string): string {
+  return `${submission.title || untitled} ${submission.teamName}`;
+}
+
+function SubmissionTable({
+  rows,
+  form,
+  actions,
+}: {
+  rows: TeamSubmission[];
+  form: SubmissionForm;
+  actions: Actions;
+}) {
+  const t = useT();
+  const { disqualify, remove, decline } = actions;
+  const busy = {
+    disqualify: disqualify.isPending,
+    remove: remove.isPending,
+    decline: decline.isPending,
+  };
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.accessor((submission) => submission.title || t("judging.untitled"), {
+          id: "title",
+          header: t("tables.project"),
+          enableHiding: false,
+          cell: (info) => {
+            const submission = info.row.original;
+            return (
+              <span className="flex items-center gap-2 font-medium">
+                <StatusDot
+                  tone={
+                    submission.status === "submitted"
+                      ? "done"
+                      : submission.status === "disqualified"
+                        ? "attention"
+                        : "idle"
+                  }
+                  label={t(STATUS_LABEL[submission.status])}
+                />
+                {info.getValue()}
+              </span>
+            );
+          },
+        }),
+        column.accessor("teamName", { header: t("tables.team") }),
+        column.accessor(
+          (submission) =>
+            (submission.status === "draft" ? submission.updated_at : submission.submitted_at) ?? "",
+          {
+            id: "when",
+            header: t("facts.when"),
+            cell: (info) => {
+              const submission = info.row.original;
+              const value = info.getValue();
+              return (
+                <span className="text-muted-fg">
+                  {value && (
+                    <>
+                      {submission.status === "draft"
+                        ? t("manageSubs.editedAgo")
+                        : t("manageSubs.submittedAgo")}{" "}
+                      <RelativeTime value={value} />
+                    </>
+                  )}
+                  {submission.deletion_requested_at && (
+                    <span className="block text-xs">{t("manageSubs.deletionRequested")}</span>
+                  )}
+                </span>
+              );
+            },
+          },
+        ),
+      ]),
+    [t],
+  );
+  const search = useMemo(
+    () => ({
+      text: (submission: TeamSubmission) => submissionText(submission, t("judging.untitled")),
+    }),
+    [t],
+  );
+  const detail = useCallback(
+    (submission: TeamSubmission) => (
+      <div className="flex flex-col gap-4 py-2">
+        <SubmissionAnswers form={form} submission={submission} files={submission.files} />
+        <div className="flex flex-wrap gap-2">
+          {submission.status === "disqualified" ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy.disqualify}
+              onClick={() => disqualify.mutate({ id: submission.id, disqualified: false })}
+            >
+              {t("manageSubs.reinstate")}
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="text-destructive"
+              size="sm"
+              disabled={busy.disqualify}
+              confirm={{
+                title: t("manageSubs.disqualifyTitle", {
+                  name: submission.title || t("manageSubs.thisSubmission"),
+                }),
+                description: t("manageSubs.disqualifyBody", { team: submission.teamName }),
+                label: t("manageSubs.disqualify"),
+              }}
+              onClick={() => disqualify.mutate({ id: submission.id, disqualified: true })}
+            >
+              {t("manageSubs.disqualifyButton")}
+            </Button>
+          )}
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={busy.remove}
+            confirm={{
+              title: t("manageSubs.deleteTitle", {
+                name: submission.title || t("manageSubs.thisSubmission"),
+              }),
+              description: t("manageSubs.deleteBody", { team: submission.teamName }),
+              label: t("common.delete"),
+            }}
+            onClick={() => remove.mutate(submission.id)}
+          >
+            {submission.deletion_requested_at ? t("manageSubs.deleteAsked") : t("webhooks.delete")}
+          </Button>
+          {submission.deletion_requested_at && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy.decline}
+              onClick={() => decline.mutate(submission.id)}
+            >
+              {t("manageSubs.decline")}
+            </Button>
+          )}
+        </div>
+      </div>
+    ),
+    // the mutations are new objects each render; their pending flags are what matter
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form, t, busy.disqualify, busy.remove, busy.decline],
+  );
+  return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      getRowId={(submission) => submission.id}
+      search={search}
+      detail={detail}
+      pageSize={25}
+    />
   );
 }

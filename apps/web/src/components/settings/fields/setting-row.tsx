@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Field, FieldContent, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
 import { IconArrowBack, IconLock, IconLockOpen } from "@tabler/icons-react";
 import { Button } from "@bogey/ui/components/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { useT } from "#/lib/translate.tsx";
 
 export interface SettingLock {
@@ -47,7 +46,7 @@ function Label({
           variant="ghost"
           size="icon-3xs"
           aria-label={t("settingRow.reset")}
-          title={t("settingRow.reset")}
+          tooltip={t("settingRow.reset")}
           onClick={source.onReset}
         >
           <IconArrowBack />
@@ -55,28 +54,22 @@ function Label({
       )}
       <div className="flex items-center gap-0.5">
         {lock && (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-2xs"
-                  aria-pressed={lock.locked}
-                  aria-label={lockLabel}
-                  className={
-                    lock.locked
-                      ? "text-fg"
-                      : "text-muted-fg transition-opacity md:opacity-0 md:group-hover/setting:opacity-100 md:group-focus-within/setting:opacity-100"
-                  }
-                  onClick={() => lock.onChange(!lock.locked)}
-                />
-              }
-            >
-              {lock.locked ? <IconLock /> : <IconLockOpen />}
-            </TooltipTrigger>
-            <TooltipContent>{lockLabel}</TooltipContent>
-          </Tooltip>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-2xs"
+            aria-pressed={lock.locked}
+            aria-label={lockLabel}
+            tooltip={lockLabel}
+            className={
+              lock.locked
+                ? "text-fg"
+                : "text-muted-fg transition-opacity md:opacity-0 md:group-hover/setting:opacity-100 md:group-focus-within/setting:opacity-100"
+            }
+            onClick={() => lock.onChange(!lock.locked)}
+          >
+            {lock.locked ? <IconLock /> : <IconLockOpen />}
+          </Button>
         )}
         {lock?.locked && <span className="text-xs text-muted-fg">{t("settingRow.locked")}</span>}
       </div>

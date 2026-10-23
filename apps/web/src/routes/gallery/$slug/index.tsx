@@ -18,7 +18,6 @@ import {
 } from "@bogey/ui/components/empty";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Screen } from "@bogey/ui/components/screen";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { cn } from "@bogey/ui/lib/utils";
 import { localizationQueryOptions } from "#/lib/i18n.ts";
 import { availableSorts, gallerySearch, sortProjects } from "#/lib/gallery.ts";
@@ -108,28 +107,22 @@ function RouteComponent() {
                 <LayoutToggle value={layout} onChange={(next) => set({ layout: next })} />
               )}
               {settings.slideshow && (
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        size="icon-sm"
-                        variant="outline"
-                        nativeButton={false}
-                        aria-label={t("gallery.slideshow")}
-                        render={
-                          <Link
-                            to="/gallery/$slug/present"
-                            params={{ slug }}
-                            search={{ ...filter, sort }}
-                          />
-                        }
-                      />
-                    }
-                  >
-                    <IconPlayerPlay />
-                  </TooltipTrigger>
-                  <TooltipContent>{t("gallery.slideshow")}</TooltipContent>
-                </Tooltip>
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  aria-label={t("gallery.slideshow")}
+                  tooltip={t("gallery.slideshow")}
+                  render={
+                    <Link
+                      to="/gallery/$slug/present"
+                      params={{ slug }}
+                      search={{ ...filter, sort }}
+                    />
+                  }
+                  nativeButton={false}
+                >
+                  <IconPlayerPlay />
+                </Button>
               )}
             </div>
           </>

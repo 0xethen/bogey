@@ -25,7 +25,6 @@ import {
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Slider } from "@bogey/ui/components/slider";
 import { Switch } from "@bogey/ui/components/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { cn } from "@bogey/ui/lib/utils";
 import { availableSorts, GALLERY_SORTS, gallerySearch, sortProjects } from "#/lib/gallery.ts";
 import { SHOW_DEFAULTS, useShuffleSeed, useSlideshowSettings } from "#/lib/slideshow.ts";
@@ -148,27 +147,25 @@ function RouteComponent() {
           chrome,
         )}
       >
-        <Tip label={t("gallery.backToProjects")}>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            nativeButton={false}
-            aria-label={t("gallery.backToProjects")}
-            render={<Link to="/gallery/$slug" params={{ slug }} search={filter} />}
-          >
-            <IconArrowLeft />
-          </Button>
-        </Tip>
-        <Tip label={t("gallery.showSettings")}>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label={t("gallery.showSettings")}
-            onClick={() => setOpen(true)}
-          >
-            <IconSettings />
-          </Button>
-        </Tip>
+        <Button
+          tooltip={t("gallery.backToProjects")}
+          size="icon-sm"
+          variant="ghost"
+          nativeButton={false}
+          aria-label={t("gallery.backToProjects")}
+          render={<Link to="/gallery/$slug" params={{ slug }} search={filter} />}
+        >
+          <IconArrowLeft />
+        </Button>
+        <Button
+          tooltip={t("gallery.showSettings")}
+          size="icon-sm"
+          variant="ghost"
+          aria-label={t("gallery.showSettings")}
+          onClick={() => setOpen(true)}
+        >
+          <IconSettings />
+        </Button>
       </div>
 
       <main
@@ -214,68 +211,62 @@ function RouteComponent() {
 
       <div className={cn("absolute inset-x-0 bottom-4 z-10 flex justify-center", chrome)}>
         <div className="flex items-center gap-1 rounded-pill border border-border bg-card/90 px-2 py-1 shadow-sm backdrop-blur">
-          <Tip label={t("gallery.previous")}>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label={t("gallery.previous")}
-              disabled={!settings.loop && at === 0}
-              onClick={back}
-            >
-              <IconChevronLeft />
-            </Button>
-          </Tip>
-          <Tip
-            label={
+          <Button
+            tooltip={t("gallery.previous")}
+            size="icon-sm"
+            variant="ghost"
+            aria-label={t("gallery.previous")}
+            disabled={!settings.loop && at === 0}
+            onClick={back}
+          >
+            <IconChevronLeft />
+          </Button>
+          <Button
+            tooltip={
               playing
                 ? t("gallery.pause")
                 : atEnd && !settings.loop
                   ? t("gallery.replay")
                   : t("gallery.play")
             }
+            size="icon-sm"
+            variant="ghost"
+            aria-label={playing ? t("gallery.pause") : t("gallery.play")}
+            disabled={projects.length === 0}
+            onClick={toggle}
           >
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label={playing ? t("gallery.pause") : t("gallery.play")}
-              disabled={projects.length === 0}
-              onClick={toggle}
-            >
-              {playing ? (
-                <IconPlayerPause />
-              ) : atEnd && !settings.loop && projects.length > 1 ? (
-                <IconReload />
-              ) : (
-                <IconPlayerPlay />
-              )}
-            </Button>
-          </Tip>
-          <Tip label={t("judging.nextProject")}>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label={t("judging.nextProject")}
-              disabled={!settings.loop && atEnd}
-              onClick={next}
-            >
-              <IconChevronRight />
-            </Button>
-          </Tip>
+            {playing ? (
+              <IconPlayerPause />
+            ) : atEnd && !settings.loop && projects.length > 1 ? (
+              <IconReload />
+            ) : (
+              <IconPlayerPlay />
+            )}
+          </Button>
+          <Button
+            tooltip={t("judging.nextProject")}
+            size="icon-sm"
+            variant="ghost"
+            aria-label={t("judging.nextProject")}
+            disabled={!settings.loop && atEnd}
+            onClick={next}
+          >
+            <IconChevronRight />
+          </Button>
           {settings.counter && projects.length > 0 && (
             <span className="px-2 text-sm text-muted-fg tabular-nums">
               {t("gallery.at", { at: at + 1, total: projects.length })}
             </span>
           )}
-          <Tip label={full ? t("gallery.exitFullScreen") : t("results.fullScreen")}>
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              aria-label={full ? t("gallery.exitFullScreen") : t("results.fullScreen")}
-              onClick={fullscreen}
-            >
-              {full ? <IconArrowsMinimize /> : <IconArrowsMaximize />}
-            </Button>
-          </Tip>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            tooltip={full ? t("gallery.exitFullScreen") : t("results.fullScreen")}
+            aria-label={full ? t("gallery.exitFullScreen") : t("results.fullScreen")}
+            onClick={fullscreen}
+          >
+            {full ? <IconArrowsMinimize /> : <IconArrowsMaximize />}
+          </Button>
         </div>
       </div>
 
@@ -359,15 +350,6 @@ function RouteComponent() {
         </DrawerContent>
       </Drawer>
     </div>
-  );
-}
-
-function Tip({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger render={<span className="inline-flex" />}>{children}</TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
   );
 }
 

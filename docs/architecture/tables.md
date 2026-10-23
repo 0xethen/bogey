@@ -1,6 +1,6 @@
 # Tables
 
-Lists of records (people, registrations, the audit log) use `DataTable` from `@bogey/ui/components/data-table`. It is
+Lists of records (people, registrations, submissions, results, members, the audit log, instance people, organizations and reports) use `DataTable` from `@bogey/ui/components/data-table`. It is
 built on TanStack Table and follows the shadcn Data Table guide: sortable headers, a search box, faceted filters, a
 columns menu, checkboxes with select-all, pagination and rows gathered under headers that open and close.
 

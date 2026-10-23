@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -20,6 +20,7 @@ import {
   type CertificateKind,
 } from "@bogey/utils/certificate";
 import { Button } from "@bogey/ui/components/button";
+import { DataTable, dataColumns, type DataTableFilter } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Panel } from "@bogey/ui/components/panel";
 import { Screen } from "@bogey/ui/components/screen";
@@ -199,6 +200,8 @@ function Wording({
   );
 }
 
+const column = dataColumns<Certificate>();
+
 function Issued({
   certificates,
   eventId,
@@ -213,42 +216,80 @@ function Issued({
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["certificates", "event", eventId] }),
   });
+  const rows = useMemo(() => [...certificates], [certificates]);
+  const kindName = useCallback(
+    (kind: CertificateKind) => sayOr(t, `certKind.${kind}`, CERTIFICATE_LABELS[kind]),
+    [t],
+  );
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.accessor("name", { header: t("checkin.name"), enableHiding: false }),
+        column.accessor((certificate) => kindName(certificate.kind), {
+          id: "kind",
+          header: t("manageCerts.kindColumn"),
+        }),
+        column.accessor((certificate) => certificate.label ?? "", {
+          id: "label",
+          header: t("manageCerts.labelColumn"),
+        }),
+        column.display({
+          id: "withdraw",
+          header: () => <span className="sr-only">{t("manageCerts.withdraw")}</span>,
+          enableHiding: false,
+          cell: (info) => (
+            <Button
+              size="sm"
+              variant="ghost"
+              confirm={{
+                title: t("manageCerts.withdrawTitle", { name: info.row.original.name }),
+                description: t("manageCerts.withdrawBody"),
+                label: t("manageCerts.withdrawLabel"),
+              }}
+              onClick={() => revoke.mutate(info.row.original.code)}
+            >
+              {t("manageCerts.withdraw")}
+            </Button>
+          ),
+        }),
+      ]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, kindName],
+  );
+  const search = useMemo(
+    () => ({
+      text: (certificate: Certificate) =>
+        `${certificate.name} ${kindName(certificate.kind)} ${certificate.label ?? ""}`,
+    }),
+    [kindName],
+  );
+  const filters = useMemo(
+    (): Tuple<DataTableFilter> => [
+      {
+        column: "kind",
+        title: t("manageCerts.kindColumn"),
+        options: CERTIFICATE_KINDS.map((kind) => ({
+          value: kindName(kind),
+          label: kindName(kind),
+        })),
+      },
+    ],
+    [t, kindName],
+  );
   return (
     <Panel
       title={t("manageCerts.issued")}
       description={t("manageCerts.soFar", { count: certificates.length })}
     >
       <ErrorAlert error={revoke.error} />
-      <ul className="divide-y divide-border text-sm">
-        {certificates.map((certificate) => (
-          <li
-            key={certificate.code}
-            className="flex flex-wrap items-center justify-between gap-2 py-2"
-          >
-            <span>
-              {certificate.name},{" "}
-              {sayOr(
-                t,
-                `certKind.${certificate.kind}`,
-                CERTIFICATE_LABELS[certificate.kind],
-              ).toLowerCase()}
-              {certificate.label ? ` (${certificate.label})` : ""}
-            </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              confirm={{
-                title: t("manageCerts.withdrawTitle", { name: certificate.name }),
-                description: t("manageCerts.withdrawBody"),
-                label: t("manageCerts.withdrawLabel"),
-              }}
-              onClick={() => revoke.mutate(certificate.code)}
-            >
-              {t("manageCerts.withdraw")}
-            </Button>
-          </li>
-        ))}
-      </ul>
+      <DataTable
+        columns={columns}
+        data={rows}
+        getRowId={(certificate) => certificate.code}
+        search={search}
+        filters={filters}
+        pageSize={25}
+      />
     </Panel>
   );
 }

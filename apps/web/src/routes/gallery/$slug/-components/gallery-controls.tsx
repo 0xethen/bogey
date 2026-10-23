@@ -7,7 +7,6 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@bogey/ui/components/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { GALLERY_SORTS, type GalleryLayout, type GallerySort } from "#/lib/gallery.ts";
 import { useT } from "#/lib/translate.tsx";
 
@@ -24,18 +23,18 @@ export function SortMenu({
   const t = useT();
   return (
     <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <DropdownMenuTrigger
-              render={<Button size="icon-sm" variant="outline" aria-label={t("gallery.sortBy")} />}
-            />
-          }
-        >
-          <IconArrowsSort />
-        </TooltipTrigger>
-        <TooltipContent>{t("gallery.sortBy")}</TooltipContent>
-      </Tooltip>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            size="icon-sm"
+            variant="outline"
+            aria-label={t("gallery.sortBy")}
+            tooltip={t("gallery.sortBy")}
+          />
+        }
+      >
+        <IconArrowsSort />
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuRadioGroup
           value={value}
@@ -71,22 +70,17 @@ export function LayoutToggle({
   return (
     <div role="group" aria-label={t("gallery.layout")} className="flex gap-0.5">
       {LAYOUTS.map(({ key, label, icon: Icon }) => (
-        <Tooltip key={key}>
-          <TooltipTrigger
-            render={
-              <Button
-                size="icon-sm"
-                variant={value === key ? "secondary" : "ghost"}
-                aria-pressed={value === key}
-                aria-label={t(label)}
-                onClick={() => onChange(key)}
-              />
-            }
-          >
-            <Icon />
-          </TooltipTrigger>
-          <TooltipContent>{t(label)}</TooltipContent>
-        </Tooltip>
+        <Button
+          key={key}
+          size="icon-sm"
+          variant={value === key ? "secondary" : "ghost"}
+          aria-pressed={value === key}
+          aria-label={t(label)}
+          tooltip={t(label)}
+          onClick={() => onChange(key)}
+        >
+          <Icon />
+        </Button>
       ))}
     </div>
   );

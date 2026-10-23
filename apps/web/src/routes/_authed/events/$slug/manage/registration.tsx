@@ -1,6 +1,6 @@
 import { exportHref } from "#/lib/exports.ts";
 import { useTimeFormat } from "@bogey/ui/lib/time-format";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -27,7 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@bogey/ui/components/dialog";
-import { DisclosureList, DisclosureRow } from "@bogey/ui/components/disclosure-row";
+import { DataTable, dataColumns } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { FieldGroup } from "@bogey/ui/components/field";
 import { StatusDot } from "@bogey/ui/components/status-dot";
@@ -168,6 +168,8 @@ function linkState(link: InviteLink, t: T): { open: boolean; reason: string } {
   return { open: true, reason: t("manageReg.open") };
 }
 
+const column = dataColumns<InviteLink>();
+
 const newInviteLink = createDialogHandle<undefined>();
 
 function InviteLinks() {
@@ -218,6 +220,142 @@ function InviteLinks() {
       setTimeout(() => setCopied((current) => (current === token ? null : current)), 2000);
     });
   };
+
+  const columns = useMemo(
+    () =>
+      column.columns([
+        column.accessor((link) => link.label || t("manageReg.link"), {
+          id: "label",
+          header: t("manageReg.linkLabel"),
+          enableHiding: false,
+          cell: (info) => {
+            const link = info.row.original;
+            const state = linkState(link, t);
+            return (
+              <span className="flex items-center gap-2 font-medium">
+                <StatusDot tone={state.open ? "done" : "idle"} label={state.reason} />
+                {info.getValue()}
+                <span className="font-normal text-muted-fg">
+                  ({link.auto_approve ? t("manageReg.auto") : t("manageReg.reviewed")})
+                </span>
+              </span>
+            );
+          },
+        }),
+        column.accessor((link) => linkState(link, t).reason, {
+          id: "state",
+          header: t("manageReg.stateColumn"),
+          cell: (info) => {
+            const link = info.row.original;
+            return (
+              <span className="text-muted-fg">
+                {info.getValue()}
+                {link.closes_at
+                  ? ` ${t("manageReg.until", { when: formatDateTime(link.closes_at, time) })}`
+                  : ""}
+              </span>
+            );
+          },
+        }),
+        column.accessor("used", {
+          header: t("manageReg.usedColumn"),
+          cell: (info) => {
+            const link = info.row.original;
+            return (
+              <span className="text-muted-fg">
+                {link.capacity !== null
+                  ? t("manageReg.usedOf", { used: link.used, capacity: link.capacity })
+                  : t("manageReg.used", { used: link.used })}
+              </span>
+            );
+          },
+        }),
+        column.display({
+          id: "copy",
+          header: () => <span className="sr-only">{t("manageReg.copyLink")}</span>,
+          enableHiding: false,
+          cell: (info) =>
+            linkState(info.row.original, t).open && (
+              <Button size="sm" variant="ghost" onClick={() => copy(info.row.original.token)}>
+                <IconCopy />
+                {copied === info.row.original.token ? t("common.copied") : t("manageReg.copyLink")}
+              </Button>
+            ),
+        }),
+      ]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, time, copied],
+  );
+  const search = useMemo(
+    () => ({ text: (link: InviteLink) => link.label || t("manageReg.link") }),
+    [t],
+  );
+  const detail = useCallback(
+    (link: InviteLink) => (
+      <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+        <code className="rounded-md bg-muted px-2 py-1 text-xs break-all select-all">
+          /join/{link.token}
+        </code>
+        <div className="flex flex-wrap items-center gap-2">
+          {link.disabled_at ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={toggle.isPending}
+              onClick={() => toggle.mutate({ id: link.id, disabled: false })}
+            >
+              {t("manageReg.turnBackOn")}
+            </Button>
+          ) : (
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={toggle.isPending}
+              confirm={{
+                title: t("manageReg.turnOffTitle", {
+                  name: link.label || t("manageReg.thisLink"),
+                }),
+                description: (
+                  <>
+                    {t("manageReg.turnOffBefore")}{" "}
+                    <Link
+                      to="/events/$slug/manage/people"
+                      params={{ slug: event.slug }}
+                      search={{ link: link.id }}
+                    >
+                      {t("manageReg.turnOffPeople")}
+                    </Link>
+                    . {t("manageReg.turnOffAfter")}
+                  </>
+                ),
+                label: t("calendar.offLabel"),
+              }}
+              onClick={() => toggle.mutate({ id: link.id, disabled: true })}
+            >
+              {t("calendar.offButton")}
+            </Button>
+          )}
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={remove.isPending}
+            confirm={{
+              title: t("manageReg.removeTitle", {
+                name: link.label || t("manageReg.thisLink"),
+              }),
+              description: t("manageReg.removeBody"),
+              label: t("twoFactor.remove"),
+            }}
+            onClick={() => remove.mutate(link.id)}
+          >
+            {t("twoFactor.removeButton")}
+          </Button>
+        </div>
+      </div>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, event.slug, toggle.isPending, remove.isPending],
+  );
 
   return (
     <Screen.Section
@@ -271,104 +409,14 @@ function InviteLinks() {
       {links.length === 0 ? (
         <p className="text-sm text-muted-fg">{t("manageReg.noLinks")}</p>
       ) : (
-        <DisclosureList>
-          {links.map((link) => {
-            const state = linkState(link, t);
-            return (
-              <DisclosureRow
-                key={link.id}
-                leading={<StatusDot tone={state.open ? "done" : "idle"} label={state.reason} />}
-                title={
-                  (link.label || t("manageReg.link")) +
-                  (link.auto_approve
-                    ? ` (${t("manageReg.auto")})`
-                    : ` (${t("manageReg.reviewed")})`)
-                }
-                meta={[
-                  `${state.reason}${
-                    link.closes_at
-                      ? ` ${t("manageReg.until", { when: formatDateTime(link.closes_at, time) })}`
-                      : ""
-                  }`,
-                  link.capacity !== null
-                    ? t("manageReg.usedOf", { used: link.used, capacity: link.capacity })
-                    : t("manageReg.used", { used: link.used }),
-                ]
-                  .filter(Boolean)
-                  .join(", ")}
-                actions={
-                  state.open && (
-                    <Button size="sm" variant="ghost" onClick={() => copy(link.token)}>
-                      <IconCopy />
-                      {copied === link.token ? t("common.copied") : t("manageReg.copyLink")}
-                    </Button>
-                  )
-                }
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3 pl-5">
-                  <code className="rounded-md bg-muted px-2 py-1 text-xs break-all select-all">
-                    /join/{link.token}
-                  </code>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {link.disabled_at ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={toggle.isPending}
-                        onClick={() => toggle.mutate({ id: link.id, disabled: false })}
-                      >
-                        {t("manageReg.turnBackOn")}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={toggle.isPending}
-                        confirm={{
-                          title: t("manageReg.turnOffTitle", {
-                            name: link.label || t("manageReg.thisLink"),
-                          }),
-                          description: (
-                            <>
-                              {t("manageReg.turnOffBefore")}{" "}
-                              <Link
-                                to="/events/$slug/manage/people"
-                                params={{ slug: event.slug }}
-                                search={{ link: link.id }}
-                              >
-                                {t("manageReg.turnOffPeople")}
-                              </Link>
-                              . {t("manageReg.turnOffAfter")}
-                            </>
-                          ),
-                          label: t("calendar.offLabel"),
-                        }}
-                        onClick={() => toggle.mutate({ id: link.id, disabled: true })}
-                      >
-                        {t("calendar.offButton")}
-                      </Button>
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={remove.isPending}
-                      confirm={{
-                        title: t("manageReg.removeTitle", {
-                          name: link.label || t("manageReg.thisLink"),
-                        }),
-                        description: t("manageReg.removeBody"),
-                        label: t("twoFactor.remove"),
-                      }}
-                      onClick={() => remove.mutate(link.id)}
-                    >
-                      {t("twoFactor.removeButton")}
-                    </Button>
-                  </div>
-                </div>
-              </DisclosureRow>
-            );
-          })}
-        </DisclosureList>
+        <DataTable
+          columns={columns}
+          data={links}
+          getRowId={(link) => link.id}
+          search={search}
+          detail={detail}
+          pageSize={25}
+        />
       )}
     </Screen.Section>
   );
