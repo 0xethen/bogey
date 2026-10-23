@@ -38,6 +38,28 @@ function ResizableHandle({
 }
 
 export type ResizablePanelHandle = ResizablePrimitive.PanelImperativeHandle;
-export const useResizableLayout = ResizablePrimitive.useDefaultLayout;
+// localStorage is missing on the server and can throw in private windows
+const layoutStorage: ResizablePrimitive.LayoutStorage = {
+  getItem: (key) => {
+    try {
+      return typeof window === "undefined" ? null : window.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key, value) => {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      // the layout just isn't remembered
+    }
+  },
+};
+
+export function useResizableLayout(
+  options: Parameters<typeof ResizablePrimitive.useDefaultLayout>[0],
+) {
+  return ResizablePrimitive.useDefaultLayout({ storage: layoutStorage, ...options });
+}
 
 export { ResizableHandle, ResizablePanel, ResizablePanelGroup };
