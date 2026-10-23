@@ -10,6 +10,7 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Inline code in pages and Markdown shares one look: a monospace pill with a light accent background. Code blocks are unchanged.
 - Certificates have a design editor: Manage → Certificates → **Edit design** on each kind opens an A4 page (landscape or portrait) where text boxes, pictures (logos, signatures), a background and the verification QR code are dragged, resized and snapped to guides, with a preview for a sample recipient beside it. Text boxes take `{{name}}`, `{{award}}`, `{{event}}`, `{{date}}`, `{{org}}`, `{{code}}` and `{{link}}`, and **bold** and _italic_. The verification page, **Print all...** and the preview all draw from the same layout, so what prints matches what you saw.
 - Organization → Settings → Certificates holds the organization's designs, which events use until they customize their own. **Customize for this event** copies the organization's design and its pictures into the event, so changing or deleting either never breaks the other.
 - Pictures for a design upload to the event's (or organization's) folder. Removing a picture or swapping the background deletes the old file once the design is saved, not while you edit, so discarding is safe; going back to the standard design deletes its pictures, and an organization's files go with it.

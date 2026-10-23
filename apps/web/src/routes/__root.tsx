@@ -35,6 +35,7 @@ import { Toaster } from "@bogey/ui/components/toast";
 import { cn } from "@bogey/ui/lib/utils";
 import css from "#/index.css?url";
 
+import { Mesurer } from "mesurer";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
@@ -200,6 +201,7 @@ function RouteComponent() {
               </PluginWrappers>
             </UnsavedChanges>
             <ShortcutsHelp />
+            {import.meta.env.DEV && <Mesurer />}
             <Toaster />
             <TanStackDevtools
               config={{ position: "bottom-right" }}

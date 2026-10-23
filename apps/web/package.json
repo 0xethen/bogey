@@ -39,6 +39,7 @@
     "@tanstack/react-virtual": "catalog:",
     "date-fns": "catalog:",
     "fflate": "catalog:",
+    "mesurer": "catalog:",
     "nitro": "catalog:",
     "nodemailer": "catalog:",
     "react": "catalog:",

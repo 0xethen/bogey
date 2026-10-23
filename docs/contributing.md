@@ -87,8 +87,6 @@ A new audit action fails type checking in `packages/db/src/audit.ts` until it ha
 
 ## Everyday commands
 
-## Everyday commands
-
 ```sh
 vp install        # after pulling
 vpr dev           # app on :3000, plus `bogey watch`
@@ -102,6 +100,16 @@ In development, TanStack Devtools (bottom right) has a **Bogey** tab: the
 session and event access, installed plugins, loaded settings, realtime
 channels, what the save bar holds, registered shortcuts and the screen's
 queries.
+
+### Inspecting the UI with Mesurer
+
+`<Mesurer />` ([mesurer](https://mesurer.dev)) is mounted in the root route
+in development only (`import.meta.env.DEV`); production builds leave it out.
+Press `I` for Inspect (click an element to see its bounds and spacing), `G`
+for guides, `R` for pixel rulers, `C` to screenshot a region, `M` for
+comments you can pin to elements, and `Cmd/Ctrl + K` to copy comments for an
+agent. `Esc` closes a panel; press it again to minimize Mesurer. Shortcuts
+are listed in its README.
 
 ## Conventions
 
