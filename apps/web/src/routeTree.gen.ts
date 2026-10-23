@@ -57,6 +57,7 @@ import { Route as UnauthedAuthSentRouteImport } from './routes/_unauthed/auth/se
 import { Route as ApiAuthSendEmailRouteImport } from './routes/api/auth/send-email'
 import { Route as ApiEmailDrainRouteImport } from './routes/api/email/drain'
 import { Route as ApiEmailUnsubscribeRouteImport } from './routes/api/email/unsubscribe'
+import { Route as ApiStorageSweepRouteImport } from './routes/api/storage/sweep'
 import { Route as ApiTlsAskRouteImport } from './routes/api/tls/ask'
 import { Route as GallerySlugIndexRouteImport } from './routes/gallery/$slug/index'
 import { Route as GallerySlugProjectIdRouteImport } from './routes/gallery/$slug/$projectId'
@@ -116,7 +117,6 @@ import { Route as AuthedEventsSlugManageAgendaTypesRouteImport } from './routes/
 import { Route as AuthedEventsSlugManageAgendaWindowsRouteImport } from './routes/_authed/events/$slug/manage/agenda-windows'
 import { Route as AuthedEventsSlugManageAnnouncementsRouteImport } from './routes/_authed/events/$slug/manage/announcements'
 import { Route as AuthedEventsSlugManageAuditRouteImport } from './routes/_authed/events/$slug/manage/audit'
-import { Route as AuthedEventsSlugManageCertificatesRouteImport } from './routes/_authed/events/$slug/manage/certificates'
 import { Route as AuthedEventsSlugManageDangerRouteImport } from './routes/_authed/events/$slug/manage/danger'
 import { Route as AuthedEventsSlugManageDemosRouteImport } from './routes/_authed/events/$slug/manage/demos'
 import { Route as AuthedEventsSlugManageDetailsRouteImport } from './routes/_authed/events/$slug/manage/details'
@@ -141,6 +141,8 @@ import { Route as AuthedEventsSlugPagesIndexRouteImport } from './routes/_authed
 import { Route as AuthedEventsSlugPagesPageRouteImport } from './routes/_authed/events/$slug/pages/$page'
 import { Route as AuthedEventsSlugResultsIndexRouteImport } from './routes/_authed/events/$slug/results/index'
 import { Route as AuthedEventsSlugResultsPresentRouteImport } from './routes/_authed/events/$slug/results/present'
+import { Route as AuthedOrgSettingsCertificatesIndexRouteImport } from './routes/_authed/org/settings/certificates/index'
+import { Route as AuthedOrgSettingsCertificatesKindRouteImport } from './routes/_authed/org/settings/certificates/$kind'
 import { Route as AuthedOrgXKeySplatRouteImport } from './routes/_authed/org/x/$key/$'
 import { Route as ApiEventsSlugExportKindRouteImport } from './routes/api/events/$slug/export/$kind'
 import { Route as ApiV1EventsSlugIndexRouteImport } from './routes/api/v1/events/$slug/index'
@@ -154,6 +156,8 @@ import { Route as ApiV1EventsSlugHackathonDotjsonRouteImport } from './routes/ap
 import { Route as ApiV1EventsSlugResultsRouteImport } from './routes/api/v1/events/$slug/results'
 import { Route as AuthedEventsSlugAgendaSessionIdIndexRouteImport } from './routes/_authed/events/$slug/agenda/$sessionId.index'
 import { Route as AuthedEventsSlugAgendaSessionIdAttendanceRouteImport } from './routes/_authed/events/$slug/agenda/$sessionId.attendance'
+import { Route as AuthedEventsSlugManageCertificatesIndexRouteImport } from './routes/_authed/events/$slug/manage/certificates/index'
+import { Route as AuthedEventsSlugManageCertificatesKindRouteImport } from './routes/_authed/events/$slug/manage/certificates/$kind'
 import { Route as AuthedEventsSlugManageFormsIndexRouteImport } from './routes/_authed/events/$slug/manage/forms/index'
 import { Route as AuthedEventsSlugManageFormsNewRouteImport } from './routes/_authed/events/$slug/manage/forms/new'
 import { Route as AuthedEventsSlugManageJudgingIndexRouteImport } from './routes/_authed/events/$slug/manage/judging/index'
@@ -402,6 +406,11 @@ const ApiEmailDrainRoute = ApiEmailDrainRouteImport.update({
 const ApiEmailUnsubscribeRoute = ApiEmailUnsubscribeRouteImport.update({
   id: '/api/email/unsubscribe',
   path: '/api/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStorageSweepRoute = ApiStorageSweepRouteImport.update({
+  id: '/api/storage/sweep',
+  path: '/api/storage/sweep',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTlsAskRoute = ApiTlsAskRouteImport.update({
@@ -734,12 +743,6 @@ const AuthedEventsSlugManageAuditRoute =
     path: '/audit',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
-const AuthedEventsSlugManageCertificatesRoute =
-  AuthedEventsSlugManageCertificatesRouteImport.update({
-    id: '/certificates',
-    path: '/certificates',
-    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
-  } as any)
 const AuthedEventsSlugManageDangerRoute =
   AuthedEventsSlugManageDangerRouteImport.update({
     id: '/danger',
@@ -884,6 +887,18 @@ const AuthedEventsSlugResultsPresentRoute =
     path: '/results/present',
     getParentRoute: () => AuthedEventsSlugRouteRoute,
   } as any)
+const AuthedOrgSettingsCertificatesIndexRoute =
+  AuthedOrgSettingsCertificatesIndexRouteImport.update({
+    id: '/certificates/',
+    path: '/certificates/',
+    getParentRoute: () => AuthedOrgSettingsRouteRoute,
+  } as any)
+const AuthedOrgSettingsCertificatesKindRoute =
+  AuthedOrgSettingsCertificatesKindRouteImport.update({
+    id: '/certificates/$kind',
+    path: '/certificates/$kind',
+    getParentRoute: () => AuthedOrgSettingsRouteRoute,
+  } as any)
 const AuthedOrgXKeySplatRoute = AuthedOrgXKeySplatRouteImport.update({
   id: '/x/$key/$',
   path: '/x/$key/$',
@@ -955,6 +970,18 @@ const AuthedEventsSlugAgendaSessionIdAttendanceRoute =
     id: '/$sessionId/attendance',
     path: '/$sessionId/attendance',
     getParentRoute: () => AuthedEventsSlugAgendaRouteRoute,
+  } as any)
+const AuthedEventsSlugManageCertificatesIndexRoute =
+  AuthedEventsSlugManageCertificatesIndexRouteImport.update({
+    id: '/certificates/',
+    path: '/certificates/',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageCertificatesKindRoute =
+  AuthedEventsSlugManageCertificatesKindRouteImport.update({
+    id: '/certificates/$kind',
+    path: '/certificates/$kind',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
 const AuthedEventsSlugManageFormsIndexRoute =
   AuthedEventsSlugManageFormsIndexRouteImport.update({
@@ -1036,6 +1063,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/send-email': typeof ApiAuthSendEmailRoute
   '/api/email/drain': typeof ApiEmailDrainRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/storage/sweep': typeof ApiStorageSweepRoute
   '/api/tls/ask': typeof ApiTlsAskRoute
   '/gallery/$slug/$projectId': typeof GallerySlugProjectIdRoute
   '/gallery/$slug/present': typeof GallerySlugPresentRoute
@@ -1094,7 +1122,6 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/agenda-windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
-  '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
   '/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
   '/events/$slug/manage/demos': typeof AuthedEventsSlugManageDemosRoute
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
@@ -1117,6 +1144,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
   '/events/$slug/results/present': typeof AuthedEventsSlugResultsPresentRoute
+  '/org/settings/certificates/$kind': typeof AuthedOrgSettingsCertificatesKindRoute
   '/org/x/$key/$': typeof AuthedOrgXKeySplatRoute
   '/api/events/$slug/export/$kind': typeof ApiEventsSlugExportKindRoute
   '/api/v1/events/$slug/agenda': typeof ApiV1EventsSlugAgendaRoute
@@ -1134,12 +1162,15 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/': typeof AuthedEventsSlugManageIndexRoute
   '/events/$slug/pages/': typeof AuthedEventsSlugPagesIndexRoute
   '/events/$slug/results/': typeof AuthedEventsSlugResultsIndexRoute
+  '/org/settings/certificates/': typeof AuthedOrgSettingsCertificatesIndexRoute
   '/api/v1/events/$slug/': typeof ApiV1EventsSlugIndexRoute
   '/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
+  '/events/$slug/manage/certificates/$kind': typeof AuthedEventsSlugManageCertificatesKindRoute
   '/events/$slug/manage/forms/new': typeof AuthedEventsSlugManageFormsNewRoute
   '/events/$slug/manage/judging/criteria': typeof AuthedEventsSlugManageJudgingCriteriaRoute
   '/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
   '/events/$slug/agenda/$sessionId/': typeof AuthedEventsSlugAgendaSessionIdIndexRoute
+  '/events/$slug/manage/certificates/': typeof AuthedEventsSlugManageCertificatesIndexRoute
   '/events/$slug/manage/forms/': typeof AuthedEventsSlugManageFormsIndexRoute
   '/events/$slug/manage/judging/': typeof AuthedEventsSlugManageJudgingIndexRoute
   '/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
@@ -1178,6 +1209,7 @@ export interface FileRoutesByTo {
   '/api/auth/send-email': typeof ApiAuthSendEmailRoute
   '/api/email/drain': typeof ApiEmailDrainRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/storage/sweep': typeof ApiStorageSweepRoute
   '/api/tls/ask': typeof ApiTlsAskRoute
   '/gallery/$slug/$projectId': typeof GallerySlugProjectIdRoute
   '/gallery/$slug/present': typeof GallerySlugPresentRoute
@@ -1231,7 +1263,6 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/agenda-windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
-  '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
   '/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
   '/events/$slug/manage/demos': typeof AuthedEventsSlugManageDemosRoute
   '/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
@@ -1254,6 +1285,7 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
   '/events/$slug/results/present': typeof AuthedEventsSlugResultsPresentRoute
+  '/org/settings/certificates/$kind': typeof AuthedOrgSettingsCertificatesKindRoute
   '/org/x/$key/$': typeof AuthedOrgXKeySplatRoute
   '/api/events/$slug/export/$kind': typeof ApiEventsSlugExportKindRoute
   '/api/v1/events/$slug/agenda': typeof ApiV1EventsSlugAgendaRoute
@@ -1271,12 +1303,15 @@ export interface FileRoutesByTo {
   '/events/$slug/manage': typeof AuthedEventsSlugManageIndexRoute
   '/events/$slug/pages': typeof AuthedEventsSlugPagesIndexRoute
   '/events/$slug/results': typeof AuthedEventsSlugResultsIndexRoute
+  '/org/settings/certificates': typeof AuthedOrgSettingsCertificatesIndexRoute
   '/api/v1/events/$slug': typeof ApiV1EventsSlugIndexRoute
   '/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
+  '/events/$slug/manage/certificates/$kind': typeof AuthedEventsSlugManageCertificatesKindRoute
   '/events/$slug/manage/forms/new': typeof AuthedEventsSlugManageFormsNewRoute
   '/events/$slug/manage/judging/criteria': typeof AuthedEventsSlugManageJudgingCriteriaRoute
   '/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
   '/events/$slug/agenda/$sessionId': typeof AuthedEventsSlugAgendaSessionIdIndexRoute
+  '/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesIndexRoute
   '/events/$slug/manage/forms': typeof AuthedEventsSlugManageFormsIndexRoute
   '/events/$slug/manage/judging': typeof AuthedEventsSlugManageJudgingIndexRoute
   '/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
@@ -1327,6 +1362,7 @@ export interface FileRoutesById {
   '/api/auth/send-email': typeof ApiAuthSendEmailRoute
   '/api/email/drain': typeof ApiEmailDrainRoute
   '/api/email/unsubscribe': typeof ApiEmailUnsubscribeRoute
+  '/api/storage/sweep': typeof ApiStorageSweepRoute
   '/api/tls/ask': typeof ApiTlsAskRoute
   '/gallery/$slug/$projectId': typeof GallerySlugProjectIdRoute
   '/gallery/$slug/present': typeof GallerySlugPresentRoute
@@ -1385,7 +1421,6 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/agenda-windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/_authed/events/$slug/manage/announcements': typeof AuthedEventsSlugManageAnnouncementsRoute
   '/_authed/events/$slug/manage/audit': typeof AuthedEventsSlugManageAuditRoute
-  '/_authed/events/$slug/manage/certificates': typeof AuthedEventsSlugManageCertificatesRoute
   '/_authed/events/$slug/manage/danger': typeof AuthedEventsSlugManageDangerRoute
   '/_authed/events/$slug/manage/demos': typeof AuthedEventsSlugManageDemosRoute
   '/_authed/events/$slug/manage/details': typeof AuthedEventsSlugManageDetailsRoute
@@ -1408,6 +1443,7 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/webhooks': typeof AuthedEventsSlugManageWebhooksRoute
   '/_authed/events/$slug/pages/$page': typeof AuthedEventsSlugPagesPageRoute
   '/_authed/events/$slug/results/present': typeof AuthedEventsSlugResultsPresentRoute
+  '/_authed/org/settings/certificates/$kind': typeof AuthedOrgSettingsCertificatesKindRoute
   '/_authed/org/x/$key/$': typeof AuthedOrgXKeySplatRoute
   '/api/events/$slug/export/$kind': typeof ApiEventsSlugExportKindRoute
   '/api/v1/events/$slug/agenda': typeof ApiV1EventsSlugAgendaRoute
@@ -1425,12 +1461,15 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/': typeof AuthedEventsSlugManageIndexRoute
   '/_authed/events/$slug/pages/': typeof AuthedEventsSlugPagesIndexRoute
   '/_authed/events/$slug/results/': typeof AuthedEventsSlugResultsIndexRoute
+  '/_authed/org/settings/certificates/': typeof AuthedOrgSettingsCertificatesIndexRoute
   '/api/v1/events/$slug/': typeof ApiV1EventsSlugIndexRoute
   '/_authed/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
+  '/_authed/events/$slug/manage/certificates/$kind': typeof AuthedEventsSlugManageCertificatesKindRoute
   '/_authed/events/$slug/manage/forms/new': typeof AuthedEventsSlugManageFormsNewRoute
   '/_authed/events/$slug/manage/judging/criteria': typeof AuthedEventsSlugManageJudgingCriteriaRoute
   '/_authed/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
   '/_authed/events/$slug/agenda/$sessionId/': typeof AuthedEventsSlugAgendaSessionIdIndexRoute
+  '/_authed/events/$slug/manage/certificates/': typeof AuthedEventsSlugManageCertificatesIndexRoute
   '/_authed/events/$slug/manage/forms/': typeof AuthedEventsSlugManageFormsIndexRoute
   '/_authed/events/$slug/manage/judging/': typeof AuthedEventsSlugManageJudgingIndexRoute
   '/_authed/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
@@ -1480,6 +1519,7 @@ export interface FileRouteTypes {
     | '/api/auth/send-email'
     | '/api/email/drain'
     | '/api/email/unsubscribe'
+    | '/api/storage/sweep'
     | '/api/tls/ask'
     | '/gallery/$slug/$projectId'
     | '/gallery/$slug/present'
@@ -1538,7 +1578,6 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/agenda-windows'
     | '/events/$slug/manage/announcements'
     | '/events/$slug/manage/audit'
-    | '/events/$slug/manage/certificates'
     | '/events/$slug/manage/danger'
     | '/events/$slug/manage/demos'
     | '/events/$slug/manage/details'
@@ -1561,6 +1600,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/webhooks'
     | '/events/$slug/pages/$page'
     | '/events/$slug/results/present'
+    | '/org/settings/certificates/$kind'
     | '/org/x/$key/$'
     | '/api/events/$slug/export/$kind'
     | '/api/v1/events/$slug/agenda'
@@ -1578,12 +1618,15 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/'
     | '/events/$slug/pages/'
     | '/events/$slug/results/'
+    | '/org/settings/certificates/'
     | '/api/v1/events/$slug/'
     | '/events/$slug/agenda/$sessionId/attendance'
+    | '/events/$slug/manage/certificates/$kind'
     | '/events/$slug/manage/forms/new'
     | '/events/$slug/manage/judging/criteria'
     | '/events/$slug/x/$key/$'
     | '/events/$slug/agenda/$sessionId/'
+    | '/events/$slug/manage/certificates/'
     | '/events/$slug/manage/forms/'
     | '/events/$slug/manage/judging/'
     | '/events/$slug/manage/x/$key/$'
@@ -1622,6 +1665,7 @@ export interface FileRouteTypes {
     | '/api/auth/send-email'
     | '/api/email/drain'
     | '/api/email/unsubscribe'
+    | '/api/storage/sweep'
     | '/api/tls/ask'
     | '/gallery/$slug/$projectId'
     | '/gallery/$slug/present'
@@ -1675,7 +1719,6 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/agenda-windows'
     | '/events/$slug/manage/announcements'
     | '/events/$slug/manage/audit'
-    | '/events/$slug/manage/certificates'
     | '/events/$slug/manage/danger'
     | '/events/$slug/manage/demos'
     | '/events/$slug/manage/details'
@@ -1698,6 +1741,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/webhooks'
     | '/events/$slug/pages/$page'
     | '/events/$slug/results/present'
+    | '/org/settings/certificates/$kind'
     | '/org/x/$key/$'
     | '/api/events/$slug/export/$kind'
     | '/api/v1/events/$slug/agenda'
@@ -1715,12 +1759,15 @@ export interface FileRouteTypes {
     | '/events/$slug/manage'
     | '/events/$slug/pages'
     | '/events/$slug/results'
+    | '/org/settings/certificates'
     | '/api/v1/events/$slug'
     | '/events/$slug/agenda/$sessionId/attendance'
+    | '/events/$slug/manage/certificates/$kind'
     | '/events/$slug/manage/forms/new'
     | '/events/$slug/manage/judging/criteria'
     | '/events/$slug/x/$key/$'
     | '/events/$slug/agenda/$sessionId'
+    | '/events/$slug/manage/certificates'
     | '/events/$slug/manage/forms'
     | '/events/$slug/manage/judging'
     | '/events/$slug/manage/x/$key/$'
@@ -1770,6 +1817,7 @@ export interface FileRouteTypes {
     | '/api/auth/send-email'
     | '/api/email/drain'
     | '/api/email/unsubscribe'
+    | '/api/storage/sweep'
     | '/api/tls/ask'
     | '/gallery/$slug/$projectId'
     | '/gallery/$slug/present'
@@ -1828,7 +1876,6 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/agenda-windows'
     | '/_authed/events/$slug/manage/announcements'
     | '/_authed/events/$slug/manage/audit'
-    | '/_authed/events/$slug/manage/certificates'
     | '/_authed/events/$slug/manage/danger'
     | '/_authed/events/$slug/manage/demos'
     | '/_authed/events/$slug/manage/details'
@@ -1851,6 +1898,7 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/webhooks'
     | '/_authed/events/$slug/pages/$page'
     | '/_authed/events/$slug/results/present'
+    | '/_authed/org/settings/certificates/$kind'
     | '/_authed/org/x/$key/$'
     | '/api/events/$slug/export/$kind'
     | '/api/v1/events/$slug/agenda'
@@ -1868,12 +1916,15 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/'
     | '/_authed/events/$slug/pages/'
     | '/_authed/events/$slug/results/'
+    | '/_authed/org/settings/certificates/'
     | '/api/v1/events/$slug/'
     | '/_authed/events/$slug/agenda/$sessionId/attendance'
+    | '/_authed/events/$slug/manage/certificates/$kind'
     | '/_authed/events/$slug/manage/forms/new'
     | '/_authed/events/$slug/manage/judging/criteria'
     | '/_authed/events/$slug/x/$key/$'
     | '/_authed/events/$slug/agenda/$sessionId/'
+    | '/_authed/events/$slug/manage/certificates/'
     | '/_authed/events/$slug/manage/forms/'
     | '/_authed/events/$slug/manage/judging/'
     | '/_authed/events/$slug/manage/x/$key/$'
@@ -1892,6 +1943,7 @@ export interface RootRouteChildren {
   ApiAuthSendEmailRoute: typeof ApiAuthSendEmailRoute
   ApiEmailDrainRoute: typeof ApiEmailDrainRoute
   ApiEmailUnsubscribeRoute: typeof ApiEmailUnsubscribeRoute
+  ApiStorageSweepRoute: typeof ApiStorageSweepRoute
   ApiTlsAskRoute: typeof ApiTlsAskRoute
   XKeySplatRoute: typeof XKeySplatRoute
   ApiAuthEmailTemplatesNameRoute: typeof ApiAuthEmailTemplatesNameRoute
@@ -2248,6 +2300,13 @@ declare module '@tanstack/react-router' {
       path: '/api/email/unsubscribe'
       fullPath: '/api/email/unsubscribe'
       preLoaderRoute: typeof ApiEmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/storage/sweep': {
+      id: '/api/storage/sweep'
+      path: '/api/storage/sweep'
+      fullPath: '/api/storage/sweep'
+      preLoaderRoute: typeof ApiStorageSweepRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/tls/ask': {
@@ -2663,13 +2722,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManageAuditRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
-    '/_authed/events/$slug/manage/certificates': {
-      id: '/_authed/events/$slug/manage/certificates'
-      path: '/certificates'
-      fullPath: '/events/$slug/manage/certificates'
-      preLoaderRoute: typeof AuthedEventsSlugManageCertificatesRouteImport
-      parentRoute: typeof AuthedEventsSlugManageRouteRoute
-    }
     '/_authed/events/$slug/manage/danger': {
       id: '/_authed/events/$slug/manage/danger'
       path: '/danger'
@@ -2838,6 +2890,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugResultsPresentRouteImport
       parentRoute: typeof AuthedEventsSlugRouteRoute
     }
+    '/_authed/org/settings/certificates/': {
+      id: '/_authed/org/settings/certificates/'
+      path: '/certificates'
+      fullPath: '/org/settings/certificates/'
+      preLoaderRoute: typeof AuthedOrgSettingsCertificatesIndexRouteImport
+      parentRoute: typeof AuthedOrgSettingsRouteRoute
+    }
+    '/_authed/org/settings/certificates/$kind': {
+      id: '/_authed/org/settings/certificates/$kind'
+      path: '/certificates/$kind'
+      fullPath: '/org/settings/certificates/$kind'
+      preLoaderRoute: typeof AuthedOrgSettingsCertificatesKindRouteImport
+      parentRoute: typeof AuthedOrgSettingsRouteRoute
+    }
     '/_authed/org/x/$key/$': {
       id: '/_authed/org/x/$key/$'
       path: '/x/$key/$'
@@ -2928,6 +2994,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/events/$slug/agenda/$sessionId/attendance'
       preLoaderRoute: typeof AuthedEventsSlugAgendaSessionIdAttendanceRouteImport
       parentRoute: typeof AuthedEventsSlugAgendaRouteRoute
+    }
+    '/_authed/events/$slug/manage/certificates/': {
+      id: '/_authed/events/$slug/manage/certificates/'
+      path: '/certificates'
+      fullPath: '/events/$slug/manage/certificates/'
+      preLoaderRoute: typeof AuthedEventsSlugManageCertificatesIndexRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/certificates/$kind': {
+      id: '/_authed/events/$slug/manage/certificates/$kind'
+      path: '/certificates/$kind'
+      fullPath: '/events/$slug/manage/certificates/$kind'
+      preLoaderRoute: typeof AuthedEventsSlugManageCertificatesKindRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
     '/_authed/events/$slug/manage/forms/': {
       id: '/_authed/events/$slug/manage/forms/'
@@ -3129,7 +3209,6 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageAgendaWindowsRoute: typeof AuthedEventsSlugManageAgendaWindowsRoute
   AuthedEventsSlugManageAnnouncementsRoute: typeof AuthedEventsSlugManageAnnouncementsRoute
   AuthedEventsSlugManageAuditRoute: typeof AuthedEventsSlugManageAuditRoute
-  AuthedEventsSlugManageCertificatesRoute: typeof AuthedEventsSlugManageCertificatesRoute
   AuthedEventsSlugManageDangerRoute: typeof AuthedEventsSlugManageDangerRoute
   AuthedEventsSlugManageDemosRoute: typeof AuthedEventsSlugManageDemosRoute
   AuthedEventsSlugManageDetailsRoute: typeof AuthedEventsSlugManageDetailsRoute
@@ -3151,8 +3230,10 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageTeamsRoute: typeof AuthedEventsSlugManageTeamsRoute
   AuthedEventsSlugManageWebhooksRoute: typeof AuthedEventsSlugManageWebhooksRoute
   AuthedEventsSlugManageIndexRoute: typeof AuthedEventsSlugManageIndexRoute
+  AuthedEventsSlugManageCertificatesKindRoute: typeof AuthedEventsSlugManageCertificatesKindRoute
   AuthedEventsSlugManageFormsNewRoute: typeof AuthedEventsSlugManageFormsNewRoute
   AuthedEventsSlugManageJudgingCriteriaRoute: typeof AuthedEventsSlugManageJudgingCriteriaRoute
+  AuthedEventsSlugManageCertificatesIndexRoute: typeof AuthedEventsSlugManageCertificatesIndexRoute
   AuthedEventsSlugManageFormsIndexRoute: typeof AuthedEventsSlugManageFormsIndexRoute
   AuthedEventsSlugManageJudgingIndexRoute: typeof AuthedEventsSlugManageJudgingIndexRoute
   AuthedEventsSlugManageXKeySplatRoute: typeof AuthedEventsSlugManageXKeySplatRoute
@@ -3170,8 +3251,6 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageAnnouncementsRoute:
       AuthedEventsSlugManageAnnouncementsRoute,
     AuthedEventsSlugManageAuditRoute: AuthedEventsSlugManageAuditRoute,
-    AuthedEventsSlugManageCertificatesRoute:
-      AuthedEventsSlugManageCertificatesRoute,
     AuthedEventsSlugManageDangerRoute: AuthedEventsSlugManageDangerRoute,
     AuthedEventsSlugManageDemosRoute: AuthedEventsSlugManageDemosRoute,
     AuthedEventsSlugManageDetailsRoute: AuthedEventsSlugManageDetailsRoute,
@@ -3196,9 +3275,13 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageTeamsRoute: AuthedEventsSlugManageTeamsRoute,
     AuthedEventsSlugManageWebhooksRoute: AuthedEventsSlugManageWebhooksRoute,
     AuthedEventsSlugManageIndexRoute: AuthedEventsSlugManageIndexRoute,
+    AuthedEventsSlugManageCertificatesKindRoute:
+      AuthedEventsSlugManageCertificatesKindRoute,
     AuthedEventsSlugManageFormsNewRoute: AuthedEventsSlugManageFormsNewRoute,
     AuthedEventsSlugManageJudgingCriteriaRoute:
       AuthedEventsSlugManageJudgingCriteriaRoute,
+    AuthedEventsSlugManageCertificatesIndexRoute:
+      AuthedEventsSlugManageCertificatesIndexRoute,
     AuthedEventsSlugManageFormsIndexRoute:
       AuthedEventsSlugManageFormsIndexRoute,
     AuthedEventsSlugManageJudgingIndexRoute:
@@ -3307,6 +3390,8 @@ interface AuthedOrgSettingsRouteRouteChildren {
   AuthedOrgSettingsSignInRoute: typeof AuthedOrgSettingsSignInRoute
   AuthedOrgSettingsWebhooksRoute: typeof AuthedOrgSettingsWebhooksRoute
   AuthedOrgSettingsIndexRoute: typeof AuthedOrgSettingsIndexRoute
+  AuthedOrgSettingsCertificatesKindRoute: typeof AuthedOrgSettingsCertificatesKindRoute
+  AuthedOrgSettingsCertificatesIndexRoute: typeof AuthedOrgSettingsCertificatesIndexRoute
 }
 
 const AuthedOrgSettingsRouteRouteChildren: AuthedOrgSettingsRouteRouteChildren =
@@ -3317,6 +3402,10 @@ const AuthedOrgSettingsRouteRouteChildren: AuthedOrgSettingsRouteRouteChildren =
     AuthedOrgSettingsSignInRoute: AuthedOrgSettingsSignInRoute,
     AuthedOrgSettingsWebhooksRoute: AuthedOrgSettingsWebhooksRoute,
     AuthedOrgSettingsIndexRoute: AuthedOrgSettingsIndexRoute,
+    AuthedOrgSettingsCertificatesKindRoute:
+      AuthedOrgSettingsCertificatesKindRoute,
+    AuthedOrgSettingsCertificatesIndexRoute:
+      AuthedOrgSettingsCertificatesIndexRoute,
   }
 
 const AuthedOrgSettingsRouteRouteWithChildren =
@@ -3418,6 +3507,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSendEmailRoute: ApiAuthSendEmailRoute,
   ApiEmailDrainRoute: ApiEmailDrainRoute,
   ApiEmailUnsubscribeRoute: ApiEmailUnsubscribeRoute,
+  ApiStorageSweepRoute: ApiStorageSweepRoute,
   ApiTlsAskRoute: ApiTlsAskRoute,
   XKeySplatRoute: XKeySplatRoute,
   ApiAuthEmailTemplatesNameRoute: ApiAuthEmailTemplatesNameRoute,

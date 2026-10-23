@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import {
   IconCalendarCog,
+  IconCertificate,
   IconKey,
   IconMail,
   IconSettings,
@@ -41,6 +42,12 @@ const groups = (t: T): Tuple<SettingsGroup> => [
         label: t("eventDefaults.title"),
         icon: IconCalendarCog,
         to: "/org/settings/event-defaults",
+      },
+      {
+        key: "certificates",
+        label: t("certificates.title"),
+        icon: IconCertificate,
+        to: "/org/settings/certificates",
       },
     ],
   },

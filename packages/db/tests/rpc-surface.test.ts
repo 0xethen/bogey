@@ -40,7 +40,9 @@ const SIGNED_IN = {
     "organizers issue everyone's certificates in one step, notify them and audit it",
   revoke_certificate: "organizers withdraw a certificate and it is audited",
   save_certificate_template:
-    "organizers (or org admins) set the wording of one kind of certificate",
+    "organizers (or org admins) set the design of one kind of certificate; its pictures must sit in its own folder",
+  copy_certificate_template:
+    "organizers give their event its own copy of the organization's design and get the files to copy",
   event_certificates:
     "organizers read every certificate of an event with its wording, to print them",
   create_calendar_token: "makes the caller's calendar token and stores only its hash",

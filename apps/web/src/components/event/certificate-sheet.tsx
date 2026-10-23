@@ -1,15 +1,15 @@
 import type { Certificate } from "@bogey/db/queries/certificates";
 import {
-  DEFAULT_CERTIFICATE_BODY,
+  defaultCertificateLayout,
   eventDates,
-  fillCertificate,
   verificationPath,
+  type CertificateOrientation,
 } from "@bogey/utils/certificate";
-import { Markdown } from "@bogey/ui/components/markdown";
 import { useExternalValue } from "@bogey/ui/hooks/external";
-import { QrCode } from "#/components/event/qr-code.tsx";
+import { CertificatePage } from "#/components/event/certificate/certificate-page.tsx";
 import { useT } from "#/lib/translate.tsx";
 
+/** One issued certificate, as it prints (A4, one per page). */
 export function CertificateSheet({ certificate }: { certificate: Certificate }) {
   const t = useT();
   const origin = useExternalValue(
@@ -17,41 +17,44 @@ export function CertificateSheet({ certificate }: { certificate: Certificate }) 
     () => location.origin,
     "",
   );
-  const body = fillCertificate(certificate.body ?? DEFAULT_CERTIFICATE_BODY[certificate.kind], {
-    name: certificate.name,
-    event: certificate.event,
-    org: certificate.org,
-    award: certificate.label,
-    date: eventDates(certificate.startsAt, certificate.endsAt),
-  });
   const address = `${origin}${verificationPath(certificate.code)}`;
-  const landscape = certificate.orientation === "landscape";
+  const orientation = certificate.orientation;
   return (
     <section
-      className={`certificate-sheet relative mx-auto flex w-full flex-col items-center justify-between gap-6 overflow-hidden border-4 border-double border-border bg-white p-8 text-center text-black break-after-page print:border-black ${landscape ? "aspect-[297/210] max-w-4xl" : "aspect-[210/297] max-w-2xl"}`}
-      style={
-        certificate.background
-          ? {
-              backgroundImage: `url(${certificate.background})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }
-          : undefined
-      }
+      data-orientation={orientation}
+      className={`certificate-sheet mx-auto w-full break-after-page border border-border shadow-sm print:border-0 print:shadow-none ${orientation === "landscape" ? "max-w-4xl" : "max-w-2xl"}`}
     >
-      <div className="flex flex-1 flex-col items-center justify-center">
-        <Markdown className="typeset-center text-black [&_h1]:text-4xl [&_h2]:text-3xl">
-          {body}
-        </Markdown>
-      </div>
-      <footer className="flex items-center gap-3 text-xs text-black/70">
-        <QrCode value={address} size={64} label={t("certificates.scan")} />
-        <span className="text-left">
-          {t("certificates.check")}
-          <br />
-          {address.replace(/^https?:\/\//, "")}
-        </span>
-      </footer>
+      <CertificatePage
+        layout={certificate.layout ?? defaultCertificateLayout(certificate.kind, orientation)}
+        orientation={orientation}
+        values={{
+          name: certificate.name,
+          event: certificate.event,
+          org: certificate.org,
+          award: certificate.label,
+          date: eventDates(certificate.startsAt, certificate.endsAt),
+          code: certificate.code,
+          link: address.replace(/^https?:\/\//, ""),
+        }}
+        qrValue={address}
+        qrLabel={t("certificates.scan")}
+      />
     </section>
+  );
+}
+
+/** Sizes the printed page to the certificates: A4, no margins, turned the way most of them are. */
+export function CertificatePrintPage({
+  orientations,
+}: {
+  orientations: readonly CertificateOrientation[];
+}) {
+  const portrait = orientations.filter((each) => each === "portrait").length;
+  const turn = portrait > orientations.length / 2 ? "portrait" : "landscape";
+  return (
+    <style>{`@page { size: A4 ${turn}; margin: 0; }
+@media print {
+  .certificate-sheet { max-width: none; width: ${turn === "landscape" ? "297mm" : "210mm"}; margin: 0; }
+}`}</style>
   );
 }

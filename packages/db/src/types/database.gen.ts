@@ -423,32 +423,29 @@ export type Database = {
       };
       certificate_templates: {
         Row: {
-          background_url: string | null;
-          body_md: string;
           event_id: string | null;
           id: string;
           kind: string;
+          layout: Json;
           org_id: string;
           orientation: string;
           updated_at: string;
         };
         ComputedFields: never;
         Insert: {
-          background_url?: string | null;
-          body_md: string;
           event_id?: string | null;
           id?: string;
           kind: string;
+          layout: Json;
           org_id: string;
           orientation?: string;
           updated_at?: string;
         };
         Update: {
-          background_url?: string | null;
-          body_md?: string;
           event_id?: string | null;
           id?: string;
           kind?: string;
+          layout?: Json;
           org_id?: string;
           orientation?: string;
           updated_at?: string;
@@ -4424,6 +4421,7 @@ export type Database = {
         Args: { p_award?: string; p_event: string; p_kind: string };
         Returns: string;
       };
+      claim_storage_orphans: { Args: { p_limit?: number }; Returns: Json };
       clear_event_data: {
         Args: { p_confirm?: string; p_dry_run?: boolean; p_event: string; p_what: string };
         Returns: Json;
@@ -4441,6 +4439,10 @@ export type Database = {
         Returns: Json;
       };
       complete_identity_setup: { Args: { p_event: string }; Returns: undefined };
+      copy_certificate_template: {
+        Args: { p_event: string; p_kind: string };
+        Returns: Json;
+      };
       create_calendar_token: { Args: Record<PropertyKey, never>; Returns: string };
       create_event: {
         Args: {
@@ -4981,10 +4983,9 @@ export type Database = {
       save_awards: { Args: { p_event: string; p_items: Json }; Returns: number };
       save_certificate_template: {
         Args: {
-          p_background_url?: string;
-          p_body_md: string;
-          p_event: string;
+          p_event?: string;
           p_kind: string;
+          p_layout: Json;
           p_org: string;
           p_orientation?: string;
         };

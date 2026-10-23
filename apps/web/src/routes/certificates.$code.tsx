@@ -5,7 +5,7 @@ import { certificateQueryOptions } from "@bogey/db/queries/certificates";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
 import { Screen } from "@bogey/ui/components/screen";
-import { CertificateSheet } from "#/components/event/certificate-sheet.tsx";
+import { CertificatePrintPage, CertificateSheet } from "#/components/event/certificate-sheet.tsx";
 import { PublicBar } from "#/components/navigation/header/PublicBar.tsx";
 import { msg, useT } from "#/lib/translate.tsx";
 
@@ -63,6 +63,7 @@ function RouteComponent() {
               </AlertDescription>
             </Alert>
             <div data-print-area>
+              <CertificatePrintPage orientations={[certificate.orientation]} />
               <CertificateSheet certificate={certificate} />
             </div>
           </>

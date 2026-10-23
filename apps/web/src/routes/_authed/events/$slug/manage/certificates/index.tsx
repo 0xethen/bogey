@@ -1,22 +1,18 @@
-import { z } from "zod";
 import { useCallback, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
-  certificateTemplatesQueryOptions,
+  certificateDesignsQueryOptions,
   eventCertificatesQueryOptions,
   issueCertificatesFn,
   revokeCertificateFn,
-  saveCertificateTemplateFn,
   type Certificate,
-  type CertificateTemplate,
 } from "@bogey/db/queries/certificates";
-import { requestFailure, unwrap } from "@bogey/db/errors";
+import { unwrap } from "@bogey/db/errors";
 import {
   CERTIFICATE_KINDS,
   CERTIFICATE_LABELS,
   CERTIFICATE_VARIABLES,
-  DEFAULT_CERTIFICATE_BODY,
   type CertificateKind,
 } from "@bogey/utils/certificate";
 import { Button } from "@bogey/ui/components/button";
@@ -25,29 +21,28 @@ import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Panel } from "@bogey/ui/components/panel";
 import { Screen } from "@bogey/ui/components/screen";
 import { toast } from "@bogey/ui/components/toast";
-import {
-  appFormOptions,
-  errorVisibility,
-  FieldSelect,
-  rewardEarlyPunishLate,
-  useAppForm,
-} from "@bogey/ui/lib/form";
-import { CertificateSheet } from "#/components/event/certificate-sheet.tsx";
+import { CertificatePrintPage, CertificateSheet } from "#/components/event/certificate-sheet.tsx";
+import { useCertificateSample } from "#/components/event/certificate/certificate-sample.ts";
+import { DesignCards } from "#/components/event/certificate/design-cards.tsx";
 import {
   prefetchSettingFields,
   SettingFields,
 } from "#/components/settings/fields/setting-fields.tsx";
 import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
-import { msg, sayOr, useT, type T } from "#/lib/translate.tsx";
+import { msg, sayOr, useT } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 
-export const Route = createFileRoute("/_authed/events/$slug/manage/certificates")({
+export const Route = createFileRoute("/_authed/events/$slug/manage/certificates/")({
   staticData: {
     title: msg("certificates.title"),
     settings: (t) => [
       searchSection(t("certificates.title"), {
         id: "certificates",
         keywords: ["award", "participation", "print"],
+      }),
+      searchSection(t("manageCerts.designs"), {
+        id: "designs",
+        keywords: ["template", "wording", "logo", "signature", "background"],
       }),
       ...searchSettings("certificates", ["enabled"], t),
     ],
@@ -57,148 +52,14 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/certificates"
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "certificates",
       ]),
-      context.query.ensureQueryData(certificateTemplatesQueryOptions(context.event.id)),
+      context.query.ensureQueryData(
+        certificateDesignsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
+      ),
       context.query.ensureQueryData(eventCertificatesQueryOptions(context.event.id)),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
 });
-
-const wordingSchema = (t: T) =>
-  z.object({
-    body: z
-      .string()
-      .max(5000, t("form.maxLength", { max: 5000 }))
-      .meta({ label: t("manageCerts.wording") })
-      .describe(t("manageCerts.wordingHelp")),
-    orientation: z.enum(["landscape", "portrait"]).meta({ label: t("manageCerts.orientation") }),
-    background: z
-      .string()
-      .trim()
-      .refine((value) => value === "" || (value.startsWith("https://") && URL.canParse(value)), {
-        message: t("webhooks.needHttps"),
-      })
-      .meta({
-        label: t("manageCerts.background"),
-        placeholder: t("manageCerts.backgroundPlaceholder"),
-      }),
-  });
-
-const orientations = (t: T) =>
-  [
-    {
-      value: "landscape",
-      label: t("manageCerts.landscape", { width: "297 mm", height: "210 mm" }),
-    },
-    { value: "portrait", label: t("manageCerts.portrait", { width: "210 mm", height: "297 mm" }) },
-  ] as const;
-
-function Wording({
-  kind,
-  saved,
-  eventId,
-  orgId,
-}: {
-  kind: CertificateKind;
-  saved: CertificateTemplate | undefined;
-  eventId: string;
-  orgId: string;
-}) {
-  const t = useT();
-  const schema = useMemo(() => wordingSchema(t), [t]);
-  const kindName = sayOr(t, `certKind.${kind}`, CERTIFICATE_LABELS[kind]);
-  const queryClient = useQueryClient();
-  const standard = {
-    body: DEFAULT_CERTIFICATE_BODY[kind],
-    orientation: "landscape",
-    background: "",
-  } as const;
-  const form = useAppForm({
-    ...appFormOptions.strictSchema({
-      defaultValues: {
-        body: saved?.body_md ?? DEFAULT_CERTIFICATE_BODY[kind],
-        orientation: saved?.orientation === "portrait" ? "portrait" : "landscape",
-        background: saved?.background_url ?? "",
-      },
-      errorVisibility,
-      validators: [rewardEarlyPunishLate(schema)],
-    }),
-    onSubmit: async ({ value, createValidationError }) => {
-      const result = await saveCertificateTemplateFn({
-        data: { orgId, eventId, kind, ...value },
-      }).catch(requestFailure);
-      if (!result.ok) return createValidationError(result.error.message);
-      toast.add({ title: t("manageCerts.saved") });
-      await queryClient.invalidateQueries({ queryKey: ["certificates"] });
-      return undefined;
-    },
-  });
-  const useStandard = useMutation({
-    mutationFn: async () =>
-      unwrap(
-        await saveCertificateTemplateFn({
-          data: { orgId, eventId, kind, body: "", orientation: "landscape", background: "" },
-        }),
-      ),
-    onSuccess: async () => {
-      form.reset(standard);
-      toast.add({ title: t("manageCerts.backToStandard") });
-      await queryClient.invalidateQueries({ queryKey: ["certificates"] });
-    },
-  });
-  return (
-    <Panel size="sm" title={kindName}>
-      <form.AppForm>
-        <form.Form unsaved="save" className="flex flex-col gap-3">
-          <form.Field name="body">
-            {(field) => (
-              <field.Field>
-                <field.Label className="sr-only">
-                  {t("manageCerts.wordingOf", { kind: kindName })}
-                </field.Label>
-                <field.TextArea rows={7} className="font-mono text-xs" />
-                <field.Error />
-              </field.Field>
-            )}
-          </form.Field>
-          <div className="flex flex-wrap items-start gap-2">
-            <form.Field name="orientation">
-              {(field) => (
-                <field.Field className="w-40">
-                  <field.Label className="sr-only" />
-                  <FieldSelect field={field} options={orientations(t)} />
-                </field.Field>
-              )}
-            </form.Field>
-            <form.Field name="background">
-              {(field) => (
-                <field.Field className="min-w-64 flex-1">
-                  <field.Label className="sr-only" />
-                  <field.TextInput type="url" />
-                  <field.Error />
-                </field.Field>
-              )}
-            </form.Field>
-          </div>
-          <form.FormAlert />
-          <ErrorAlert error={useStandard.error} />
-          {saved && (
-            <div>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={useStandard.isPending}
-                onClick={() => useStandard.mutate()}
-              >
-                {t("manageCerts.useStandard")}
-              </Button>
-            </div>
-          )}
-        </form.Form>
-      </form.AppForm>
-    </Panel>
-  );
-}
 
 const column = dataColumns<Certificate>();
 
@@ -296,10 +157,18 @@ function Issued({
 
 function RouteComponent() {
   const t = useT();
-  const { event } = Route.useRouteContext();
+  const { event, session } = Route.useRouteContext();
   const scope = { scope: "event", eventId: event.id } as const;
   const queryClient = useQueryClient();
-  const { data: templates } = useSuspenseQuery(certificateTemplatesQueryOptions(event.id));
+  const { data: designs } = useSuspenseQuery(
+    certificateDesignsQueryOptions({ orgId: event.org_id, eventId: event.id }),
+  );
+  const sample = useCertificateSample({
+    event: event.name,
+    org: session.org?.name ?? "",
+    startsAt: event.starts_at,
+    endsAt: event.ends_at,
+  });
   const { data: issued } = useSuspenseQuery(eventCertificatesQueryOptions(event.id));
   const issue = useMutation({
     mutationFn: async () => unwrap(await issueCertificatesFn({ data: event.id })),
@@ -354,27 +223,41 @@ function RouteComponent() {
         <SettingFields scope={scope} namespace="certificates" keys={["enabled"]} />
       </Screen.Section>
       <Screen.Section
-        id="wording"
-        title={t("manageCerts.wording")}
-        description={t("manageCerts.wordingIntro", {
+        id="designs"
+        title={t("manageCerts.designs")}
+        description={t("manageCerts.designsIntro", {
           variables: Object.keys(CERTIFICATE_VARIABLES)
             .map((name) => `{{${name}}}`)
             .join(", "),
         })}
       >
-        {CERTIFICATE_KINDS.map((kind) => (
-          <Wording
-            key={kind}
-            kind={kind}
-            saved={templates.find((template) => template.kind === kind)}
-            eventId={event.id}
-            orgId={event.org_id}
-          />
-        ))}
+        <DesignCards
+          level="event"
+          designs={designs}
+          sample={sample}
+          edit={(kind) => (
+            <Button
+              size="sm"
+              variant="outline"
+              render={
+                <Link
+                  to="/events/$slug/manage/certificates/$kind"
+                  params={{ slug: event.slug, kind }}
+                />
+              }
+              nativeButton={false}
+            >
+              {t("manageCerts.edit")}
+            </Button>
+          )}
+        />
       </Screen.Section>
       {issued.length > 0 && <Issued certificates={issued} eventId={event.id} />}
       {printing && (
         <div data-print-area className="hidden print:block">
+          <CertificatePrintPage
+            orientations={issued.map((certificate) => certificate.orientation)}
+          />
           {issued.map((certificate) => (
             <CertificateSheet key={certificate.code} certificate={certificate} />
           ))}

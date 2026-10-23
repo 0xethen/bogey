@@ -4,11 +4,16 @@ import { z } from "zod";
 import {
   CERTIFICATE_KINDS,
   isCertificateKind,
+  parseCertificateLayout,
   type CertificateKind,
+  type CertificateLayout,
+  type CertificateOrientation,
 } from "@bogey/utils/certificate";
+import { createAdminClient } from "../admin.ts";
 import { createServerClient } from "../server.ts";
+import { removeStorageOrphans } from "../storage-orphans.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
-import { COLUMN_VALUES, type Tables } from "../types.ts";
+import { COLUMN_VALUES, type Json, type Tables } from "../types.ts";
 import { requireId, requireOneOf, requireText } from "./validate.ts";
 
 const certificateSchema = z.object({
@@ -23,20 +28,23 @@ const certificateSchema = z.object({
   startsAt: z.string().nullable(),
   endsAt: z.string().nullable(),
   org: z.string(),
-  body: z.string().nullable(),
+  layout: z.unknown(),
   orientation: z.enum(COLUMN_VALUES.certificate_templates.orientation),
-  background: z.string().nullable(),
 });
 
-export type Certificate = Omit<z.infer<typeof certificateSchema>, "kind"> & {
+export type Certificate = Omit<z.infer<typeof certificateSchema>, "kind" | "layout"> & {
   kind: CertificateKind;
+  /** Null draws the standard design. */
+  layout: CertificateLayout | null;
 };
 
 function parseCertificate(value: unknown): Certificate | null {
   const parsed = certificateSchema.safeParse(value);
   if (!parsed.success) return null;
   const kind = CERTIFICATE_KINDS.find((each) => each === parsed.data.kind);
-  return kind ? { ...parsed.data, kind } : null;
+  if (!kind) return null;
+  const layout = parsed.data.layout ? parseCertificateLayout(parsed.data.layout) : null;
+  return { ...parsed.data, kind, layout };
 }
 
 export const certificateFn = createServerFn({ method: "GET" })
@@ -145,55 +153,137 @@ export const revokeCertificateFn = createServerFn({ method: "POST" })
     return error ? toFailure(error, "revoking the certificate") : ok(null);
   });
 
-export type CertificateTemplate = Tables<"certificate_templates">;
+export interface CertificateDesign {
+  kind: CertificateKind;
+  /** Null for the organization's own designs. */
+  eventId: string | null;
+  orientation: CertificateOrientation;
+  layout: CertificateLayout;
+  updatedAt: string;
+}
 
-export const certificateTemplatesFn = createServerFn({ method: "GET" })
-  .validator((eventId: unknown) => requireId(eventId, "eventId"))
-  .handler(async ({ data: eventId }): Promise<DbResult<CertificateTemplate[]>> => {
+export interface CertificateDesigns {
+  /** This event's (or, for the organization, its own) designs. */
+  own: CertificateDesign[];
+  /** What an event falls back to; empty for the organization itself. */
+  org: CertificateDesign[];
+}
+
+function toDesign(row: Tables<"certificate_templates">): CertificateDesign | null {
+  const kind = CERTIFICATE_KINDS.find((each) => each === row.kind);
+  if (!kind) return null;
+  return {
+    kind,
+    eventId: row.event_id,
+    orientation: row.orientation === "portrait" ? "portrait" : "landscape",
+    layout: parseCertificateLayout(row.layout),
+    updatedAt: row.updated_at,
+  };
+}
+
+export interface DesignScope {
+  orgId: string;
+  eventId: string | null;
+}
+
+function readScope(raw: Record<string, unknown>): DesignScope {
+  return {
+    orgId: requireId(raw.orgId, "orgId"),
+    eventId:
+      raw.eventId === null || raw.eventId === undefined ? null : requireId(raw.eventId, "eventId"),
+  };
+}
+
+export const certificateDesignsFn = createServerFn({ method: "GET" })
+  .validator((input: unknown) => readScope((input ?? {}) as Record<string, unknown>))
+  .handler(async ({ data }): Promise<DbResult<CertificateDesigns>> => {
     const supabase = createServerClient();
-    const { data, error } = await supabase
-      .from("certificate_templates")
-      .select("*")
-      .eq("event_id", eventId);
-    return error ? toFailure(error, "loading certificate wording") : ok(data);
+    const query = supabase.from("certificate_templates").select("*").eq("org_id", data.orgId);
+    const { data: rows, error } = await (data.eventId
+      ? query.or(`event_id.eq.${data.eventId},event_id.is.null`)
+      : query.is("event_id", null));
+    if (error) return toFailure(error, "loading certificate designs");
+    const designs = rows.flatMap((row) => toDesign(row) ?? []);
+    return ok({
+      own: designs.filter((design) => design.eventId === data.eventId),
+      org: data.eventId ? designs.filter((design) => design.eventId === null) : [],
+    });
   });
 
-export const certificateTemplatesQueryOptions = (eventId: string) =>
+export const certificateDesignsQueryOptions = (scope: DesignScope) =>
   queryOptions({
-    queryKey: ["certificates", "templates", eventId] as const,
-    queryFn: async () => unwrap(await certificateTemplatesFn({ data: eventId })),
+    queryKey: ["certificates", "designs", scope.orgId, scope.eventId] as const,
+    queryFn: async () => unwrap(await certificateDesignsFn({ data: scope })),
     retry: retryPolicy,
   });
 
-export const saveCertificateTemplateFn = createServerFn({ method: "POST" })
+/** Saves a design, or with `layout: null` goes back to the organization's (or the standard) one.
+ * Files the design stopped pointing to are removed once it's saved. */
+export const saveCertificateDesignFn = createServerFn({ method: "POST" })
   .validator((input: unknown) => {
     const raw = (input ?? {}) as Record<string, unknown>;
-    const background = typeof raw.background === "string" ? raw.background.trim() : "";
-    if (background && !/^https:\/\//.test(background)) {
-      throw new Error("A background picture needs a full address starting with https://");
-    }
     return {
-      orgId: requireId(raw.orgId, "orgId"),
-      eventId: requireId(raw.eventId, "eventId"),
+      ...readScope(raw),
       kind: requireOneOf(raw.kind, CERTIFICATE_KINDS, "kind"),
-      body: typeof raw.body === "string" ? raw.body.slice(0, 2000) : "",
+      layout: raw.layout === null ? null : parseCertificateLayout(raw.layout),
       orientation: requireOneOf(
-        raw.orientation,
+        raw.orientation ?? "landscape",
         COLUMN_VALUES.certificate_templates.orientation,
         "orientation",
       ),
-      background,
     };
   })
   .handler(async ({ data }): Promise<DbResult<null>> => {
     const supabase = createServerClient();
     const { error } = await supabase.rpc("save_certificate_template", {
       p_org: data.orgId,
+      p_kind: data.kind,
+      p_layout: data.layout as unknown as Json,
+      p_orientation: data.orientation,
+      ...(data.eventId ? { p_event: data.eventId } : {}),
+    });
+    if (error) return toFailure(error, "saving the design");
+    // the cron sweep retries whatever this misses
+    await removeStorageOrphans().catch((sweep: unknown) =>
+      console.warn(
+        "[bogey/db] removing unused files:",
+        sweep instanceof Error ? sweep.message : sweep,
+      ),
+    );
+    return ok(null);
+  });
+
+const fileCopies = z.array(z.object({ from: z.string(), to: z.string() }));
+
+/** Gives the event its own copy of the organization's design, files included. */
+export const copyCertificateDesignFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as Record<string, unknown>;
+    return {
+      eventId: requireId(raw.eventId, "eventId"),
+      kind: requireOneOf(raw.kind, CERTIFICATE_KINDS, "kind"),
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const supabase = createServerClient();
+    const { data: files, error } = await supabase.rpc("copy_certificate_template", {
       p_event: data.eventId,
       p_kind: data.kind,
-      p_body_md: data.body,
-      p_orientation: data.orientation,
-      ...(data.background ? { p_background_url: data.background } : {}),
     });
-    return error ? toFailure(error, "saving the wording") : ok(null);
+    if (error) return toFailure(error, "copying the design");
+    const parsed = fileCopies.safeParse(files);
+    if (!parsed.success) return fail("unknown", "The database answered in an unexpected way.");
+    const storage = createAdminClient().storage.from("event-assets");
+    const missed: string[] = [];
+    for (const file of parsed.data) {
+      const { error: copying } = await storage.copy(file.from, file.to);
+      if (copying) missed.push(file.from.slice(file.from.lastIndexOf("/") + 1));
+    }
+    if (missed.length > 0) {
+      return fail(
+        "unknown",
+        `The design was copied, but not these pictures: ${missed.join(", ")}.`,
+      );
+    }
+    return ok(null);
   });

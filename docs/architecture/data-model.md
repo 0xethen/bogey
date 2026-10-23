@@ -630,8 +630,19 @@ Plugin-owned; present when the plugin is installed.
 
 ## Certificates
 
-- **`certificate_templates`**: `org_id`, `event_id?` (null: the organization's wording), `kind` (`participation`, `award`,
-  `judge`, `volunteer`), `body_md`, `orientation`, `background_url?`. One per event and kind, and per org and kind.
+- **`certificate_templates`**: `org_id`, `event_id?` (null: the organization's design), `kind` (`participation`, `award`,
+  `judge`, `volunteer`), `layout`, `orientation`. One per event and kind, and per org and kind. `layout` is the design
+  (`CertificateLayout` in `packages/utils/src/certificate.ts`): a `background` (`color`, `image?`, `frame`) and `layers`
+  drawn in order, each a `text` (with placeholders), `image` or `qr` box placed in millimetres on the A4 page. Pictures
+  stored in `event-assets` carry their `path`, which must sit in the design's folder (`<event>/certificates/<kind>/` or
+  `org/<org>/certificates/<kind>/`). Event organizers can read their organization's designs.
+- Written by `save_certificate_template` (null `layout` deletes it) and `copy_certificate_template`, which gives an event its
+  own copy of the organization's design and returns the files for the app to copy into the event's folder.
+- A trigger on `certificate_templates` queues files a design stopped pointing to in **`private.storage_orphans`**: the old
+  version's pictures, uploads in its folder nothing used for a day (a discarded edit), and the whole folder when the design is
+  deleted. Deleting an org queues its `org/<org>/` folder and branding. The app removes them through the Storage API after
+  each save and when `private.sweep_storage_orphans()` calls `/api/storage/sweep`; `claim_storage_orphans` (service role)
+  hands them over, skipping any a design points to again.
 - **`certificates`**: `event_id`, `user_id`, `kind`, `award_id?`, `label`, `recipient_name` (as it was when issued), a
   ten-character `code` (unique), `issued_by`, `issued_at`, `revoked_at?`. A person reads their own, organizers all of the event's.
 - Written by `claim_certificate` (the caller, if `private.certificate_options` says they qualify: checked in or submitted,
@@ -668,7 +679,9 @@ Plugin-owned; present when the plugin is installed.
 Every object path starts with the id that scopes it, and the bucket's
 policies check that prefix. `branding` is scoped by `<org_id>/`, and the
 other buckets by `<event_id>/`. Every event belongs to exactly one org, so
-this still keeps orgs apart.
+this still keeps orgs apart. `event-assets` also has `org/<org_id>/` for what
+belongs to the organization rather than one event (its certificate designs),
+writable by org admins.
 
 | Bucket          | Public | Contents                                                                                                                                 |
 | --------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -687,6 +700,7 @@ this still keeps orgs apart.
 - **`private.prune_audit_log()`**, daily.
 - **`private.drain_email_outbox()`**, every minute: wakes the app when mail is due.
 - **`private.prune_notifications()`**, daily: drops old sent mail and notifications.
+- **`private.sweep_storage_orphans()`**, every ten minutes: wakes the app to remove files nothing points to any more.
 - **`private.deliver_webhooks()`**, every minute, and **`private.prune_webhook_deliveries()`**, daily (30 days).
 - **`private.challenges_expire_leases()`**, every minute: requeues judgings
   whose runner lease has expired, and marks JE after too many attempts.

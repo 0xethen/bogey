@@ -524,10 +524,19 @@ shows (division and prize tracks among them) and whether a seconds-left timer ru
 
 ## Certificates
 
-**Manage → Certificates** turns certificates on for the event and sets the wording for each kind: participation (for
+**Manage → Certificates** turns certificates on for the event and shows the design of each kind: participation (for
 people who checked in or submitted), award (for each award a team won, once results are published), judge and volunteer
-(staff). The wording is Markdown with `{{name}}`, `{{event}}`, `{{award}}`, `{{date}}` and `{{org}}`; a background picture
-and landscape or portrait are chosen per kind. People can claim theirs at `/events/<event>/certificates`, or **Issue all...**
+(staff). **Edit design** opens an A4 page, landscape or portrait, where you add text boxes, pictures (logos, signatures),
+a background and the verification QR code, then drag, resize and snap them to the page's edges, its middle and each other
+(arrow keys nudge, Alt with arrows resizes). Text boxes take `{{name}}`, `{{event}}`, `{{award}}`, `{{date}}`, `{{org}}`,
+`{{code}}` and `{{link}}`, and **bold** and _italic_. A preview with a sample recipient sits beside the page; type a long name
+there to see that it fits. Changes join the save bar, and printing draws from the same layout as the preview.
+
+Organization → Settings → Certificates holds designs every event uses until it has its own. On an event, **Customize for
+this event** copies the organization's design, pictures included, so changes on either side stay there. **Use the
+organization's design...** (or **Use the standard design...**) deletes the event's own design and its pictures.
+
+People can claim theirs at `/events/<event>/certificates`, or **Issue all...**
 makes everyone's and tells them. Each certificate has a code and a page at `/certificates/<code>` that anyone can open to see
 that it is real and print it; **Print all...** prints the whole set and **Withdraw...** revokes one.
 

@@ -8,21 +8,27 @@ import { Input } from "@bogey/ui/components/input";
 import { cn } from "@bogey/ui/lib/utils";
 import { useT, type T } from "#/lib/translate.tsx";
 
-const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/svg+xml";
-const MAX_MB = 5;
+export const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp,image/gif,image/svg+xml";
+export const IMAGE_MAX_MB = 5;
 
-async function uploadEventImage(eventId: string, file: File, t: T): Promise<string> {
-  if (file.size > MAX_MB * 1024 * 1024) {
-    throw new Error(t("onboarding.tooBig", { name: file.name, max: MAX_MB }));
+/** Uploads a picture into `folder` of the public event-assets bucket: `<event>/...`, or
+ * `org/<org>/...` for what belongs to the organization. */
+export async function uploadImage(
+  folder: string,
+  file: File,
+  t: T,
+): Promise<{ path: string; url: string }> {
+  if (file.size > IMAGE_MAX_MB * 1024 * 1024) {
+    throw new Error(t("onboarding.tooBig", { name: file.name, max: IMAGE_MAX_MB }));
   }
   const safe = file.name.replace(/[^\w.-]+/g, "_").slice(-80);
-  const path = `${eventId}/${crypto.randomUUID()}-${safe}`;
+  const path = `${folder}/${crypto.randomUUID()}-${safe}`;
   const storage = browserClient().storage.from("event-assets");
   const { error } = await storage.upload(path, file, { contentType: file.type });
   if (error) {
     throw new Error(t("onboarding.uploadFailed", { name: file.name, error: error.message }));
   }
-  return storage.getPublicUrl(path).data.publicUrl;
+  return { path, url: storage.getPublicUrl(path).data.publicUrl };
 }
 
 export function ImageInput({
@@ -45,7 +51,7 @@ export function ImageInput({
   const t = useT();
   const input = useRef<HTMLInputElement>(null);
   const upload = useMutation({
-    mutationFn: (file: File) => uploadEventImage(eventId, file, t),
+    mutationFn: async (file: File) => (await uploadImage(eventId, file, t)).url,
     onSuccess: onChange,
   });
 
@@ -83,7 +89,7 @@ export function ImageInput({
         <input
           ref={input}
           type="file"
-          accept={ACCEPT}
+          accept={IMAGE_ACCEPT}
           className="sr-only"
           tabIndex={-1}
           aria-label={t("image.choose")}

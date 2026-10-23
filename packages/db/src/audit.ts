@@ -118,7 +118,7 @@ export const ACTION_LABELS: Record<CoreAction, string> = {
   "event.cleared": "cleared event data from the danger zone",
   "certificate.issued": "issued certificates",
   "certificate.revoked": "revoked a certificate",
-  "certificate.template_saved": "edited a certificate's wording",
+  "certificate.template_saved": "edited a certificate's design",
   "webhook.created": "added a webhook",
   "webhook.updated": "edited a webhook",
   "webhook.deleted": "deleted a webhook",

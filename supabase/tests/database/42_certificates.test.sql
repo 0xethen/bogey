@@ -64,11 +64,13 @@ select isnt(public.claim_certificate(tests.u('ev'), 'participation'), (select co
 reset role;
 
 select tests.as_user(tests.u('own'));
-select public.save_certificate_template(tests.u('org'), tests.u('ev'), 'judge', 'Thanks {{name}}!', 'portrait', null);
+select public.save_certificate_template(tests.u('org'), 'judge',
+  '{"background":{"color":"#ffffff","image":null,"frame":false},"layers":[{"id":"a","type":"text","x":10,"y":10,"w":100,"h":20,"text":"Thanks {{name}}!"}]}',
+  'portrait', tests.u('ev'));
 reset role;
 select set_config('t.judge', (select c.code from public.certificates c where c.event_id = tests.u('ev') and c.kind = 'judge'), true);
 select tests.as_anon();
-select is(public.verify_certificate(current_setting('t.judge')) ->> 'body', 'Thanks {{name}}!', 'a certificate carries the event''s wording');
+select is(public.verify_certificate(current_setting('t.judge')) #>> '{layout,layers,0,text}', 'Thanks {{name}}!', 'a certificate carries the event''s design');
 reset role;
 
 select * from finish();

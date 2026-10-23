@@ -38,6 +38,17 @@ create policy event_assets_write on storage.objects for all to authenticated
   using (bucket_id = 'event-assets' and (select private.can_manage(private.path_uuid(name, 1))))
   with check (bucket_id = 'event-assets' and (select private.can_manage(private.path_uuid(name, 1))));
 
+-- org/<org>/... holds what belongs to the organization rather than one event (its certificate designs)
+create policy event_assets_org_write on storage.objects for all to authenticated
+  using (
+    bucket_id = 'event-assets' and (storage.foldername(name))[1] = 'org'
+    and (select private.is_org_admin(private.path_uuid(name, 2)))
+  )
+  with check (
+    bucket_id = 'event-assets' and (storage.foldername(name))[1] = 'org'
+    and (select private.is_org_admin(private.path_uuid(name, 2)))
+  );
+
 create policy submissions_read on storage.objects for select to authenticated
   using (
     bucket_id = 'submissions'
