@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.0-beta.0 (2026-10-23)
+
 - Long tables have a search box and pages (25 or 50 rows, changeable under the table): Manage → Submissions, Judging (judges and projects), Results, Registration (invites), Certificates and Audit log; the organization's Members; and the instance's People, Organizations and Reports. Tooltips on buttons use the button's own tooltip.
 - Manage → People's table has a search box (name, email or team), a "Show" select for everyone, checked in or not checked in, and Role and Division comboboxes that pick any number of roles (plugin roles included) and divisions, each showing how many people have it. "Reset" clears them. These replace the Filter popover.
 - Manage → People can group its rows by team, role or division ("Group rows" in the table's toolbar). Each group has an arrow to collapse it, a count, and a checkbox that selects everyone in it; sorting and pagination work inside groups. The choice stays in the page's address.
