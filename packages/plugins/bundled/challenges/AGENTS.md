@@ -11,7 +11,10 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
 
 > A claimed judging's `scoring` comes from the problem's type (`kind`): `partial` sends `"ioi"`
 > (score each test), `shortest` sends `"golf"` and `pass_fail` sends `"icpc"`. The contest's own
-> `scoring` setting only decides how the scoreboard ranks.
+> `scoring` setting only decides how the scoreboard ranks. A new problem's type comes from `defaultKind`
+> (`"style"` follows `scoring`) in the `challenges_problem_kind` trigger, and `scoreFrom` picks whether a
+> partial problem's best or last judged solution scores. The settings' SQL defaults live in
+> `private.challenges_settings`; keep them equal to the manifest's.
 >
 > Scoring `golf` reaches the runner as `scoring: "golf"` in the claimed judging. A golf
 > verdict is still all-or-nothing (accepted or not); the length is read from the solution's

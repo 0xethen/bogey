@@ -30,8 +30,14 @@ advisory (see docs/contributing.md#security-releases). -->
 - Agenda time slots are separated by a rule instead of a box around each, so sessions are the only cards on the page.
 - Timezone pickers (preferences, new event, event details) and the audit log's event filter are searchable.
 - Button styles are consistent: one main button per group, outline for row and toolbar actions, and quiet red buttons for removing things.
+- Challenges: Manage → Contest starts with **Start from a style**: ICPC style (teams of up to three, pass/fail, 20 penalty minutes, verdicts only, a frozen last hour), IOI style (on their own, partial credit, the best solution counts, 50 tries, every test's result) and Code golf. Picking one lists each setting it changes, from the current value to the new one, before you apply it; the settings can still be changed one by one afterwards.
+- Challenges: two new contest settings, "Type of new problems" (pass/fail, partial credit or shortest code, or whatever suits the contest style) and "Which solution a partial-credit problem scores" (the best one, as before, or the last judged one).
+- Challenges: "Penalty per wrong answer" shows 20 minutes by default, the value scoreboards already used when it was never changed.
+- Challenges: a problem's editor tabs have their own addresses (`/jury/two-sum/tests`, `/jury/new/limits`), so the browser's Back goes to the previous tab; old `#tests` links still land on the tab. Moving between tabs keeps unsaved changes.
+- Challenges: adding a problem from the problem bank is on the **Add a problem** page (**Or start from → The problem bank**) instead of a button on the Jury page.
+- Plugins can offer `settingsPresets` on a settings page, and a splat with slashes is a deeper path (`<Link to="/jury" splat="two-sum/tests">`). See docs/plugins.md.
 
-**Upgrade notes:** run `bogey db migrate` (migrations `20261024090000_certificate_designs` and `20261024110000_gallery_view_modes`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them. Manage links moved under their parent pages (for example `/manage/review` is now `/manage/people/review`); the old addresses redirect.
+**Upgrade notes:** run `bogey db migrate` (migrations `20261024090000_certificate_designs` and `20261024110000_gallery_view_modes`, and the challenges plugin's `8_contest_presets`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them. Manage links moved under their parent pages (for example `/manage/review` is now `/manage/people/review`); the old addresses redirect.
 
 ## 2.4.0-beta.0 (2026-10-23)
 

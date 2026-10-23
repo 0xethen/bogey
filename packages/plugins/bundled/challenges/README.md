@@ -98,6 +98,28 @@ points, first solves and a team scoreboard.
 CTF teams don't have submissions, so this doesn't feed rounds or published results. Read the final order from the
 scoreboard. `bogey seed demo` adds a demo CTF.
 
+## Contest settings
+
+Manage → Contest holds the contest's settings, with **Start from a style** above them. A style fills in the settings
+and the event's team size; it lists what it will change before you apply it, and every setting stays editable after.
+
+| Setting                      | ICPC style   | IOI style      | Code golf     | DOMjudge                             |
+| ---------------------------- | ------------ | -------------- | ------------- | ------------------------------------ |
+| Team size (Details)          | 1 to 3       | 1              | 1             | teams                                |
+| Contest style (ranking)      | ICPC         | IOI            | Code golf     | scoreboard type                      |
+| Type of new problems         | Pass/fail    | Partial credit | Shortest code | problem `points`, `scoring`          |
+| Penalty per wrong answer     | 20 minutes   | (not used)     | (not used)    | `penalty_time`                       |
+| Compile errors count         | Off          | (not used)     | (not used)    | `compile_penalty`                    |
+| Which solution scores        | (not used)   | Best           | (not used)    | best submission                      |
+| Tries per problem            | No limit     | 50             | No limit      | `submission_rate_limit`              |
+| What teams see of a solution | Verdict only | Each test      | Each test     | `show_compile`, `show_sample_output` |
+| Freeze the scoreboard        | Last 60 min  | Never          | Never         | contest `freeze`                     |
+
+Other DOMjudge settings map to: `verification_required` → "Jury verifies results", `show_compile` → "Show error
+messages", the contest's `unfreeze` → "Reveal the final standings". Lazy evaluation is fixed: pass/fail problems stop at
+the first failing test, partial-credit problems run every test. Scoring each subtask by its best run across solutions
+(IOI since 2017) isn't offered; partial credit takes one solution's score.
+
 ## Tests
 
 `tests/*.test.ts` run with the plugins package's tests (`vp test` in `packages/plugins`): the package format, the Contest API

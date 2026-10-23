@@ -686,6 +686,28 @@ A setting belongs to one section at most; the rest stay in the plugin's row, whi
 show only while the plugin is on for the event, carry its name, and are found by Manage's search. Organization and
 instance pages still show every setting in the plugin's row. `definePlugin` checks the pages and setting names.
 
+### Presets
+
+`settingsPresets` offers named sets of values above a settings page's sections ("Start from a style"). Picking one
+lists exactly what it changes, from the current value to the new one, and **Apply** saves them all at once. The settings
+stay ordinary settings, so they can be changed afterwards; a preset whose values all match shows as current.
+
+```ts
+settingsPresets: [
+  {
+    key: "icpc",
+    label: "ICPC style",
+    description: "Teams of three, pass/fail problems, 20 minutes a wrong try.",
+    page: "contest",
+    teamSize: [1, 3],
+    values: { scoring: "icpc", penaltyMinutes: 20 },
+  },
+],
+```
+
+`page` is named as a section's is. `values` must fit the plugin's settings, and `teamSize` (smallest first, as an event
+type's) also sets the event's team size, which is otherwise on Details. Presets show at the event level only.
+
 ## Notifications and email
 
 Core has a bell (a `notifications` table people read in the menubar) and an **email outbox**
