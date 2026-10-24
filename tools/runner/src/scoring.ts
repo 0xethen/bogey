@@ -42,28 +42,43 @@ export function stopsGroup(problem: Problem, test: Testcase): boolean {
   return test.group_key !== null && problem.test_groups[test.group_key]?.stopOnFail === true;
 }
 
+const round = (value: number) => Math.round(value * 100) / 100;
+
+// each group's points by its key; a test outside any group is a group of its own, `#<test id>`
+export function groupScores(
+  problem: Problem,
+  tests: Tuple<Testcase>,
+  runs: Tuple<Pick<Run, "testcase_id" | "verdict">>,
+  partial: ReadonlyMap<string, number> = new Map(),
+): Record<string, number> {
+  const points = testPoints(problem, tests);
+  const passed = new Set(runs.filter((run) => run.verdict === "AC").map((run) => run.testcase_id));
+  const scores: Record<string, number> = {};
+  for (const group of groupTests(problem, tests)) {
+    let total = 0;
+    if (group.rule.aggregation === "min") {
+      if (group.tests.every((test) => passed.has(test.id))) {
+        total = Math.max(...group.tests.map((test) => points.get(test.id) ?? 0));
+      }
+    } else {
+      total = group.tests.reduce((sum, test) => {
+        const worth = points.get(test.id) ?? 0;
+        return sum + (passed.has(test.id) ? worth : Math.min(partial.get(test.id) ?? 0, worth));
+      }, 0);
+    }
+    scores[group.key] = round(total);
+  }
+  return scores;
+}
+
 export function ioiScore(
   problem: Problem,
   tests: Tuple<Testcase>,
   runs: Tuple<Pick<Run, "testcase_id" | "verdict">>,
   partial: ReadonlyMap<string, number> = new Map(),
 ): number {
-  const points = testPoints(problem, tests);
-  const passed = new Set(runs.filter((run) => run.verdict === "AC").map((run) => run.testcase_id));
-  let total = 0;
-  for (const group of groupTests(problem, tests)) {
-    if (group.rule.aggregation === "min") {
-      if (group.tests.every((test) => passed.has(test.id))) {
-        total += Math.max(...group.tests.map((test) => points.get(test.id) ?? 0));
-      }
-    } else {
-      total += group.tests.reduce((sum, test) => {
-        const worth = points.get(test.id) ?? 0;
-        return sum + (passed.has(test.id) ? worth : Math.min(partial.get(test.id) ?? 0, worth));
-      }, 0);
-    }
-  }
-  return Math.round(total * 100) / 100;
+  const scores = groupScores(problem, tests, runs, partial);
+  return round(Object.values(scores).reduce((sum, each) => sum + each, 0));
 }
 
 export function judgingVerdict(runs: Tuple<{ verdict: Verdict }>): Verdict {

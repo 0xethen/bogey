@@ -115,6 +115,7 @@ export function parseClaim(value: unknown): Claim {
     language: parseLanguage(o.language),
     problem: parseProblem(o.problem),
     scoring: scoringOf(o.scoring),
+    runAll: o.run_all === true,
     testcases: testcases.map(parseTestcase),
   };
 }
@@ -135,6 +136,7 @@ export interface Api {
 export interface RecordedResult {
   verdict: Verdict;
   score: number | null;
+  groupScores?: Readonly<Record<string, number>> | null;
   maxTimeMs: number | null;
   maxMemoryKb: number | null;
   compileOutput: string;
@@ -223,6 +225,8 @@ export function createApi(
         p_max_memory_kb: result.maxMemoryKb,
         p_compile_output: result.compileOutput,
         p_runs: result.runs.map((run) => ({ ...run })),
+        // only when there are any, so a pass/fail judging still records on a database without p_groups
+        ...(result.groupScores ? { p_groups: { ...result.groupScores } } : {}),
       });
       return recorded === true;
     },

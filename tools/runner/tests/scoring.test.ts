@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vite-plus/test";
-import { ioiScore, judgingVerdict, stopsGroup, testPoints } from "../src/scoring.ts";
+import { groupScores, ioiScore, judgingVerdict, stopsGroup, testPoints } from "../src/scoring.ts";
 import type { Problem, Testcase } from "../src/types.ts";
 
 const problem = (extra: Partial<Problem> = {}): Problem => ({
@@ -97,4 +97,16 @@ test("stopOnFail comes from the test's group", () => {
   assert.equal(stopsGroup(rules, test_("a", { group_key: "g" })), true);
   assert.equal(stopsGroup(rules, test_("a", { group_key: "h" })), false);
   assert.equal(stopsGroup(rules, test_("a")), false);
+});
+
+test("each group's points are kept apart, and an ungrouped test is a group of its own", () => {
+  const tests = [
+    test_("a", { group_key: "g1", points: 40 }),
+    test_("b", { group_key: "g1", points: 40 }),
+    test_("c", { group_key: "g2", points: 30 }),
+    test_("d", { points: 30 }),
+  ];
+  const rules = problem({ test_groups: { g1: { aggregation: "min", stopOnFail: false } } });
+  assert.deepEqual(groupScores(rules, tests, passed("a", "c", "d")), { g1: 0, g2: 30, "#d": 30 });
+  assert.equal(ioiScore(rules, tests, passed("a", "c", "d")), 60, "the score is the groups' sum");
 });

@@ -111,6 +111,7 @@ function claimFor(
       test_groups: {},
     },
     scoring: "icpc",
+    runAll: false,
     testcases: [
       { id: `case-${answer}`, ordinal: 1, is_sample: false, group_key: null, points: null },
     ],

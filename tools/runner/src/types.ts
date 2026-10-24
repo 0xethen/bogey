@@ -49,6 +49,8 @@ export interface Claim {
   language: Language;
   problem: Problem;
   scoring: Scoring;
+  /** The contest's `testRun` is "all": a pass/fail or shortest problem keeps going past a failed test. */
+  runAll: boolean;
   testcases: Tuple<Testcase>;
 }
 
@@ -69,6 +71,8 @@ export interface Run {
 export interface Outcome {
   verdict: Verdict;
   score: number | null;
+  /** Partial-credit problems: the points of each test group, for scoring subtasks across solutions. */
+  groupScores: Readonly<Record<string, number>> | null;
   maxTimeMs: number | null;
   maxMemoryKb: number | null;
   compileOutput: string;

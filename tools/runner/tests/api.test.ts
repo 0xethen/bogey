@@ -118,6 +118,24 @@ test("with a runner key the API calls only the runner's functions, and never sen
     assert.equal(call.headers.get("authorization"), null);
   }
   assert.equal(JSON.parse(seen[2]?.body ?? "").p_verdict, "AC");
+  assert.equal("p_groups" in JSON.parse(seen[2]?.body ?? ""), false, "no groups, no p_groups");
+});
+
+test("a claim says whether to run every test, and a record sends each group's points", async () => {
+  assert.equal(parseClaim(payload).runAll, false);
+  assert.equal(parseClaim({ ...payload, run_all: true }).runAll, true);
+  const { seen, fetcher } = recording(() => "true");
+  const api = createApi(keyed, fetcher);
+  await api.record("j1", {
+    verdict: "WA",
+    score: 30,
+    groupScores: { g1: 30, g2: 0 },
+    maxTimeMs: 5,
+    maxMemoryKb: null,
+    compileOutput: "",
+    runs: [],
+  });
+  assert.deepEqual(JSON.parse(seen[0]?.body ?? "").p_groups, { g1: 30, g2: 0 });
 });
 
 test("with a runner key, test data comes from the judging it holds", async () => {

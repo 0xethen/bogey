@@ -93,6 +93,7 @@ function claim(
       test_groups: {},
     },
     scoring: "icpc",
+    runAll: false,
     testcases: tests,
     ...extra,
   };
@@ -140,6 +141,19 @@ test("ICPC stops at the first test that fails", async () => {
   const outcome = await judge(claim(), deps(sandbox));
   assert.equal(outcome.verdict, "WA");
   assert.equal(outcome.runs.length, 2, "the third test never ran");
+  assert.equal(outcome.groupScores, null);
+});
+
+test("with every test run, a pass/fail problem keeps going and the verdict is the first failure", async () => {
+  const sandbox = new FakeSandbox((_, call) => ran(call === 1 ? "2\n" : call === 2 ? "" : "1\n"));
+  const outcome = await judge(claim({ runAll: true }), deps(sandbox));
+  assert.equal(outcome.runs.length, 3);
+  assert.deepEqual(
+    outcome.runs.map((run) => run.verdict),
+    ["AC", "WA", "WA"],
+  );
+  assert.equal(outcome.verdict, "WA");
+  assert.equal(outcome.score, null);
 });
 
 test("limits are the problem's, never above the host's ceilings", async () => {
@@ -259,6 +273,7 @@ test("IOI skips the rest of a group that stops at its first failure", async () =
     ["a", "c"],
   );
   assert.equal(outcome.score, 10);
+  assert.deepEqual(outcome.groupScores, { g: 0, h: 10 }, "each group's points go with the score");
 });
 
 test("a custom checker decides with the Kattis exit codes and may give partial points", async () => {

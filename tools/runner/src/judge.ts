@@ -3,7 +3,7 @@ import type { Api } from "./api.ts";
 import { builtinMatch } from "./checkers.ts";
 import type { HostLimits } from "./config.ts";
 import { makeJobDir, readContained, safeName, writeNew } from "./paths.ts";
-import { ioiScore, judgingVerdict, stopsGroup } from "./scoring.ts";
+import { groupScores, ioiScore, judgingVerdict, stopsGroup } from "./scoring.ts";
 import { KILLED, type ExecResult, type ExecSpec, type Sandbox } from "./sandbox.ts";
 import {
   InfraError,
@@ -260,6 +260,7 @@ export async function judge(claim: Claim, deps: JudgeDeps): Promise<Outcome> {
     return {
       verdict: "JE",
       score: null,
+      groupScores: null,
       maxTimeMs: null,
       maxMemoryKb: null,
       compileOutput: "This problem has no tests, so there is nothing to judge a solution against.",
@@ -286,6 +287,7 @@ export async function judge(claim: Claim, deps: JudgeDeps): Promise<Outcome> {
       return {
         verdict: "CE",
         score: claim.scoring === "ioi" ? 0 : null,
+        groupScores: null,
         maxTimeMs: null,
         maxMemoryKb: null,
         compileOutput: failedCompile,
@@ -366,15 +368,18 @@ export async function judge(claim: Claim, deps: JudgeDeps): Promise<Outcome> {
       });
 
       if (verdict !== "AC") {
-        if (claim.scoring !== "ioi") stopAll = true;
+        if (claim.scoring !== "ioi") stopAll = !claim.runAll;
         else if (stopsGroup(problem, test) && test.group_key !== null) stopped.add(test.group_key);
       }
     }
 
     const verdict = judgingVerdict(runs);
+    const groups =
+      claim.scoring === "ioi" ? groupScores(problem, claim.testcases, runs, partial) : null;
     return {
       verdict,
       score: claim.scoring === "ioi" ? ioiScore(problem, claim.testcases, runs, partial) : null,
+      groupScores: groups,
       maxTimeMs: Math.round(maxTime),
       maxMemoryKb: null,
       compileOutput: "",
