@@ -11,7 +11,7 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
 
 > Since 2.4 the runner holds a runner key, not the service key (ADR 0033,
 > `docs/self-hosting/runner-security.md`). It calls the `challenges_runner_*` wrappers in
-> `migrations/8_runner_keys.sql` as `anon`, which check the key and call the functions above under
+> `migrations/9_runner_keys.sql` as `anon`, which check the key and call the functions above under
 > the runner id `key:<name>/<id>`; it reads test data only through `challenges_runner_test_data`, for
 > a judging it holds. Change claiming or recording in the wrapped functions, not the wrappers. Notes
 > below that say the runner uses the service-role key describe the old path, which still works.
