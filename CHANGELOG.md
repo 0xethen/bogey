@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.1 (2026-10-24)
+
 - "View as" now applies to the data too, not only the screens: while previewing a role, the database answers as that role, so a participant preview no longer shows hidden test cases or anything else that role can't see. The preview is kept for the browser session across tabs rather than per tab.
 - SparkCloud is a supported way to run Bogey: `deploy/sparkcloud` has an installer for a fresh box and the scripts that run the all-in-one stack without Docker (see docs/self-hosting/sparkcloud.md). Its `bogey-upgrade` builds this instance's own themes (`/srv/bogey/themes`) into the app alongside plugins, and installs each release's box scripts.
 - `bogey -v` (or `--version`) prints the versions of Bogey, the plugin API, Node and each installed plugin.
