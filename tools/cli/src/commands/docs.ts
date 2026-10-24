@@ -104,6 +104,7 @@ export function cliReference(commands: Tuple<Command>): string {
     "Commands that talk to Supabase read `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from `.env`.",
     "At a terminal, a command asks for what its flags leave out. `--no-input` (or `BOGEY_NO_INPUT=1`) turns that off",
     "for scripts: nothing is asked, and a command that needs an answer says which flag gives it.",
+    "`bogey -v` (or `--version`) prints the versions of Bogey, the plugin API, Node and each installed plugin.",
     "",
     "The image carries the CLI too: `docker compose exec web bogey <command>`. It has no checkout, so the",
     "commands that author Bogey (schema, themes, types, release) and the ones that control the host",

@@ -11,6 +11,7 @@ advisory (see docs/contributing.md#security-releases). -->
 ## Unreleased
 
 - "View as" now applies to the data too, not only the screens: while previewing a role, the database answers as that role, so a participant preview no longer shows hidden test cases or anything else that role can't see. The preview is kept for the browser session across tabs rather than per tab.
+- `bogey -v` (or `--version`) prints the versions of Bogey, the plugin API, Node and each installed plugin.
 - Manage > Judging counts every sheet a judge finished as done, including projects that weren't assigned to them, and shows how many of those were unassigned.
 - Plugins can declare network areas, so an event can limit a plugin's pages to its networks; the challenges plugin offers its contest, and sending a solution or a flag from outside the network is refused.
 - The blocked-access list in Manage > Security says which area each refused attempt was in.

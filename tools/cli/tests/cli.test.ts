@@ -80,3 +80,12 @@ test("--help after a subcommand explains it instead of running it", async () => 
   }
   expect(ran).toEqual([]);
 });
+
+test("-v and --version print the release and the plugin API", async () => {
+  for (const flag of ["-v", "--version"]) {
+    const result = await run([flag]);
+    expect(result.exitCode).toBe(0);
+    expect(result.output.split("\n")[0]).toBe(`bogey ${version()}`);
+    expect(result.output).toMatch(/^plugin API \d+$/m);
+  }
+});

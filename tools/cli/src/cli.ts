@@ -7,6 +7,7 @@ import { newerRelease } from "./lib/release-status.ts";
 import { expandShortFlags, SHORT_FLAGS, withShortFlags } from "./lib/short-flags.ts";
 import { suggestCommands } from "./lib/suggest.ts";
 import { runUpgrade } from "./commands/upgrade.ts";
+import { versions } from "./lib/version.ts";
 
 export interface CliResult {
   exitCode: number;
@@ -28,6 +29,7 @@ function usage(): string {
       .join(", ")}`,
     "",
     "--no-input (or BOGEY_NO_INPUT=1) never asks: commands that need an answer say which flag gives it.",
+    "bogey -v (or --version) prints the versions of Bogey, the plugin API and installed plugins.",
     "",
     "bogey <command> --help (or -h) for details on a specific command, or bogey on its own for a menu",
   ].join("\n");
@@ -88,6 +90,7 @@ export async function run(
 ): Promise<CliResult> {
   const [name, ...rest] = expandShortFlags(argv);
   if (!name || name === "--help" || name === "help") return { exitCode: 0, output: usage() };
+  if (name === "-v" || name === "--version") return { exitCode: 0, output: versions(cwd) };
   const command = COMMANDS.find((candidate) => candidate.name === name);
   if (!command) return unknownCommand(name, rest, cwd, prompter, runner);
   // Anywhere in the line, so `bogey plugins migrate --help` explains instead of migrating.
