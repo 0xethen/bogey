@@ -229,8 +229,78 @@ function FieldError({
   );
 }
 
+/**
+ * A labelled control in one of three layouts; see docs/architecture/ui-conventions.md#fields.
+ * `stack` puts the control under the label, `row` puts short controls at the right edge once the
+ * field is wide, and `switch` sets a switch beside its label.
+ */
+function FieldFrame({
+  layout = "stack",
+  label,
+  description,
+  descriptionId,
+  note,
+  error,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<"div">, "children"> & {
+  layout?: "stack" | "row" | "switch";
+  label: React.ReactNode;
+  description?: React.ReactNode;
+  descriptionId?: string;
+  // a quieter line under the description, like where a setting comes from
+  note?: React.ReactNode;
+  error?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const about = (description || note) && (
+    <div className="flex flex-col gap-1">
+      {description && <FieldDescription id={descriptionId}>{description}</FieldDescription>}
+      {note}
+    </div>
+  );
+  if (layout === "switch") {
+    return (
+      <Field orientation="horizontal" className={cn("justify-between", className)} {...props}>
+        <FieldContent>
+          {label}
+          {about}
+          {error}
+        </FieldContent>
+        {children}
+      </Field>
+    );
+  }
+  if (layout === "row") {
+    return (
+      <Field className={cn("@container/field", className)} {...props}>
+        <div className="flex flex-col gap-3 @xl/field:grid @xl/field:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] @xl/field:items-start @xl/field:gap-x-6 @xl/field:gap-y-1">
+          <div className="flex flex-col gap-1 @xl/field:row-span-2">
+            {label}
+            {about}
+          </div>
+          <div className="flex flex-col @xl/field:items-end *:data-[slot=number-field]:w-full *:data-[slot=number-field]:max-w-44">
+            {children}
+          </div>
+          {error && <div className="@xl/field:col-start-2 @xl/field:text-right">{error}</div>}
+        </div>
+      </Field>
+    );
+  }
+  return (
+    <Field className={className} {...props}>
+      {label}
+      {children}
+      {about}
+      {error}
+    </Field>
+  );
+}
+
 export {
   Field,
+  FieldFrame,
   FieldLabel,
   FieldDescription,
   FieldError,

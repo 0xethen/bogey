@@ -7,8 +7,8 @@ import { operatorConfigPath } from "@bogey/config/settings";
 import {
   prefetchSettingFields,
   SettingFields,
+  SettingRow,
 } from "#/components/settings/fields/setting-fields.tsx";
-import { SettingRow } from "#/components/settings/fields/setting-row.tsx";
 import { searchSettings } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT } from "#/lib/translate.tsx";
 

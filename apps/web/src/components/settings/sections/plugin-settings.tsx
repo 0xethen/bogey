@@ -12,7 +12,7 @@ import {
   type PluginSetting,
 } from "@bogey/plugins";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@bogey/ui/components/field";
+import { FieldGroup } from "@bogey/ui/components/field";
 import { Input } from "@bogey/ui/components/input";
 import { NumberInput } from "@bogey/ui/components/number-field";
 import { OptSelect } from "@bogey/ui/components/opt-select";
@@ -21,6 +21,7 @@ import { Textarea } from "@bogey/ui/components/textarea";
 import { useUnsavedEntry } from "@bogey/ui/lib/unsaved";
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "#/lib/translate.tsx";
+import { SettingRow } from "../fields/setting-fields.tsx";
 import {
   ownPluginSettingsQueryOptions,
   pluginOrgSettingsQueryOptions,
@@ -29,6 +30,12 @@ import {
 } from "#/lib/plugins.ts";
 
 type Value = string | number | boolean;
+
+function layoutOf(setting: PluginSetting): "stack" | "row" | "switch" {
+  if (setting.type === "boolean") return "switch";
+  if (setting.type === "string") return "stack";
+  return "row";
+}
 
 function Control({
   id,
@@ -50,15 +57,14 @@ function Control({
       return (
         <NumberInput
           id={id}
-          className="max-w-56"
           scrub={scrub || setting.scrub === true}
           min={setting.min}
           max={setting.max}
-          placeholder={setting.placeholder}
-          value={typeof value !== "number" || (setting.placeholder && value === 0) ? null : value}
+          // plugin API 1 used the placeholder as what 0 shows as
+          emptyLabel={setting.emptyLabel ?? setting.placeholder}
+          value={typeof value === "number" ? value : null}
           onValueChange={(next) => {
             if (next !== null) onChange(next);
-            else if (setting.placeholder) onChange(0);
           }}
         />
       );
@@ -118,8 +124,18 @@ function LockedSettings({
       {locked.map(([name, setting]) => {
         const id = `${manifest.key}-${name}-locked`;
         return (
-          <Field key={name} id={`${manifest.key}.${name}`} className="jump-target">
-            <FieldLabel htmlFor={id}>{setting.label}</FieldLabel>
+          <SettingRow
+            key={name}
+            id={id}
+            anchor={`${manifest.key}.${name}`}
+            label={setting.label}
+            description={setting.description}
+            source={{
+              kind: "locked",
+              by: t(setting.lock === "instance" ? "settingSource.instance" : "settingSource.org"),
+            }}
+            layout={layoutOf(setting)}
+          >
             <fieldset disabled>
               <Control
                 id={id}
@@ -129,12 +145,7 @@ function LockedSettings({
                 onChange={() => undefined}
               />
             </fieldset>
-            <FieldDescription>
-              {t(
-                setting.lock === "instance" ? "settings.lockedByInstance" : "settings.lockedByOrg",
-              )}
-            </FieldDescription>
-          </Field>
+          </SettingRow>
         );
       })}
     </FieldGroup>
@@ -220,25 +231,17 @@ export function PluginSettings({
               onChange={(value) => setDraft({ ...draft, [name]: value })}
             />
           );
-          return setting.type === "boolean" ? (
-            <Field
+          return (
+            <SettingRow
               key={name}
-              id={`${manifest.key}.${name}`}
-              orientation="horizontal"
-              className="jump-target justify-between"
+              id={id}
+              anchor={`${manifest.key}.${name}`}
+              label={setting.label}
+              description={setting.description}
+              layout={Custom ? "stack" : layoutOf(setting)}
             >
-              <div className="flex flex-col gap-1">
-                <FieldLabel htmlFor={id}>{setting.label}</FieldLabel>
-                {setting.description && <FieldDescription>{setting.description}</FieldDescription>}
-              </div>
               {control}
-            </Field>
-          ) : (
-            <Field key={name} id={`${manifest.key}.${name}`} className="jump-target">
-              <FieldLabel htmlFor={id}>{setting.label}</FieldLabel>
-              {control}
-              {setting.description && <FieldDescription>{setting.description}</FieldDescription>}
-            </Field>
+            </SettingRow>
           );
         })}
       </FieldGroup>

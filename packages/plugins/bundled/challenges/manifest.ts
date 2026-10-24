@@ -469,7 +469,7 @@ export const manifest = definePlugin({
       type: "number",
       showWhen: { setting: "format", in: ["contest"] },
       label: "Tries per problem",
-      description: "0 for no limit.",
+      emptyLabel: "No limit",
       default: 0,
       min: 0,
       max: 100,

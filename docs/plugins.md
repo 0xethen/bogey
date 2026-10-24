@@ -611,8 +611,10 @@ the plugin knows what to count. The instance's values live in the settings names
 
 ## Settings
 
-Types: `boolean`, `number` (`min`, `max`), `string` (`placeholder`,
-`multiline`) and `select` (`options`). `settings` in the context is always
+Types: `boolean`, `number` (`min`, `max`, `emptyLabel`), `string`
+(`placeholder`, `multiline`) and `select` (`options`). A number whose 0 means
+"no limit" or "off" sets `emptyLabel` ("No limit"): a saved 0 shows as an
+empty field reading it, and leaving the field empty saves 0. `settings` in the context is always
 complete: stored values that don't fit their type fall back to the default.
 
 `showWhen` shows a setting only while another one of the plugin's settings (declared

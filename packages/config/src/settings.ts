@@ -27,7 +27,11 @@ export interface SettingField<V> {
   /** The org's and event's tags can be picked beside the choices, held as "tag:<id>". */
   withTags?: boolean;
   placeholder?: string;
+  /** For a number where 0 means no limit or off: 0 shows as an empty field reading this. */
+  empty?: SettingEmpty;
 }
+
+export type SettingEmpty = "noLimit" | "off";
 
 export type SettingFields<T> = { [K in keyof T]?: SettingField<T[K]> };
 
@@ -366,7 +370,7 @@ export const settingsRegistry = {
       capacity: {
         label: say("setting.registration.capacity"),
         description: say("setting.registration.capacity.help"),
-        placeholder: "0",
+        empty: "noLimit",
       },
       autoPromote: {
         label: say("setting.registration.autoPromote"),
@@ -501,7 +505,7 @@ export const settingsRegistry = {
       maxPasskeys: {
         label: say("setting.accounts.maxPasskeys"),
         description: say("setting.accounts.maxPasskeys.help"),
-        placeholder: "5",
+        empty: "off",
       },
       requireAdminMfa: {
         label: say("setting.accounts.requireAdminMfa"),
@@ -790,7 +794,7 @@ export const settingsRegistry = {
       reminderHours: {
         label: say("setting.submissions.reminderHours"),
         description: say("setting.submissions.reminderHours.help"),
-        placeholder: "24",
+        empty: "off",
       },
       maxTracks: {
         label: say("setting.submissions.maxTracks"),
@@ -913,7 +917,7 @@ export const settingsRegistry = {
       reminderMinutes: {
         label: say("setting.agenda.reminderMinutes"),
         description: say("setting.agenda.reminderMinutes.help"),
-        placeholder: "5",
+        empty: "off",
       },
     },
   }),
@@ -1101,7 +1105,7 @@ export const settingsRegistry = {
       leaveLimit: {
         label: say("setting.teams.leaveLimit"),
         description: say("setting.teams.leaveLimit.help"),
-        placeholder: "0",
+        empty: "noLimit",
       },
       creation: {
         label: say("setting.teams.creation"),
@@ -1317,7 +1321,7 @@ export const settingsRegistry = {
       badgeEmailHours: {
         label: say("setting.checkin.badgeEmailHours"),
         description: say("setting.checkin.badgeEmailHours.help"),
-        placeholder: "24",
+        empty: "off",
       },
       selfCheckIn: {
         label: say("setting.checkin.selfCheckIn"),
@@ -1640,6 +1644,7 @@ export const settingsRegistry = {
       flagGap: {
         label: say("setting.judging.flagGap"),
         description: say("setting.judging.flagGap.help"),
+        empty: "off",
       },
       holdFlagged: {
         label: say("setting.judging.holdFlagged"),
@@ -1824,6 +1829,7 @@ export type SettingControl =
       label: string;
       description?: string;
       placeholder?: string;
+      empty?: SettingEmpty;
       min?: number;
       max?: number;
       integer: boolean;
@@ -1862,6 +1868,7 @@ export function settingControl<N extends CoreNamespace>(
       label: field.label,
       description,
       placeholder: field.placeholder,
+      empty: field.empty,
       min: Number.isFinite(inner.minValue) ? (inner.minValue ?? undefined) : undefined,
       max: Number.isFinite(inner.maxValue) ? (inner.maxValue ?? undefined) : undefined,
       integer: inner.isInt,

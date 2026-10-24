@@ -335,9 +335,6 @@ export const en = {
   "sub.reviewDivisionFailed": "Couldn't move your team",
   "sub.reviewDivisionMove": "Move team",
 
-  "settings.lockedByInstance": "You can't change this setting.",
-  "settings.lockedByOrg": "You can't change this setting.",
-
   "account.language": "Language",
   "account.languageHelp": "The language Bogey is shown in. Other languages are from the community.",
   "common.saving": "Saving...",
@@ -1559,6 +1556,8 @@ export const en = {
   "settingSource.events": "events",
   "settingFields.saveFailed": "Couldn't save that setting",
   "settingFields.lockFailed": "Couldn't change that lock",
+  "settingFields.noLimit": "No limit",
+  "settingFields.off": "Off",
   "network.notAddress": '"{value}" isn\'t an address or range',
   "network.saveFailed": "Couldn't save the networks",
   "ext.pages": "{count, plural, one {# page} other {# pages}}",
@@ -3854,7 +3853,7 @@ export const en = {
     "Shown under the text on the not-found and error pages, for example where to get help. Markdown works.",
   "setting.registration.capacity": "Participant limit",
   "setting.registration.capacity.help":
-    "Once this many participants are approved, new registrations join the waitlist. 0 has no limit.",
+    "Once this many participants are approved, new registrations join the waitlist.",
   "setting.registration.autoPromote": "Move people up the waitlist",
   "setting.registration.autoPromote.help":
     "When someone withdraws or is declined, the person waiting longest is approved.",
@@ -3882,7 +3881,7 @@ export const en = {
     "People can sign out one of their other devices, or all of them, from Account > Security.",
   "setting.accounts.maxPasskeys": "Passkeys per person",
   "setting.accounts.maxPasskeys.help":
-    "How many passkeys one person can add from Account > Security; 0 turns passkeys off.",
+    "How many passkeys one person can add from Account > Security.",
   "setting.accounts.requireAdminMfa": "Two-factor for instance admins",
   "setting.accounts.requireAdminMfa.help":
     "Instance admins must verify an authenticator app code each session before being granted access to the database. Turn off from the CLI with bogey mfa off!",
@@ -3909,7 +3908,7 @@ export const en = {
   "setting.limits.pendingInvitesPerOrg": "Open invite links per organization",
   "setting.submissions.reminderHours": "Remind teams with a draft (hours before)",
   "setting.submissions.reminderHours.help":
-    "Teams that only have an unsubmitted draft get one reminder. 0 sends none.",
+    "Teams that only have an unsubmitted draft get one reminder.",
   "setting.submissions.maxTracks": "Most prizes a team can enter",
   "setting.submissions.maxTracks.help":
     "Teams choose prizes on their submission. Organizers can always place entries.",
@@ -3951,7 +3950,7 @@ export const en = {
     "Sessions that take attendance or have page content get a page. With this on, they're listed when you hover Agenda in the tabs.",
   "setting.agenda.reminderMinutes": "Remind people (minutes before)",
   "setting.agenda.reminderMinutes.help":
-    "Sent for sessions people signed up for, and to everyone before a window opens unless the window sets its own. 0 sends none.",
+    "Sent for sessions people signed up for, and to everyone before a window opens unless the window sets its own.",
   "setting.identity.enabled": "Identity setup",
   "setting.identity.enabled.help":
     "Welcome new participants with Initial Setup. The first time a participant opens the event, they confirm their name (it starts as the first part of their email address) and set up a team before anything else.",
@@ -3989,7 +3988,7 @@ export const en = {
     "Participants can leave their team and join or start another while teams are open. Organizers can still move anyone here.",
   "setting.teams.leaveLimit": "Times someone can leave a team",
   "setting.teams.leaveLimit.help":
-    "Stops people from leaving and starting team after team (disbanding counts too). 0 means no limit. Organizers can still move anyone.",
+    "Stops people from leaving and starting team after team (disbanding counts too). Organizers can still move anyone.",
   "setting.teams.creation": "Who can start a team",
   "setting.teams.creation.participants": "Participants",
   "setting.teams.creation.organizers": "Organizers only",
@@ -4033,7 +4032,7 @@ export const en = {
   "setting.checkin.allowWalkIns": "Accept walk-ins",
   "setting.checkin.allowWalkIns.help": "Staff can add someone by email at the desk.",
   "setting.checkin.badgeEmailHours": "Email the check-in code (hours before)",
-  "setting.checkin.badgeEmailHours.help": "0 doesn't email it.",
+  "setting.checkin.badgeEmailHours.help": "Each person gets their check-in code by email.",
   "setting.checkin.selfCheckIn": "Self check-in",
   "setting.checkin.selfCheckIn.help":
     "People enter the venue code, which changes every ten minutes and is shown on the check-in screen, while the Check-in window is open.",
@@ -4124,7 +4123,7 @@ export const en = {
   "setting.judging.deliberation.all": "Every judge",
   "setting.judging.flagGap": "Flag on disagreement",
   "setting.judging.flagGap.help":
-    "Points out of 100 judges' totals for one project may differ by before it's flagged on its own. 0 turns it off.",
+    "Points out of 100 judges' totals for one project may differ by before it's flagged on its own.",
   "setting.judging.holdFlagged": "Hold results while flagged",
   "setting.judging.holdFlagged.help": "Publishing waits until every flagged project is resolved.",
   "setting.judging.demoJudges": "Show teams their demo judges",

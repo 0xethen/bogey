@@ -9,13 +9,7 @@ import { unwrap } from "@bogey/db/errors";
 import { propose, type Proposal } from "@bogey/utils/team-matcher";
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import {
-  NumberField,
-  NumberFieldDecrement,
-  NumberFieldGroup,
-  NumberFieldIncrement,
-  NumberFieldInput,
-} from "@bogey/ui/components/number-field";
+import { NumberInput } from "@bogey/ui/components/number-field";
 import {
   Dialog,
   DialogContent,
@@ -98,7 +92,7 @@ function Matcher({ eventId, onDone }: { eventId: string; onDone: () => void }) {
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="match-size">{t("teamMatch.aimFor")}</Label>
-          <NumberField
+          <NumberInput
             id="match-size"
             value={size}
             min={data.min}
@@ -108,13 +102,7 @@ function Matcher({ eventId, onDone }: { eventId: string; onDone: () => void }) {
               setProposal(null);
             }}
             className="w-36"
-          >
-            <NumberFieldGroup>
-              <NumberFieldDecrement />
-              <NumberFieldInput />
-              <NumberFieldIncrement />
-            </NumberFieldGroup>
-          </NumberField>
+          />
         </div>
         <Button
           variant="outline"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   useMutation,
   useQuery,
@@ -22,10 +22,14 @@ import {
   scopesBelow,
   settingControl,
   type CoreNamespace,
+  type SettingEmpty,
   type SettingScope,
   type SettingsValue,
 } from "@bogey/config/settings";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import { Button } from "@bogey/ui/components/button";
+import { FieldFrame, FieldLabel } from "@bogey/ui/components/field";
+import { IconArrowBack, IconLock, IconLockOpen } from "@tabler/icons-react";
 import { useUnsavedEntry } from "@bogey/ui/lib/unsaved";
 import { Input } from "@bogey/ui/components/input";
 import { NumberInput } from "@bogey/ui/components/number-field";
@@ -34,7 +38,6 @@ import { MultiSelect, type SearchSelectOption } from "@bogey/ui/components/searc
 import { tagsQueryOptions } from "@bogey/db/queries/tags";
 import { TAG_REF, tagRef } from "@bogey/utils/keys";
 import { useEventViewer } from "#/lib/viewer.ts";
-import { SettingRow, type SettingLock, type SettingSource } from "./setting-row.tsx";
 import { Switch } from "@bogey/ui/components/switch";
 import { useLocale } from "@bogey/ui/lib/locale";
 import { sayOr, useT, type PlainKey, type T } from "#/lib/translate.tsx";
@@ -228,141 +231,123 @@ export function SettingFields<N extends CoreNamespace>({
           ? sayOr(t, `setting.${namespace}.${key}.help`, control.description)
           : undefined;
 
-        return control.kind === "switch" ? (
-          <SettingRow
-            key={key}
-            id={id}
-            anchor={`${namespace}.${key}`}
-            keyName={key}
-            label={label}
-            description={description}
-            source={source}
-            lock={source.kind === "operator" ? undefined : lockFor(key)}
-            inline
-          >
-            <Switch
-              id={id}
-              checked={value === true}
-              disabled={disabled}
-              onCheckedChange={(checked) => change({ [key]: checked })}
-            />
-          </SettingRow>
-        ) : control.kind === "number" ? (
-          <SettingRow
-            row
-            key={key}
-            id={id}
-            anchor={`${namespace}.${key}`}
-            keyName={key}
-            label={label}
-            description={description}
-            source={source}
-            lock={source.kind === "operator" ? undefined : lockFor(key)}
-          >
-            <NumberSetting
-              key={generation}
-              id={id}
-              value={typeof value === "number" ? value : null}
-              min={control.min}
-              max={control.max}
-              step={control.integer ? 1 : "any"}
-              placeholder={placeholder}
-              disabled={disabled}
-              scrub={scope.scope !== "event"}
-              onValueChange={(next) => change({ [key]: next })}
-            />
-          </SettingRow>
-        ) : control.kind === "multiselect" ? (
-          <SettingRow
-            key={key}
-            id={id}
-            anchor={`${namespace}.${key}`}
-            keyName={key}
-            label={label}
-            description={description}
-            source={source}
-            lock={source.kind === "operator" ? undefined : lockFor(key)}
-          >
-            <MultiSelect
-              id={id}
-              value={
-                Array.isArray(value)
-                  ? value.filter(
-                      (item): item is string =>
-                        typeof item === "string" &&
-                        // a deleted tag drops out of the list, once the tags are in
-                        (!TAG_REF.test(item) ||
-                          !tagsLoaded ||
-                          tagChoices.some((tag) => tag.value === item)),
-                    )
-                  : []
-              }
-              always={control.always}
-              options={[
-                ...control.options.map((option) => ({
-                  value: option.value,
-                  label: sayOr(t, `setting.${namespace}.${key}.${option.value}`, option.label),
-                  group:
-                    control.withTags && tagChoices.length > 0
-                      ? t("settingFields.roles")
-                      : undefined,
-                })),
-                ...(control.withTags ? tagChoices : []),
-              ]}
-              disabled={disabled}
-              onValueChange={(next) => change({ [key]: next })}
-            />
-          </SettingRow>
-        ) : control.kind === "text" ? (
-          <SettingRow
-            key={key}
-            id={id}
-            anchor={`${namespace}.${key}`}
-            keyName={key}
-            label={label}
-            description={description}
-            source={source}
-            lock={source.kind === "operator" ? undefined : lockFor(key)}
-          >
-            <TextSetting
-              key={generation}
-              id={id}
-              value={typeof value === "string" ? value : ""}
-              placeholder={placeholder}
-              disabled={disabled}
-              onValueChange={(next) => change({ [key]: next })}
-            />
-          </SettingRow>
-        ) : (
-          <SettingRow
-            row
-            key={key}
-            id={id}
-            anchor={`${namespace}.${key}`}
-            keyName={key}
-            label={label}
-            description={description}
-            source={source}
-            lock={source.kind === "operator" ? undefined : lockFor(key)}
-          >
-            <OptSelect
-              id={id}
-              value={typeof value === "string" ? value : ""}
-              options={control.options.map((option) => ({
-                ...option,
-                label: sayOr(t, `setting.${namespace}.${key}.${option.value}`, option.label),
-              }))}
-              disabled={disabled}
-              onChange={(next) => change({ [key]: next })}
-            />
-          </SettingRow>
-        );
+        const row = {
+          id,
+          anchor: `${namespace}.${key}`,
+          keyName: key,
+          label,
+          description,
+          source,
+          lock: source.kind === "operator" ? undefined : lockFor(key),
+        };
+
+        switch (control.kind) {
+          case "switch":
+            return (
+              <SettingRow key={key} {...row} layout="switch">
+                <Switch
+                  id={id}
+                  checked={value === true}
+                  disabled={disabled}
+                  onCheckedChange={(checked) => change({ [key]: checked })}
+                />
+              </SettingRow>
+            );
+          case "number":
+            return (
+              <SettingRow key={key} {...row} layout="row">
+                <NumberInput
+                  key={generation}
+                  id={id}
+                  defaultValue={typeof value === "number" ? value : undefined}
+                  min={control.min}
+                  max={control.max}
+                  step={control.integer ? 1 : "any"}
+                  placeholder={placeholder}
+                  emptyLabel={control.empty && t(EMPTY_LABEL[control.empty])}
+                  disabled={disabled}
+                  scrub={scope.scope !== "event"}
+                  onValueChange={(next) => change({ [key]: next })}
+                />
+              </SettingRow>
+            );
+          case "multiselect":
+            return (
+              <SettingRow key={key} {...row}>
+                <MultiSelect
+                  id={id}
+                  value={
+                    Array.isArray(value)
+                      ? value.filter(
+                          (item): item is string =>
+                            typeof item === "string" &&
+                            // a deleted tag drops out of the list, once the tags are in
+                            (!TAG_REF.test(item) ||
+                              !tagsLoaded ||
+                              tagChoices.some((tag) => tag.value === item)),
+                        )
+                      : []
+                  }
+                  always={control.always}
+                  options={[
+                    ...control.options.map((option) => ({
+                      value: option.value,
+                      label: sayOr(t, `setting.${namespace}.${key}.${option.value}`, option.label),
+                      group:
+                        control.withTags && tagChoices.length > 0
+                          ? t("settingFields.roles")
+                          : undefined,
+                    })),
+                    ...(control.withTags ? tagChoices : []),
+                  ]}
+                  disabled={disabled}
+                  onValueChange={(next) => change({ [key]: next })}
+                />
+              </SettingRow>
+            );
+          case "text":
+            return (
+              <SettingRow key={key} {...row}>
+                <Input
+                  key={generation}
+                  id={id}
+                  defaultValue={typeof value === "string" ? value : ""}
+                  placeholder={placeholder}
+                  disabled={disabled}
+                  onChange={(event) => {
+                    const next = event.target.value.trim();
+                    change({ [key]: next === "" ? null : next });
+                  }}
+                />
+              </SettingRow>
+            );
+          case "select":
+            return (
+              <SettingRow key={key} {...row} layout="row">
+                <OptSelect
+                  id={id}
+                  value={typeof value === "string" ? value : ""}
+                  options={control.options.map((option) => ({
+                    ...option,
+                    label: sayOr(t, `setting.${namespace}.${key}.${option.value}`, option.label),
+                  }))}
+                  disabled={disabled}
+                  onChange={(next) => change({ [key]: next })}
+                />
+              </SettingRow>
+            );
+        }
       })}
       <ErrorAlert error={save.error} title={t("settingFields.saveFailed")} />
       <ErrorAlert error={setLock.error} title={t("settingFields.lockFailed")} />
     </>
   );
 }
+
+const EMPTY_LABEL = {
+  noLimit: "settingFields.noLimit",
+  off: "settingFields.off",
+} as const satisfies Record<SettingEmpty, PlainKey>;
 
 const BELOW_LABEL = {
   instance: "settingSource.instance",
@@ -373,72 +358,6 @@ const BELOW_LABEL = {
 function describe(scopes: Tuple<SettingScope>, t: T, locale: string): string {
   return new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format(
     scopes.map((scope) => t(BELOW_LABEL[scope])),
-  );
-}
-
-function NumberSetting({
-  id,
-  value,
-  min,
-  max,
-  step,
-  placeholder,
-  disabled,
-  scrub,
-  onValueChange,
-}: {
-  id: string;
-  value: number | null;
-  min?: number;
-  max?: number;
-  step: number | "any";
-  placeholder?: string;
-  disabled: boolean;
-  scrub: boolean;
-  onValueChange: (value: number | null) => void;
-}) {
-  const [initial] = useState(value);
-  return (
-    <NumberInput
-      id={id}
-      className="w-full"
-      scrub={scrub}
-      defaultValue={initial ?? undefined}
-      min={min}
-      max={max}
-      step={step}
-      placeholder={placeholder}
-      disabled={disabled}
-      onValueChange={(next) => onValueChange(next)}
-    />
-  );
-}
-
-function TextSetting({
-  id,
-  value,
-  placeholder,
-  disabled,
-  onValueChange,
-}: {
-  id: string;
-  value: string;
-  placeholder?: string;
-  disabled: boolean;
-  onValueChange: (value: string | null) => void;
-}) {
-  const [initial] = useState(value);
-  return (
-    <Input
-      id={id}
-      defaultValue={initial}
-      placeholder={placeholder}
-      disabled={disabled}
-      onChange={(event) => {
-        const next = event.target.value.trim();
-        onValueChange(next === "" ? null : next);
-      }}
-    />
   );
 }
 
@@ -455,5 +374,132 @@ export function prefetchSettingFields(
         ? [query.ensureQueryData(ownLocksQueryOptions(scope, namespace))]
         : []),
     ]),
+  );
+}
+
+export interface SettingLock {
+  locked: boolean;
+  below: string;
+  onChange: (locked: boolean) => void;
+}
+
+export type SettingSource =
+  | { kind: "own"; onReset: () => void }
+  | { kind: "inherited"; from?: string }
+  | { kind: "locked"; by: string }
+  | { kind: "operator"; path?: string | null };
+
+function Label({
+  id,
+  label,
+  keyName,
+  source,
+  lock,
+}: {
+  id: string;
+  label: string;
+  keyName?: string;
+  source: SettingSource;
+  lock?: SettingLock;
+}) {
+  const t = useT();
+  const lockLabel = lock
+    ? lock.locked
+      ? t("settingRow.unlockFor", { below: lock.below })
+      : t("settingRow.lockFor", { below: lock.below })
+    : "";
+  return (
+    <div className="flex items-center gap-1">
+      <FieldLabel htmlFor={id} title={keyName}>
+        {label}
+      </FieldLabel>
+      {source.kind === "own" && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-3xs"
+          aria-label={t("settingRow.reset")}
+          tooltip={t("settingRow.reset")}
+          onClick={source.onReset}
+        >
+          <IconArrowBack />
+        </Button>
+      )}
+      <div className="flex items-center gap-0.5">
+        {lock && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-2xs"
+            aria-pressed={lock.locked}
+            aria-label={lockLabel}
+            tooltip={lockLabel}
+            className={
+              lock.locked
+                ? "text-fg"
+                : "text-muted-fg transition-opacity md:opacity-0 md:group-hover/setting:opacity-100 md:group-focus-within/setting:opacity-100"
+            }
+            onClick={() => lock.onChange(!lock.locked)}
+          >
+            {lock.locked ? <IconLock /> : <IconLockOpen />}
+          </Button>
+        )}
+        {lock?.locked && <span className="text-xs text-muted-fg">{t("settingRow.locked")}</span>}
+      </div>
+    </div>
+  );
+}
+
+// where a value comes from, when it isn't set here
+function origin(source: SettingSource, t: T): string | null {
+  switch (source.kind) {
+    case "locked":
+      return t("settingRow.lockedBy", { by: source.by });
+    case "operator":
+      return source.path
+        ? t("settingRow.operatorAt", { path: source.path })
+        : t("settingRow.operator");
+    case "inherited":
+      return source.from ? t("settingRow.from", { from: source.from }) : null;
+    case "own":
+      return null;
+  }
+}
+
+/** One setting: its label with reset and lock buttons, where its value comes from, and its control. */
+export function SettingRow({
+  id,
+  anchor,
+  keyName,
+  label,
+  description,
+  source = { kind: "inherited" },
+  layout = "stack",
+  lock,
+  children,
+}: {
+  id: string;
+  anchor?: string;
+  keyName?: string;
+  label: string;
+  description?: ReactNode;
+  source?: SettingSource;
+  layout?: "stack" | "row" | "switch";
+  lock?: SettingLock;
+  children: ReactNode;
+}) {
+  const t = useT();
+  const from = origin(source, t);
+  return (
+    <FieldFrame
+      id={anchor}
+      layout={layout}
+      className="group/setting jump-target"
+      label={<Label id={id} label={label} keyName={keyName} source={source} lock={lock} />}
+      description={description}
+      note={from && <p className="text-xs text-muted-fg">{from}</p>}
+    >
+      {children}
+    </FieldFrame>
   );
 }

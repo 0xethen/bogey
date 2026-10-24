@@ -25,6 +25,8 @@ export type PluginSetting =
       min?: number;
       max?: number;
       placeholder?: string;
+      /** For a number where 0 means no limit or off: 0 shows as an empty field reading this ("No limit"). */
+      emptyLabel?: string;
       scrub?: boolean;
     })
   | (PluginSettingBase & {

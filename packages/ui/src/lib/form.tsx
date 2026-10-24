@@ -41,6 +41,7 @@ import { CreateDialogHeadline } from "../components/create-dialog";
 import { RangeInput, type Range } from "../components/range-input";
 import {
   Field as FieldRoot,
+  FieldFrame as Frame,
   FieldDescription,
   FieldError,
   FieldLabel,
@@ -105,20 +106,22 @@ export function fieldAnchor(group: string, name: string): string {
   return `${group}.${name}`;
 }
 
+// the props every field's root takes: its address, and whether it's invalid
+function useFieldRoot(field: AnyFieldApi, className?: string) {
+  const group = useContext(AnchorGroup);
+  return {
+    id: group ? fieldAnchor(group, field.name) : undefined,
+    "data-invalid": field.meta.isInvalid || undefined,
+    className: cn(group && "jump-target", className),
+  };
+}
+
 function FormField({
   field,
   className,
   ...props
 }: ComponentProps<typeof FieldRoot> & { field: AnyFieldApi }) {
-  const group = useContext(AnchorGroup);
-  return (
-    <FieldRoot
-      id={group ? fieldAnchor(group, field.name) : undefined}
-      data-invalid={field.meta.isInvalid || undefined}
-      className={cn(group && "jump-target", className)}
-      {...props}
-    />
-  );
+  return <FieldRoot {...useFieldRoot(field, className)} {...props} />;
 }
 
 function FormLabel({
@@ -185,27 +188,17 @@ function FieldFrame({
   description?: ReactNode;
   hideLabel?: boolean;
   heading?: ReactNode;
-  // short controls: label left, control right once the field group is wide
+  // short controls: label left, control at the right edge once the field is wide
   row?: boolean;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <FormField
-      field={field}
-      className={cn(
-        row &&
-          "@xl/field-group:grid @xl/field-group:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] @xl/field-group:items-start @xl/field-group:gap-x-6 @xl/field-group:gap-y-1",
-        className,
-      )}
-    >
-      <div
-        className={cn(
-          "contents",
-          row && "@xl/field-group:block @xl/field-group:col-start-1 @xl/field-group:row-start-1",
-        )}
-      >
-        {heading ?? (
+    <Frame
+      layout={row ? "row" : "stack"}
+      {...useFieldRoot(field, className)}
+      label={
+        heading ?? (
           <FormLabel
             field={field}
             required={required}
@@ -213,36 +206,14 @@ function FieldFrame({
           >
             {label}
           </FormLabel>
-        )}
-      </div>
-      <div
-        className={cn(
-          "contents",
-          row &&
-            "@xl/field-group:block @xl/field-group:col-start-2 @xl/field-group:row-span-2 @xl/field-group:row-start-1",
-        )}
-      >
-        {children}
-      </div>
-      {description && (
-        <div
-          className={cn(
-            "contents",
-            row && "@xl/field-group:block @xl/field-group:col-start-1 @xl/field-group:row-start-2",
-          )}
-        >
-          <FormDescription field={field}>{description}</FormDescription>
-        </div>
-      )}
-      <div
-        className={cn(
-          "contents",
-          row && "@xl/field-group:block @xl/field-group:col-start-2 @xl/field-group:row-start-3",
-        )}
-      >
-        <FormError field={field} />
-      </div>
-    </FormField>
+        )
+      }
+      description={description}
+      descriptionId={`${field.name}-description`}
+      error={<FormError field={field} />}
+    >
+      {children}
+    </Frame>
   );
 }
 
@@ -293,6 +264,7 @@ function NumberInput({
   step,
   placeholder,
   scrub,
+  emptyLabel,
 }: {
   field: FieldWithValue<number>;
   min?: number;
@@ -300,10 +272,12 @@ function NumberInput({
   step?: number;
   placeholder?: string;
   scrub?: boolean;
+  emptyLabel?: string;
 }) {
   return (
     <NumberFieldInput
       scrub={scrub}
+      emptyLabel={emptyLabel}
       id={field.name}
       name={field.name}
       value={Number.isNaN(field.value) ? null : field.value}
@@ -721,6 +695,7 @@ function NumberField({
   max,
   step,
   scrub,
+  emptyLabel,
   ...props
 }: WrapperProps & {
   field: FieldWithValue<number>;
@@ -728,6 +703,7 @@ function NumberField({
   max?: number;
   step?: number;
   scrub?: boolean;
+  emptyLabel?: string;
 }) {
   const { label, description, placeholder } = resolve(field, props);
   return (
@@ -739,6 +715,7 @@ function NumberField({
         step={step}
         placeholder={placeholder}
         scrub={scrub}
+        emptyLabel={emptyLabel}
       />
     </FieldFrame>
   );
@@ -754,13 +731,15 @@ function SwitchField({
 }) {
   const { label, description } = resolve(field, props);
   return (
-    <FormField field={field} orientation="horizontal" className="justify-between">
-      <div className="flex flex-col gap-1">
-        <FormLabel field={field}>{label}</FormLabel>
-        {description && <FormDescription field={field}>{description}</FormDescription>}
-      </div>
+    <Frame
+      layout="switch"
+      {...useFieldRoot(field)}
+      label={<FormLabel field={field}>{label}</FormLabel>}
+      description={description}
+      descriptionId={`${field.name}-description`}
+    >
       <SwitchInput field={field} disabled={disabled} />
-    </FormField>
+    </Frame>
   );
 }
 
