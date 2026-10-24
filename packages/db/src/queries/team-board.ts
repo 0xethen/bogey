@@ -240,9 +240,9 @@ export const teamMatchingOverviewQueryOptions = (eventId: string) =>
 const groupsSchema = z
   .array(
     z.object({
-      team: z.string().uuid().nullable(),
+      team: z.uuid().nullable(),
       name: z.string().trim().min(1).max(60).nullable(),
-      members: z.array(z.string().uuid()).max(100),
+      members: z.array(z.uuid()).max(100),
     }),
   )
   .max(500);

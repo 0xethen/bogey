@@ -20,7 +20,6 @@
     "devn": "echo \"Sharing over network & with cloudflared\" && echo \"doesn't work with TanStack Devtools Source Inspector, cannot handle terminal input\" && BOGEY_DEV_ALLOWED_HOSTS=\"${BOGEY_DEV_ALLOWED_HOSTS:+$BOGEY_DEV_ALLOWED_HOSTS,}.trycloudflare.com\" concurrently -i -n web,console,bogey,cloudflared -c auto --kill-others \"vp run web#dev --host\" \"node tools/cli/src/bin.ts console\" \"node tools/cli/src/bin.ts watch\" \"cloudflared tunnel --url http://localhost:3000\"",
     "webdev": "vp run web#dev",
     "test": "vp test",
-    "typecheck": "tsc --noEmit && vp run -r typecheck",
     "release": "vpr bogey release",
     "prepare": "vp config"
   },

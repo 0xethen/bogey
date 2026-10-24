@@ -36,6 +36,8 @@ export default defineConfig({
       e2e: { command: "vp run web#e2e", cache: false },
       bogey: { command: "node tools/cli/src/bin.ts", cache: false },
       find: { command: "node tools/dev/src/find-text.ts", cache: false },
+      // tsc reads files vp can't see, so its cache misses edits
+      typecheck: { command: "tsc --noEmit && vp run -r --no-cache typecheck", cache: false },
     },
   },
 });
