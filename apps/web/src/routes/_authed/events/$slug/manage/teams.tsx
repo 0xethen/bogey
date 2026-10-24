@@ -368,7 +368,7 @@ function RouteComponent() {
                 columns={columns}
                 data={ordered}
                 getRowId={teamId}
-                pageSize={50}
+                pageSize={25}
                 selection={
                   divisions.length > 0
                     ? { selected: picked, onChange: setPicked, label: teamName }

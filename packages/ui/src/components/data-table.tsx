@@ -798,7 +798,10 @@ const DataRow = memo(
     const [open, setOpen] = useState(false);
     return (
       <>
-        <TableRow data-state={selected ? "selected" : undefined}>
+        <TableRow
+          data-state={selected ? "selected" : undefined}
+          className={cn(open && "border-b-0 has-aria-expanded:bg-transparent")}
+        >
           {selectable && (
             <TableCell className="w-8 align-middle">
               <Checkbox
@@ -833,8 +836,11 @@ const DataRow = memo(
           ))}
         </TableRow>
         {detail && open && (
+          // the leading checkbox and arrow cells stay empty so the detail lines up with the first column
           <TableRow className="hover:bg-transparent">
-            <TableCell colSpan={columnCount} className="bg-muted/30 pb-4">
+            {selectable && <TableCell aria-hidden />}
+            <TableCell aria-hidden />
+            <TableCell colSpan={columnCount - (selectable ? 2 : 1)} className="pt-0 pb-4">
               {detail(row.original)}
             </TableCell>
           </TableRow>

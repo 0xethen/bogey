@@ -140,7 +140,7 @@ function RouteComponent() {
           columns={columns}
           data={people.data ?? EMPTY}
           getRowId={(person) => person.id}
-          pageSize={50}
+          pageSize={25}
           empty={q ? t("session.noMatch", { search: q }) : t("adminPeople.empty")}
         />
         {people.data?.length === 200 && (

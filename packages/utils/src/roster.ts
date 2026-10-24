@@ -376,17 +376,18 @@ function peopleOf(
 ): {
   people: Person[];
   problems: RosterIssue[];
-  notes: RosterIssue[];
+  notes: RosterNote[];
 } {
   const people = new Map<string, Person>();
   const problems: RosterIssue[] = [];
-  const notes: RosterIssue[] = [];
+  const notes: RosterNote[] = [];
   const teammateColumns = table.columns.filter((column) => column.kind === "teammate");
 
   const width = table.columns.length;
   for (const row of table.rows) {
     if (table.hasHeader && row.cells.length !== width) {
       notes.push({
+        kind: "cellCount",
         line: row.line,
         message: say(
           "roster.cellCount",
@@ -488,6 +489,7 @@ function peopleOf(
     };
     if (person.mode === "solo" && person.team) {
       notes.push({
+        kind: "soloWithTeam",
         line: row.line,
         message: say(
           "roster.soloWithTeam",
@@ -500,6 +502,7 @@ function peopleOf(
     const earlier = people.get(email);
     if (earlier) {
       notes.push({
+        kind: "duplicate",
         line: row.line,
         message: say(
           "roster.duplicate",
@@ -587,9 +590,33 @@ function findTeammate(ref: TeammateRef, claimant: Named, people: Tuple<Named>): 
   return { person: null, ambiguous: [], loose: false };
 }
 
+/** What a correction is about, so a long list of them can be grouped. */
+export type RosterNoteKind =
+  | "cellCount"
+  | "soloWithTeam"
+  | "duplicate"
+  | "ambiguousMate"
+  | "looseMate"
+  | "notOnRoster"
+  | "readAsOne"
+  | "noTeamName"
+  | "tooBig"
+  | "noDivision"
+  | "noSession";
+
 export interface RosterIssue {
   line?: number;
   message: string;
+}
+
+export interface RosterNote extends RosterIssue {
+  kind: RosterNoteKind;
+}
+
+/** A line of a conflict's evidence and the roster lines it comes from. */
+export interface RosterEvidence {
+  lines: number[];
+  text: string;
 }
 
 export interface ConflictOption {
@@ -602,7 +629,7 @@ export interface RosterConflict {
   key: string;
   kind: "name" | "similar" | "solo" | "sameName";
   title: string;
-  evidence: string[];
+  evidence: RosterEvidence[];
   options: ConflictOption[];
   suggested: string;
 }
@@ -634,7 +661,7 @@ export interface RosterPlan {
   people: PlannedPerson[];
   teams: PlannedTeam[];
   conflicts: RosterConflict[];
-  notes: RosterIssue[];
+  notes: RosterNote[];
   problems: RosterIssue[];
 }
 
@@ -741,6 +768,8 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
     const person = people[index];
     return person ? label(person) : say("roster.someone", "someone");
   };
+  const linesOf = (indexes: Tuple<number>) =>
+    [...new Set(indexes.flatMap((index) => people[index]?.line ?? []))].toSorted((a, b) => a - b);
   const everyone = people.map((_, index) => index);
   const groups = new Groups(people.length);
   const claimedBy = new Map<number, number[]>();
@@ -753,6 +782,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
       if (match.person === null) {
         if (match.ambiguous.length) {
           notes.push({
+            kind: "ambiguousMate",
             line: person.line,
             message: say(
               "roster.ambiguousMate",
@@ -772,6 +802,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
       if (!mate) continue;
       if (match.loose) {
         notes.push({
+          kind: "looseMate",
           line: person.line,
           message: say(
             "roster.looseMate",
@@ -789,6 +820,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
 
   for (const { ref, by } of unmatched.values()) {
     notes.push({
+      kind: "notOnRoster",
       line: people[by[0] ?? -1]?.line,
       message: isEmail(ref.text)
         ? say(
@@ -834,25 +866,24 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
             named,
           ),
       evidence: [
-        solo
-          ? say("roster.soloLine", "Line {line}: {name} said they're working on their own", {
-              line: person.line,
-              name: label(person),
-            })
-          : say("roster.placedLine", "Line {line}: {name} asked to be placed on a team", {
-              line: person.line,
-              name: label(person),
-            }),
-        ...by.map((each) => {
-          const line = people[each]?.line ?? 0;
-          const team = people[each]?.team;
-          return team
-            ? say("roster.listsThemOn", "Line {line}: {name} lists them on {team}", {
-                line,
-                name: who(each),
-                team,
+        {
+          lines: [person.line],
+          text: solo
+            ? say("roster.soloLine", "{name} said they're working on their own", {
+                name: label(person),
               })
-            : say("roster.listsThem", "Line {line}: {name} lists them", { line, name: who(each) });
+            : say("roster.placedLine", "{name} asked to be placed on a team", {
+                name: label(person),
+              }),
+        },
+        ...by.map((each) => {
+          const team = people[each]?.team;
+          return {
+            lines: linesOf([each]),
+            text: team
+              ? say("roster.listsThemOn", "{name} lists them on {team}", { name: who(each), team })
+              : say("roster.listsThem", "{name} lists them", { name: who(each) }),
+          };
         }),
       ],
       options: [
@@ -901,7 +932,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
           count: big.length,
           name: spelling,
         }),
-        evidence: big.map((set) => list(set.map(who))),
+        evidence: big.map((set) => ({ lines: linesOf(set), text: list(set.map(who)) })),
         options: [
           { id: "merge", label: say("roster.oneTeam", "They're one team") },
           {
@@ -951,6 +982,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
       const variants = [...new Set(spellings)];
       if (variants.length > 1) {
         notes.push({
+          kind: "readAsOne",
           message: say("roster.readAsOne", "{names} are read by Bogey as one team, {name}", {
             names: list(variants.map((each) => `"${each}"`)),
             name: commonest(spellings) ?? "",
@@ -970,6 +1002,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
         });
       if (!names.length)
         notes.push({
+          kind: "noTeamName",
           message: say(
             "roster.noTeamName",
             '{people} named each other but no team, so they\'re "{name}"',
@@ -1005,23 +1038,18 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
         .filter((person) => person !== undefined)
         .map((person) => {
           const values = {
-            line: person.line,
             name: label(person),
             team: person.team ?? "",
             mates: list(person.teammates.map((ref) => ref.text)),
           };
-          if (person.teammates.length) {
-            return person.team
-              ? say("roster.wroteWith", 'Line {line}: {name} wrote "{team}", with {mates}', values)
-              : say(
-                  "roster.wroteNoneWith",
-                  "Line {line}: {name} wrote no team name, with {mates}",
-                  values,
-                );
-          }
-          return person.team
-            ? say("roster.wrote", 'Line {line}: {name} wrote "{team}"', values)
-            : say("roster.wroteNone", "Line {line}: {name} wrote no team name", values);
+          const text = person.teammates.length
+            ? person.team
+              ? say("roster.wroteWith", '{name} wrote "{team}", with {mates}', values)
+              : say("roster.wroteNoneWith", "{name} wrote no team name, with {mates}", values)
+            : person.team
+              ? say("roster.wrote", '{name} wrote "{team}"', values)
+              : say("roster.wroteNone", "{name} wrote no team name", values);
+          return { lines: [person.line], text };
         }),
       options: [
         ...names.map((name) => ({
@@ -1086,10 +1114,13 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
           },
         ),
         evidence: [
-          say("roster.wroteName", '{people} wrote "{team}"', {
-            people: list(team.members.map(who)),
-            team: team.name,
-          }),
+          {
+            lines: linesOf(team.members),
+            text: say("roster.wroteName", '{people} wrote "{team}"', {
+              people: list(team.members.map(who)),
+              team: team.name,
+            }),
+          },
         ],
         options: [
           { id: "join", label: say("roster.putOn", "Put them on {team}", { team: near }) },
@@ -1128,12 +1159,13 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
           a: team.name,
           b: other.name,
         }),
-        evidence: [team, other].map((each) =>
-          say("roster.wroteName", '{people} wrote "{team}"', {
+        evidence: [team, other].map((each) => ({
+          lines: linesOf(each.members),
+          text: say("roster.wroteName", '{people} wrote "{team}"', {
             people: list(each.members.map(who)),
             team: each.name,
           }),
-        ),
+        })),
         options: [
           ...pair.map((name) => ({
             id: `use:${name}`,
@@ -1163,6 +1195,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
     for (const team of finalTeams) {
       if (team.members.length > options.maxTeamSize) {
         notes.push({
+          kind: "tooBig",
           message: say(
             "roster.tooBig",
             "{team} would have {count} members; the event allows {max}. Extra members are left off when it fills up",
@@ -1236,6 +1269,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
 
   if (unmatchedDivisions.size) {
     notes.push({
+      kind: "noDivision",
       message: say("roster.noDivision", "No division matches {values}; add a rule to place them", {
         values: list([...unmatchedDivisions].map((each) => `"${each}"`)),
       }),
@@ -1243,6 +1277,7 @@ export function planRoster(text: string, options: PlanOptions = {}): RosterPlan 
   }
   if (unmatchedSessions.size) {
     notes.push({
+      kind: "noSession",
       message:
         unmatchedSessions.size > 5
           ? say(

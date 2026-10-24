@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { IconChevronDown, IconInfoCircle, IconUsersGroup } from "@tabler/icons-react";
+import { IconChevronDown, IconUsersGroup } from "@tabler/icons-react";
 import { z } from "zod";
 import { requestFailure } from "@bogey/db/errors";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
@@ -48,6 +48,7 @@ import type { EditorHandle } from "@bogey/ui/components/code-editor";
 import type { LineMark } from "@bogey/ui/lib/editor-lines";
 import { LineButton, WithLineRefs } from "./line-refs.tsx";
 import { RosterConflicts } from "./roster-conflicts.tsx";
+import { RosterCorrections } from "./roster-corrections.tsx";
 import { RosterEditor } from "./roster-editor.tsx";
 
 const ROLES = [
@@ -446,7 +447,7 @@ function Review({
       </p>
 
       {plan.problems.length > 0 && (
-        <ul className="flex flex-col gap-0.5 rounded-2xl border border-destructive/40 p-3 text-sm text-destructive">
+        <ul className="flex max-h-[min(20rem,50vh)] flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-2xl border border-destructive/40 px-4 py-2.5 text-sm text-destructive">
           {plan.problems.map((problem) => (
             <li key={`${problem.line}:${problem.message}`}>
               {problem.line ? <LineButton line={problem.line} onJump={onJump} /> : null}
@@ -579,21 +580,7 @@ function Review({
           defaultOpen
           badge={<span className="text-xs font-normal text-muted-fg">{plan.notes.length}</span>}
         >
-          <ul className="flex flex-col gap-1.5 text-sm">
-            {plan.notes.map((note) => (
-              <li key={`${note.line}:${note.message}`} className="flex gap-2">
-                <IconInfoCircle className="mt-0.5 size-4 shrink-0 text-muted-fg" />
-                <span>
-                  {note.line !== undefined && (
-                    <span className="text-muted-fg">
-                      <LineButton line={note.line} onJump={onJump} />{" "}
-                    </span>
-                  )}
-                  <WithLineRefs text={note.message} onJump={onJump} />
-                </span>
-              </li>
-            ))}
-          </ul>
+          <RosterCorrections notes={plan.notes} onJump={onJump} />
         </Part>
       )}
     </div>

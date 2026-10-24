@@ -462,7 +462,7 @@ function RouteComponent() {
                   />
                 }
                 empty={t("managePeople.noneShown")}
-                pageSize={50}
+                pageSize={25}
               />
             </Busy>
           </div>

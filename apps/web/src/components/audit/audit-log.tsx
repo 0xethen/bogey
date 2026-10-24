@@ -140,7 +140,7 @@ export function AuditLog({
           data={entries}
           getRowId={(entry) => String(entry.id)}
           search={search}
-          pageSize={50}
+          pageSize={25}
           empty={t("audit.empty")}
         />
       )}

@@ -203,6 +203,27 @@ test("a team already in the event is joined, and a near spelling asks", () => {
   expect(near.conflicts.some((each) => each.kind === "similar")).toBe(true);
 });
 
+test("every piece of a conflict's evidence names the roster lines it comes from", () => {
+  const near = planRoster(form, { kinds, catalog: { ...catalog, teams: ["Byte Clubb"] } });
+  const similar = near.conflicts.find((each) => each.kind === "similar");
+  const lines = [
+    person("ivy.chen@example.com")?.line,
+    person("leo.martin@example.com")?.line,
+  ].toSorted((a, b) => (a ?? 0) - (b ?? 0));
+  expect(similar?.evidence[0]?.lines).toEqual(expect.arrayContaining(lines));
+  for (const conflict of [...plan.conflicts, ...near.conflicts]) {
+    for (const each of conflict.evidence) {
+      expect(each.lines.length).toBeGreaterThan(0);
+      expect(each.text).not.toMatch(/^Line \d/);
+    }
+  }
+});
+
+test("corrections say what kind they are", () => {
+  expect(plan.notes.find((note) => note.message.includes('"ByteClub"'))?.kind).toBe("readAsOne");
+  expect(plan.notes.every((note) => typeof note.kind === "string")).toBe(true);
+});
+
 test("a preferred name defaults to the first word of the first name", () => {
   const text = [
     "email,first name,last name,teammate",
