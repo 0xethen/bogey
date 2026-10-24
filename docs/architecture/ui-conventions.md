@@ -71,3 +71,19 @@ Destructive actions go behind `confirm`. Don't recolor a button with `className=
 - **Accent** (`bg-accent`) is a faint wash for "this one": a hovered or selected tile, a drop target, the highlighted row in a ranking, and the flash when a `#id` link lands on a setting or section. It's lighter than `muted` and carries only a hint of the brand hue.
 - **Muted** (`bg-muted`, `text-muted-fg`) is for secondary surfaces and text: icon chips, meta lines, empty states.
 - Tones (`warning`, `destructive`, emerald for success, sky for info) carry meaning; use them only for that meaning.
+
+## Passing data down
+
+A component reads what it needs where it is, instead of taking it as a prop only to hand it to a child. Pick the tool by where the data comes from:
+
+| Data                                                                  | How a component gets it                                                                                                                                                                                                                |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The event being shown                                                 | `useEvent()` from `#/lib/viewer.ts`. Anything under `/events/$slug` can call it.                                                                                                                                                       |
+| Other route data (params, search, loader data, `beforeLoad` context)  | In the route's own file, `Route.useParams()`, `Route.useSearch()`, `Route.useLoaderData()`, `Route.useRouteContext({ select })`. In `-components/` and `components/`, `getRouteApi("/_authed/events/$slug")` and the same hooks on it. |
+| What the viewer may do                                                | `useEventViewer()` (respects "View as"), `useCan(...)`.                                                                                                                                                                                |
+| Server data                                                           | The leaf calls `useSuspenseQuery` / `useQuery` with the shared query options (`eventPrizesQueryOptions(eventId)` and so on). The cache dedupes, so two components reading the same query cost one request.                             |
+| State a whole subtree shares (an editor's draft, a plugin's settings) | A small typed context next to that subtree, like `withChallenges` / `useChallenges()` in the challenges plugin. One per feature, never one app-wide context.                                                                           |
+
+- Props are still right for what the parent decides: which row this is, open/closed, callbacks, and values the parent computed.
+- Components that work in more than one place keep their props: `@bogey/ui` primitives, settings sections that take a `scope` (org, event or instance), and plugin slots, whose props are the plugin API.
+- A component used outside the event routes (the join page's `OnboardingForm`) takes `eventId` as a prop, since there's no event route to read.
