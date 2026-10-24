@@ -26,36 +26,12 @@ import {
   type ProjectExportAccess,
   type ProjectFieldKey,
 } from "#/lib/project-export.ts";
-
-export class ExportError extends Error {
-  constructor(
-    readonly status: 400 | 401 | 403 | 404 | 500,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+import { ExportError, readAll, readAllIn } from "#/lib/server/export-reads.server.ts";
 
 type Client = ReturnType<typeof createServerClient>;
 type Event = Tables<"events">;
 
-const PAGE = 1000;
 const LINK_SECONDS = 7 * 24 * 60 * 60;
-
-async function readAll<T>(
-  page: (
-    from: number,
-    to: number,
-  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
-): Promise<T[]> {
-  const rows: T[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await page(from, from + PAGE - 1);
-    if (error) throw new ExportError(500, error.message);
-    rows.push(...(data ?? []));
-    if ((data?.length ?? 0) < PAGE) return rows;
-  }
-}
 
 function must<T>(result: { data: T | null; error: { message: string } | null }): T {
   if (result.error) throw new ExportError(500, result.error.message);
@@ -235,16 +211,15 @@ async function members(supabase: Client, event: Event): Promise<Response> {
     ),
     supabase.from("divisions").select("id, name").eq("event_id", event.id),
   ]);
-  const profiles = await readAll((from, to) =>
-    supabase
-      .from("profiles")
-      .select("id, display_name")
-      .in(
-        "id",
-        people.map((person) => person.user_id),
-      )
-      .order("id")
-      .range(from, to),
+  const profiles = await readAllIn(
+    people.map((person) => person.user_id),
+    (ids, from, to) =>
+      supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", ids)
+        .order("id")
+        .range(from, to),
   );
   const names = new Map(profiles.map((profile) => [profile.id, profile.display_name]));
   const registration = new Map(regs.flatMap((row) => (row.user_id ? [[row.user_id, row]] : [])));
@@ -308,16 +283,15 @@ async function teams(supabase: Client, event: Event): Promise<Response> {
     ),
     supabase.from("divisions").select("id, name").eq("event_id", event.id),
   ]);
-  const profiles = await readAll((from, to) =>
-    supabase
-      .from("profiles")
-      .select("id, display_name")
-      .in(
-        "id",
-        memberRows.map((row) => row.user_id),
-      )
-      .order("id")
-      .range(from, to),
+  const profiles = await readAllIn(
+    memberRows.map((row) => row.user_id),
+    (ids, from, to) =>
+      supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", ids)
+        .order("id")
+        .range(from, to),
   );
   const names = new Map(profiles.map((profile) => [profile.id, profile.display_name]));
   const divisionNames = new Map(must(divisions).map((division) => [division.id, division.name]));
@@ -358,12 +332,11 @@ async function findForm(supabase: Client, event: Event, key: string | null) {
 }
 
 async function namesOf(supabase: Client, ids: Tuple<string>): Promise<Map<string, string>> {
-  const unique = [...new Set(ids)];
-  const profiles = await readAll((from, to) =>
+  const profiles = await readAllIn(ids, (chunk, from, to) =>
     supabase
       .from("profiles")
       .select("id, display_name")
-      .in("id", unique)
+      .in("id", chunk)
       .order("id")
       .range(from, to),
   );
@@ -674,18 +647,17 @@ async function submissionFiles(
   const teamById = byId(
     must(await supabase.from("teams").select("id, name").eq("event_id", event.id)),
   );
-  const files = await readAll((from, to) =>
-    supabase
-      .from("submission_files")
-      .select("*")
-      .in(
-        "submission_id",
-        subs.map((sub) => sub.id),
-      )
-      .order("submission_id")
-      .order("sort")
-      .order("id")
-      .range(from, to),
+  const files = await readAllIn(
+    subs.map((sub) => sub.id),
+    (ids, from, to) =>
+      supabase
+        .from("submission_files")
+        .select("*")
+        .in("submission_id", ids)
+        .order("submission_id")
+        .order("sort")
+        .order("id")
+        .range(from, to),
   );
   const subById = byId(subs);
 
