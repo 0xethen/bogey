@@ -89,7 +89,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/")({
 
 function RouteComponent() {
   const t = useT();
-  const { event, plugins } = Route.useRouteContext();
+  const { event } = Route.useRouteContext();
   return (
     <Screen title={t("judging.title")} description={t("manageJudging.intro")} width="embedded">
       <Progress />
@@ -100,7 +100,7 @@ function RouteComponent() {
           keys={["blind", "browseProjects", "judgeExport"]}
         />
       </Screen.Section>
-      <Rounds eventId={event.id} slug={event.slug} plugins={plugins} />
+      <Rounds />
       <ManualAssignments eventId={event.id} />
       <Deliberation />
       <Calibration eventId={event.id} />

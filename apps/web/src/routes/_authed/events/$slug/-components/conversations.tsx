@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getRouteApi } from "@tanstack/react-router";
 import { loadedPluginSlots, readPluginSettings } from "@bogey/plugins";
 import { emitSignal } from "@bogey/plugins/signals";
 import { pluginSettingsQueryOptions } from "#/lib/plugins.ts";
-import { useEventViewer, useSession } from "#/lib/viewer.ts";
+import { useEvent, useEventViewer, useSession } from "#/lib/viewer.ts";
 import { z } from "zod";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { useT, type PlainKey, type T } from "#/lib/translate.tsx";
@@ -70,6 +71,8 @@ import { MessageBox } from "#/components/event/messaging/message-box.tsx";
 import { MessageAttachments } from "#/components/event/messaging/message-attachments.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
+const eventRoute = getRouteApi("/_authed/events/$slug");
+
 export const messagesSearch = z.object({
   c: z
     .union([z.literal(ANNOUNCEMENTS), z.string().uuid()])
@@ -97,8 +100,6 @@ const STATUS = {
 } as const;
 
 export function Conversations({
-  eventId,
-  viewerId,
   conversations,
   announcements,
   openId,
@@ -110,8 +111,6 @@ export function Conversations({
   forward = false,
   empty,
 }: {
-  eventId: string;
-  viewerId: string;
   conversations?: Tuple<Conversation>;
   announcements: { channel: ReactNode; latest: Announcement | undefined; unread: number };
   openId: string | undefined;
@@ -219,7 +218,6 @@ export function Conversations({
           <OpenConversation
             key={open.id}
             conversation={open}
-            viewerId={viewerId}
             canReply={canReply(open)}
             moderate={moderate}
             forward={forward}
@@ -237,8 +235,8 @@ export function Conversations({
         )}
       </section>
 
-      <NewConversationDialog eventId={eventId} audiences={start} onStarted={(id) => onOpen(id)} />
-      {messageTeams && <MessageTeamDialog eventId={eventId} onStarted={(id) => onOpen(id)} />}
+      <NewConversationDialog audiences={start} onStarted={(id) => onOpen(id)} />
+      {messageTeams && <MessageTeamDialog onStarted={(id) => onOpen(id)} />}
     </div>
   );
 }
@@ -358,19 +356,18 @@ function ConversationRow({
 
 function OpenConversation({
   conversation,
-  viewerId,
   canReply,
   moderate,
   forward,
   onBack,
 }: {
   conversation: Conversation;
-  viewerId: string;
   canReply: boolean;
   moderate: boolean;
   forward: boolean;
   onBack: () => void;
 }) {
+  const viewerId = eventRoute.useRouteContext({ select: (context) => context.session.user.id });
   const t = useT();
   return (
     <>
@@ -711,15 +708,14 @@ const startSchema = (t: T) =>
   });
 
 function NewConversationDialog({
-  eventId,
   audiences,
   onStarted,
 }: {
-  eventId: string;
   audiences: Tuple<ConversationAudience>;
   onStarted: (id: string) => void;
 }) {
   const t = useT();
+  const eventId = useEvent().id;
   const schema = useMemo(() => startSchema(t), [t]);
   const queryClient = useQueryClient();
   const form = useAppForm({
@@ -813,14 +809,9 @@ const teamSchema = (t: T) =>
       .meta({ label: t("compose.message") }),
   });
 
-function MessageTeamDialog({
-  eventId,
-  onStarted,
-}: {
-  eventId: string;
-  onStarted: (id: string) => void;
-}) {
+function MessageTeamDialog({ onStarted }: { onStarted: (id: string) => void }) {
   const t = useT();
+  const eventId = useEvent().id;
   const schema = useMemo(() => teamSchema(t), [t]);
   const queryClient = useQueryClient();
   const teams = useQuery(audienceChoicesQueryOptions(eventId));

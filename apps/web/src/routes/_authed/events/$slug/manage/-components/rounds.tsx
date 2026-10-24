@@ -10,7 +10,7 @@ import {
   saveRoundFn,
   type JudgingRound,
 } from "@bogey/db/queries/judging";
-import { Link } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import { submissionFormsQueryOptions } from "@bogey/db/queries/submissions";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { requestFailure } from "@bogey/db/errors";
@@ -24,9 +24,11 @@ import {
   rewardEarlyPunishLate,
   useAppForm,
 } from "@bogey/ui/lib/form";
-import { pluginRankingMethods, type PluginManifest } from "@bogey/plugins";
+import { pluginRankingMethods } from "@bogey/plugins";
 import { windowLabel } from "#/lib/windows.ts";
 import { useT, type T } from "#/lib/translate.tsx";
+
+const eventRoute = getRouteApi("/_authed/events/$slug");
 
 const EVENT_WINDOW = "judging";
 
@@ -77,21 +79,19 @@ const advanceSchema = (t: T) =>
   });
 
 function RoundRow({
-  eventId,
-  slug,
   round,
   entries,
   last,
-  plugins,
 }: {
-  eventId: string;
-  slug: string;
   round: JudgingRound;
-  plugins: Tuple<PluginManifest>;
   entries: number | null;
   last: boolean;
 }) {
   const t = useT();
+  const {
+    event: { id: eventId, slug },
+    plugins,
+  } = eventRoute.useRouteContext();
   const roundForm = useMemo(() => roundSchema(t), [t]);
   const assignForm = useMemo(() => assignSchema(t), [t]);
   const advanceForm = useMemo(() => advanceSchema(t), [t]);
@@ -347,16 +347,9 @@ function RoundRow({
   );
 }
 
-export function Rounds({
-  eventId,
-  slug,
-  plugins,
-}: {
-  eventId: string;
-  slug: string;
-  plugins: Tuple<PluginManifest>;
-}) {
+export function Rounds() {
   const t = useT();
+  const eventId = eventRoute.useRouteContext({ select: (context) => context.event.id });
   const { data } = useSuspenseQuery(judgingRoundsQueryOptions(eventId));
   const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(eventId));
   const judged = forms.filter((form) => form.judged);
@@ -375,8 +368,6 @@ export function Rounds({
               {rounds.map((round, index) => (
                 <RoundRow
                   key={round.id}
-                  eventId={eventId}
-                  slug={slug}
                   round={round}
                   entries={
                     round.ordinal === 1
@@ -384,7 +375,6 @@ export function Rounds({
                       : data.entries.filter((entry) => entry.roundId === round.id).length
                   }
                   last={index === rounds.length - 1}
-                  plugins={plugins}
                 />
               ))}
             </RowList>

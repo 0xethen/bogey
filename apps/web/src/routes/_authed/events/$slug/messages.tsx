@@ -56,7 +56,6 @@ function RouteComponent() {
     access: realAccess,
     chat,
     manager,
-    session,
     announcements: announcing,
   } = Route.useRouteContext();
   const { c } = Route.useSearch();
@@ -122,8 +121,6 @@ function RouteComponent() {
         </Alert>
       )}
       <Conversations
-        eventId={event.id}
-        viewerId={session.user.id}
         conversations={chatting ? visible : undefined}
         announcements={{
           channel: (
