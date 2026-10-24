@@ -45,7 +45,7 @@ function RouteComponent() {
         <>
           {t("audit.eventIntro")}{" "}
           <Link to="/org/audit" className="link">
-            {t("audit.seeAll")}
+            {t("audit.seeAll")}...
           </Link>
         </>
       }

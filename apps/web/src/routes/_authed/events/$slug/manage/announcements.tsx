@@ -56,7 +56,7 @@ function RouteComponent() {
             {t("announcements.all")}
           </Button>
           <DialogTrigger handle={newAnnouncement} render={<Button size="sm" />}>
-            {t("announcements.new")}
+            {t("announcements.new")}...
           </DialogTrigger>
         </>
       }

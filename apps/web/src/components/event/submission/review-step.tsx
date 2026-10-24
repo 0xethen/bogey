@@ -185,7 +185,7 @@ function TeamDivision({
             disabled={!picked || picked === current?.id || move.isPending}
             onClick={() => picked && move.mutate(picked)}
           >
-            {move.isPending ? t("common.saving") : t("sub.reviewDivisionMove")}
+            {move.isPending ? `${t("common.saving")}...` : t("sub.reviewDivisionMove")}
           </Button>
         </div>
       </div>

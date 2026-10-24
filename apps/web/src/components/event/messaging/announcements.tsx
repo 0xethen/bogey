@@ -129,7 +129,7 @@ export function AnnouncementChannel({
                     onClick={() => setDeleting(announcement.id)}
                   >
                     <IconTrash />
-                    {t("announcements.delete")}
+                    {t("announcements.delete")}...
                   </DropdownMenuItem>
                 )
               }
@@ -171,7 +171,7 @@ function AnnouncementBox() {
       <p className="text-sm text-muted-fg">{t("announcements.boxHelp")}</p>
       <DialogTrigger handle={newAnnouncement} render={<Button type="button" size="sm" />}>
         <IconSpeakerphone />
-        {t("announcements.new")}
+        {t("announcements.new")}...
       </DialogTrigger>
     </div>
   );

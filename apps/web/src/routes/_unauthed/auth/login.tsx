@@ -163,7 +163,7 @@ function RouteComponent() {
 
             <Field>
               <form.FormAlert title={t("auth.sendFailedTitle")} />
-              <form.Submit pending={t("auth.sending")}>{t("auth.emailMeLink")}</form.Submit>
+              <form.Submit pending={`${t("auth.sending")}...`}>{t("auth.emailMeLink")}</form.Submit>
             </Field>
 
             <p className="text-center text-sm text-muted-fg">
@@ -203,7 +203,7 @@ function RouteComponent() {
                 ) : (
                   <Button type="button" variant="outline" onClick={() => setSsoOpen(true)}>
                     <ProviderIcon provider="sso" />
-                    {t("auth.sso")}
+                    {t("auth.sso")}...
                   </Button>
                 ))}
               <ErrorAlert error={providerSignIn.error} title={t("auth.providerFailedTitle")} />
@@ -251,7 +251,7 @@ function SsoForm({ onSubmit }: { onSubmit: (email: string) => void }) {
           <form.Field name="email">
             {(field) => <field.TextField type="email" autoComplete="email" />}
           </form.Field>
-          <form.Submit pending={t("auth.opening")}>{t("auth.ssoContinue")}</form.Submit>
+          <form.Submit pending={`${t("auth.opening")}...`}>{t("auth.ssoContinue")}</form.Submit>
         </FieldGroup>
       </form.Form>
     </form.AppForm>

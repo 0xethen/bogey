@@ -38,7 +38,7 @@ function RouteComponent() {
         actions={
           !certificate.revoked && (
             <Button size="sm" variant="outline" onClick={() => window.print()}>
-              {t("common.print")}
+              {t("common.print")}...
             </Button>
           )
         }

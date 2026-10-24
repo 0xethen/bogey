@@ -149,7 +149,7 @@ export function CmdK({ session }: { session: Session }) {
       ? [
           {
             id: "new-announcement",
-            label: t("announcements.new"),
+            label: `${t("announcements.new")}...`,
             group: real.event.name,
             keywords: ["post", "announce"],
             run: () => newAnnouncement.open(null),
@@ -211,7 +211,7 @@ export function CmdK({ session }: { session: Session }) {
       ? [
           {
             id: "report-issue",
-            label: t("cmd.reportIssue"),
+            label: `${t("cmd.reportIssue")}...`,
             group: "Help",
             keywords: ["bug", "feedback", "github"],
             external: true,
@@ -221,7 +221,7 @@ export function CmdK({ session }: { session: Session }) {
       : []),
     {
       id: "sign-out",
-      label: t("nav.signOut"),
+      label: `${t("nav.signOut")}...`,
       group: "Account",
       keywords: ["log out"],
       run: () => signOutDialog.open(null),
@@ -260,7 +260,11 @@ export function CmdK({ session }: { session: Session }) {
       description={t("cmd.description")}
       filter={(value, raw, keywords) => matchCommand(value, commandMode(raw).query, keywords)}
     >
-      <CommandInput placeholder={t("cmd.placeholder")} value={search} onValueChange={setSearch} />
+      <CommandInput
+        placeholder={`${t("cmd.placeholder")}...`}
+        value={search}
+        onValueChange={setSearch}
+      />
       <CommandList className={cn("scroll-fade", showHint && "mb-10")}>
         <CommandEmpty>{t("cmd.empty")}</CommandEmpty>
         {!search && recentItems.length > 0 && (

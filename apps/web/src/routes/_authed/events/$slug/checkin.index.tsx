@@ -343,7 +343,7 @@ function Desk() {
               <div className="flex flex-col gap-2 sm:flex-row">
                 <walkInForm.Submit
                   className="sm:flex-1"
-                  pending={t("checkin.registering")}
+                  pending={`${t("checkin.registering")}...`}
                   onClick={() => {
                     walkInCheckIn.current = true;
                   }}
@@ -353,7 +353,7 @@ function Desk() {
                 </walkInForm.Submit>
                 <walkInForm.Submit
                   variant="outline"
-                  pending={t("checkin.registering")}
+                  pending={`${t("checkin.registering")}...`}
                   onClick={() => {
                     walkInCheckIn.current = false;
                   }}

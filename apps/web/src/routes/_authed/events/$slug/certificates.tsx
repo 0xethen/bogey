@@ -53,7 +53,7 @@ function CertificateRow({ option, eventId }: { option: CertificateOption; eventI
             nativeButton={false}
             render={<Link to="/certificates/$code" params={{ code: option.code }} />}
           >
-            {t("certificates.open")}
+            {t("certificates.open")}...
           </Button>
         ) : (
           <Button

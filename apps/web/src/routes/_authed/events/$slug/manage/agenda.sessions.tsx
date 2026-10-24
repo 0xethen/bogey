@@ -622,8 +622,8 @@ function SessionsEditor() {
                             type="button"
                             size="icon-sm"
                             variant="ghost-destructive"
-                            aria-label={t("manageAgenda.removeSlot")}
-                            tooltip={t("manageAgenda.removeSlot")}
+                            aria-label={`${t("manageAgenda.removeSlot")}...`}
+                            tooltip={`${t("manageAgenda.removeSlot")}...`}
                             confirm={{
                               title: t("manageAgenda.removeSlotTitle"),
                               description: t("manageAgenda.removeSlotBody", {

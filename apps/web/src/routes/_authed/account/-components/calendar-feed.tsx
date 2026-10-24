@@ -72,7 +72,7 @@ export function CalendarFeed() {
               }}
               onClick={() => create.mutate()}
             >
-              {t("calendar.newButton")}
+              {t("calendar.newButton")}...
             </Button>
             <Button
               variant="ghost"
@@ -83,7 +83,7 @@ export function CalendarFeed() {
               }}
               onClick={() => revoke.mutate()}
             >
-              {t("calendar.offButton")}
+              {t("calendar.offButton")}...
             </Button>
           </>
         ) : (

@@ -77,7 +77,7 @@ function Badges() {
           </Button>
           <Button size="sm" onClick={() => window.print()}>
             <IconPrinter />
-            {t("common.print")}
+            {t("common.print")}...
           </Button>
         </>
       }

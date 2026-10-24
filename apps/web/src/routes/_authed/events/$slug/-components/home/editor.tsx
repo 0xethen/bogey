@@ -587,8 +587,8 @@ function BlockPicker({
         </InputGroupAddon>
         <InputGroupInput
           type="search"
-          aria-label={t("homeEditor.search")}
-          placeholder={t("homeEditor.search")}
+          aria-label={`${t("homeEditor.search")}...`}
+          placeholder={`${t("homeEditor.search")}...`}
           value={query}
           onChange={(event) => setQuery(event.currentTarget.value)}
           onKeyDown={(event) => {
@@ -666,12 +666,12 @@ function AddBlock({
             variant="ghost"
             size="sm"
             className="justify-start self-start text-muted-fg"
-            aria-label={t(columnOf(column).addHere)}
+            aria-label={`${t(columnOf(column).addHere)}...`}
           />
         }
       >
         <IconPlus />
-        {t("homeEditor.addHere")}
+        {t("homeEditor.addHere")}...
       </PopoverTrigger>
       <PopoverContent
         align="start"

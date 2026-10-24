@@ -247,7 +247,7 @@ export function TwoFactorSection({ forAdmin }: { forAdmin?: boolean }) {
       )}
       {state.isPending ? (
         <span className="flex items-center gap-2">
-          <Spinner /> <span className="text-muted-fg text-sm">{t("twoFactor.checking")}</span>
+          <Spinner /> <span className="text-muted-fg text-sm">{t("twoFactor.checking")}...</span>
         </span>
       ) : state.isError ? (
         <ErrorAlert error={t("twoFactor.checkFailed")} title={t("common.wentWrong")} />
@@ -505,7 +505,7 @@ function RemoveButton({
       }}
       onClick={onRemove}
     >
-      {t("twoFactor.removeButton")}
+      {t("twoFactor.removeButton")}...
     </Button>
   );
 }

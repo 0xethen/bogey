@@ -173,11 +173,11 @@ export function MessageBox({
             <DropdownMenuContent align="start" side="top">
               <DropdownMenuItem onClick={() => pick(files.current)}>
                 <IconPaperclip />
-                {t("conv.files")}
+                {t("conv.files")}...
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => pick(pictures.current)}>
                 <IconPhoto />
-                {t("conv.pictures")}
+                {t("conv.pictures")}...
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -210,7 +210,11 @@ export function MessageBox({
           <form.Subscribe selector={(state) => state.values.body.length}>
             {(length) => <CharacterCount length={length} max={MAX_MESSAGE_LENGTH} />}
           </form.Subscribe>
-          <form.Submit size="sm" pending={t("onboarding.sending")} disabled={uploads.uploading}>
+          <form.Submit
+            size="sm"
+            pending={`${t("onboarding.sending")}...`}
+            disabled={uploads.uploading}
+          >
             <IconSend />
             {t("conv.send")}
           </form.Submit>

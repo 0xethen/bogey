@@ -285,7 +285,7 @@ function ReviewTable({
                   aria-label={t("managePeople.viewAnswersFor", { name: nameOf(row) })}
                   onClick={() => onOpen(row)}
                 >
-                  {t("managePeople.viewAnswers")}
+                  {t("managePeople.viewAnswers")}...
                 </Button>
               </div>
             );
@@ -301,7 +301,7 @@ function ReviewTable({
         data={[...rows]}
         getRowId={(row) => row.id}
         selection={{ selected, onChange: onSelect, label: nameOf }}
-        search={{ text: searchText, placeholder: t("managePeople.searchRegistrations") }}
+        search={{ text: searchText, placeholder: `${t("managePeople.searchRegistrations")}...` }}
         pageSize={25}
       />
     </div>
@@ -318,7 +318,9 @@ function AnswersDialog({ busy, onReview }: { busy: boolean; onReview: (input: De
         return (
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>{payload ? nameOf(payload) : t("managePeople.viewAnswers")}</DialogTitle>
+              <DialogTitle>
+                {payload ? nameOf(payload) : `${t("managePeople.viewAnswers")}...`}
+              </DialogTitle>
               <DialogDescription>
                 {payload?.full_name ? String(payload.email) : t("managePeople.answersHelp")}
               </DialogDescription>

@@ -238,7 +238,7 @@ function WhoForm({
           {(field) => <field.TextField type="email" required autoComplete="off" />}
         </form.Field>
         <form.FormAlert title={t("checkin.walkInFailed")} />
-        <form.Submit size="lg" pending={t("checkin.registering")}>
+        <form.Submit size="lg" pending={`${t("checkin.registering")}...`}>
           {hasQuestions ? t("kiosk.continue") : t("kiosk.checkIn")}
         </form.Submit>
       </form.Form>

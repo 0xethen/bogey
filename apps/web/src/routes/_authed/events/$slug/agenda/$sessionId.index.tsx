@@ -67,7 +67,7 @@ function RouteComponent() {
                   />
                 }
               >
-                {t("agenda.takeAttendance")}
+                {t("agenda.takeAttendance")}...
               </Button>
             )}
             {manages && (

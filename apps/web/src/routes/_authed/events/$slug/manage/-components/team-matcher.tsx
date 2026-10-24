@@ -160,7 +160,7 @@ function Matcher({ onDone }: { onDone: () => void }) {
               }}
               onClick={() => apply.mutate(proposal.groups)}
             >
-              {t("teamMatch.apply")}
+              {t("teamMatch.apply")}...
             </Button>
           </div>
         </div>

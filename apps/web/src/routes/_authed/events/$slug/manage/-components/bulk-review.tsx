@@ -81,7 +81,7 @@ export function BulkReview({
   return (
     <>
       <Button size="sm" disabled={ids.length === 0} onClick={() => setDecision("approved")}>
-        {t("bulk.approveSelected")}
+        {t("bulk.approveSelected")}...
       </Button>
       <Button
         size="sm"
@@ -89,7 +89,7 @@ export function BulkReview({
         disabled={ids.length === 0}
         onClick={() => setDecision("rejected")}
       >
-        {t("bulk.declineSelected")}
+        {t("bulk.declineSelected")}...
       </Button>
       <Dialog open={decision !== null} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="sm:max-w-md">
@@ -118,7 +118,7 @@ export function BulkReview({
                 </Button>
                 <form.Submit
                   variant={decision === "rejected" ? "destructive" : "default"}
-                  pending={t("bulk.working")}
+                  pending={`${t("bulk.working")}...`}
                 >
                   {t("bulk.action", { verb, count: ids.length })}
                 </form.Submit>

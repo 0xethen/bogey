@@ -71,7 +71,7 @@ function RouteComponent() {
             }}
             onClick={() => goBack.mutate()}
           >
-            {t("manageCerts.useStandard")}
+            {t("manageCerts.useStandard")}...
           </Button>
         )
       }

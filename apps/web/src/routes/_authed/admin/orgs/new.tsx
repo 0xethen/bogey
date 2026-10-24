@@ -112,7 +112,9 @@ function RouteComponent() {
             <form.Field name="ownerEmail">{(field) => <field.TextField type="email" />}</form.Field>
             <form.FormAlert title={t("adminOrgs.createFailed")} />
             <div className="flex gap-2">
-              <form.Submit pending={t("teamForm.creating")}>{t("adminOrgs.create")}</form.Submit>
+              <form.Submit pending={`${t("teamForm.creating")}...`}>
+                {t("adminOrgs.create")}
+              </form.Submit>
               <Button variant="ghost" nativeButton={false} render={<Link to="/admin/orgs" />}>
                 {t("common.cancel")}
               </Button>

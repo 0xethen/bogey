@@ -167,7 +167,7 @@ function RouteComponent() {
             payload={org}
             render={<Button size="sm" variant="outline" />}
           >
-            {t("adminOrgs.hostnamesButton")}
+            {t("adminOrgs.hostnamesButton")}...
           </DialogTrigger>
           <Button
             size="sm"
@@ -182,7 +182,9 @@ function RouteComponent() {
             payload={org}
             render={<Button size="sm" variant="outline" />}
           >
-            {org.status === "active" ? t("adminOrgs.restrictButton") : t("adminOrgs.statusButton")}
+            {org.status === "active"
+              ? `${t("adminOrgs.restrictButton")}...`
+              : `${t("adminOrgs.statusButton")}...`}
           </DialogTrigger>
         </div>
       </div>
@@ -371,7 +373,7 @@ function AddHostnameForm({ org }: { org: InstanceOrg }) {
       <form.Form>
         <FieldGroup>
           <form.Field name="hostname">{(field) => <field.TextField required />}</form.Field>
-          <form.Submit pending={t("webhooks.adding")}>
+          <form.Submit pending={`${t("webhooks.adding")}...`}>
             {t("adminOrgs.addHostnameButton")}
           </form.Submit>
         </FieldGroup>

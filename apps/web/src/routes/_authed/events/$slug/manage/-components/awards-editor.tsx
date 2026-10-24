@@ -212,7 +212,7 @@ export function AwardsEditor({ eventId, rows }: { eventId: string; rows: Tuple<R
                     onClick={() => list.handleChange(propose())}
                   >
                     <IconWand />
-                    {t("awardsEditor.propose")}
+                    {t("awardsEditor.propose")}...
                   </Button>
                   <Button
                     type="button"

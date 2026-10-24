@@ -239,16 +239,16 @@ function ClearAction({
       <DangerRow
         title={title}
         help={help}
-        button={t("danger.clearButton", { title })}
+        button={`${t("danger.clearButton", { title })}...`}
         onOpen={() => setOpen(true)}
       />
       <ConfirmDialog
         open={open}
         onOpenChange={setOpen}
         title={t("danger.clearTitle", { title })}
-        description={count === undefined ? t("common.loading") : body(count)}
+        description={count === undefined ? `${t("common.loading")}...` : body(count)}
         submit={title}
-        pending={t("danger.clearing")}
+        pending={`${t("danger.clearing")}...`}
         failed={t("danger.clearFailed")}
         onConfirm={async (confirm) => {
           const problem = await run(confirm);
@@ -308,7 +308,7 @@ function PruneParticipants() {
       <DangerRow
         title={title}
         help={t("danger.pruneHelp")}
-        button={t("danger.clearButton", { title })}
+        button={`${t("danger.clearButton", { title })}...`}
         onOpen={() => setOpen(true)}
       />
       <ConfirmDialog
@@ -319,7 +319,7 @@ function PruneParticipants() {
           picked.length === 0
             ? t("danger.prunePick")
             : count.data === undefined
-              ? t("common.loading")
+              ? `${t("common.loading")}...`
               : t("danger.pruneBody", { count: count.data })
         }
         extra={
@@ -336,7 +336,7 @@ function PruneParticipants() {
           </Field>
         }
         submit={title}
-        pending={t("danger.clearing")}
+        pending={`${t("danger.clearing")}...`}
         failed={t("danger.clearFailed")}
         onConfirm={async (confirm) => {
           if (picked.length === 0) return t("danger.prunePick");
@@ -370,7 +370,7 @@ function DeleteEvent() {
     <>
       <div>
         <Button variant="destructive" onClick={() => setOpen(true)}>
-          {t("danger.deleteButton")}
+          {t("danger.deleteButton")}...
         </Button>
       </div>
       <ConfirmDialog
@@ -387,7 +387,7 @@ function DeleteEvent() {
           </>
         }
         submit={t("danger.deleteConfirm")}
-        pending={t("danger.deleting")}
+        pending={`${t("danger.deleting")}...`}
         failed={t("danger.deleteFailed")}
         onConfirm={async (confirm) => {
           const result = await deleteEventFn({ data: { eventId: event.id, confirm } }).catch(

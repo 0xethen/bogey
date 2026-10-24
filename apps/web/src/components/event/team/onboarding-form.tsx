@@ -211,7 +211,7 @@ export function OnboardingForm({
             <>
               <form.FormAlert title={t("onboarding.failed")} />
               <div>
-                <form.Submit pending={t("onboarding.sending")}>{submit}</form.Submit>
+                <form.Submit pending={`${t("onboarding.sending")}...`}>{submit}</form.Submit>
               </div>
             </>
           )}

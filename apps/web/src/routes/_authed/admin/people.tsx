@@ -224,7 +224,7 @@ function peopleColumns(options: {
                 }}
                 onClick={() => options.onChange({ email: person.email, admin: false })}
               >
-                {t("adminPeople.removeButton")}
+                {t("adminPeople.removeButton")}...
               </Button>
             ) : (
               <Button
@@ -239,7 +239,7 @@ function peopleColumns(options: {
                 }}
                 onClick={() => options.onChange({ email: person.email, admin: true })}
               >
-                {t("adminPeople.makeButton")}
+                {t("adminPeople.makeButton")}...
               </Button>
             )}
           </div>

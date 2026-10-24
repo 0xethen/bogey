@@ -133,7 +133,7 @@ export function StartOrJoinTeam({ onDone }: { onDone?: () => Promise<void> | voi
               </create.Field>
               <create.FormAlert title={t("teamForm.createFailed")} />
               <div>
-                <create.Submit pending={t("teamForm.creating")}>
+                <create.Submit pending={`${t("teamForm.creating")}...`}>
                   {t("teamForm.create")}
                 </create.Submit>
               </div>
@@ -160,8 +160,8 @@ export function StartOrJoinTeam({ onDone }: { onDone?: () => Promise<void> | voi
             </join.Field>
             <join.FormAlert title={t("teamForm.joinFailed")} />
             <div>
-              <join.Submit variant="outline" pending={t("teamForm.finding")}>
-                {t("teamForm.joinButton")}
+              <join.Submit variant="outline" pending={`${t("teamForm.finding")}...`}>
+                {t("teamForm.joinButton")}...
               </join.Submit>
             </div>
           </join.Form>
@@ -231,7 +231,7 @@ function JoinConfirmation({
         <AlertDialogCancel>{blocked ? t("common.close") : t("common.cancel")}</AlertDialogCancel>
         {!blocked && (
           <Button type="button" disabled={joining} onClick={onJoin}>
-            {joining ? t("teamForm.joining") : t("teamForm.join")}
+            {joining ? `${t("teamForm.joining")}...` : t("teamForm.join")}
           </Button>
         )}
       </AlertDialogFooter>

@@ -88,7 +88,7 @@ export function Comments({ eventId, submissionId }: { eventId: string; submissio
             maxLength={1000}
             rows={3}
             aria-label={t("gallery.commentLabel")}
-            placeholder={t("gallery.commentPlaceholder")}
+            placeholder={`${t("gallery.commentPlaceholder")}...`}
             onChange={(event) => setDraft(event.target.value)}
           />
           <Button type="submit" size="sm" disabled={post.isPending || !draft.trim()}>

@@ -190,7 +190,7 @@ function CheckInCode({
               label: t("session.replaceLabel"),
             }}
             onClick={() => rotate.mutate()}
-            title={t("session.newCode")}
+            title={`${t("session.newCode")}...`}
           >
             <IconRefresh />
           </Button>

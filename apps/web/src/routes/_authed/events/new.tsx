@@ -555,7 +555,9 @@ function RouteComponent() {
                   {t("newEvent.next")}
                 </Button>
               ) : (
-                <form.Submit pending={t("teamForm.creating")}>{t("newEvent.create")}</form.Submit>
+                <form.Submit pending={`${t("teamForm.creating")}...`}>
+                  {t("newEvent.create")}
+                </form.Submit>
               )}
             </div>
           </FieldGroup>

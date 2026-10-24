@@ -88,7 +88,7 @@ function RouteComponent() {
         <>
           {t("reports.intro")}{" "}
           <Route.Link to="/admin/orgs" className="link">
-            {t("reports.restrict")}
+            {t("reports.restrict")}...
           </Route.Link>
         </>
       }

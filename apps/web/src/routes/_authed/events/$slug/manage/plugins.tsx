@@ -109,7 +109,7 @@ function RouteComponent() {
                     }}
                     onClick={() => toggle(each.key, false)}
                   >
-                    {t("twoFactor.removeButton")}
+                    {t("twoFactor.removeButton")}...
                   </Button>
                 }
               />

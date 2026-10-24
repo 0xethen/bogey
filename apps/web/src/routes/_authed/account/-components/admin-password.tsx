@@ -69,7 +69,7 @@ export function AdminPasswordSection() {
             </p>
           )}
           <div>
-            <form.Submit pending={t("common.saving")}>{t("password.set")}</form.Submit>
+            <form.Submit pending={`${t("common.saving")}...`}>{t("password.set")}</form.Submit>
           </div>
         </form.Form>
       </form.AppForm>

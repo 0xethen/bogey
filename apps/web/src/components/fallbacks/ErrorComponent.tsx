@@ -134,7 +134,7 @@ export function ErrorComponent({ error, reset }: ErrorComponentProps) {
           {kind === "outdated"
             ? t("error.reload")
             : retrying
-              ? t("error.trying")
+              ? `${t("error.trying")}...`
               : t("error.tryAgain")}
         </Button>
         {canGoBack ? (

@@ -87,7 +87,7 @@ function RouteComponent() {
             }}
             onClick={() => goBack.mutate()}
           >
-            {org ? t("manageCerts.useOrg") : t("manageCerts.useStandard")}
+            {org ? `${t("manageCerts.useOrg")}...` : `${t("manageCerts.useStandard")}...`}
           </Button>
         )
       }

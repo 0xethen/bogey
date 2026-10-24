@@ -152,8 +152,8 @@ function MessageMenu({ text, children }: { text: string | null; children?: React
               size="icon-sm"
               variant="ghost"
               className="rounded-pill"
-              aria-label={t("chat.actions")}
-              title={t("chat.actions")}
+              aria-label={`${t("chat.actions")}...`}
+              title={`${t("chat.actions")}...`}
             />
           }
         >

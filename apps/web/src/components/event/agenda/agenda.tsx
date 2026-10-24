@@ -310,7 +310,7 @@ export function AgendaView({
                                       />
                                     }
                                   >
-                                    {t("agenda.takeAttendance")}
+                                    {t("agenda.takeAttendance")}...
                                   </Button>
                                 )}
                                 {slot.kind === "choose" && mine && (
@@ -488,7 +488,7 @@ export function CheckInForm({ eventId, code = "" }: { eventId: string; code?: st
             </field.Field>
           )}
         </form.Field>
-        <form.Submit pending={t("agenda.checkingIn")}>{t("agenda.checkIn")}</form.Submit>
+        <form.Submit pending={`${t("agenda.checkingIn")}...`}>{t("agenda.checkIn")}</form.Submit>
       </form.Form>
       {checkedIn && (
         <p role="status" className="text-sm text-muted-fg">

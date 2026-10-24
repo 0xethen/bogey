@@ -88,7 +88,7 @@ function StatusForm({ org }: { org: InstanceOrg }) {
             }
           </form.Subscribe>
           <form.FormAlert title={t("orgStatus.failed")} />
-          <form.Submit pending={t("common.saving")}>{t("orgStatus.save")}</form.Submit>
+          <form.Submit pending={`${t("common.saving")}...`}>{t("orgStatus.save")}</form.Submit>
         </FieldGroup>
       </form.Form>
     </form.AppForm>

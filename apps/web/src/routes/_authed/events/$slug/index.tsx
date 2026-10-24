@@ -167,7 +167,7 @@ function RouteComponent() {
               }}
               onClick={() => setLayout(DEFAULT_HOME_LAYOUT)}
             >
-              {t("home.reset")}
+              {t("home.reset")}...
             </Button>
             <Button size="sm" disabled={save.isPending} onClick={() => void finishCustomizing()}>
               <IconCheck />

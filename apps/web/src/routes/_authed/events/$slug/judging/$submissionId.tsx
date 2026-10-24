@@ -466,7 +466,7 @@ function ScoreCard({
           <span className="flex items-center gap-2">
             {open && saving && (
               <span className="text-xs text-muted-fg" aria-live="polite">
-                {t("judging.autosaving")}
+                {t("judging.autosaving")}...
               </span>
             )}
             {sheet.status === "done" && <Badge variant="secondary">{t("judging.done")}</Badge>}
@@ -503,7 +503,10 @@ function ScoreCard({
         <form.FormAlert title={t("judging.notSaved")} />
         {open && (
           <div className="flex flex-col gap-2">
-            <form.Submit pending={t("common.saving")} onClick={() => (intent.current = "done")}>
+            <form.Submit
+              pending={`${t("common.saving")}...`}
+              onClick={() => (intent.current = "done")}
+            >
               {t("judging.saveDone")}
             </form.Submit>
           </div>

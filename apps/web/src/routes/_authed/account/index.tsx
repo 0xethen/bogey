@@ -143,7 +143,7 @@ function RouteComponent() {
       >
         <div>
           <Button variant="secondary" onClick={() => signOutDialog.open(null)}>
-            {t("nav.signOut")}
+            {t("nav.signOut")}...
           </Button>
         </div>
       </Screen.Section>
@@ -385,7 +385,7 @@ function DangerZone() {
           </p>
           <div>
             <Button variant="outline" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
-              {cancel.isPending ? t("profile.cancelling") : t("profile.cancelRequest")}
+              {cancel.isPending ? `${t("profile.cancelling")}...` : t("profile.cancelRequest")}
             </Button>
           </div>
         </div>
@@ -407,7 +407,7 @@ function DangerZone() {
                     }}
                     onClick={() => void form.handleSubmit()}
                   >
-                    {t("profile.askDelete")}
+                    {t("profile.askDelete")}...
                   </Button>
                 </div>
               )}

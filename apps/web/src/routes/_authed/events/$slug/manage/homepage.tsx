@@ -63,7 +63,7 @@ function RouteComponent() {
           }
         >
           <IconLayoutDashboard />
-          {t("homepageSetup.customize")}
+          {t("homepageSetup.customize")}...
         </Button>
       }
     >

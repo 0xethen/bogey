@@ -108,7 +108,7 @@ export function NextSteps({
                 }}
                 onClick={() => withdraw.mutate()}
               >
-                {member ? t("steps.leaveButton") : t("steps.withdrawButton")}
+                {member ? `${t("steps.leaveButton")}...` : `${t("steps.withdrawButton")}...`}
               </Button>,
             ]
           : registrationOpen && status !== "rejected"
@@ -147,7 +147,7 @@ export function NextSteps({
                 handle={changeDivision}
                 render={<Button size="sm" variant={current ? "outline" : "default"} />}
               >
-                {current ? t("steps.change") : t("steps.pickOne")}
+                {current ? `${t("steps.change")}...` : `${t("steps.pickOne")}...`}
               </DialogTrigger>,
             ]
           : undefined,

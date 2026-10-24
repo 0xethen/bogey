@@ -175,7 +175,9 @@ export function ChooseDivision({
         </form.Field>
         <form.FormAlert title={t("division.saveFailed")} />
         <div className="flex flex-wrap gap-2">
-          <form.Submit pending={t("common.saving")}>{submitLabel ?? t("common.save")}</form.Submit>
+          <form.Submit pending={`${t("common.saving")}...`}>
+            {submitLabel ?? t("common.save")}
+          </form.Submit>
           {secondary}
         </div>
       </form.Form>

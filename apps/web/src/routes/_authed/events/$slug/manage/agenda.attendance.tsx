@@ -102,7 +102,7 @@ function Attendance() {
                     />
                   }
                 >
-                  {t("agenda.takeAttendance")}
+                  {t("agenda.takeAttendance")}...
                 </Button>
               )}
             </li>

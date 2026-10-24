@@ -348,7 +348,9 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
                 </field.Field>
               )}
             </form.Field>
-            <form.Submit pending={t("webhooks.adding")}>{t("rosterImport.add")}</form.Submit>
+            <form.Submit pending={`${t("webhooks.adding")}...`}>
+              {t("rosterImport.add")}
+            </form.Submit>
           </div>
           <form.Field name="notify">{(field) => <field.SwitchField />}</form.Field>
           <form.FormAlert title={t("rosterImport.addFailed")} />

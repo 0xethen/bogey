@@ -74,7 +74,7 @@ export function FileDrop({
       >
         {busy ? <Spinner /> : <IconUpload className="size-5 text-muted-fg" />}
         <p className="text-muted-fg">
-          {busy ? t("ui.uploading") : multiple ? t("ui.dropFiles") : t("ui.dropFile")}{" "}
+          {busy ? `${t("ui.uploading")}...` : multiple ? t("ui.dropFiles") : t("ui.dropFile")}{" "}
           {!busy && (
             <button
               type="button"

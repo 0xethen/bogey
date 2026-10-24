@@ -234,7 +234,7 @@ export function SetupList({
       <ErrorAlert error={keep.error} />
       <div>
         <Button size="sm" variant="outline" onClick={() => setImporting(true)}>
-          {t("certImport.importSlides")}
+          {t("certImport.importSlides")}...
         </Button>
       </div>
       <AssignSlidesDialog

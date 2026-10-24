@@ -590,8 +590,8 @@ function DataTableSearchInput({
       </InputGroupAddon>
       <InputGroupInput
         type="search"
-        aria-label={placeholder ?? t("ui.search")}
-        placeholder={placeholder ?? t("ui.search")}
+        aria-label={placeholder ?? `${t("ui.search")}...`}
+        placeholder={placeholder ?? `${t("ui.search")}...`}
         value={draft}
         onChange={(event) => setDraft(event.currentTarget.value)}
       />

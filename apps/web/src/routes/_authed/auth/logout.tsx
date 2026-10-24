@@ -54,7 +54,7 @@ function RouteComponent() {
       <ErrorAlert error={signOutMutation.error} title={t("logout.failed")} />
       <div className="flex flex-col gap-2">
         <Button onClick={() => signOutMutation.mutate()} disabled={signOutMutation.isPending}>
-          {signOutMutation.isPending ? t("logout.signingOut") : t("signOut.confirm")}
+          {signOutMutation.isPending ? `${t("logout.signingOut")}...` : t("signOut.confirm")}
         </Button>
         <Button
           variant="outline"

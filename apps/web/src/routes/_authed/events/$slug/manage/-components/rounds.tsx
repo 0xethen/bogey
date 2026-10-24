@@ -297,7 +297,11 @@ function RoundRow({
                   </field.Field>
                 )}
               </assignment.Field>
-              <assignment.Submit size="sm" variant="outline" pending={t("manageJudging.assigning")}>
+              <assignment.Submit
+                size="sm"
+                variant="outline"
+                pending={`${t("manageJudging.assigning")}...`}
+              >
                 {t("manageJudging.assign")}
               </assignment.Submit>
               <assignment.FormAlert title={t("manageJudging.assignFailed")} />
@@ -330,7 +334,7 @@ function RoundRow({
                   }}
                   onClick={() => void advancing.handleSubmit()}
                 >
-                  {busy ? t("rounds.advancing") : t("rounds.advanceButton")}
+                  {busy ? `${t("rounds.advancing")}...` : `${t("rounds.advanceButton")}...`}
                 </Button>
               )}
             </advancing.Subscribe>

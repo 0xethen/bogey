@@ -122,7 +122,7 @@ const criterionSchema = (t: T) =>
         .max(2000, t("form.maxLength", { max: 2000 }))
         .meta({
           label: t("manageJudging.description"),
-          placeholder: t("manageJudging.guidancePlaceholder"),
+          placeholder: `${t("manageJudging.guidancePlaceholder")}...`,
         }),
       range: z
         .tuple([z.union([z.number(), z.nan()]), z.union([z.number(), z.nan()])])
@@ -190,7 +190,7 @@ const rubricSchema = (t: T) =>
       .max(2000, t("form.maxLength", { max: 2000 }))
       .meta({
         label: t("manageJudging.description"),
-        placeholder: t("rubric.guidancePlaceholder"),
+        placeholder: `${t("rubric.guidancePlaceholder")}...`,
       }),
     divisionIds: z
       .array(z.string())

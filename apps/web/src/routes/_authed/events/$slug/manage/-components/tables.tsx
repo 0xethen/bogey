@@ -105,7 +105,7 @@ export function Tables({ eventId, slug }: { eventId: string; slug: string }) {
           disabled={numbered === 0}
           render={<Link to="/events/$slug/tables" params={{ slug }} />}
         >
-          {t("tablesEditor.print")}
+          {t("tablesEditor.print")}...
         </Button>
       }
     >
@@ -179,7 +179,7 @@ export function Tables({ eventId, slug }: { eventId: string; slug: string }) {
                 </field.Field>
               )}
             </form.Field>
-            <form.Submit size="sm" pending={t("tablesEditor.numbering2")}>
+            <form.Submit size="sm" pending={`${t("tablesEditor.numbering2")}...`}>
               {t("tablesEditor.number")}
             </form.Submit>
             {notice && (

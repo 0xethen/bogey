@@ -203,7 +203,9 @@ function Results() {
               publish.mutate();
             }}
           >
-            {publish.isPending ? t("manageJudging.publishing2") : t("manageJudging.publish")}
+            {publish.isPending
+              ? `${t("manageJudging.publishing2")}...`
+              : t("manageJudging.publish")}
           </Button>
         </>
       }

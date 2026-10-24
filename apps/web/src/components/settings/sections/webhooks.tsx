@@ -215,7 +215,9 @@ function AddWebhook({ scope, onSecret }: { scope: Scope; onSecret: (secret: stri
           </form.Field>
           <form.FormAlert title={t("webhooks.addFailed")} />
           <div>
-            <form.Submit pending={t("webhooks.adding")}>{t("webhooks.addButton")}</form.Submit>
+            <form.Submit pending={`${t("webhooks.adding")}...`}>
+              {t("webhooks.addButton")}
+            </form.Submit>
           </div>
         </form.Form>
       </form.AppForm>
@@ -280,7 +282,7 @@ function WebhookRow({ hook, onSecret }: { hook: Webhook; onSecret: (secret: stri
           }}
           onClick={() => rotate.mutate()}
         >
-          {t("webhooks.newSecret")}
+          {t("webhooks.newSecret")}...
         </Button>
         <Button
           size="sm"
@@ -292,7 +294,7 @@ function WebhookRow({ hook, onSecret }: { hook: Webhook; onSecret: (secret: stri
           }}
           onClick={() => remove.mutate()}
         >
-          {t("webhooks.delete")}
+          {t("webhooks.delete")}...
         </Button>
       </div>
     </li>

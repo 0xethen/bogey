@@ -87,7 +87,9 @@ function RouteComponent() {
           </form.Field>
           {captcha.widget}
           <form.FormAlert title={t("passwordSignIn.failed")} />
-          <form.Submit pending={t("passwordSignIn.signingIn")}>{t("nav.signIn")}</form.Submit>
+          <form.Submit pending={`${t("passwordSignIn.signingIn")}...`}>
+            {t("nav.signIn")}
+          </form.Submit>
         </form.Form>
       </form.AppForm>
     </Screen.Auth>

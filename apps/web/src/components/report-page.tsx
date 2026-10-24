@@ -67,7 +67,7 @@ function ReportForm({ orgId, path }: { orgId: string; path: string }) {
             )}
           </form.Field>
           <form.FormAlert title={t("report.failed")} />
-          <form.Submit pending={t("onboarding.sending")}>{t("report.send")}</form.Submit>
+          <form.Submit pending={`${t("onboarding.sending")}...`}>{t("report.send")}</form.Submit>
         </FieldGroup>
       </form.Form>
     </form.AppForm>

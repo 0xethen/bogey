@@ -183,7 +183,7 @@ function RouteComponent() {
               params={{ slug: event.slug }}
               className="link"
             >
-              {t("manageSubs.openIt")}
+              {t("manageSubs.openIt")}...
             </Route.Link>
           </>
         )
@@ -395,7 +395,7 @@ function SubmissionTable({
               }}
               onClick={() => disqualify.mutate({ id: submission.id, disqualified: true })}
             >
-              {t("manageSubs.disqualifyButton")}
+              {t("manageSubs.disqualifyButton")}...
             </Button>
           )}
           <Button
@@ -411,7 +411,9 @@ function SubmissionTable({
             }}
             onClick={() => remove.mutate(submission.id)}
           >
-            {submission.deletion_requested_at ? t("manageSubs.deleteAsked") : t("webhooks.delete")}
+            {submission.deletion_requested_at
+              ? `${t("manageSubs.deleteAsked")}...`
+              : `${t("webhooks.delete")}...`}
           </Button>
           {submission.deletion_requested_at && (
             <Button

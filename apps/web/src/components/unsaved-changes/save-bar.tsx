@@ -52,7 +52,7 @@ export function SaveBar({
                 {t("unsaved.reset")}
               </Button>
               <Button ref={main} type="button" size="sm" disabled={saving} onClick={onSave}>
-                {saving ? t("common.saving") : t("unsaved.save")}
+                {saving ? `${t("common.saving")}...` : t("unsaved.save")}
               </Button>
             </>
           ) : (

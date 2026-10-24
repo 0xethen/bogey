@@ -166,7 +166,7 @@ function RouteComponent() {
                 nativeButton={false}
                 render={<Link to="/events/copy" search={{ from: event.id, template: true }} />}
               >
-                {t("details.saveTemplate")}
+                {t("details.saveTemplate")}...
               </Button>
             )}
             <Button
@@ -175,7 +175,7 @@ function RouteComponent() {
               nativeButton={false}
               render={<Link to="/events/copy" search={{ from: event.id }} />}
             >
-              {t("details.duplicate")}
+              {t("details.duplicate")}...
             </Button>
             <Button
               size="sm"
@@ -183,7 +183,7 @@ function RouteComponent() {
               nativeButton={false}
               render={<a href={`/api/events/${event.slug}/archive`} download />}
             >
-              {t("details.archive")}
+              {t("details.archive")}...
             </Button>
           </>
         )

@@ -298,7 +298,7 @@ function RouteComponent() {
             actions={
               <Button size="sm" variant="outline" onClick={() => setMatching(true)}>
                 <IconUsersGroup />
-                {t("teamMatch.open")}
+                {t("teamMatch.open")}...
               </Button>
             }
           >
@@ -332,11 +332,11 @@ function RouteComponent() {
                   </span>
                   <OptSelect
                     size="sm"
-                    ariaLabel={t("managePeople.bulkDivision")}
+                    ariaLabel={`${t("managePeople.bulkDivision")}...`}
                     value={KEEP}
                     disabled={placing}
                     options={[
-                      { value: KEEP, label: t("managePeople.bulkDivision") },
+                      { value: KEEP, label: `${t("managePeople.bulkDivision")}...` },
                       { value: NO_DIVISION, label: t("checkin.noDivision") },
                       ...divisions.map((division) => ({
                         value: division.id,
@@ -374,7 +374,7 @@ function RouteComponent() {
                     ? { selected: picked, onChange: setPicked, label: teamName }
                     : undefined
                 }
-                search={{ text: searchText, placeholder: t("manageTeams.search") }}
+                search={{ text: searchText, placeholder: `${t("manageTeams.search")}...` }}
                 filters={filters}
                 detail={teamDetail}
               />
@@ -485,7 +485,7 @@ function TeamDetail({ team }: { team: RosterTeam }) {
           }}
           onClick={() => onDisband(team.id)}
         >
-          {t("manageTeams.disbandButton")}
+          {t("manageTeams.disbandButton")}...
         </Button>
         <p className="w-full text-xs text-muted-fg">{t("manageTeams.lockHelp")}</p>
       </div>
@@ -531,7 +531,7 @@ function RenameTeam({ team }: { team: RosterTeam }) {
               </field.Field>
             )}
           </form.Field>
-          <form.Submit size="sm" variant="outline" pending={t("team.renaming")}>
+          <form.Submit size="sm" variant="outline" pending={`${t("team.renaming")}...`}>
             {t("team.renameButton")}
           </form.Submit>
         </div>
@@ -575,7 +575,7 @@ function CreateTeam({ onDone }: { onDone: () => void }) {
         </form.Field>
         <form.FormAlert title={t("teamForm.createFailed")} />
         <div className="flex gap-2">
-          <form.Submit pending={t("teamForm.creating")}>{t("teamForm.create")}</form.Submit>
+          <form.Submit pending={`${t("teamForm.creating")}...`}>{t("teamForm.create")}</form.Submit>
           <Button type="button" variant="ghost" onClick={onDone}>
             {t("common.cancel")}
           </Button>

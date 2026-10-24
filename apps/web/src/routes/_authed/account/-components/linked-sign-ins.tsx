@@ -90,7 +90,7 @@ export function LinkedSignIns() {
               <Button
                 variant="outline"
                 disabled={unlink.isPending}
-                aria-label={t("security.unlinkNamed", { name: nameOf(identity, t) })}
+                aria-label={`${t("security.unlinkNamed", { name: nameOf(identity, t) })}...`}
                 confirm={{
                   title: t("security.unlinkTitle", { name: nameOf(identity, t) }),
                   description: t("security.unlinkBody", { name: nameOf(identity, t) }),
@@ -98,7 +98,7 @@ export function LinkedSignIns() {
                 }}
                 onClick={() => unlink.mutate(identity)}
               >
-                {t("security.unlinkButton")}
+                {t("security.unlinkButton")}...
               </Button>
             )}
           </li>
@@ -113,7 +113,7 @@ export function LinkedSignIns() {
               disabled={link.isPending}
               onClick={() => link.mutate(key)}
             >
-              {t("security.link", { provider: providerLabel(key) })}
+              {t("security.link", { provider: providerLabel(key) })}...
             </Button>
           ))}
         </div>

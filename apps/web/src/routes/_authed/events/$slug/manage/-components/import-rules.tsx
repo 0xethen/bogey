@@ -196,7 +196,7 @@ function RuleCards({
                 onClick={() => replace({ ...rule, when: [...rule.when, condition()] })}
               >
                 <IconPlus />
-                {t("importRules.andWhen")}
+                {t("importRules.andWhen")}...
               </Button>
             </li>
           );
@@ -246,7 +246,7 @@ function ConditionRow({
         ariaLabel={t("importRules.column")}
         className="max-w-64"
         value={columns.headers.includes(condition.column) ? condition.column : null}
-        placeholder={condition.column || t("importRules.columnPlaceholder")}
+        placeholder={condition.column || `${t("importRules.columnPlaceholder")}...`}
         options={columns.headers.map((header) => ({ value: header, label: header }))}
         onChange={(column) => onChange({ ...condition, column })}
       />
@@ -320,7 +320,7 @@ function ActionRow({
           }
           placeholder={
             catalog.divisions.length
-              ? t("importRules.divisionPlaceholder")
+              ? `${t("importRules.divisionPlaceholder")}...`
               : t("importRules.noDivisions")
           }
           options={catalog.divisions.map((each) => ({ value: each.name, label: each.name }))}
@@ -337,7 +337,7 @@ function ActionRow({
           }
           placeholder={
             catalog.sessions.length
-              ? t("importRules.sessionPlaceholder")
+              ? `${t("importRules.sessionPlaceholder")}...`
               : t("importRules.noSessions")
           }
           options={catalog.sessions.map((each) => ({ value: each.name, label: each.name }))}

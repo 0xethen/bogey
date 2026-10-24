@@ -84,7 +84,7 @@ export function ImageInput({
           onClick={() => input.current?.click()}
         >
           <IconPhotoUp />
-          {upload.isPending ? t("image.uploading") : t("image.upload")}
+          {upload.isPending ? `${t("image.uploading")}...` : t("image.upload")}
         </Button>
         <input
           ref={input}

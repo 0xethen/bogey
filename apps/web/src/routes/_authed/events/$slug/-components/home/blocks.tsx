@@ -524,7 +524,7 @@ export function HomeBlockView({
                   handle={newAnnouncement}
                   render={<Button className="flex-1 sm:flex-none" size="sm" />}
                 >
-                  {t("home.newAnnouncement")}
+                  {t("home.newAnnouncement")}...
                 </DialogTrigger>
               )}
             </div>

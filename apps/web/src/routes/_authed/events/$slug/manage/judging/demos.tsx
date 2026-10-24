@@ -281,7 +281,7 @@ function DemoRound({ round, title }: { round: JudgingRound; title: string }) {
               }}
               onClick={() => schedule.mutate(true)}
             >
-              {t("demos.reshuffleButton")}
+              {t("demos.reshuffleButton")}...
             </Button>
           </>
         )

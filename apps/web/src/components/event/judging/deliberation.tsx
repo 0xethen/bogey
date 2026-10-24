@@ -111,7 +111,9 @@ export function FlagDialog({
                 {(field) => <field.TextAreaField rows={3} required />}
               </form.Field>
               <form.FormAlert title={t("deliberation.flagFailed")} />
-              <form.Submit pending={t("common.saving")}>{t("deliberation.flagSubmit")}</form.Submit>
+              <form.Submit pending={`${t("common.saving")}...`}>
+                {t("deliberation.flagSubmit")}
+              </form.Submit>
             </FieldGroup>
           </form.Form>
         </form.AppForm>
@@ -258,7 +260,7 @@ function NoteForm({ flagId, submissionId }: { flagId: string; submissionId: stri
         <form.Field name="body">{(field) => <field.TextAreaField rows={2} />}</form.Field>
         <form.FormAlert title={t("deliberation.noteFailed")} />
         <div>
-          <form.Submit size="sm" variant="outline" pending={t("common.saving")}>
+          <form.Submit size="sm" variant="outline" pending={`${t("common.saving")}...`}>
             {t("deliberation.addNote")}
           </form.Submit>
         </div>
@@ -302,7 +304,7 @@ function ResolveForm({ flagId, submissionId }: { flagId: string; submissionId: s
         <form.Field name="resolution">{(field) => <field.TextField />}</form.Field>
         <form.FormAlert title={t("deliberation.resolveFailed")} />
         <div>
-          <form.Submit size="sm" pending={t("common.saving")}>
+          <form.Submit size="sm" pending={`${t("common.saving")}...`}>
             {t("deliberation.resolve")}
           </form.Submit>
         </div>

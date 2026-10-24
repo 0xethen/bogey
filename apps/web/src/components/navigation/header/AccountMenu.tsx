@@ -188,7 +188,7 @@ function Account({ session }: { session: Session }) {
           <DropdownMenuGroup>
             <DropdownMenuItem variant="destructive" onClick={() => signOutDialog.open(null)}>
               <IconLogout />
-              {t("nav.signOut")}
+              {t("nav.signOut")}...
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
@@ -209,7 +209,7 @@ function ViewAsMenu() {
     <DropdownMenuSub>
       <DropdownMenuSubTrigger>
         <IconEye />
-        {t("nav.viewAs")}
+        {t("nav.viewAs")}...
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent>
         {VIEW_AS_ROLES.map((role) => (

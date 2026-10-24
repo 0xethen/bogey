@@ -117,7 +117,7 @@ function ShortcutRow({
             <span className="text-sm text-muted-fg" aria-live="polite">
               {recorder.recordedHotkey
                 ? formatForDisplay(recorder.recordedHotkey)
-                : t("shortcuts.recording")}
+                : `${t("shortcuts.recording")}...`}
             </span>
             <Button size="sm" variant="ghost" onClick={recorder.cancelRecording}>
               {t("common.cancel")}
@@ -131,7 +131,7 @@ function ShortcutRow({
               <span className="text-sm text-muted-fg">{t("shortcuts.off")}</span>
             )}
             <Button size="sm" variant="outline" onClick={recorder.startRecording}>
-              {t("shortcuts.change")}
+              {t("shortcuts.change")}...
             </Button>
             {custom && (
               <Button size="sm" variant="ghost" onClick={() => set(fallback)}>

@@ -41,7 +41,7 @@ function RouteComponent() {
         <>
           {t("deletions.intro")}{" "}
           <Link to="/admin/settings/accounts" hash="accounts.deletionRequests" className="link">
-            {t("deletions.turnOff")}
+            {t("deletions.turnOff")}...
           </Link>
         </>
       }
@@ -91,7 +91,7 @@ function RouteComponent() {
                     }}
                     onClick={() => resolve.mutate({ userId: request.userId, decline: false })}
                   >
-                    {t("deletions.deleteButton")}
+                    {t("deletions.deleteButton")}...
                   </Button>
                   <Button
                     size="sm"

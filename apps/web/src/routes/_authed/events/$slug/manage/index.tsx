@@ -168,7 +168,7 @@ function RouteComponent() {
       actions={
         <OptSelect
           size="sm"
-          ariaLabel={t("nav.viewAs")}
+          ariaLabel={`${t("nav.viewAs")}...`}
           value={previewing ?? "self"}
           options={VIEW_AS.map((each) => ({ ...each, label: t(each.label) }))}
           onChange={(next) => {

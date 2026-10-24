@@ -145,7 +145,7 @@ function RouteComponent() {
           <ErrorAlert error={finish.error} title={t("welcome.finishFailed")} />
           <div>
             <Button disabled={finish.isPending} onClick={() => finish.mutate()}>
-              {finish.isPending ? t("welcome.opening") : t("welcome.goToEvent")}
+              {finish.isPending ? `${t("welcome.opening")}...` : t("welcome.goToEvent")}
             </Button>
           </div>
         </section>
@@ -186,7 +186,7 @@ function NameStep({ onDone }: { onDone: () => void }) {
         </form.Field>
         <form.FormAlert title={t("profile.nameFailed")} />
         <div>
-          <form.Submit pending={t("common.saving")}>{t("common.continue")}</form.Submit>
+          <form.Submit pending={`${t("common.saving")}...`}>{t("common.continue")}</form.Submit>
         </div>
       </form.Form>
     </form.AppForm>
@@ -266,7 +266,7 @@ function TeamStep({
               }}
               onClick={() => leave.mutate()}
             >
-              {t("welcome.notMine")}
+              {t("welcome.notMine")}...
             </Button>
           )}
           {teamsOpen && !switching && settings.teams.askOrganizer && canMessage && (

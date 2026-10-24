@@ -284,7 +284,7 @@ function YourTeam({ mine, teamsOpen }: { mine: MyTeam; teamsOpen: boolean }) {
                       }}
                       onClick={() => leave.mutate(undefined)}
                     >
-                      {leave.isPending ? t("team.leaving") : t("team.leaveButton")}
+                      {leave.isPending ? `${t("team.leaving")}...` : `${t("team.leaveButton")}...`}
                     </Button>
                   </div>
                   <ErrorAlert error={leave.error} title={t("team.leaveFailed")} />
@@ -306,7 +306,9 @@ function YourTeam({ mine, teamsOpen }: { mine: MyTeam; teamsOpen: boolean }) {
                       }}
                       onClick={() => disband.mutate(undefined)}
                     >
-                      {disband.isPending ? t("team.disbanding") : t("team.disbandButton")}
+                      {disband.isPending
+                        ? `${t("team.disbanding")}...`
+                        : `${t("team.disbandButton")}...`}
                     </Button>
                   </div>
                   <ErrorAlert error={disband.error} title={t("team.disbandFailed")} />
@@ -346,8 +348,8 @@ function InviteCode({ code, renew }: { code: string; renew: boolean }) {
             variant="ghost"
             size="icon-sm"
             disabled={renewCode.isPending}
-            tooltip={renewCode.error ? renewCode.error.message : t("team.newCode")}
-            aria-label={renewCode.error ? renewCode.error.message : t("team.newCode")}
+            tooltip={renewCode.error ? renewCode.error.message : `${t("team.newCode")}...`}
+            aria-label={renewCode.error ? renewCode.error.message : `${t("team.newCode")}...`}
             confirm={{
               title: t("team.newCodeTitle"),
               description: t("team.newCodeBody"),
@@ -406,7 +408,7 @@ function RenameTeam({ mine }: { mine: MyTeam }) {
               </field.Field>
             )}
           </form.Field>
-          <form.Submit pending={t("team.renaming")}>{t("team.renameButton")}</form.Submit>
+          <form.Submit pending={`${t("team.renaming")}...`}>{t("team.renameButton")}</form.Submit>
         </div>
         <form.FormAlert title={t("team.renameFailed")} />
       </form.Form>

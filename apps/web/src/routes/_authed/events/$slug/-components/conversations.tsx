@@ -149,7 +149,7 @@ export function Conversations({
                 render={<Button className="flex-none sm:flex-1 lg:flex-none" />}
               >
                 <IconPlus />
-                {t("conv.new")}
+                {t("conv.new")}...
               </DialogTrigger>
             )}
             {messageTeams && (
@@ -158,7 +158,7 @@ export function Conversations({
                 render={<Button variant={start.length > 0 ? "outline" : "default"} />}
               >
                 <IconUsersGroup />
-                {t("conv.messageTeam")}
+                {t("conv.messageTeam")}...
               </DialogTrigger>
             )}
           </div>
@@ -536,7 +536,7 @@ function ForwardItem({
   return (
     <DropdownMenuItem disabled={forward.isPending} onClick={() => forward.mutate()}>
       <IconShare3 />
-      {t("conv.forward")}
+      {t("conv.forward")}...
     </DropdownMenuItem>
   );
 }
@@ -640,7 +640,7 @@ function BlockButton({ conversation }: { conversation: Conversation }) {
   return (
     <>
       <Button size="sm" variant="ghost-destructive" onClick={() => setOpen(true)}>
-        {t("conv.block")}
+        {t("conv.block")}...
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
@@ -676,7 +676,7 @@ function BlockButton({ conversation }: { conversation: Conversation }) {
                 )}
                 <form.Field name="reason">{(field) => <field.TextField />}</form.Field>
                 <form.FormAlert title={t("conv.blockFailed")} />
-                <form.Submit variant="destructive" pending={t("common.saving")}>
+                <form.Submit variant="destructive" pending={`${t("common.saving")}...`}>
                   {t("conv.blockConfirm")}
                 </form.Submit>
               </FieldGroup>
@@ -778,7 +778,7 @@ function NewConversationDialog({
                 {(field) => <field.MarkdownField rows={4} required features="message" />}
               </form.Field>
               <form.FormAlert title={t("conv.sendFailed")} />
-              <form.Submit pending={t("onboarding.sending")}>{t("conv.send")}</form.Submit>
+              <form.Submit pending={`${t("onboarding.sending")}...`}>{t("conv.send")}</form.Submit>
             </FieldGroup>
           </form.Form>
         </form.AppForm>
@@ -853,12 +853,12 @@ function MessageTeamDialog({ onStarted }: { onStarted: (id: string) => void }) {
                     <FieldCombobox
                       field={field}
                       options={options}
-                      empty={teams.isPending ? t("common.loading") : t("conv.noTeams")}
+                      empty={teams.isPending ? `${t("common.loading")}...` : t("conv.noTeams")}
                       placeholder={
                         teams.isPending
-                          ? t("common.loading")
+                          ? `${t("common.loading")}...`
                           : options.length
-                            ? t("conv.searchTeams")
+                            ? `${t("conv.searchTeams")}...`
                             : t("conv.noTeams")
                       }
                     />
@@ -870,7 +870,7 @@ function MessageTeamDialog({ onStarted }: { onStarted: (id: string) => void }) {
                 {(field) => <field.MarkdownField rows={4} required features="message" />}
               </form.Field>
               <form.FormAlert title={t("conv.sendFailed")} />
-              <form.Submit pending={t("onboarding.sending")}>{t("conv.send")}</form.Submit>
+              <form.Submit pending={`${t("onboarding.sending")}...`}>{t("conv.send")}</form.Submit>
             </FieldGroup>
           </form.Form>
         </form.AppForm>

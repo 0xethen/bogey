@@ -44,7 +44,7 @@ export function FlagMenu({
     <>
       <Button size="sm" variant="ghost" onClick={() => setStep("choose")}>
         <IconFlag />
-        {t("deliberation.flag")}
+        {t("deliberation.flag")}...
       </Button>
       <Dialog open={step === "choose"} onOpenChange={close}>
         <DialogContent className="sm:max-w-md">
@@ -88,7 +88,7 @@ export function FlagMenu({
               disabled={declare.isPending}
               onClick={() => declare.mutate()}
             >
-              {declare.isPending ? t("common.saving") : t("judging.conflictLabel")}
+              {declare.isPending ? `${t("common.saving")}...` : t("judging.conflictLabel")}
             </Button>
           </DialogFooter>
         </DialogContent>

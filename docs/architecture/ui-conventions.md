@@ -54,6 +54,10 @@ Three things build on it, and nothing else should hand-roll `Field` + `FieldLabe
 
 Destructive actions go behind `confirm`. Don't recolor a button with `className="text-..."`; pick the variant.
 
+## Ellipsis
+
+"..." on a label that opens a dialog or menu, or on pending text like "Saving...", lives in the code, not in the message. The message is the plain English, and the dots go next to the `t()` call: `{t("team.leaveButton")}...` in JSX text, or `` `${t("team.leaveButton")}...` `` in an attribute or expression. `node scripts/i18n-ellipsis.mjs` does the bulk move. Keys read through a variable can't be rewritten and keep their dots.
+
 ## Pickers and menus
 
 | Primitive                        | Use it for                                                                                                                                          |

@@ -575,7 +575,7 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
         <ErrorAlert error={remove.error} title={t("manageForms.deleteFailed")} />
         <div className="flex flex-wrap gap-2">
           {!form && (
-            <editor.Submit pending={t("teamForm.creating")}>
+            <editor.Submit pending={`${t("teamForm.creating")}...`}>
               {t("manageForms.create")}
             </editor.Submit>
           )}
@@ -596,7 +596,7 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
               }}
               onClick={() => remove.mutate(form.id)}
             >
-              {t("manageForms.deleteButton")}
+              {t("manageForms.deleteButton")}...
             </Button>
           )}
         </div>

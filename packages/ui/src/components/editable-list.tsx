@@ -510,7 +510,7 @@ export function EditableListItem({
           confirm={
             confirmRemove
               ? {
-                  title: t("ui.removeTitle", { name: label }),
+                  title: `${t("ui.removeTitle", { name: label })}...`,
                   description: confirmRemove,
                   label: t("twoFactor.remove"),
                 }

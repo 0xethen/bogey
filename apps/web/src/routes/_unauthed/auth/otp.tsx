@@ -118,7 +118,7 @@ function RouteComponent() {
           </form.Field>
 
           <form.FormAlert title={t("auth.providerFailedTitle")} />
-          <form.Submit pending={t("otp.checking")}>{t("nav.signIn")}</form.Submit>
+          <form.Submit pending={`${t("otp.checking")}...`}>{t("nav.signIn")}</form.Submit>
         </form.Form>
       </form.AppForm>
     </Screen.Auth>

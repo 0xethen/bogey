@@ -259,7 +259,7 @@ function StartSubmission({ entry, teamId, open }: { entry: Entry; teamId: string
       {open && (
         <div>
           <Button disabled={start.isPending} onClick={() => start.mutate()}>
-            {start.isPending ? t("sub.starting") : t("sub.startDraft")}
+            {start.isPending ? `${t("sub.starting")}...` : t("sub.startDraft")}
           </Button>
         </div>
       )}
@@ -619,7 +619,7 @@ function SubmissionEditor({
                 {nextStep &&
                   (editable ? (
                     <form.Submit
-                      pending={t("sub.saving")}
+                      pending={`${t("sub.saving")}...`}
                       onClick={() => (intent.current = "next")}
                     >
                       {t("sub.next")}
@@ -633,7 +633,7 @@ function SubmissionEditor({
                   ))}
                 {!nextStep && editable && !submitted && (
                   <form.Submit
-                    pending={t("sub.submitting")}
+                    pending={`${t("sub.submitting")}...`}
                     onClick={() => (intent.current = "submit")}
                   >
                     {t("sub.submit")}
@@ -693,7 +693,7 @@ function SubmissionEditor({
               <div className="flex flex-col gap-2">
                 <form.Submit
                   variant="secondary"
-                  pending={t("sub.saving")}
+                  pending={`${t("sub.saving")}...`}
                   onClick={() => (intent.current = "save")}
                 >
                   {submitted ? t("sub.saveChanges") : t("sub.saveDraft")}
@@ -891,7 +891,7 @@ function DeleteSubmission({
           }}
           onClick={() => remove.mutate()}
         >
-          {t("sub.deleteButton")}
+          {t("sub.deleteButton")}...
         </Button>
       ) : (
         <Button
@@ -904,7 +904,7 @@ function DeleteSubmission({
           }}
           onClick={() => remove.mutate()}
         >
-          {t("sub.askButton")}
+          {t("sub.askButton")}...
         </Button>
       )}
       {error}

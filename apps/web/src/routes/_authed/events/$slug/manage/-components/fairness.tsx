@@ -244,7 +244,11 @@ export function ManualAssignments({ eventId }: { eventId: string }) {
                     }
                   />
                   <div>
-                    <pasteForm.Submit size="sm" variant="secondary" pending={t("webhooks.adding")}>
+                    <pasteForm.Submit
+                      size="sm"
+                      variant="secondary"
+                      pending={`${t("webhooks.adding")}...`}
+                    >
                       {lines.length > 0
                         ? t("fairness.addN", { count: lines.length })
                         : t("fairness.addMany")}
@@ -306,7 +310,7 @@ export function ManualAssignments({ eventId }: { eventId: string }) {
                     }}
                     onClick={() => lift.mutate({ judgeId: row.judgeId, teamId: row.teamId })}
                   >
-                    {t("fairness.liftButton")}
+                    {t("fairness.liftButton")}...
                   </Button>
                 )
               }

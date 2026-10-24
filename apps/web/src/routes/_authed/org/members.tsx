@@ -153,7 +153,7 @@ function RouteComponent() {
             }}
             onClick={() => remove.mutate(member.userId)}
           >
-            {mine ? t("members.leaveButton") : t("members.removeButton")}
+            {mine ? `${t("members.leaveButton")}...` : `${t("members.removeButton")}...`}
           </Button>
         </div>
       );

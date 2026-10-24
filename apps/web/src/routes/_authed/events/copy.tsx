@@ -299,7 +299,7 @@ function CopyForm({
             </form.Field>
             <form.FormAlert title={t("copy.failed")} />
             <div>
-              <form.Submit pending={t("copy.copying")}>
+              <form.Submit pending={`${t("copy.copying")}...`}>
                 {template ? t("copy.saveButton") : t("copy.copyButton")}
               </form.Submit>
             </div>

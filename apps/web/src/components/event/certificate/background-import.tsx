@@ -138,7 +138,7 @@ function Reading() {
   return (
     <p className="flex items-center gap-2 text-sm text-muted-fg">
       <Spinner />
-      {t("certImport.reading")}
+      {t("certImport.reading")}...
     </p>
   );
 }
@@ -232,7 +232,7 @@ export function BackgroundDialog({
           {use.isPending && deck && (
             <p className="flex items-center gap-2 text-sm text-muted-fg">
               <Spinner />
-              {t("image.uploading")}
+              {t("image.uploading")}...
             </p>
           )}
           {deck && (
@@ -395,7 +395,7 @@ export function AssignSlidesDialog({
                 else save.mutate();
               }}
             >
-              {save.isPending ? t("certImport.applying") : t("certImport.apply")}
+              {save.isPending ? `${t("certImport.applying")}...` : t("certImport.apply")}
             </Button>
           )}
         </DialogFooter>

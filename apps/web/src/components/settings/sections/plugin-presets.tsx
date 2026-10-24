@@ -194,7 +194,7 @@ export function PluginPresets({
               {changes.length > 0 && (
                 <Button size="sm" disabled={apply.isPending} onClick={() => apply.mutate(open)}>
                   {apply.isPending
-                    ? t("pluginPresets.applying")
+                    ? `${t("pluginPresets.applying")}...`
                     : t("pluginPresets.apply", { name: open.label })}
                 </Button>
               )}

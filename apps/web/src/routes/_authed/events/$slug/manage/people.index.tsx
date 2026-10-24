@@ -390,7 +390,7 @@ function RouteComponent() {
               nativeButton={false}
               render={<Link to="/events/$slug/badges" params={{ slug: event.slug }} />}
             >
-              {t("managePeople.printBadges")}
+              {t("managePeople.printBadges")}...
             </Button>
             <Button
               size="sm"
@@ -436,7 +436,7 @@ function RouteComponent() {
                   onChange: setPickedMembers,
                   label: rowName,
                 }}
-                search={{ text: searchText, placeholder: t("managePeople.search") }}
+                search={{ text: searchText, placeholder: `${t("managePeople.search")}...` }}
                 filters={filters}
                 columnsMenu
                 groups={groups}
@@ -815,7 +815,7 @@ function RemoveCell({
         }}
         onClick={() => onRemove(member.userId)}
       >
-        {t("managePeople.removeButton")}
+        {t("managePeople.removeButton")}...
       </Button>
     </div>
   );
@@ -880,11 +880,11 @@ function BulkMembers({
         </span>
         <OptSelect
           size="sm"
-          ariaLabel={t("managePeople.bulkRole")}
+          ariaLabel={`${t("managePeople.bulkRole")}...`}
           value={KEEP}
           disabled={busy || others.length === 0}
           options={[
-            { value: KEEP, label: t("managePeople.bulkRole") },
+            { value: KEEP, label: `${t("managePeople.bulkRole")}...` },
             ...ROLES.map((role) => ({ value: role, label: roleLabel(role) })),
           ]}
           onChange={(role) => {
@@ -899,11 +899,11 @@ function BulkMembers({
         {divisions.length > 0 && (
           <OptSelect
             size="sm"
-            ariaLabel={t("managePeople.bulkDivision")}
+            ariaLabel={`${t("managePeople.bulkDivision")}...`}
             value={KEEP}
             disabled={busy}
             options={[
-              { value: KEEP, label: t("managePeople.bulkDivision") },
+              { value: KEEP, label: `${t("managePeople.bulkDivision")}...` },
               { value: NO_DIVISION, label: t("checkin.noDivision") },
               ...divisions.map((division) => ({ value: division.id, label: division.name })),
             ]}
@@ -930,7 +930,7 @@ function BulkMembers({
             )
           }
         >
-          {t("managePeople.removeButton")}
+          {t("managePeople.removeButton")}...
         </Button>
         <Button size="sm" variant="ghost" className="ml-auto" disabled={busy} onClick={onDone}>
           {t("managePeople.clearSelection")}

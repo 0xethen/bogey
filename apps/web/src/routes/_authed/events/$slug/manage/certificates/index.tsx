@@ -115,7 +115,7 @@ function Issued({
         }),
         column.display({
           id: "withdraw",
-          header: () => <span className="sr-only">{t("manageCerts.withdraw")}</span>,
+          header: () => <span className="sr-only">{t("manageCerts.withdraw")}...</span>,
           enableHiding: false,
           cell: (info) => (
             <Button
@@ -128,7 +128,7 @@ function Issued({
               }}
               onClick={() => revoke.mutate(info.row.original.code)}
             >
-              {t("manageCerts.withdraw")}
+              {t("manageCerts.withdraw")}...
             </Button>
           ),
         }),
@@ -226,7 +226,7 @@ function RouteComponent() {
               disabled={issue.isPending}
               onClick={() => issue.mutate()}
             >
-              {t("manageCerts.issueAll")}
+              {t("manageCerts.issueAll")}...
             </Button>
             <Button
               size="sm"
@@ -241,7 +241,7 @@ function RouteComponent() {
                 }, 100);
               }}
             >
-              {t("manageCerts.printAll")}
+              {t("manageCerts.printAll")}...
             </Button>
           </>
         )
@@ -265,7 +265,7 @@ function RouteComponent() {
             title={t("certificates.title")}
             actions={
               <Button size="sm" variant="outline" onClick={() => setSetup(true)}>
-                {t("certSetup.change")}
+                {t("certSetup.change")}...
               </Button>
             }
           >
@@ -332,7 +332,7 @@ function RouteComponent() {
             <EmptyDescription>{t("certSetup.offBody")}</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button onClick={() => setSetup(true)}>{t("certSetup.turnOn")}</Button>
+            <Button onClick={() => setSetup(true)}>{t("certSetup.turnOn")}...</Button>
           </EmptyContent>
         </Empty>
       )}

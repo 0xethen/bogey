@@ -245,7 +245,7 @@ export function CertificateEditor({
           <AlertDescription>{t("certDesign.startBody")}</AlertDescription>
           <AlertAction className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={() => setChoosingBackground(true)}>
-              {t("certImport.background")}
+              {t("certImport.background")}...
             </Button>
             <Button size="sm" disabled={save.isPending} onClick={() => save.mutate(draft)}>
               {t("certSetup.keepStandard")}
@@ -287,7 +287,7 @@ export function CertificateEditor({
             onClick={() => picker.current?.click()}
           >
             <IconPhotoPlus />
-            {upload.isPending ? t("image.uploading") : t("certDesign.addPicture")}
+            {upload.isPending ? `${t("image.uploading")}...` : `${t("certDesign.addPicture")}...`}
           </ToolbarButton>
           <ToolbarButton
             size="sm"
@@ -318,7 +318,7 @@ export function CertificateEditor({
         <ToolbarGroup>
           <ToolbarButton size="sm" onClick={() => setChoosingBackground(true)}>
             <IconPhoto />
-            {t("certImport.background")}
+            {t("certImport.background")}...
           </ToolbarButton>
         </ToolbarGroup>
         <ToolbarSeparator />
@@ -599,7 +599,7 @@ function PageInspector({
             />
           )}
           <Button size="sm" variant="outline" onClick={onChoose}>
-            {image ? t("certImport.change") : t("certImport.choose")}
+            {image ? `${t("certImport.change")}...` : `${t("certImport.choose")}...`}
           </Button>
           {image && (
             <Button size="sm" variant="ghost" onClick={() => onChange({ image: null })}>

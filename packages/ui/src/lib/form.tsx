@@ -166,7 +166,7 @@ function FormError({
   return (
     <>
       <FieldError {...props} errors={field.meta.errors} />
-      {field.meta.isValidating && <FieldDescription>{t("ui.checking")}</FieldDescription>}
+      {field.meta.isValidating && <FieldDescription>{t("ui.checking")}...</FieldDescription>}
     </>
   );
 }

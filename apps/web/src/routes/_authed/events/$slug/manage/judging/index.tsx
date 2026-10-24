@@ -144,7 +144,7 @@ function Progress() {
           disabled={progress.submissions === 0 || assign.isPending}
           onClick={() => assign.mutate()}
         >
-          {assign.isPending ? t("manageJudging.assigning") : t("manageJudging.assign")}
+          {assign.isPending ? `${t("manageJudging.assigning")}...` : t("manageJudging.assign")}
         </Button>
         {assign.isSuccess && (
           <span className="text-sm text-muted-fg" role="status">

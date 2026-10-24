@@ -134,7 +134,10 @@ const linkSchema = (t: T) =>
       .trim()
       .min(1, t("manageReg.nameLink"))
       .max(80, t("form.maxLength", { max: 80 }))
-      .meta({ label: t("manageReg.linkLabel"), placeholder: t("manageReg.linkPlaceholder") }),
+      .meta({
+        label: t("manageReg.linkLabel"),
+        placeholder: `${t("manageReg.linkPlaceholder")}...`,
+      }),
     autoApprove: z.boolean().meta({ label: t("manageReg.autoApprove") }),
     capacity: z
       .union([
@@ -332,7 +335,7 @@ function InviteLinks() {
               }}
               onClick={() => toggle.mutate({ id: link.id, disabled: true })}
             >
-              {t("calendar.offButton")}
+              {t("calendar.offButton")}...
             </Button>
           )}
           <Button
@@ -348,7 +351,7 @@ function InviteLinks() {
             }}
             onClick={() => remove.mutate(link.id)}
           >
-            {t("twoFactor.removeButton")}
+            {t("twoFactor.removeButton")}...
           </Button>
         </div>
       </div>
@@ -365,7 +368,7 @@ function InviteLinks() {
       actions={
         <DialogTrigger handle={newInviteLink} render={<Button size="sm" variant="outline" />}>
           <IconPlus />
-          {t("manageReg.newLink")}
+          {t("manageReg.newLink")}...
         </DialogTrigger>
       }
     >
@@ -395,7 +398,7 @@ function InviteLinks() {
                 <form.Field name="capacity">{(field) => <field.NumberField min={1} />}</form.Field>
                 <form.Field name="closesAt">{(field) => <field.DateTimeField />}</form.Field>
                 <form.FormAlert title={t("manageReg.createFailed")} />
-                <form.Submit pending={t("teamForm.creating")}>
+                <form.Submit pending={`${t("teamForm.creating")}...`}>
                   {t("manageReg.createLink")}
                 </form.Submit>
               </FieldGroup>

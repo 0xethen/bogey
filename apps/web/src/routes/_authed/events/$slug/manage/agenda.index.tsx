@@ -234,7 +234,7 @@ function WindowEditor({
               {(reminder) => (
                 <PopoverTrigger render={<Button size="sm" variant="outline" />}>
                   {reminder === "none" ? <IconBellOff /> : <IconBell />}
-                  {t("manageAgenda.setReminder")}
+                  {t("manageAgenda.setReminder")}...
                 </PopoverTrigger>
               )}
             </form.Subscribe>
@@ -311,8 +311,8 @@ function WindowEditor({
             onClick={() => remove.mutate()}
           >
             <IconCircleX />
-            <span className="sm:hidden">{t("manageAgenda.removeShort")}</span>
-            <span className="max-sm:hidden">{t("manageAgenda.removeWindow")}</span>
+            <span className="sm:hidden">{t("manageAgenda.removeShort")}...</span>
+            <span className="max-sm:hidden">{t("manageAgenda.removeWindow")}...</span>
           </Button>
         </div>
       </form.Form>

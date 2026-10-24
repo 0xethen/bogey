@@ -34,7 +34,7 @@ export function ShortcutsHelp() {
             {t("shortcutsHelp.intro")}{" "}
             {signedIn && (
               <Link to="/account/shortcuts" className="link" onClick={() => shortcutsHelp.close()}>
-                {t("shortcuts.change")}
+                {t("shortcuts.change")}...
               </Link>
             )}
           </DialogDescription>

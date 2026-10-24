@@ -138,7 +138,7 @@ function RouteComponent() {
                     nativeButton={false}
                     render={<Link to="/events/copy" search={{ from: template.id }} />}
                   >
-                    {t("events.useTemplate")}
+                    {t("events.useTemplate")}...
                   </Button>
                 }
               />

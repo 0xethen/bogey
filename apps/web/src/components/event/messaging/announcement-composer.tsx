@@ -185,7 +185,7 @@ export function NewAnnouncementDialog({
                       items={[
                         {
                           id: "attach",
-                          label: t("ui.attach"),
+                          label: `${t("ui.attach")}...`,
                           icon: <IconPaperclip />,
                           run: async () => {
                             uploads.add(await pickFiles());
@@ -267,7 +267,7 @@ export function NewAnnouncementDialog({
                 <CreateDialogActions>
                   <form.Subscribe selector={(state) => state.values.when === "later"}>
                     {(later) => (
-                      <form.Submit pending={t("compose.posting")}>
+                      <form.Submit pending={`${t("compose.posting")}...`}>
                         {later ? t("compose.schedule") : t("compose.post")}
                       </form.Submit>
                     )}
@@ -327,5 +327,5 @@ function AudienceOptions({
       group: t("compose.sessions"),
     })),
   ];
-  return children(options, choices.isPending ? t("common.loading") : t("compose.noMatch"));
+  return children(options, choices.isPending ? `${t("common.loading")}...` : t("compose.noMatch"));
 }

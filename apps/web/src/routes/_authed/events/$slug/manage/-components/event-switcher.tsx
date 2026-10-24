@@ -86,7 +86,7 @@ export function EventSwitcher({ event, orgAdmin }: { event: Event; orgAdmin: boo
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t("orgTab.events")}</DropdownMenuLabel>
               {events.isPending && (
-                <DropdownMenuItem disabled>{t("common.loading")}</DropdownMenuItem>
+                <DropdownMenuItem disabled>{t("common.loading")}...</DropdownMenuItem>
               )}
               {live.map(item)}
             </DropdownMenuGroup>
