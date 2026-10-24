@@ -9,7 +9,6 @@ import { unwrap } from "@bogey/db/errors";
 import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
 import { localizationQueryOptions, setLanguageFn } from "#/lib/i18n.ts";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { SearchSelect } from "@bogey/ui/components/search-select";
 import { Screen } from "@bogey/ui/components/screen";
@@ -20,6 +19,7 @@ import { useSessionRefresh } from "#/lib/refresh.ts";
 import { useClockPreference } from "#/lib/time.ts";
 import { useDraft } from "#/components/unsaved-changes/index.tsx";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
+import { SettingRow } from "#/components/settings/fields/setting-fields.tsx";
 import { HOME_PREFERENCE, isHomeChoice, type HomeChoice } from "#/lib/home.ts";
 
 export const Route = createFileRoute("/_authed/account/preferences")({
@@ -77,16 +77,20 @@ function LanguageField() {
   );
   if (languages.length < 2) return null;
   return (
-    <Field id="prefs.language" className="jump-target">
-      <FieldLabel htmlFor="language">{t("account.language")}</FieldLabel>
+    <SettingRow
+      id="language"
+      anchor="prefs.language"
+      label={t("account.language")}
+      description={t("account.languageHelp")}
+      layout="row"
+    >
       <OptSelect
         id="language"
         value={language}
         options={languages.map((each) => ({ value: each.code, label: each.label }))}
         onChange={setLanguage}
       />
-      <FieldDescription>{t("account.languageHelp")}</FieldDescription>
-    </Field>
+    </SettingRow>
   );
 }
 
@@ -120,15 +124,21 @@ function HomeField() {
   // a pick that's gone (left the event) shows as the default, which is where "/" sends them
   const value = options.some((option) => option.value === home.value) ? home.value : "default";
   return (
-    <Field id="prefs.home" className="jump-target">
-      <FieldLabel htmlFor="home">{t("prefs.home")}</FieldLabel>
-      <OptSelect id="home" value={value} options={options} onChange={home.set} />
-      <FieldDescription>{t("prefs.homeHelp")}</FieldDescription>
+    <>
+      <SettingRow
+        id="home"
+        anchor="prefs.home"
+        label={t("prefs.home")}
+        description={t("prefs.homeHelp")}
+        layout="row"
+      >
+        <OptSelect id="home" value={value} options={options} onChange={home.set} />
+      </SettingRow>
       <ErrorAlert
         error={home.error instanceof Error ? home.error : null}
         title={t("prefs.saveFailed")}
       />
-    </Field>
+    </>
   );
 }
 
@@ -162,33 +172,39 @@ function RouteComponent() {
     <Screen title={t("accountNav.preferences")} width="embedded">
       <Screen.Section id="time-and-appearance" title={t("prefs.section")}>
         <LanguageField />
-        <Field id="prefs.timezone" className="jump-target">
-          <FieldLabel htmlFor="timezone">{t("prefs.timezone")}</FieldLabel>
+        <SettingRow
+          id="timezone"
+          anchor="prefs.timezone"
+          label={t("prefs.timezone")}
+          description={t("prefs.timezoneHelp")}
+        >
           <SearchSelect
             id="timezone"
             value={zone}
             options={timezoneOptions(detected)}
             onValueChange={(next) => next && setZone(next)}
           />
-          <FieldDescription>{t("prefs.timezoneHelp")}</FieldDescription>
-        </Field>
-        <Field id="prefs.clock24h" orientation="horizontal" className="jump-target justify-between">
-          <FieldLabel htmlFor="clock-24h">{t("prefs.clock24")}</FieldLabel>
+        </SettingRow>
+        <SettingRow
+          id="clock-24h"
+          anchor="prefs.clock24h"
+          label={t("prefs.clock24")}
+          layout="switch"
+        >
           <Switch
             id="clock-24h"
             checked={clock.value}
             onCheckedChange={(checked) => clock.set(checked)}
           />
-        </Field>
-        <Field id="prefs.theme" className="jump-target">
-          <FieldLabel htmlFor="theme">{t("prefs.theme")}</FieldLabel>
+        </SettingRow>
+        <SettingRow id="theme" anchor="prefs.theme" label={t("prefs.theme")} layout="row">
           <OptSelect
             id="theme"
             value={chosen}
             options={THEMES.map((each) => ({ ...each, label: t(each.label) }))}
             onChange={choose}
           />
-        </Field>
+        </SettingRow>
         <ErrorAlert error={save.error} title={t("prefs.saveFailed")} />
       </Screen.Section>
       <Screen.Section id="home-page" title={t("prefs.homeSection")}>

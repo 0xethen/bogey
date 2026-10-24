@@ -20,6 +20,24 @@ Pass `render={<ul />}` to `RowList` and `render={<li />}` to `Row` when the list
 - A group of controls with a heading is a `Panel`. Don't hand-roll `rounded-2xl border p-4` boxes.
 - Don't stack bordered cards to make a list; use a `RowList`. Cards are for things people drag, compare side by side or pick from (sessions on the agenda, gallery projects).
 
+## Fields
+
+Every labelled control is drawn by one frame, `FieldFrame` in `@bogey/ui/components/field`. Its `layout` is one of three:
+
+| Layout   | Use it for                                                                                                                                                                                                                                         |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stack`  | Wide controls: text, Markdown, lists, multi-selects. The control sits under the label and the description under the control.                                                                                                                       |
+| `row`    | Short controls: numbers, selects, a slug, a date. Once the field is wide (36rem, measured on the field itself) the label and description sit left and the control at the right edge; narrower, it stacks. A number in a row is at most 11rem wide. |
+| `switch` | A switch beside its label and description.                                                                                                                                                                                                         |
+
+Three things build on it, and nothing else should hand-roll `Field` + `FieldLabel` + `FieldDescription`:
+
+- **Forms** use the `@bogey/ui/lib/form` kit (`field.TextField`, `field.NumberField`, `field.SwitchField`, ...), which picks the layout per control and adds the error and anchor.
+- **Settings** use `SettingRow` from `apps/web/src/components/settings/fields/setting-fields.tsx`: the label with reset and lock buttons, and a note on where the value comes from ("From the organization", "Locked by the instance"). `SettingFields` renders registry settings with it, plugin settings use it in `plugin-settings.tsx`, and pages with their own settings (Account → Preferences, Accessibility) use it directly.
+- **Bare controls** (a table cell, a toolbar) use the control alone: `NumberInput`, `OptSelect`, `Switch`, `Input`.
+
+`NumberInput` is the only number control. `scrub` adds a drag handle before the field. For a number where 0 means "no limit" or "off", pass `emptyLabel` (a registry setting sets `empty: "noLimit" | "off"`, a plugin setting `emptyLabel`): a 0 shows as an empty field reading the label once you leave it, and leaving the field empty saves 0. Don't explain the 0 in the description.
+
 ## Buttons
 
 | Variant             | When                                                                                                                                                        |

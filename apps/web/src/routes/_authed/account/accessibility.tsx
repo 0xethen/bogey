@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { Field, FieldDescription, FieldLabel } from "@bogey/ui/components/field";
 import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Screen } from "@bogey/ui/components/screen";
 import { Switch } from "@bogey/ui/components/switch";
@@ -18,6 +17,7 @@ import {
   useWideSpacingPreference,
 } from "#/lib/accessibility.tsx";
 import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
+import { SettingRow } from "#/components/settings/fields/setting-fields.tsx";
 
 const SWITCHES = [
   { id: "reduce-motion", label: "a11y.motion", description: "a11y.motionHelp" },
@@ -71,50 +71,62 @@ function RouteComponent() {
   return (
     <Screen title={t("accountNav.accessibility")} description={t("a11y.intro")} width="embedded">
       <div className="flex flex-col gap-4">
-        <Field id="a11y.textSize" className="jump-target">
-          <FieldLabel htmlFor="text-size">{t("a11y.textSize")}</FieldLabel>
+        <SettingRow
+          id="text-size"
+          anchor="a11y.textSize"
+          label={t("a11y.textSize")}
+          description={t("a11y.textSizeHelp")}
+          layout="row"
+        >
           <OptSelect
             id="text-size"
             value={size.value}
             options={named(TEXT_SIZES)}
             onChange={size.set}
           />
-          <FieldDescription>{t("a11y.textSizeHelp")}</FieldDescription>
-        </Field>
-        <Field id="a11y.font" className="jump-target">
-          <FieldLabel htmlFor="font">{t("a11y.font")}</FieldLabel>
+        </SettingRow>
+        <SettingRow
+          id="font"
+          anchor="a11y.font"
+          label={t("a11y.font")}
+          description={t("a11y.fontHelp")}
+          layout="row"
+        >
           <OptSelect id="font" value={font.value} options={named(FONTS)} onChange={font.set} />
-          <FieldDescription>{t("a11y.fontHelp")}</FieldDescription>
-        </Field>
-        <Field id="a11y.spoilers" className="jump-target">
-          <FieldLabel htmlFor="spoilers">{t("a11y.spoilers")}</FieldLabel>
+        </SettingRow>
+        <SettingRow
+          id="spoilers"
+          anchor="a11y.spoilers"
+          label={t("a11y.spoilers")}
+          description={
+            <>
+              {mode ? t(mode.description) : null} {t("a11y.spoilersHelp")}
+            </>
+          }
+          layout="row"
+        >
           <OptSelect
             id="spoilers"
             value={spoilers.value}
             options={named(SPOILER_MODES)}
             onChange={spoilers.set}
           />
-          <FieldDescription>
-            {mode ? t(mode.description) : null} {t("a11y.spoilersHelp")}
-          </FieldDescription>
-        </Field>
+        </SettingRow>
         {SWITCHES.map((item) => (
-          <Field
+          <SettingRow
             key={item.id}
-            id={`a11y.${item.id}`}
-            orientation="horizontal"
-            className="jump-target justify-between"
+            id={item.id}
+            anchor={`a11y.${item.id}`}
+            label={t(item.label)}
+            description={t(item.description)}
+            layout="switch"
           >
-            <div className="flex flex-col gap-1">
-              <FieldLabel htmlFor={item.id}>{t(item.label)}</FieldLabel>
-              <FieldDescription>{t(item.description)}</FieldDescription>
-            </div>
             <Switch
               id={item.id}
               checked={preferences[item.id].value}
               onCheckedChange={(checked) => preferences[item.id].set(checked)}
             />
-          </Field>
+          </SettingRow>
         ))}
         {[size, font, spoilers, lineNumbers, spacing, motion, links, contrast].map(
           (preference, index) => (
