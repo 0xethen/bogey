@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -155,6 +155,8 @@ function Desk() {
       if (result) formApi.reset();
     },
   });
+  // which walk-in button was pressed (Enter presses the first)
+  const walkInCheckIn = useRef(true);
   const walkInForm = useAppForm({
     ...appFormOptions.strictSchema({
       defaultValues: { email: "", name: "" },
@@ -163,11 +165,18 @@ function Desk() {
     }),
     onSubmit: async ({ value, formApi, createValidationError }) => {
       setWalkNotice(null);
-      const result = await walkInFn({ data: { eventId: event.id, ...value } }).catch(
+      const checkIn = walkInCheckIn.current;
+      const result = await walkInFn({ data: { eventId: event.id, ...value, checkIn } }).catch(
         requestFailure,
       );
       if (!result.ok) return createValidationError(result.error.message);
-      setWalkNotice(result.data.checkedIn ? t("checkin.walkInDone") : t("checkin.walkInPending"));
+      setWalkNotice(
+        !checkIn
+          ? t("checkin.walkInRegistered")
+          : result.data.checkedIn
+            ? t("checkin.walkInDone")
+            : t("checkin.walkInPending"),
+      );
       formApi.reset();
       await refresh();
       return undefined;
@@ -258,7 +267,7 @@ function Desk() {
 
       <Screen.Section id="scan-or-type-a-code" title={t("checkin.scanOrType")}>
         <codeForm.AppForm>
-          <codeForm.Form className="flex flex-wrap items-end gap-2">
+          <codeForm.Form className="flex flex-wrap items-end gap-4">
             <codeForm.Field name="code">
               {(field) => (
                 <field.Field>
@@ -272,11 +281,13 @@ function Desk() {
                 </field.Field>
               )}
             </codeForm.Field>
-            <codeForm.Submit className="flex-1">{t("checkin.checkIn")}</codeForm.Submit>
-            <Button type="button" variant="outline" onClick={() => setScanning((on) => !on)}>
-              {scanning ? <IconCameraOff /> : <IconCamera />}
-              {scanning ? t("checkin.stopCamera") : t("checkin.scan")}
-            </Button>
+            <div className="flex flex-1 flex-row sm:flex-col gap-2">
+              <codeForm.Submit className="flex-1">{t("checkin.checkIn")}</codeForm.Submit>
+              <Button type="button" variant="outline" onClick={() => setScanning((on) => !on)}>
+                {scanning ? <IconCameraOff /> : <IconCamera />}
+                {scanning ? t("checkin.stopCamera") : t("checkin.scan")}
+              </Button>
+            </div>
           </codeForm.Form>
         </codeForm.AppForm>
         {scanning && (
@@ -327,9 +338,23 @@ function Desk() {
               <walkInForm.Field name="name">
                 {(field) => <field.TextField autoComplete="off" />}
               </walkInForm.Field>
-              <walkInForm.Submit pending={t("checkin.registering")}>
+              <walkInForm.Submit
+                pending={t("checkin.registering")}
+                onClick={() => {
+                  walkInCheckIn.current = true;
+                }}
+              >
                 <IconUserPlus />
                 {t("checkin.registerAndCheckIn")}
+              </walkInForm.Submit>
+              <walkInForm.Submit
+                variant="outline"
+                pending={t("checkin.registering")}
+                onClick={() => {
+                  walkInCheckIn.current = false;
+                }}
+              >
+                {t("checkin.register")}
               </walkInForm.Submit>
             </walkInForm.Form>
             <walkInForm.FormAlert title={t("checkin.walkInFailed")} />

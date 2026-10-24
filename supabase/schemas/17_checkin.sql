@@ -311,7 +311,8 @@ end;
 $$;
 
 create function public.check_in_walk_in(
-  p_event uuid, p_email text, p_name text default '', p_answers jsonb default '{}'
+  p_event uuid, p_email text, p_name text default '', p_answers jsonb default '{}',
+  p_check_in boolean default true
 )
 returns table (registered boolean, checked_in boolean)
 language plpgsql
@@ -345,7 +346,7 @@ begin
   perform private.audit(p_event, 'checkin.walk_in', 'registration', null, '{}');
 
   select u.id into v_user from auth.users u where lower(u.email) = v_email;
-  if v_user is not null and exists (
+  if p_check_in and v_user is not null and exists (
     select 1 from public.event_members m where m.event_id = p_event and m.user_id = v_user and m.status = 'active'
   ) then
     perform public.check_in(p_event, v_user, null, 'desk');
@@ -400,7 +401,7 @@ grant execute on function
   public.check_out(uuid, uuid),
   public.checkin_roster(uuid),
   public.badge_sheet(uuid, public.event_role[]),
-  public.check_in_walk_in(uuid, text, text, jsonb)
+  public.check_in_walk_in(uuid, text, text, jsonb, boolean)
 to authenticated;
 
 select private.hide_suspended_org('public.checkins');

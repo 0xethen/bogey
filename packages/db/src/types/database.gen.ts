@@ -4439,7 +4439,13 @@ export type Database = {
       };
       check_in_session: { Args: { p_code: string; p_event: string }; Returns: string };
       check_in_walk_in: {
-        Args: { p_answers?: Json; p_email: string; p_event: string; p_name?: string };
+        Args: {
+          p_answers?: Json;
+          p_check_in?: boolean;
+          p_email: string;
+          p_event: string;
+          p_name?: string;
+        };
         Returns: {
           checked_in: boolean;
           registered: boolean;

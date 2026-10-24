@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(30);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha'), (tests.u('other'), 'beta', 'Beta');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max, starts_at)
@@ -66,6 +66,12 @@ reset role;
 update public.settings set value = '{"allowWalkIns":true}' where event_id = tests.u('ev') and namespace = 'checkin';
 select tests.as_user(tests.u('desk'));
 select is((select registered from public.check_in_walk_in(tests.u('ev'), 'someone-new@t.test', 'New Person')), true, 'staff register someone off the roster');
+reset role;
+create temp table pa_email as select email from auth.users where id = tests.u('pa');
+grant select on pa_email to authenticated;
+select tests.as_user(tests.u('desk'));
+select is((select checked_in from public.check_in_walk_in(tests.u('ev'), (select email from pa_email), '', '{}', false)), false, 'register only leaves a member checked out');
+select is((select checked_in from public.check_in_walk_in(tests.u('ev'), (select email from pa_email))), true, 'register and check in checks a member in');
 reset role;
 select tests.as_user(tests.u('own2'));
 select throws_ok($$select * from public.badge_sheet(tests.u('ev'))$$, '42501', null, 'another org''s owner can''t print the badges');

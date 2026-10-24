@@ -153,6 +153,7 @@ export const walkInFn = createServerFn({ method: "POST" })
       email?: unknown;
       name?: unknown;
       answers?: unknown;
+      checkIn?: unknown;
     };
     if (typeof raw.email !== "string" || !raw.email.trim())
       throw new Error("Enter an email address");
@@ -161,6 +162,7 @@ export const walkInFn = createServerFn({ method: "POST" })
       email: raw.email.trim().slice(0, 320),
       name: typeof raw.name === "string" ? raw.name.trim().slice(0, 120) : "",
       answers: readAnswers(raw.answers),
+      checkIn: raw.checkIn !== false,
     };
   })
   .handler(async ({ data }): Promise<DbResult<WalkInResult>> => {
@@ -171,10 +173,13 @@ export const walkInFn = createServerFn({ method: "POST" })
         p_email: data.email,
         p_name: data.name,
         p_answers: answersToJson(data.answers),
+        p_check_in: data.checkIn,
       });
     const first = await walkIn();
     if (first.error) return toFailure(first.error, "adding the walk-in");
     if (first.data[0]?.checked_in) return ok({ checkedIn: true, name: data.name });
+    // registering only: they make their own account when they sign in
+    if (!data.checkIn) return ok({ checkedIn: false, name: data.name });
 
     // No account yet. The database has let this person at the desk register them, so make the
     // account (signed in later by email, like any other) and check them in with it.
