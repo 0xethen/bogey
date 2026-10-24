@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- SparkCloud: `bogey-upgrade` no longer fails to build when `brand.theme` names one of the instance's own themes ("brand.theme: Invalid input"). `bogey themes` now runs without reading bogey.config.ts, since that config is checked against the theme list it writes.
+
 ## 2.4.2 (2026-10-24)
 
 - Contributors: `tsc` at the repository root checks only the root files, and `vpr typecheck` runs tsc in every package (never cached).

@@ -60,7 +60,7 @@ export function present(
     .join("\n");
 }
 
-// a failure long enough to end with "✗ bogey <command> failed.", which bin.ts offers to report
+// a failure long enough to end with "✗ bogey <command> failed.", which main.ts offers to report
 export function reportable(result: CliResult, command?: string): boolean {
   return result.exitCode !== 0 && !!command && result.output.split("\n").length > 4;
 }
