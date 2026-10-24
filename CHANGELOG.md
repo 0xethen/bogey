@@ -11,6 +11,9 @@ advisory (see docs/contributing.md#security-releases). -->
 ## Unreleased
 
 - Manage → Submissions: the public gallery settings are now their own Public gallery subtab; old #gallery links go there.
+- Menus, selects, popovers, tooltips and dialogs fade and grow out of their trigger with one short, shared animation, and hover colors on buttons, rows, links and menu items ease in. Reduced motion turns all of it off.
+- Rows in lists keep one minimum height with their icons lined up, table rows are the same height whether they hold text or a button, and action columns sit at the right edge.
+
 - Copying an event: every "What to copy" option says what it copies, and Judging sits nested under Submission forms, greyed out with a tooltip while forms are off.
 - New event and Manage → Details: the web address has its label above the input like Name, and Starts and Ends sit side by side with their labels above.
 - Badges and actions on expandable rows (like Installed on Admin → Plugins) now come before the chevron instead of after it.

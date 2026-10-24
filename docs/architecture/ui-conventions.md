@@ -19,6 +19,8 @@ Pass `render={<ul />}` to `RowList` and `render={<li />}` to `Row` when the list
 - A single standalone row (a call-out like "Open the kiosk") is an `Item variant="outline"`.
 - A group of controls with a heading is a `Panel`. Don't hand-roll `rounded-2xl border p-4` boxes.
 - Don't stack bordered cards to make a list; use a `RowList`. Cards are for things people drag, compare side by side or pick from (sessions on the agenda, gallery projects).
+- Rows have a minimum height (`min-h-14`, `min-h-11` for `sm`), so a row with actions and one without line up. Every row kind puts `leading` in the same slot (icons without a size class become `size-5`), so icons line up down the list. Table cells are a fixed `h-11` whether they hold text, a badge or a small button.
+- In a `DataTable`, set `meta: { align: "end" }` on number columns; an `actions` column is end-aligned and shrinks to its content by default.
 
 ## Fields
 
@@ -87,3 +89,20 @@ A component reads what it needs where it is, instead of taking it as a prop only
 - Props are still right for what the parent decides: which row this is, open/closed, callbacks, and values the parent computed.
 - Components that work in more than one place keep their props: `@bogey/ui` primitives, settings sections that take a `scope` (org, event or instance), and plugin slots, whose props are the plugin API.
 - A component used outside the event routes (the join page's `OnboardingForm`) takes `eventId` as a prop, since there's no event route to read.
+
+## Motion
+
+Motion lives in `packages/ui/src/styles/motion.css`: duration and easing tokens (`--motion-hover`, `--motion-enter`, `--motion-exit`, `--motion-expand`, `ease-emphasized`) and a utility per kind of movement. Use the utility, not ad-hoc `duration-*`/`animate-in` classes.
+
+| Utility           | Use it for                                                                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `motion-hover`    | Color, background, border and shadow changes on hover, focus and press (buttons, rows, links, menu items, tabs).                                     |
+| `motion-popup`    | Floating popups (menus, selects, comboboxes, popovers, tooltips). Fades and grows from the trigger, sliding a few pixels away from the trigger side. |
+| `motion-dialog`   | Centered dialogs. Fades and grows, no slide.                                                                                                         |
+| `motion-fade`     | Backdrops and anything that only fades.                                                                                                              |
+| `motion-collapse` | Collapsible panels, which open to their measured height.                                                                                             |
+
+- Enter is short (150ms, ease-out); exit is shorter (100ms, ease-in). Hover is 120ms. Expanding and chevron turns are 200ms.
+- Animate only opacity, transform (scale, translate, rotate) and colors. Never animate width, padding or margin; the one exception is a collapsible's height, which is the point of it.
+- Things that appear because of what people do (popups, dialogs, panels, toasts) animate. Things that are just there on load (pages, lists, table rows) don't.
+- Reduced motion (the device setting, or Account > Accessibility) turns every transition and animation to an instant change, except spinners.

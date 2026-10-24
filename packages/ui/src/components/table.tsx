@@ -69,9 +69,8 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        // a small button is 12px taller than a line of text, so its cell gives that back and the
-        // row stays as tall as one without
-        "p-3 align-middle whitespace-nowrap has-data-[slot=button]:py-1.5 [&:has([role=checkbox])]:pr-0",
+        // fixed row height so text, badges and small buttons all give the same row
+        "h-11 px-3 py-1.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className,
       )}
       {...props}

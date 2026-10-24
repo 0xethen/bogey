@@ -37,12 +37,22 @@ export function RowList({
   });
 }
 
+// a min height keeps rows with and without actions the same height
 const rowVariants = cva("flex items-center gap-3", {
   variants: {
-    size: { default: "py-3", sm: "py-2" },
+    size: { default: "min-h-14 py-3", sm: "min-h-11 py-2" },
   },
   defaultVariants: { size: "default" },
 });
+
+// one leading slot for every row kind so icons line up down the list
+function RowLeading({ children }: { children: ReactNode }) {
+  return (
+    <span className="flex shrink-0 items-center text-muted-fg [&_svg:not([class*='size-'])]:size-5">
+      {children}
+    </span>
+  );
+}
 
 function RowText({
   title,
@@ -94,7 +104,7 @@ export function Row({
       className: cn(rowVariants({ size }), "flex-wrap", id && "jump-target", className),
       children: (
         <>
-          {leading && <span className="flex shrink-0 text-muted-fg [&_svg]:size-5">{leading}</span>}
+          {leading && <RowLeading>{leading}</RowLeading>}
           <RowText title={title} meta={meta} />
           {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
           {children && <div className="basis-full">{children}</div>}
@@ -128,7 +138,7 @@ export function LinkRow({
       ),
       children: (
         <>
-          {leading}
+          {leading && <RowLeading>{leading}</RowLeading>}
           <RowText title={title} meta={meta} truncate />
           {trailing && <span className="flex shrink-0 items-center gap-2">{trailing}</span>}
           <IconChevronRight className="size-4 shrink-0 text-muted-fg" />
@@ -176,7 +186,7 @@ export function DisclosureRow({
           disabled={!expandable}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
         >
-          {leading}
+          {leading && <RowLeading>{leading}</RowLeading>}
           <RowText title={title} meta={meta} truncate />
         </CollapsibleTrigger>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
