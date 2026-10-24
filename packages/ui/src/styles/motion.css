@@ -69,6 +69,15 @@
   }
 }
 
+/* popups that appear at once but still fade out (selects) */
+@utility motion-no-enter {
+  &[data-starting-style] {
+    opacity: 1 !important;
+    scale: 1 !important;
+    translate: none !important;
+  }
+}
+
 /* dialogs are centered with translate, so they only fade and grow */
 @utility motion-dialog {
   transition-property: opacity, scale;

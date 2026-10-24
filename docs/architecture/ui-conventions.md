@@ -98,6 +98,7 @@ Motion lives in `packages/ui/src/styles/motion.css`: duration and easing tokens 
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `motion-hover`    | Color, background, border and shadow changes on hover, focus and press (buttons, rows, links, menu items, tabs).                                     |
 | `motion-popup`    | Floating popups (menus, selects, comboboxes, popovers, tooltips). Fades and grows from the trigger, sliding a few pixels away from the trigger side. |
+| `motion-no-enter` | Added to `motion-popup` for popups that should appear at once but still fade out (selects).                                                          |
 | `motion-dialog`   | Centered dialogs. Fades and grows, no slide.                                                                                                         |
 | `motion-fade`     | Backdrops and anything that only fades.                                                                                                              |
 | `motion-collapse` | Collapsible panels, which open to their measured height.                                                                                             |

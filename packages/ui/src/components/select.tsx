@@ -90,7 +90,7 @@ function SelectContent({
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
           className={cn(
-            "motion-popup isolate z-50 max-h-(--available-height) w-max max-w-[min(28rem,var(--available-width))] min-w-[max(var(--anchor-width),9rem)] overflow-x-hidden overflow-y-auto rounded-3xl text-popover-fg shadow-lg ring-1 ring-fg/5 dark:ring-fg/10 relative popup-glass **:data-[slot$=-item]:focus:bg-fg/10 **:data-[slot$=-item]:data-highlighted:bg-fg/10 **:data-[slot$=-separator]:bg-fg/5 **:data-[slot$=-trigger]:focus:bg-fg/10 **:data-[slot$=-trigger]:aria-expanded:bg-fg/10! **:data-[variant=destructive]:focus:bg-fg/10! **:data-[variant=destructive]:text-accent-fg! **:data-[variant=destructive]:**:text-accent-fg!",
+            "motion-popup motion-no-enter isolate z-50 max-h-(--available-height) w-max max-w-[min(28rem,var(--available-width))] min-w-[max(var(--anchor-width),9rem)] overflow-x-hidden overflow-y-auto rounded-3xl text-popover-fg shadow-lg ring-1 ring-fg/5 dark:ring-fg/10 relative popup-glass **:data-[slot$=-item]:focus:bg-fg/10 **:data-[slot$=-item]:data-highlighted:bg-fg/10 **:data-[slot$=-separator]:bg-fg/5 **:data-[slot$=-trigger]:focus:bg-fg/10 **:data-[slot$=-trigger]:aria-expanded:bg-fg/10! **:data-[variant=destructive]:focus:bg-fg/10! **:data-[variant=destructive]:text-accent-fg! **:data-[variant=destructive]:**:text-accent-fg!",
             className,
           )}
           {...props}
