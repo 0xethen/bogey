@@ -10,6 +10,10 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Copying an event: every "What to copy" option says what it copies, and Judging sits nested under Submission forms, greyed out with a tooltip while forms are off.
+- New event and Manage → Details: the web address has its label above the input like Name, and Starts and Ends sit side by side with their labels above.
+- Badges and actions on expandable rows (like Installed on Admin → Plugins) now come before the chevron instead of after it.
+
 - Inline code in pages and Markdown shares one look: a monospace pill with a light accent background. Code blocks are unchanged.
 - `bogey watch` only reacts when a file its generators read actually changes (gitignored files excluded), stays silent when nothing is out of date, and prints the baseline advice once per real change. The release command no longer prints "vpr vpr". CI formats the code with `vp fmt` before checking, and on main commits any formatting back.
 - Screens can put a button left of the title; back buttons on project pages, the problem page and the problem editor now sit there as icon buttons with a tooltip naming where they go.

@@ -489,8 +489,12 @@ function RouteComponent() {
                   )}
                 </form.Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <form.Field name="startsAt">{(field) => <field.DateTimeField />}</form.Field>
-                  <form.Field name="endsAt">{(field) => <field.DateTimeField />}</form.Field>
+                  <form.Field name="startsAt">
+                    {(field) => <field.DateTimeField stacked />}
+                  </form.Field>
+                  <form.Field name="endsAt">
+                    {(field) => <field.DateTimeField stacked />}
+                  </form.Field>
                 </div>
                 <p className="text-sm text-muted-fg">{t("newEvent.datesHelp")}</p>
               </>

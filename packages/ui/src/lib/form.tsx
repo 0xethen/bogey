@@ -498,7 +498,7 @@ function SlugField({
     caret.current = null;
   });
   return (
-    <FieldFrame field={field} label={label} required={required} description={description} row>
+    <FieldFrame field={field} label={label} required={required} description={description}>
       <Input
         ref={input}
         id={field.name}
@@ -768,14 +768,23 @@ function DateTimeField({
   field,
   required,
   showIcon,
+  stacked,
   ...props
 }: Omit<WrapperProps, "placeholder"> & {
   field: FieldWithValue<string>;
   showIcon?: boolean;
+  /** Label above the input even in wide forms; for fields placed side by side. */
+  stacked?: boolean;
 }) {
   const { label, description } = resolve(field, props);
   return (
-    <FieldFrame field={field} label={label} required={required} description={description} row>
+    <FieldFrame
+      field={field}
+      label={label}
+      required={required}
+      description={description}
+      row={!stacked}
+    >
       <DateTime field={field} label={label} showIcon={showIcon} />
     </FieldFrame>
   );

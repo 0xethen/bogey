@@ -174,15 +174,21 @@ export function DisclosureRow({
       <div className={rowVariants()}>
         <CollapsibleTrigger
           disabled={!expandable}
-          className="group flex min-w-0 flex-1 items-center gap-3 text-left"
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
         >
           {leading}
           <RowText title={title} meta={meta} truncate />
-          {expandable && (
-            <IconChevronDown className="size-4 shrink-0 text-muted-fg transition-transform group-data-[panel-open]:rotate-180" />
-          )}
         </CollapsibleTrigger>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {expandable && (
+          <CollapsibleTrigger
+            aria-hidden
+            tabIndex={-1}
+            className="group -mr-1 flex shrink-0 items-center p-1"
+          >
+            <IconChevronDown className="size-4 text-muted-fg transition-transform group-data-[panel-open]:rotate-180" />
+          </CollapsibleTrigger>
+        )}
       </div>
       {expandable && (
         <CollapsibleContent keepMounted>

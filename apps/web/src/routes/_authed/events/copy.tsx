@@ -14,6 +14,8 @@ import { Checkbox } from "@bogey/ui/components/checkbox";
 import { CheckboxGroup } from "@bogey/ui/components/checkbox-group";
 import { FieldGroup, FieldSet } from "@bogey/ui/components/field";
 import { Screen } from "@bogey/ui/components/screen";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
+import { cn } from "@bogey/ui/lib/utils";
 import {
   appFormOptions,
   errorVisibility,
@@ -46,17 +48,20 @@ export const Route = createFileRoute("/_authed/events/copy")({
 const SECTION_LABELS = {
   details: { label: "copy.details", description: "copy.detailsHelp" },
   windows: { label: "copy.windows", description: "copy.windowsHelp" },
-  divisions: { label: "copy.divisions", description: null },
-  tracks: { label: "copy.tracks", description: null },
+  divisions: { label: "copy.divisions", description: "copy.divisionsHelp" },
+  tracks: { label: "copy.tracks", description: "copy.tracksHelp" },
   forms: { label: "copy.forms", description: "copy.formsHelp" },
   judging: { label: "copy.judging", description: "copy.judgingHelp" },
   agenda: { label: "copy.agenda", description: "copy.agendaHelp" },
-  pages: { label: "copy.pages", description: null },
+  pages: { label: "copy.pages", description: "copy.pagesHelp" },
   homepage: { label: "copy.homepage", description: "copy.homepageHelp" },
   settings: { label: "copy.settings", description: "copy.settingsHelp" },
-  onboarding: { label: "copy.onboarding", description: null },
+  onboarding: { label: "copy.onboarding", description: "copy.onboardingHelp" },
   invites: { label: "copy.invites", description: "copy.invitesHelp" },
-} as const satisfies Record<CloneSection, { label: PlainKey; description: PlainKey | null }>;
+} as const satisfies Record<CloneSection, { label: PlainKey; description: PlainKey }>;
+
+// sections that need another one
+const REQUIRES: Partial<Record<CloneSection, CloneSection>> = { judging: "forms" };
 
 const copySchema = (t: T, sourceStart: string) => {
   const fields = eventFields(t);
@@ -250,22 +255,43 @@ function CopyForm({
                   <CheckboxGroup
                     value={field.value}
                     onValueChange={(next) =>
-                      field.handleChange(CLONE_SECTIONS.filter((key) => next.includes(key)))
+                      field.handleChange(
+                        CLONE_SECTIONS.filter((key) => {
+                          const parent = REQUIRES[key];
+                          return next.includes(key) && (!parent || next.includes(parent));
+                        }),
+                      )
                     }
                   >
-                    {CLONE_SECTIONS.map((key) => (
-                      <label key={key} className="flex items-start gap-3">
-                        <Checkbox value={key} className="mt-1" />
-                        <span className="flex flex-col">
-                          <span>{t(SECTION_LABELS[key].label)}</span>
-                          {SECTION_LABELS[key].description && (
+                    {CLONE_SECTIONS.map((key) => {
+                      const parent = REQUIRES[key];
+                      const blocked = parent !== undefined && !field.value.includes(parent);
+                      const row = (
+                        <label
+                          className={cn(
+                            "flex items-start gap-3",
+                            parent && "ml-2 border-l pl-5",
+                            blocked && "opacity-60",
+                          )}
+                        >
+                          <Checkbox value={key} disabled={blocked} className="mt-1" />
+                          <span className="flex flex-col">
+                            <span>{t(SECTION_LABELS[key].label)}</span>
                             <span className="text-sm text-muted-fg">
                               {t(SECTION_LABELS[key].description)}
                             </span>
-                          )}
-                        </span>
-                      </label>
-                    ))}
+                          </span>
+                        </label>
+                      );
+                      return blocked ? (
+                        <Tooltip key={key}>
+                          <TooltipTrigger render={<div />}>{row}</TooltipTrigger>
+                          <TooltipContent>{t("copy.judgingNeedsFormsTip")}</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <div key={key}>{row}</div>
+                      );
+                    })}
                   </CheckboxGroup>
                   <field.Error />
                 </FieldSet>
