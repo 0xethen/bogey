@@ -82,6 +82,12 @@ test("the default home layout is valid", () => {
   expect(homeLayoutSchema.safeParse(DEFAULT_HOME_LAYOUT).success).toBe(true);
 });
 
+test("a hidden block keeps its flag", () => {
+  const parsed = homeBlockSchema.parse({ id: "a", type: "agenda", hidden: true });
+  expect(parsed.hidden).toBe(true);
+  expect(homeBlockSchema.parse({ id: "a", type: "divider" }).hidden).toBeUndefined();
+});
+
 test("blocks the organizer fills in need what they show", () => {
   const image = { url: "https://example.com/a.png", alt: "" };
   expect(homeBlockSchema.safeParse({ id: "a", type: "divider" }).success).toBe(true);

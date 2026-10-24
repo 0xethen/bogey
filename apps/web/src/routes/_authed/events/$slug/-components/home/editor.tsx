@@ -1,5 +1,15 @@
-import { useState, type ReactNode, type SetStateAction } from "react";
-import { IconPlug, IconPlus, IconX } from "@tabler/icons-react";
+import { useState, type ReactNode } from "react";
+import {
+  IconArrowsLeftRight,
+  IconCopy,
+  IconEye,
+  IconEyeOff,
+  IconPlug,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import {
   CALLOUT_TONES,
   HOME_BUILT_IN_BLOCKS,
@@ -9,6 +19,7 @@ import {
   type HomeBlock,
   type HomeLayout,
 } from "@bogey/config/settings";
+import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
 import {
   EditableList,
@@ -18,15 +29,27 @@ import {
   EditableListSource,
   type EditableListPosition,
 } from "@bogey/ui/components/editable-list";
-import { Field, FieldError, FieldLabel } from "@bogey/ui/components/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@bogey/ui/components/field";
 import { Input } from "@bogey/ui/components/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@bogey/ui/components/input-group";
 import {
   MarkdownEditor,
   MarkdownLabel,
   useMarkdownMode,
 } from "@bogey/ui/components/markdown-input";
 import { OptSelect, type SelectOption } from "@bogey/ui/components/opt-select";
+import { Popover, PopoverContent, PopoverTrigger } from "@bogey/ui/components/popover";
+import { Switch } from "@bogey/ui/components/switch";
+import { Tabs, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
 import { Textarea } from "@bogey/ui/components/textarea";
+import { useMinWidth } from "@bogey/ui/hooks/media";
+import { useReducedMotion } from "@bogey/ui/hooks/reduced-motion";
 import {
   BLOCK_GROUPS,
   BLOCK_INFO,
@@ -44,9 +67,33 @@ import { useEventViewer } from "#/lib/viewer.ts";
 
 type Column = keyof HomeLayout;
 
-const COLUMNS: Tuple<{ key: Column; label: PlainKey; hint: PlainKey }> = [
-  { key: "main", label: "homeEditor.main", hint: "homeEditor.mainHint" },
-  { key: "aside", label: "homeEditor.side", hint: "homeEditor.sideHint" },
+const COLUMNS: Tuple<{
+  key: Column;
+  label: PlainKey;
+  short: PlainKey;
+  hint: PlainKey;
+  within: PlainKey;
+  moveHere: PlainKey;
+  addHere: PlainKey;
+}> = [
+  {
+    key: "main",
+    label: "homeEditor.main",
+    short: "homeEditor.mainShort",
+    within: "homeEditor.inMain",
+    moveHere: "homeEditor.moveToMain",
+    addHere: "homeEditor.addToMain",
+    hint: "homeEditor.mainHint",
+  },
+  {
+    key: "aside",
+    label: "homeEditor.side",
+    short: "homeEditor.sideShort",
+    within: "homeEditor.inSide",
+    moveHere: "homeEditor.moveToSide",
+    addHere: "homeEditor.addToSide",
+    hint: "homeEditor.sideHint",
+  },
 ];
 
 function placedPanels(layout: HomeLayout): ReadonlySet<string> {
@@ -120,10 +167,6 @@ function blank(type: BlockType): HomeBlock {
   }
 }
 
-function hasSettings(block: HomeBlock): boolean {
-  return block.type !== "divider";
-}
-
 function isCustom(block: HomeBlock): boolean {
   return HOME_CUSTOM_BLOCKS.some((type) => type === block.type);
 }
@@ -174,6 +217,35 @@ function templates(layout: HomeLayout, data: HomeData, t: T): PaletteGroup[] {
   return [...groups, pluginGroup].filter((group) => group.items.length > 0);
 }
 
+interface Found {
+  column: Column;
+  index: number;
+  block: HomeBlock;
+}
+
+function findBlock(layout: HomeLayout, id: string | null): Found | null {
+  if (id === null) return null;
+  for (const { key: column } of COLUMNS) {
+    const index = layout[column].findIndex((block) => block.id === id);
+    const block = layout[column][index];
+    if (block) return { column, index, block };
+  }
+  return null;
+}
+
+function iconOf(block: HomeBlock) {
+  return block.type === "plugin" ? IconPlug : BLOCK_INFO[block.type].icon;
+}
+
+const otherColumn = (column: Column): Column => (column === "main" ? "aside" : "main");
+
+const columnOf = (column: Column) => (column === "main" ? COLUMNS[0] : COLUMNS[1]);
+
+/**
+ * Customize mode for the event homepage: the page itself as the canvas, a side panel for the
+ * selected block (or the block picker), and inline editing on narrow screens.
+ * See docs/architecture/ui-conventions.md.
+ */
 export function HomeEditor({
   layout,
   onChange,
@@ -184,29 +256,63 @@ export function HomeEditor({
   data: HomeData;
 }) {
   const t = useT();
+  const wide = useMinWidth("xl");
+  const reduced = useReducedMotion();
   const [active, setActive] = useState<string | null>(null);
-  const [previewing, setPreviewingState] = useState<string | null>(null);
+  const [target, setTarget] = useState<Column>("main");
   const palette = templates(layout, data, t);
-  const previewed = palette
-    .flatMap((group) => group.items)
-    .find((template) => template.key === previewing);
+  const selected = findBlock(layout, active);
 
+  const setColumn = (column: Column, blocks: Array<HomeBlock>) =>
+    onChange({ ...layout, [column]: blocks });
   const replace = (column: Column, block: HomeBlock) =>
-    onChange({
-      ...layout,
-      [column]: layout[column].map((each) => (each.id === block.id ? block : each)),
-    });
+    setColumn(
+      column,
+      layout[column].map((each) => (each.id === block.id ? block : each)),
+    );
+  const reveal = (id: string) =>
+    requestAnimationFrame(() =>
+      document
+        .querySelector(`[data-home-block="${id}"]`)
+        ?.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" }),
+    );
   const add = (key: string, to: EditableListPosition) => {
     const template = palette.flatMap((group) => group.items).find((each) => each.key === key);
     if (!template || !isColumn(to.list)) return;
     const block = template.make();
-    onChange({ ...layout, [to.list]: layout[to.list].toSpliced(to.index, 0, block) });
-    if (isCustom(block) && hasSettings(block)) setActive(block.id);
+    setColumn(to.list, layout[to.list].toSpliced(to.index, 0, block));
+    setActive(block.id);
+    reveal(block.id);
+  };
+  const remove = ({ column, block }: Found) => {
+    setColumn(
+      column,
+      layout[column].filter((each) => each.id !== block.id),
+    );
+    if (active === block.id) setActive(null);
+  };
+  const duplicate = ({ column, index, block }: Found) => {
+    const copy = { ...block, id: newId(block.type) };
+    setColumn(column, layout[column].toSpliced(index + 1, 0, copy));
+    setActive(copy.id);
+  };
+  const toggle = ({ column, block }: Found) =>
+    replace(column, { ...block, hidden: block.hidden ? undefined : true });
+  const moveAcross = ({ column, index }: Found) => {
+    const to = otherColumn(column);
+    onChange(moveBlock(layout, { list: column, index }, { list: to, index: layout[to].length }));
   };
 
-  const setPreviewing = (state: SetStateAction<string | null>) => {
-    setTimeout(() => setPreviewingState(state), 100);
-  };
+  const options = (found: Found, full: boolean) => (
+    <BlockOptions
+      block={found.block}
+      column={found.column}
+      onToggle={() => toggle(found)}
+      onMove={() => moveAcross(found)}
+      onDuplicate={full && isCustom(found.block) ? () => duplicate(found) : undefined}
+      onRemove={full ? () => remove(found) : undefined}
+    />
+  );
 
   return (
     <EditableListGroup
@@ -214,65 +320,11 @@ export function HomeEditor({
       onAdd={add}
       onRemove={(from) => {
         if (!isColumn(from.list)) return;
-        onChange({ ...layout, [from.list]: layout[from.list].toSpliced(from.index, 1) });
+        const block = layout[from.list][from.index];
+        if (block) remove({ column: from.list, index: from.index, block });
       }}
     >
-      <div className="flex flex-col gap-8">
-        <EditableListPalette
-          label={t("homeEditor.palette")}
-          removeLabel={t("homeEditor.remove")}
-          className="sticky top-[calc(var(--layout-offset,0px)+--spacing(3))] z-10 rounded-3xl border border-border bg-background/95 p-3 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80 sm:p-4"
-        >
-          <div className="flex flex-col gap-3">
-            <div className="grid max-h-40 scroll-fade gap-x-6 gap-y-2 overflow-y-auto scrollbar-thin sm:max-h-none lg:grid-cols-2">
-              {palette.map((group) => (
-                <div key={group.key} className="flex flex-wrap items-center gap-1.5">
-                  <h3
-                    className="w-full text-[0.6875rem] font-semibold tracking-wide text-muted-fg uppercase sm:w-24 sm:shrink-0"
-                    title={group.hint}
-                  >
-                    {group.label}
-                  </h3>
-                  {group.items.map((template) => (
-                    <EditableListSource
-                      key={template.key}
-                      id={template.key}
-                      title={template.description}
-                      onPreview={(shown) =>
-                        setPreviewing((current) =>
-                          shown ? template.key : current === template.key ? null : current,
-                        )
-                      }
-                      onActivate={() =>
-                        add(template.key, { list: "main", index: layout.main.length })
-                      }
-                      className="inline-flex items-center gap-1.5 rounded-pill bg-muted/40 py-1 pr-3 pl-1.5 text-sm"
-                    >
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-pill bg-muted text-muted-fg">
-                        <template.icon className="size-3.5" />
-                      </span>
-                      <span className="font-medium">{template.label}</span>
-                    </EditableListSource>
-                  ))}
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-fg">
-              {previewed ? (
-                <>
-                  <span className="font-medium text-fg">{previewed.label}.</span>{" "}
-                  {previewed.description}
-                </>
-              ) : (
-                <>
-                  <span className="font-medium text-fg">{t("homeEditor.addBlock")}</span>{" "}
-                  {t("homeEditor.addHelp")}
-                </>
-              )}
-            </p>
-          </div>
-        </EditableListPalette>
-
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           {COLUMNS.map((column) => (
             <section
@@ -280,18 +332,22 @@ export function HomeEditor({
               aria-label={t(column.label)}
               className="flex min-w-0 flex-col gap-3"
             >
-              <header className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
-                <div className="flex flex-col">
+              <header className="flex items-end justify-between gap-3 border-b border-border pb-2">
+                <div className="flex min-w-0 flex-col">
                   <h2 className="text-sm font-semibold">{t(column.label)}</h2>
                   <p className="text-xs text-muted-fg">{t(column.hint)}</p>
                 </div>
-                <span className="text-xs text-muted-fg tabular-nums">
+                <span className="shrink-0 text-xs text-muted-fg tabular-nums">
                   {t("homeEditor.blocks", { count: layout[column.key].length })}
                 </span>
               </header>
               <EditableList id={column.key} empty={t("homeEditor.empty")}>
                 {layout[column.key].map((block, index) => {
+                  const found = { column: column.key, index, block };
                   const label = blockLabel(block, data.plugins, t);
+                  const Icon = iconOf(block);
+                  const invalid = !homeBlockSchema.safeParse(block).success;
+                  const editingHere = !wide && active === block.id;
                   return (
                     <EditableListItem
                       key={block.id}
@@ -299,46 +355,337 @@ export function HomeEditor({
                       index={index}
                       noun={label}
                       title={label}
+                      icon={<Icon />}
                       numbered={false}
-                      handle={false}
-                      editWith="button"
-                      onRemove={() =>
-                        onChange({
-                          ...layout,
-                          [column.key]: layout[column.key].filter((each) => each.id !== block.id),
-                        })
+                      selected={wide && active === block.id}
+                      dimmed={block.hidden}
+                      actions={
+                        <>
+                          {invalid && (
+                            <Badge variant="destructive" className="mr-1">
+                              {t("homeEditor.needsFix")}
+                            </Badge>
+                          )}
+                          {block.hidden && (
+                            <Badge variant="secondary" className="mr-1">
+                              {t("homeEditor.hidden")}
+                            </Badge>
+                          )}
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="ghost"
+                            aria-label={t(block.hidden ? "homeEditor.show" : "homeEditor.hide", {
+                              name: label,
+                            })}
+                            tooltip={t(block.hidden ? "homeEditor.show" : "homeEditor.hide", {
+                              name: label,
+                            })}
+                            onClick={() => toggle(found)}
+                          >
+                            {block.hidden ? <IconEye /> : <IconEyeOff />}
+                          </Button>
+                        </>
                       }
-                      onDuplicate={
-                        isCustom(block)
-                          ? () =>
-                              onChange({
-                                ...layout,
-                                [column.key]: layout[column.key].toSpliced(index + 1, 0, {
-                                  ...block,
-                                  id: newId(block.type),
-                                }),
-                              })
-                          : undefined
+                      onDuplicate={isCustom(block) ? () => duplicate(found) : undefined}
+                      onRemove={() => remove(found)}
+                      preview={
+                        <div data-home-block={block.id} className="min-w-0">
+                          <HomeBlockView block={block} data={data} customizing />
+                        </div>
                       }
-                      preview={<HomeBlockView block={block} data={data} customizing />}
-                      editing={active === block.id || !homeBlockSchema.safeParse(block).success}
+                      editing={editingHere}
                       onEdit={() => setActive(block.id)}
                       onDone={() => setActive(null)}
                     >
-                      <BlockSettings
-                        block={block}
-                        eventId={data.event.id}
-                        onChange={(next) => replace(column.key, next)}
-                      />
+                      {editingHere && (
+                        <>
+                          <BlockSettings
+                            block={block}
+                            eventId={data.event.id}
+                            onChange={(next) => replace(column.key, next)}
+                          />
+                          {options(found, false)}
+                        </>
+                      )}
                     </EditableListItem>
                   );
                 })}
               </EditableList>
+              <AddBlock
+                groups={palette}
+                column={column.key}
+                onPick={(key) => add(key, { list: column.key, index: layout[column.key].length })}
+              />
             </section>
           ))}
         </div>
+
+        {wide && (
+          <EditableListPalette
+            label={selected ? blockLabel(selected.block, data.plugins, t) : t("homeEditor.palette")}
+            removeLabel={t("homeEditor.remove")}
+            className="sticky top-[calc(var(--layout-offset,0px)+--spacing(3))] rounded-3xl border border-border bg-card"
+          >
+            <div
+              className="flex max-h-[calc(100dvh-var(--layout-offset,0px)-(--spacing(6)))] flex-col overflow-y-auto scrollbar-thin"
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && selected) setActive(null);
+              }}
+            >
+              {selected ? (
+                <>
+                  <header className="flex items-center gap-3 border-b border-border p-4">
+                    <BlockIcon icon={iconOf(selected.block)} />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <h2 className="truncate text-sm font-semibold">
+                        {blockLabel(selected.block, data.plugins, t)}
+                      </h2>
+                      <p className="text-xs text-muted-fg">{t(columnOf(selected.column).within)}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={t("homeEditor.close")}
+                      tooltip={t("homeEditor.close")}
+                      onClick={() => setActive(null)}
+                    >
+                      <IconX />
+                    </Button>
+                  </header>
+                  <div className="p-4">
+                    <BlockSettings
+                      key={selected.block.id}
+                      block={selected.block}
+                      eventId={data.event.id}
+                      onChange={(next) => replace(selected.column, next)}
+                    />
+                  </div>
+                  <div className="border-t border-border p-4">{options(selected, true)}</div>
+                </>
+              ) : (
+                <div className="flex flex-col gap-3 p-4">
+                  <header className="flex items-center justify-between gap-3">
+                    <h2 className="text-sm font-semibold">{t("homeEditor.addTitle")}</h2>
+                    <Tabs
+                      value={target}
+                      onValueChange={(next: Column) => setTarget(next)}
+                      className="gap-0"
+                    >
+                      <TabsList variant="switch" aria-label={t("homeEditor.addTo")}>
+                        {COLUMNS.map((column) => (
+                          <TabsTrigger key={column.key} value={column.key}>
+                            {t(column.short)}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  </header>
+                  <p className="text-xs text-muted-fg">{t("homeEditor.addHelp")}</p>
+                  <BlockPicker
+                    groups={palette}
+                    draggable
+                    onPick={(key) => add(key, { list: target, index: layout[target].length })}
+                  />
+                </div>
+              )}
+            </div>
+          </EditableListPalette>
+        )}
       </div>
     </EditableListGroup>
+  );
+}
+
+function BlockIcon({ icon: Icon }: { icon: Template["icon"] }) {
+  return (
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-fg">
+      <Icon className="size-4" />
+    </span>
+  );
+}
+
+function BlockOptions({
+  block,
+  column,
+  onToggle,
+  onMove,
+  onDuplicate,
+  onRemove,
+}: {
+  block: HomeBlock;
+  column: Column;
+  onToggle: () => void;
+  onMove: () => void;
+  onDuplicate?: () => void;
+  onRemove?: () => void;
+}) {
+  const t = useT();
+  const id = `${block.id}-shown`;
+  return (
+    <div className="flex flex-col gap-4">
+      <Field orientation="horizontal" className="justify-between">
+        <FieldContent>
+          <FieldLabel htmlFor={id}>{t("homeEditor.shown")}</FieldLabel>
+          <FieldDescription>{t("homeEditor.shownHelp")}</FieldDescription>
+        </FieldContent>
+        <Switch id={id} checked={!block.hidden} onCheckedChange={onToggle} />
+      </Field>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" variant="outline" onClick={onMove}>
+          <IconArrowsLeftRight />
+          {t(columnOf(otherColumn(column)).moveHere)}
+        </Button>
+        {onDuplicate && (
+          <Button type="button" size="sm" variant="outline" onClick={onDuplicate}>
+            <IconCopy />
+            {t("homeEditor.duplicate")}
+          </Button>
+        )}
+        {onRemove && (
+          <Button type="button" size="sm" variant="ghost-destructive" onClick={onRemove}>
+            <IconTrash />
+            {t("homeEditor.removeBlock")}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function matches(template: Template, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  return (
+    !needle ||
+    template.label.toLowerCase().includes(needle) ||
+    template.description.toLowerCase().includes(needle)
+  );
+}
+
+function BlockPicker({
+  groups,
+  draggable = false,
+  onPick,
+}: {
+  groups: Tuple<PaletteGroup>;
+  draggable?: boolean;
+  onPick: (key: string) => void;
+}) {
+  const t = useT();
+  const [query, setQuery] = useState("");
+  const shown = groups
+    .map((group) => ({ ...group, items: group.items.filter((each) => matches(each, query)) }))
+    .filter((group) => group.items.length > 0);
+  const row =
+    "flex w-full items-center gap-3 rounded-xl p-1.5 text-left transition-colors hocus:bg-muted";
+  return (
+    <div className="flex flex-col gap-3">
+      <InputGroup>
+        <InputGroupAddon>
+          <IconSearch />
+        </InputGroupAddon>
+        <InputGroupInput
+          type="search"
+          aria-label={t("homeEditor.search")}
+          placeholder={t("homeEditor.search")}
+          value={query}
+          onChange={(event) => setQuery(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            const first = shown[0]?.items[0];
+            if (event.key === "Enter" && first) {
+              event.preventDefault();
+              onPick(first.key);
+            }
+          }}
+        />
+      </InputGroup>
+      {shown.length === 0 && <p className="text-sm text-muted-fg">{t("homeEditor.noMatches")}</p>}
+      {shown.map((group) => (
+        <div key={group.key} className="flex flex-col gap-0.5">
+          <h3
+            className="px-1.5 pb-1 text-[0.6875rem] font-semibold tracking-wide text-muted-fg uppercase"
+            title={group.hint}
+          >
+            {group.label}
+          </h3>
+          {group.items.map((template) => {
+            const content = (
+              <>
+                <BlockIcon icon={template.icon} />
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm font-medium">{template.label}</span>
+                  <span className="line-clamp-1 text-xs text-muted-fg">{template.description}</span>
+                </span>
+              </>
+            );
+            return draggable ? (
+              <EditableListSource
+                key={template.key}
+                id={template.key}
+                title={template.description}
+                onActivate={() => onPick(template.key)}
+                className={row}
+              >
+                {content}
+              </EditableListSource>
+            ) : (
+              <button
+                key={template.key}
+                type="button"
+                className={row}
+                onClick={() => onPick(template.key)}
+              >
+                {content}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AddBlock({
+  groups,
+  column,
+  onPick,
+}: {
+  groups: Tuple<PaletteGroup>;
+  column: Column;
+  onPick: (key: string) => void;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="justify-start self-start text-muted-fg"
+            aria-label={t(columnOf(column).addHere)}
+          />
+        }
+      >
+        <IconPlus />
+        {t("homeEditor.addHere")}
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="max-h-[min(28rem,var(--available-height))] w-80 overflow-y-auto p-3 scrollbar-thin"
+      >
+        <BlockPicker
+          groups={groups}
+          onPick={(key) => {
+            onPick(key);
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -172,36 +172,39 @@ export const homeImageSchema = z.object({
 });
 export type HomeImage = z.infer<typeof homeImageSchema>;
 
+// hidden blocks keep their place and settings but don't show
+const blockBase = { id: blockId, hidden: z.boolean().optional() };
+
 export const homeBlockSchema = z.discriminatedUnion("type", [
-  z.object({ id: blockId, type: z.enum(HOME_BUILT_IN_BLOCKS), title: blockTitle }),
+  z.object({ ...blockBase, type: z.enum(HOME_BUILT_IN_BLOCKS), title: blockTitle }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("about"),
     title: blockTitle,
     images: z.array(homeImageSchema).max(12, "Up to 12 images").optional(),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("plugin"),
     title: blockTitle,
     plugin: z.string().max(32),
     panel: z.string().max(41).optional(),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("text"),
     title: blockTitle,
     body: z.string().max(20_000, "Keep it under 20,000 characters"),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("callout"),
     title: blockTitle,
     tone: z.enum(CALLOUT_TONES),
     body: z.string().max(2_000, "Keep it under 2,000 characters"),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("faq"),
     title: blockTitle,
     questions: z
@@ -214,14 +217,14 @@ export const homeBlockSchema = z.discriminatedUnion("type", [
       .max(20, "Up to 20 questions"),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("image"),
     title: blockTitle,
     image: homeImageSchema,
     caption: z.string().trim().max(300, "Keep it under 300 characters").optional(),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("sponsors"),
     title: blockTitle,
     sponsors: z
@@ -235,7 +238,7 @@ export const homeBlockSchema = z.discriminatedUnion("type", [
       .max(40, "Up to 40 sponsors"),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("links"),
     title: blockTitle,
     links: z
@@ -248,12 +251,12 @@ export const homeBlockSchema = z.discriminatedUnion("type", [
       .max(12, "Up to 12 links"),
   }),
   z.object({
-    id: blockId,
+    ...blockBase,
     type: z.literal("countdown"),
     title: blockTitle,
     to: z.enum(["start", "end"]),
   }),
-  z.object({ id: blockId, type: z.literal("divider") }),
+  z.object({ ...blockBase, type: z.literal("divider") }),
 ]);
 export type HomeBlock = z.infer<typeof homeBlockSchema>;
 

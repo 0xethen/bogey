@@ -4,8 +4,13 @@ import { useT } from "#/lib/translate.tsx";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { IconCheck, IconLayoutDashboard, IconPencil } from "@tabler/icons-react";
-import { DEFAULT_HOME_LAYOUT, homeLayoutSchema, type HomeLayout } from "@bogey/config/settings";
+import { IconCheck, IconLayoutDashboard } from "@tabler/icons-react";
+import {
+  DEFAULT_HOME_LAYOUT,
+  homeLayoutSchema,
+  type HomeBlock,
+  type HomeLayout,
+} from "@bogey/config/settings";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { eventPagesQueryOptions } from "@bogey/db/queries/pages";
 import {
@@ -57,6 +62,8 @@ export const Route = createFileRoute("/_authed/events/$slug/")({
 function sameLayout(a: HomeLayout, b: HomeLayout): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
+
+const shown = (block: HomeBlock) => !block.hidden;
 
 function RouteComponent() {
   const t = useT();
@@ -140,21 +147,11 @@ function RouteComponent() {
         </span>
       }
       description={
-        customizing ? (
-          <>
-            {t("home.customizeHint", { pencil: "\u0000" })
-              .split("\u0000")
-              .flatMap((part, index) =>
-                index === 0
-                  ? [part]
-                  : [<IconPencil key="pencil" className="inline-block align-top size-4" />, part],
-              )}
-          </>
-        ) : (
-          [formatDateRange(event.starts_at, event.ends_at, time), event.location]
-            .filter(Boolean)
-            .join(", ")
-        )
+        customizing
+          ? t("home.customizeHint")
+          : [formatDateRange(event.starts_at, event.ends_at, time), event.location]
+              .filter(Boolean)
+              .join(", ")
       }
       actions={
         customizing ? (
@@ -205,12 +202,12 @@ function RouteComponent() {
       ) : (
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="flex min-w-0 flex-col gap-10">
-            {layout.main.map((block) => (
+            {layout.main.filter(shown).map((block) => (
               <HomeBlockView key={block.id} block={block} data={data} />
             ))}
           </div>
           <aside className="flex min-w-0 flex-col gap-10">
-            {layout.aside.map((block) => (
+            {layout.aside.filter(shown).map((block) => (
               <HomeBlockView key={block.id} block={block} data={data} />
             ))}
           </aside>
