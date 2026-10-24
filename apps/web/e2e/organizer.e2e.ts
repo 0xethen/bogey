@@ -12,6 +12,7 @@ const MANAGE = [
   "/teams",
   "/divisions",
   "/submissions",
+  "/submissions/gallery",
   "/submissions/forms",
   "/prizes",
   "/judging",

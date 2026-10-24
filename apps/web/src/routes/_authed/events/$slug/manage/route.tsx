@@ -11,6 +11,7 @@ import {
   IconHistory,
   IconHome,
   IconInbox,
+  IconLayoutGrid,
   IconInfoCircle,
   IconListDetails,
   IconLayoutDashboard,
@@ -202,6 +203,12 @@ function RouteComponent() {
           to: `${base}/submissions`,
           exact: true,
           sub: [
+            {
+              key: "gallery",
+              label: t("manageSubs.gallery"),
+              icon: IconLayoutGrid,
+              to: `${base}/submissions/gallery`,
+            },
             {
               key: "forms",
               label: t("manageNav.forms"),

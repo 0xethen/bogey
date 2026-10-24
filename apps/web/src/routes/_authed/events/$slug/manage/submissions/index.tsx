@@ -1,7 +1,7 @@
 import { exportHref } from "#/lib/exports.ts";
 import { ProjectExport } from "#/components/event/project-export.tsx";
 import { useCallback, useMemo } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
   useMutation,
   useQueryClient,
@@ -40,18 +40,17 @@ import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 
-const GALLERY_KEYS = [
-  "banners",
-  "teamBanners",
-  "teamSizes",
-  "winners",
-  "likes",
-  "comments",
-  "sort",
-  "slideshow",
-] as const;
-
 export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/")({
+  // Old #gallery links, from before the gallery had its own subtab.
+  beforeLoad: ({ params, location }) => {
+    if (location.hash === "gallery") {
+      throw redirect({
+        to: "/events/$slug/manage/submissions/gallery",
+        params,
+        replace: true,
+      });
+    }
+  },
   staticData: {
     title: msg("window.submissions"),
     settings: (t) => [
@@ -59,11 +58,6 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/"
       searchSection(t("manageSubs.drafts"), { id: "drafts" }),
       searchSection(t("manageSubs.reminders"), { id: "reminders" }),
       ...searchSettings("submissions", ["reminderHours"], t),
-      searchSection(t("manageSubs.gallery"), {
-        keywords: ["banner", "likes", "comments"],
-        id: "gallery",
-      }),
-      ...searchSettings("gallery", GALLERY_KEYS, t),
       searchSection(t("manageSubs.disqualified"), { id: "disqualified" }),
     ],
   },
@@ -74,7 +68,6 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/"
       context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "submissions",
-        "gallery",
       ]),
     ]),
   component: RouteComponent,
@@ -267,17 +260,6 @@ function RouteComponent() {
           scope={{ scope: "event", eventId: event.id }}
           namespace="submissions"
           keys={["reminderHours"]}
-        />
-      </Screen.Section>
-      <Screen.Section
-        id="gallery"
-        title={t("manageSubs.gallery")}
-        description={t("manageSubs.galleryHelp")}
-      >
-        <SettingFields
-          scope={{ scope: "event", eventId: event.id }}
-          namespace="gallery"
-          keys={GALLERY_KEYS}
         />
       </Screen.Section>
       {disqualified.length > 0 && (
