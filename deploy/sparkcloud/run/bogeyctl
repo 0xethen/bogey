@@ -1,0 +1,46 @@
+#!/bin/bash
+# bogeyctl: the services under /srv/bogey/run/supervise.sh.
+RUN=/run/bogey
+
+pid_of() { cat "$RUN/$1.pid" 2>/dev/null; }
+alive() { local p; p=$(pid_of "$1"); [ -n "$p" ] && kill -0 "$p" 2>/dev/null; }
+tree() { local p=$1 c; for c in $(pgrep -P "$p"); do tree "$c"; done; echo "$p"; }
+
+stop() {
+  local s=$1 p loop
+  p=$(pid_of "$s")
+  [ -n "$p" ] && kill -0 "$p" 2>/dev/null || { echo "$s isn't running"; return 0; }
+  # the restart loop is the service's parent; stop it first so it doesn't start the service again
+  loop=$(ps -o ppid= -p "$p" | tr -d ' ')
+  [ -n "$loop" ] && [ "$loop" != 1 ] && kill "$loop" 2>/dev/null
+  kill $(tree "$p") 2>/dev/null
+  for _ in $(seq 1 20); do kill -0 "$p" 2>/dev/null || break; sleep 0.5; done
+  kill -9 $(tree "$p") 2>/dev/null
+  touch "$RUN/$s.stopped"
+  echo "[$(date -Is)] $s stopped by bogeyctl" >> "/srv/bogey/logs/$s.log"
+  echo "$s stopped"
+}
+
+start() {
+  local s=$1
+  if alive "$s"; then echo "$s is already running"; return 0; fi
+  rm -f "$RUN/$s.stopped"
+  setsid /srv/bogey/run/supervise.sh "$s" > /dev/null 2>&1 < /dev/null &
+  echo "$s started"
+}
+
+case $1 in
+  restart) for s in "${@:2}"; do kill "$(pid_of "$s")"; done ;;
+  stop) for s in "${@:2}"; do stop "$s"; done ;;
+  start) for s in "${@:2}"; do start "$s"; done ;;
+  logs) tail -n "${3:-50}" -f "/srv/bogey/logs/$2.log" ;;
+  status)
+    for f in "$RUN"/*.pid; do
+      s=$(basename "$f" .pid)
+      if alive "$s"; then echo "$s up (pid $(pid_of "$s"))"
+      elif [ -f "$RUN/$s.stopped" ]; then echo "$s stopped (bogeyctl start $s)"
+      else echo "$s down"; fi
+    done ;;
+  upgrade) exec /srv/bogey/run/bogey-upgrade "${@:2}" ;;
+  *) echo "bogeyctl upgrade [version] | status | start|stop|restart <svc>... | logs <svc> [n]" ;;
+esac

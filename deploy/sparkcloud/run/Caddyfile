@@ -1,0 +1,108 @@
+# Front door and gateway in one: Sparkcloud terminates TLS and proxies to :80.
+# The gateway part stands in for Kong (deploy/all-in-one/volumes/api/kong.yml).
+{
+	admin off
+	auto_https off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+(cors) {
+	header ?Access-Control-Allow-Origin *
+	@preflight method OPTIONS
+	handle @preflight {
+		header Access-Control-Allow-Methods "GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS"
+		header Access-Control-Allow-Headers "*"
+		header Access-Control-Max-Age 3600
+		respond 204
+	}
+}
+
+# Kong's key-auth: apikey header or query must be the anon or service key
+(keyed) {
+	@nokey not expression `{header.apikey} in ["{$ANON_KEY}", "{$SERVICE_ROLE_KEY}"] || {query.apikey} in ["{$ANON_KEY}", "{$SERVICE_ROLE_KEY}"]`
+	respond @nokey `{"message":"Invalid authentication credentials"}` 401
+}
+
+# Kong's LUA_AUTH_EXPR: keep a real Authorization, else use the apikey
+(authz) {
+	@useapikey expression `({header.Authorization} == "" || {header.Authorization}.startsWith("Bearer sb_")) && {header.apikey} != ""`
+	request_header @useapikey Authorization "Bearer {header.apikey}"
+}
+
+:80 {
+	encode zstd gzip
+
+	@auth_open path /auth/v1/verify* /auth/v1/callback* /auth/v1/authorize* /auth/v1/.well-known/jwks.json /auth/v1/sso/saml/acs /auth/v1/sso/saml/metadata
+	handle @auth_open {
+		import cors
+		uri strip_prefix /auth/v1
+		reverse_proxy 127.0.0.1:9999
+	}
+	handle /auth/v1/* {
+		import cors
+		import keyed
+		import authz
+		uri strip_prefix /auth/v1
+		reverse_proxy 127.0.0.1:9999
+	}
+	handle /.well-known/oauth-authorization-server {
+		import cors
+		reverse_proxy 127.0.0.1:9999
+	}
+
+	handle /rest/v1/ {
+		import cors
+		@notservice not expression `{header.apikey} == "{$SERVICE_ROLE_KEY}" || {query.apikey} == "{$SERVICE_ROLE_KEY}"`
+		respond @notservice `{"message":"You cannot consume this service"}` 403
+		import authz
+		rewrite * /
+		reverse_proxy 127.0.0.1:3002
+	}
+	handle /rest/v1/* {
+		import cors
+		import keyed
+		import authz
+		uri strip_prefix /rest/v1
+		reverse_proxy 127.0.0.1:3002
+	}
+
+	handle /realtime/v1/api/openapi* {
+		respond "Access is forbidden." 403
+	}
+	handle /realtime/v1/api/tenants* {
+		respond "Access is forbidden." 403
+	}
+	handle /realtime/v1/api/* {
+		import cors
+		import keyed
+		import authz
+		uri strip_prefix /realtime/v1
+		reverse_proxy 127.0.0.1:4000 {
+			header_up Host realtime-dev.supabase-realtime
+		}
+	}
+	handle /realtime/v1/* {
+		import cors
+		import keyed
+		request_header x-api-key {query.apikey}
+		uri replace /realtime/v1/ /socket/ 1
+		reverse_proxy 127.0.0.1:4000 {
+			header_up Host realtime-dev.supabase-realtime
+		}
+	}
+
+	handle /storage/v1/* {
+		import cors
+		import authz
+		@emptyauth expression `{header.Authorization}.matches("^\\s*$")`
+		request_header @emptyauth -Authorization
+		uri strip_prefix /storage/v1
+		reverse_proxy 127.0.0.1:5000
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}

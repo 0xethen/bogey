@@ -1,0 +1,340 @@
+#!/bin/bash
+# bogey-upgrade: moves this instance to a Bogey release, with its plugins and themes.
+#   bogey-upgrade             the newest stable release
+#   bogey-upgrade 2.3.0       a specific release
+#   bogey-upgrade --check     only say what would change
+#   bogey-upgrade --force     rebuild and reinstall even if nothing changed (or go back a version)
+# Plugins: `bogey plugins add <key>` (or remove) edits bogey.plugins.lock in the running app.
+# Themes: put <key>.theme.css in /srv/bogey/themes and set brand.theme in bogey.config.ts.
+# Run this after changing either and it rebuilds the app with them. Both are compiled into the app,
+# so with any installed this builds the release here (a few minutes); with none it uses the image as is.
+# It backs up first, applies migrations, swaps the app in, restarts it, and puts the old app back
+# if the new one doesn't come up. It also installs the release's deploy/sparkcloud scripts.
+# It runs detached and keeps the box awake, so a dropped SSH session or SparkCloud's sleep timer
+# doesn't stop it; the log is /srv/bogey/logs/upgrade.log.
+set -uo pipefail
+
+REPO=ghcr.io/0xethen/bogey
+SOURCE=https://codeload.github.com/0xethen/bogey/tar.gz/refs/tags
+IMG=/srv/img
+BUILD=/srv/build
+RUN=/srv/bogey/run
+STATE=/srv/bogey/state
+THEMES_DIR=/srv/bogey/themes
+BACKUPS=/srv/bogey/backups
+LOG=/srv/bogey/logs/upgrade.log
+BUILD_LOG=/srv/bogey/logs/upgrade-build.log
+KEEP_BACKUPS=3
+# the box allows 200 threads in all and the services use about 150; these pause while it builds
+PAUSE_WHILE_BUILDING="studio meta"
+
+. $RUN/common.sh
+
+bold=$'\e[1m' dim=$'\e[2m' red=$'\e[31m' green=$'\e[32m' yellow=$'\e[33m' off=$'\e[0m'
+step() { echo "${bold}==>${off} $*"; }
+ok() { echo "  ${green}✓${off} $*"; }
+warn() { echo "  ${yellow}!${off} $*"; }
+die() { echo "  ${red}✗${off} $*" >&2; exit 1; }
+
+TAG="" CHECK=0 FORCE=0
+for arg in "$@"; do
+  case $arg in
+    --check | --dry-run) CHECK=1 ;;
+    --force) FORCE=1 ;;
+    -h | --help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) die "unknown option $arg (try --help)" ;;
+    *) TAG=${arg#v} ;;
+  esac
+done
+
+# Run detached and follow the log: SSH dropping only stops the following.
+if [ $CHECK = 0 ] && [ -z "${BOGEY_UPGRADE_DETACHED:-}" ]; then
+  mkdir -p "$(dirname "$LOG")" /run/bogey
+  if [ -f /run/bogey/upgrade.pid ] && kill -0 "$(cat /run/bogey/upgrade.pid)" 2>/dev/null; then
+    die "an upgrade is already running (pid $(cat /run/bogey/upgrade.pid)); follow it with tail -f $LOG"
+  fi
+  [ -f "$LOG" ] && mv "$LOG" "$LOG.1"
+  BOGEY_UPGRADE_DETACHED=1 setsid "$0" "$@" >"$LOG" 2>&1 </dev/null &
+  pid=$!
+  echo "$pid" >/run/bogey/upgrade.pid
+  echo "${dim}Running detached (pid $pid); it carries on if this session drops. Log: $LOG${off}"
+  tail -n +1 -f --pid="$pid" "$LOG"
+  wait "$pid"
+  exit $?
+fi
+
+mkdir -p "$STATE" "$BACKUPS" "$THEMES_DIR"
+
+# SparkCloud puts the box to sleep after a quiet spell; outside requests through its proxy keep it up
+if [ $CHECK = 0 ]; then
+  (
+    hosts=$(echo "${BOGEY_HOSTS:-$BOGEY_HOST}" | tr ',' ' ')
+    while true; do
+      for h in $hosts; do curl -s -o /dev/null --max-time 20 "https://$h/" || true; done
+      sleep 45
+    done
+  ) &
+  KEEPALIVE=$!
+fi
+PAUSED=""
+cleanup() {
+  [ -n "${KEEPALIVE:-}" ] && kill "$KEEPALIVE" 2>/dev/null
+  [ -n "$PAUSED" ] && $RUN/bogeyctl start $PAUSED >/dev/null
+  rm -f /run/bogey/upgrade.pid
+}
+trap cleanup EXIT
+
+psql_db() { "$PGBIN/psql" "${DATABASE_URL/@db:/@127.0.0.1:}" -XAtq "$@"; }
+
+# migrations the database has that an app folder doesn't ship
+db_ahead_of() {
+  local dir=$1/app/supabase/migrations applied version
+  applied=$(psql_db -c "select version from supabase_migrations.schema_migrations order by 1") || return 1
+  for version in $applied; do
+    ls "$dir"/"${version}"_*.sql >/dev/null 2>&1 || echo "$version"
+  done
+}
+
+# the plugins in a lock file, one key per line ("" for none)
+lock_keys() { [ -f "$1" ] && jq -r 'keys[]' "$1" 2>/dev/null; }
+
+step "Checking for releases"
+if [ -z "$TAG" ]; then
+  TAG=$(crane ls "$REPO" 2>/dev/null | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -V | tail -1)
+  [ -n "$TAG" ] || die "couldn't list the releases of $REPO"
+fi
+DIGEST=$(crane digest --platform linux/amd64 "$REPO:$TAG" 2>/dev/null) || die "there's no $REPO:$TAG"
+CURRENT_DIGEST=$(cat "$STATE/web.digest" 2>/dev/null || echo "")
+CURRENT_VERSION=$(cat "$STATE/web.version" 2>/dev/null || echo "an unrecorded build")
+ok "running $CURRENT_VERSION; newest release is $TAG"
+
+# what plugins are wanted (the running app's lock, which `bogey plugins add` edits) and what's built in
+WANT_LOCK=$IMG/web/app/bogey.plugins.lock
+[ -f "$WANT_LOCK" ] || echo '{}' >"$WANT_LOCK"
+PLUGINS=$(lock_keys "$WANT_LOCK" | tr '\n' ' ' | sed 's/ $//')
+PLUGINS_SAME=0
+cmp -s "$WANT_LOCK" "$STATE/plugins.lock" && PLUGINS_SAME=1
+[ -n "$PLUGINS" ] && ok "plugins: $PLUGINS" || ok "no plugins installed"
+[ $PLUGINS_SAME = 0 ] && ok "plugins changed since the last upgrade"
+
+# this instance's own themes, and whether they changed since the running build
+THEMES=$(find "$THEMES_DIR" -maxdepth 1 -name '*.theme.css' -printf '%f\n' | sed 's/\.theme\.css$//' | sort | tr '\n' ' ' | sed 's/ $//')
+THEMES_SUM=""
+[ -n "$THEMES" ] && THEMES_SUM=$(cat "$THEMES_DIR"/*.theme.css | sha256sum | cut -d' ' -f1)
+THEMES_SAME=0
+[ "$THEMES_SUM" = "$(cat "$STATE/themes.sum" 2>/dev/null)" ] && THEMES_SAME=1
+[ -n "$THEMES" ] && ok "themes: $THEMES" || ok "no themes of its own"
+[ $THEMES_SAME = 0 ] && ok "themes changed since the last upgrade"
+
+# plugins and themes are compiled in, so either one means building here
+BUILD_HERE=0
+[ -n "$PLUGINS$THEMES" ] && BUILD_HERE=1
+EXTRAS=$(echo "$PLUGINS $THEMES" | xargs)
+
+if [ "$DIGEST" = "$CURRENT_DIGEST" ] && [ $PLUGINS_SAME = 1 ] && [ $THEMES_SAME = 1 ] && [ $FORCE = 0 ]; then
+  ok "already on $TAG with these plugins and themes"
+  AHEAD=$(db_ahead_of "$IMG/web")
+  if [ -n "$AHEAD" ]; then
+    warn "the database has migrations no release has yet: $(echo $AHEAD)"
+    warn "they came from a newer Bogey build. Once a release includes them, run bogey-upgrade again."
+  fi
+  exit 0
+fi
+if [ "$CURRENT_VERSION" != "an unrecorded build" ] && [ "$(printf '%s\n%s\n' "$TAG" "$CURRENT_VERSION" | sort -V | tail -1)" != "$TAG" ] && [ $FORCE = 0 ]; then
+  die "$TAG is older than $CURRENT_VERSION; pass --force to go back"
+fi
+if [ $CHECK = 1 ]; then
+  if [ $BUILD_HERE = 1 ]; then
+    echo "Would build $TAG here with $EXTRAS (a few minutes), back up, migrate, swap the app and restart web."
+  else
+    echo "Would update to $TAG ($DIGEST): back up, migrate, swap the app and restart web."
+  fi
+  exit 0
+fi
+
+FREE=$(df -Pm /srv | awk 'NR==2 {print $4}')
+NEED=1500
+[ $BUILD_HERE = 1 ] && NEED=5000
+[ "$FREE" -gt $NEED ] || die "only ${FREE} MB free in /srv; this needs about $NEED MB"
+
+step "Backing up"
+BACKUP=$BACKUPS/$(date +%Y%m%d-%H%M%S)-before-$TAG
+bogey backup --out "$BACKUP" >"$BACKUP.log" 2>&1 || die "the backup failed, so nothing was changed (see $BACKUP.log)"
+mv "$BACKUP.log" "$BACKUP/backup.log"
+[ -n "$THEMES" ] && cp -a "$THEMES_DIR" "$BACKUP/themes"
+ok "$BACKUP"
+ls -1d "$BACKUPS"/*/ 2>/dev/null | sort | head -n -$KEEP_BACKUPS | xargs -r rm -rf
+
+step "Downloading $TAG"
+rm -rf "$IMG/web.new" && mkdir -p "$IMG/web.new"
+crane export --platform linux/amd64 "$REPO@$DIGEST" - | tar -x -C "$IMG/web.new" --no-same-owner \
+  || die "couldn't download the image"
+[ -f "$IMG/web.new/app/server/index.mjs" ] || die "the image has no app/server/index.mjs; not a Bogey image?"
+cp -a "$IMG/web/app/bogey.config.ts" "$IMG/web.new/app/bogey.config.ts"
+# keep any brand files added here, like a custom logo
+[ -d "$IMG/web/app/public/brand" ] && cp -a "$IMG/web/app/public/brand/." "$IMG/web.new/app/public/brand/"
+ok "unpacked to $IMG/web.new, with this instance's bogey.config.ts and brand files"
+
+# the release's box scripts, installed once the new app is in (releases before 2.5 don't have them)
+SCRIPTS=$IMG/web.new/sparkcloud
+rm -rf "$SCRIPTS" && mkdir -p "$SCRIPTS"
+if curl -fsSL "$SOURCE/v$TAG" | tar -xz -C "$SCRIPTS" --strip-components=3 --wildcards '*/deploy/sparkcloud/*' 2>/dev/null \
+  && [ -f "$SCRIPTS/run/supervise.sh" ]; then
+  ok "box scripts from $TAG's deploy/sparkcloud"
+else
+  rm -rf "$SCRIPTS"
+  ok "$TAG has no deploy/sparkcloud; keeping the box scripts as they are"
+fi
+
+if [ $BUILD_HERE = 1 ]; then
+  step "Building $TAG with $EXTRAS"
+  T0=$(date +%s)
+  rm -rf "$BUILD" && mkdir -p "$BUILD/src"
+  curl -fsSL "$SOURCE/v$TAG" | tar -xz -C "$BUILD/src" --strip-components=1 \
+    || die "couldn't download the source of v$TAG"
+  # the toolchain the release's Dockerfile builds with, kept between upgrades
+  TOOLCHAIN=$(awk 'tolower($0) ~ /^from .* as build/ {print $2; exit}' "$BUILD/src/Dockerfile")
+  [ -n "$TOOLCHAIN" ] || die "the Dockerfile of v$TAG has no build stage"
+  TC=$IMG/build-$(echo "$TOOLCHAIN" | sed 's|.*/||; s|[^A-Za-z0-9._-]|-|g')
+  if [ ! -f "$TC/.complete" ]; then
+    rm -rf "$IMG"/build-* && mkdir -p "$TC"
+    crane export --platform linux/amd64 "$TOOLCHAIN" - | tar -x -C "$TC" --no-same-owner \
+      || die "couldn't download the build toolchain $TOOLCHAIN"
+    touch "$TC/.complete"
+  fi
+  TC_ENV=$(crane config --platform linux/amd64 "$TOOLCHAIN" 2>/dev/null | jq -r '.config.Env[]' 2>/dev/null)
+  ok "toolchain $TOOLCHAIN"
+
+  cp "$WANT_LOCK" "$BUILD/src/bogey.plugins.lock"
+  cp "$IMG/web/app/bogey.config.ts" "$BUILD/src/bogey.config.ts"
+  [ -f /srv/bogey/bogey.libraries.json ] && cp /srv/bogey/bogey.libraries.json "$BUILD/src/"
+  [ -n "$THEMES" ] && cp "$THEMES_DIR"/*.theme.css "$BUILD/src/packages/ui/src/styles/themes/"
+
+  for s in $PAUSE_WHILE_BUILDING; do
+    if [ -f "/run/bogey/$s.pid" ] && kill -0 "$(cat "/run/bogey/$s.pid")" 2>/dev/null; then
+      $RUN/bogeyctl stop "$s" >/dev/null && PAUSED="$PAUSED $s"
+    fi
+  done
+  [ -n "$PAUSED" ] && ok "paused$PAUSED while building (threads are capped on this box)"
+
+  # what the Dockerfile's build stage does, under proot (the toolchain's glibc is newer than the box's);
+  # the CLI is rebuilt too, since it checks bogey.config.ts against the theme list
+  # shellcheck disable=SC2086
+  proot -r "$TC" -b "$BUILD/src:/app" -b /proc -b /dev -b /sys -b /etc/resolv.conf -b /etc/hosts -w /app \
+    /usr/bin/env -i HOME=/root $TC_ENV CI=1 TOKIO_WORKER_THREADS=2 RAYON_NUM_THREADS=2 UV_THREADPOOL_SIZE=2 \
+    bash -c 'set -e
+      vp install --frozen-lockfile
+      node tools/cli/src/bin.ts themes
+      rm -rf packages/plugins/installed && mkdir -p packages/plugins/installed
+      node tools/cli/src/bin.ts plugins install
+      (cd apps/web && vp build)
+      cd tools/cli && vp pack' >"$BUILD_LOG" 2>&1 \
+    || { tail -n 40 "$BUILD_LOG"; die "the build failed; nothing was changed (backup: $BACKUP). Log: $BUILD_LOG; tree: $BUILD"; }
+  for key in $PLUGINS; do
+    [ -f "$BUILD/src/packages/plugins/installed/$key/manifest.ts" ] || die "the build is missing the $key plugin"
+  done
+
+  # the release's image with the app swapped for this build, as the Dockerfile's last stage lays it out
+  rm -rf "$IMG/web.new/app/server" "$IMG/web.new/app/public" "$IMG/web.new/opt/bogey/cli"
+  cp -a "$BUILD/src/apps/web/.output/." "$IMG/web.new/app/"
+  cp -a "$BUILD/src/tools/cli/dist" "$IMG/web.new/opt/bogey/cli"
+  [ -d "$IMG/web/app/public/brand" ] && cp -a "$IMG/web/app/public/brand/." "$IMG/web.new/app/public/brand/"
+  rm -rf "$IMG/web.new/app/packages/plugins/installed"
+  cp -a "$BUILD/src/packages/plugins/installed" "$IMG/web.new/app/packages/plugins/installed"
+  cp "$WANT_LOCK" "$IMG/web.new/app/bogey.plugins.lock"
+  rm -rf "$BUILD"
+  [ -n "$PAUSED" ] && $RUN/bogeyctl start $PAUSED >/dev/null && PAUSED=""
+  ok "built in $(( ($(date +%s) - T0) / 60 )) min (output in $BUILD_LOG)"
+else
+  cp "$WANT_LOCK" "$IMG/web.new/app/bogey.plugins.lock"
+fi
+
+step "Migrating the database"
+NEW_CLI() {
+  BOGEY_HOME=$IMG/web.new/app BOGEY_CONFIG=$IMG/web.new/app/bogey.config.ts \
+    "$IMG/web.new/usr/local/bin/node" "$IMG/web.new/opt/bogey/cli/bin.mjs" "$@"
+}
+NEW_CLI db migrate || die "migrations failed; the app wasn't changed (backup: $BACKUP)"
+NEW_CLI plugins migrate || die "plugin migrations failed; the app wasn't changed (backup: $BACKUP)"
+ok "schema is up to date"
+
+# Files are replaced by rename, never rewritten in place: bash reads a running script as it goes,
+# and this one is among them.
+CHANGED=""
+install_scripts() {
+  local from=$1 f name
+  for f in "$from"/run/*; do
+    name=$(basename "$f")
+    cmp -s "$f" "$RUN/$name" && continue
+    cp -a "$f" "$RUN/.$name.new" && mv "$RUN/.$name.new" "$RUN/$name"
+    CHANGED="$CHANGED $name"
+  done
+  if [ -f "$from/start.sh" ] && ! cmp -s "$from/start.sh" /app/start.sh; then
+    cp -a "$from/start.sh" /app/.start.sh.new && mv /app/.start.sh.new /app/start.sh
+  fi
+  ln -sfn "$RUN/bogey" /usr/local/bin/bogey
+  ln -sfn "$RUN/bogeyctl" /usr/local/bin/bogeyctl
+  ln -sfn "$RUN/bogey-upgrade" /usr/local/bin/bogey-upgrade
+}
+if [ -d "$SCRIPTS" ]; then
+  step "Installing the box scripts"
+  rm -rf "$RUN.prev" && cp -a "$RUN" "$RUN.prev"
+  install_scripts "$SCRIPTS"
+  [ -n "$CHANGED" ] && ok "updated:$CHANGED (the old ones are in $RUN.prev)" || ok "no changes"
+fi
+
+step "Switching to $TAG"
+rm -rf "$IMG/web.prev"
+mv "$IMG/web" "$IMG/web.prev" && mv "$IMG/web.new" "$IMG/web"
+install_node() { cp "$1/usr/local/bin/node" /usr/local/bin/node.new && mv /usr/local/bin/node.new /usr/local/bin/node; }
+install_node "$IMG/web"
+$RUN/bogeyctl restart web
+
+up() {
+  for _ in $(seq 1 90); do
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:3000/ || true)
+    case $code in 2* | 3* | 4*) return 0 ;; esac
+    sleep 2
+  done
+  return 1
+}
+if ! up; then
+  warn "web didn't come up on $TAG; putting the previous app back"
+  rm -rf "$IMG/web.failed"
+  mv "$IMG/web" "$IMG/web.failed" && mv "$IMG/web.prev" "$IMG/web"
+  [ -n "$CHANGED" ] && install_scripts "$RUN.prev" && warn "put the previous box scripts back"
+  install_node "$IMG/web"
+  $RUN/bogeyctl restart web
+  up && warn "the previous app is running again" || warn "the previous app isn't answering either"
+  die "the upgrade failed. Logs: bogeyctl logs web 200. The failed build is in $IMG/web.failed; backup: $BACKUP"
+fi
+echo "$DIGEST" >"$STATE/web.digest"
+echo "$TAG" >"$STATE/web.version"
+cp "$IMG/web/app/bogey.plugins.lock" "$STATE/plugins.lock"
+printf '%s' "$THEMES_SUM" >"$STATE/themes.sum"
+sed -i "s|^BOGEY_IMAGE=.*|BOGEY_IMAGE=$REPO:$TAG|" /srv/bogey/.env
+ok "web is up on $TAG"
+
+# services whose scripts changed, other than web (just restarted); supervise.sh and the
+# helpers take effect on the next boot or restart
+RESTART=""
+for name in $CHANGED; do
+  case $name in
+    web.sh) ;;
+    *.sh) s=${name%.sh}; [ -f "/run/bogey/$s.pid" ] && RESTART="$RESTART $s" ;;
+  esac
+done
+case " $CHANGED " in *" common.sh "*) RESTART=$(ls /run/bogey/*.pid 2>/dev/null | xargs -rn1 basename | sed 's/\.pid$//' | grep -v '^web$' | tr '\n' ' ') ;; esac
+if [ -n "$(echo $RESTART)" ]; then
+  $RUN/bogeyctl restart $RESTART
+  ok "restarted $(echo $RESTART) for their new scripts"
+fi
+
+AHEAD=$(db_ahead_of "$IMG/web")
+if [ -n "$AHEAD" ]; then
+  warn "the database still has migrations $TAG doesn't ship: $(echo $AHEAD)"
+  warn "they came from a newer Bogey build than any release. Run bogey-upgrade again once a release has them."
+fi
+
+echo
+echo "${green}${bold}Upgraded to $TAG${EXTRAS:+ with $EXTRAS}.${off} ${dim}Backup: $BACKUP. The previous app is in $IMG/web.prev until the next upgrade.${off}"

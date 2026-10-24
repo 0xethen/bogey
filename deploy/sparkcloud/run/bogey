@@ -1,0 +1,5 @@
+#!/bin/sh
+export BOGEY_HOME=${BOGEY_HOME:-/srv/img/web/app} BOGEY_CONFIG=${BOGEY_CONFIG:-/srv/img/web/app/bogey.config.ts}
+export PATH=/nix/var/nix/profiles/default/bin:$PATH
+set -a; [ -f /srv/bogey/.env ] && . /srv/bogey/.env; set +a
+exec node /opt/bogey/cli/bin.mjs "$@"

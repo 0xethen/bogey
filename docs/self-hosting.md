@@ -14,6 +14,9 @@ Supabase project. Pick one path:
 - **[Your own Supabase](self-hosting/supabase.md):** Supabase's self-hosted
   stack plus Bogey's overlay, deployed with the
   [plain compose](self-hosting/deploy.md).
+- **[SparkCloud](self-hosting/sparkcloud.md):** the all-in-one stack without
+  Docker, on a SparkCloud box, with an installer and an upgrade command that
+  builds plugins and themes in.
 
 Then, for every path:
 
