@@ -25,12 +25,14 @@ import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { useT, type T } from "#/lib/translate.tsx";
+import { useEvent } from "#/lib/viewer.ts";
 
 function failure(error: unknown): Error | null {
   return error instanceof Error ? error : null;
 }
 
-function useBoardRefresh(eventId: string) {
+function useBoardRefresh() {
+  const eventId = useEvent().id;
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
@@ -52,27 +54,22 @@ function Labels({ labels }: { labels: readonly string[] }) {
   );
 }
 
-export function TeamBoard({
-  eventId,
-  team,
-}: {
-  eventId: string;
-  team: { full: boolean; editable: boolean } | null;
-}) {
+export function TeamBoard({ team }: { team: { full: boolean; editable: boolean } | null }) {
+  const eventId = useEvent().id;
   const requests = useQuery(teamRequestsQueryOptions(eventId));
   const recruiting = team !== null && team.editable && !team.full;
   return (
     <>
-      <Requests eventId={eventId} rows={requests.data ?? []} />
-      {team === null && <FindATeam eventId={eventId} />}
-      {recruiting && <FindTeammates eventId={eventId} />}
+      <Requests rows={requests.data ?? []} />
+      {team === null && <FindATeam />}
+      {recruiting && <FindTeammates />}
     </>
   );
 }
 
-function Requests({ eventId, rows }: { eventId: string; rows: readonly TeamRequest[] }) {
+function Requests({ rows }: { rows: readonly TeamRequest[] }) {
   const t = useT();
-  const refresh = useBoardRefresh(eventId);
+  const refresh = useBoardRefresh();
   const answer = useMutation({
     mutationFn: async (input: { requestId: string; accept: boolean }) =>
       unwrap(await answerTeamRequestFn({ data: input })),
@@ -179,10 +176,11 @@ const seekerSchema = (t: T) =>
       .describe(t("teamBoard.lookingHelp")),
   });
 
-function SeekerForm({ eventId, card }: { eventId: string; card: SeekerCard | undefined }) {
+function SeekerForm({ card }: { card: SeekerCard | undefined }) {
+  const eventId = useEvent().id;
   const t = useT();
   const schema = useMemo(() => seekerSchema(t), [t]);
-  const refresh = useBoardRefresh(eventId);
+  const refresh = useBoardRefresh();
   const form = useAppForm({
     defaultValues: {
       skills: joinLabels(card?.skills ?? []),
@@ -224,9 +222,10 @@ function SeekerForm({ eventId, card }: { eventId: string; card: SeekerCard | und
   );
 }
 
-function FindATeam({ eventId }: { eventId: string }) {
+function FindATeam() {
+  const eventId = useEvent().id;
   const t = useT();
-  const refresh = useBoardRefresh(eventId);
+  const refresh = useBoardRefresh();
   const people = useQuery(teamBoardPeopleQueryOptions(eventId));
   const openings = useQuery(teamBoardOpeningsQueryOptions(eventId));
   const ask = useMutation({
@@ -244,7 +243,7 @@ function FindATeam({ eventId }: { eventId: string }) {
         description={t("teamBoard.cardHelp")}
       >
         <ErrorAlert error={failure(people.error)} title={t("teamBoard.loadFailed")} />
-        {people.data && <SeekerForm key={card?.user_id ?? "new"} eventId={eventId} card={card} />}
+        {people.data && <SeekerForm key={card?.user_id ?? "new"} card={card} />}
       </Screen.Section>
       <Screen.Section id="teams-looking" title={t("teamBoard.teamsTitle")}>
         <ErrorAlert error={failure(openings.error) ?? ask.error} title={t("teamBoard.askFailed")} />
@@ -300,10 +299,11 @@ const openingSchema = (t: T) =>
       .describe(t("teamBoard.openHelp")),
   });
 
-function OpeningForm({ eventId, post }: { eventId: string; post: TeamOpening | undefined }) {
+function OpeningForm({ post }: { post: TeamOpening | undefined }) {
+  const eventId = useEvent().id;
   const t = useT();
   const schema = useMemo(() => openingSchema(t), [t]);
-  const refresh = useBoardRefresh(eventId);
+  const refresh = useBoardRefresh();
   const form = useAppForm({
     defaultValues: {
       blurb: post?.blurb ?? "",
@@ -334,9 +334,10 @@ function OpeningForm({ eventId, post }: { eventId: string; post: TeamOpening | u
   );
 }
 
-function FindTeammates({ eventId }: { eventId: string }) {
+function FindTeammates() {
+  const eventId = useEvent().id;
   const t = useT();
-  const refresh = useBoardRefresh(eventId);
+  const refresh = useBoardRefresh();
   const people = useQuery(teamBoardPeopleQueryOptions(eventId));
   const openings = useQuery(teamBoardOpeningsQueryOptions(eventId));
   const invite = useMutation({
@@ -353,9 +354,7 @@ function FindTeammates({ eventId }: { eventId: string }) {
         title={t("teamBoard.postTitle")}
         description={t("teamBoard.postHelp")}
       >
-        {openings.data && (
-          <OpeningForm key={post?.team_id ?? "new"} eventId={eventId} post={post} />
-        )}
+        {openings.data && <OpeningForm key={post?.team_id ?? "new"} post={post} />}
       </Screen.Section>
       <Screen.Section id="people-looking" title={t("teamBoard.peopleTitle")}>
         <ErrorAlert

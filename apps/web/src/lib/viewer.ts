@@ -1,4 +1,4 @@
-import { useMatch } from "@tanstack/react-router";
+import { getRouteApi, useMatch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@bogey/db/auth";
 import { isOrgAdmin, sessionQueryOptions } from "@bogey/db/auth";
@@ -55,6 +55,13 @@ export function inEvent(check: (viewer: EventViewer) => boolean) {
 
 export const orgAdmin = ({ session }: Viewer) => isOrgAdmin(session) && !!session.org;
 export const platformAdmin = ({ session }: Viewer) => session.platformAdmin;
+
+const eventRoute = getRouteApi("/_authed/events/$slug");
+
+/** The event of the page being shown. Only for components under /events/$slug. */
+export function useEvent(): Event {
+  return eventRoute.useRouteContext({ select: (context) => context.event });
+}
 
 export function useEventViewer(): EventViewer | undefined {
   const context = useMatch({

@@ -12,21 +12,19 @@ import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { Screen } from "@bogey/ui/components/screen";
 import { PrizeCard } from "#/components/event/judging/prize-card.tsx";
 import { useT } from "#/lib/translate.tsx";
+import { useEvent } from "#/lib/viewer.ts";
 
 export function PrizePicker({
-  eventId,
-  orgId,
   submissionId,
   formId,
   disabled,
 }: {
-  eventId: string;
-  orgId: string;
   submissionId: string;
   formId: string;
   disabled: boolean;
 }) {
   const t = useT();
+  const { id: eventId, org_id: orgId } = useEvent();
   const queryClient = useQueryClient();
   const prizes = useQuery(eventPrizesQueryOptions(eventId));
   const entered = useQuery(submissionTracksQueryOptions(submissionId));

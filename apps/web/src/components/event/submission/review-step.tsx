@@ -21,6 +21,7 @@ import { Facts } from "@bogey/ui/components/facts";
 import { Screen } from "@bogey/ui/components/screen";
 import { canMoveTo, DivisionChoices } from "#/components/event/team/divisions.tsx";
 import { useT } from "#/lib/translate.tsx";
+import { useEvent } from "#/lib/viewer.ts";
 
 export interface ReviewValues {
   title: string;
@@ -29,7 +30,6 @@ export interface ReviewValues {
 
 /** The last step of a submission: what judges see first, what's missing, and the team's division. */
 export function ReviewStep({
-  eventId,
   form,
   values,
   files,
@@ -39,7 +39,6 @@ export function ReviewStep({
   onFix,
   visibility,
 }: {
-  eventId: string;
   form: SubmissionForm;
   values: ReviewValues;
   files: Tuple<SubmissionFile>;
@@ -50,6 +49,7 @@ export function ReviewStep({
   visibility: ReactNode;
 }) {
   const t = useT();
+  const eventId = useEvent().id;
   const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(eventId));
   const division = divisions.find((each) => each.id === team.divisionId);
   const answerable = form.items.filter((item) => item.kind !== "file");
@@ -127,7 +127,7 @@ export function ReviewStep({
       </Screen.Section>
 
       {divisions.length > 0 && (
-        <TeamDivision eventId={eventId} form={form} divisions={divisions} current={division} />
+        <TeamDivision form={form} divisions={divisions} current={division} />
       )}
 
       {visibility}
@@ -136,17 +136,16 @@ export function ReviewStep({
 }
 
 function TeamDivision({
-  eventId,
   form,
   divisions,
   current,
 }: {
-  eventId: string;
   form: SubmissionForm;
   divisions: Tuple<Division>;
   current: Division | undefined;
 }) {
   const t = useT();
+  const eventId = useEvent().id;
   const queryClient = useQueryClient();
   const [picked, setPicked] = useState<string | null>(current?.id ?? null);
   const options = divisions.filter(

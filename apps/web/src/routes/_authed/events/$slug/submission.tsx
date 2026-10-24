@@ -21,7 +21,6 @@ import {
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import { networkStatusQueryOptions, settingsQueryOptions } from "@bogey/db/queries/settings";
 import { requestFailure, unwrap } from "@bogey/db/errors";
-import type { Event } from "@bogey/db/queries/events";
 import { answerProblem } from "@bogey/utils/answers";
 import { TeamFeedback } from "#/routes/_authed/events/$slug/-components/team-feedback.tsx";
 import { DemoNotice } from "#/components/event/judging/demo-notice.tsx";
@@ -75,7 +74,7 @@ import { useHelperSay, useT } from "#/lib/translate.tsx";
 import type { createTranslator } from "@bogey/utils/messages";
 import type { en } from "@bogey/config/messages";
 import { useCan } from "@bogey/db/permissions";
-import { hasSubmissionPage, inEvent } from "#/lib/viewer.ts";
+import { hasSubmissionPage, inEvent, useEvent } from "#/lib/viewer.ts";
 import { useUploadMb } from "#/lib/uploads.ts";
 
 const stepSchema = z.enum(["prizes", "review"]);
@@ -202,16 +201,10 @@ function ParticipantSubmission() {
           </div>
         </div>
       ) : !entry.submission ? (
-        <StartSubmission
-          event={event}
-          entry={entry}
-          teamId={data.team.id}
-          open={open(entry.form)}
-        />
+        <StartSubmission entry={entry} teamId={data.team.id} open={open(entry.form)} />
       ) : (
         <SubmissionEditor
           key={`${entry.submission.id}-${entry.submission.updated_at}`}
-          event={event}
           entry={entry}
           submission={entry.submission}
           team={data.team}
@@ -241,18 +234,9 @@ function FormStatus({ entry, open }: { entry: Entry; open: boolean }) {
   );
 }
 
-function StartSubmission({
-  event,
-  entry,
-  teamId,
-  open,
-}: {
-  event: Event;
-  entry: Entry;
-  teamId: string;
-  open: boolean;
-}) {
+function StartSubmission({ entry, teamId, open }: { entry: Entry; teamId: string; open: boolean }) {
   const t = useT();
+  const event = useEvent();
   const queryClient = useQueryClient();
   const start = useMutation({
     mutationFn: async () =>
@@ -327,19 +311,18 @@ function initialAnswers(form: SubmissionForm, saved: Submission["answers"]) {
 type StepKey = "project" | z.infer<typeof stepSchema>;
 
 function SubmissionEditor({
-  event,
   entry,
   submission,
   team,
   open,
 }: {
-  event: Event;
   entry: Entry;
   submission: Submission;
   team: NonNullable<MySubmissions["team"]>;
   open: boolean;
 }) {
   const t = useT();
+  const event = useEvent();
   const say = useHelperSay();
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -537,7 +520,6 @@ function SubmissionEditor({
                   item.kind === "file" ? (
                     <FileItem
                       key={item.key}
-                      event={event}
                       item={item}
                       submission={submission}
                       teamId={team.id}
@@ -567,15 +549,12 @@ function SubmissionEditor({
             {step === "prizes" && (
               <div className="flex min-w-0 flex-col gap-10">
                 <PrizePicker
-                  eventId={event.id}
-                  orgId={event.org_id}
                   submissionId={submission.id}
                   formId={submission.form_id}
                   disabled={!editable}
                 />
                 {hasRubric && (
                   <TeamRubric
-                    eventId={event.id}
                     submissionId={submission.id}
                     editable={editable}
                     showCriteria={settings.judging.teamRubricShows === "criteria"}
@@ -588,7 +567,6 @@ function SubmissionEditor({
               <form.Subscribe selector={(state) => state.values}>
                 {(values) => (
                   <ReviewStep
-                    eventId={event.id}
                     form={definition}
                     values={values}
                     files={files}
@@ -732,13 +710,8 @@ function SubmissionEditor({
                 )}
               </div>
             )}
-            <GalleryLook
-              eventId={event.id}
-              slug={event.slug}
-              submission={submission}
-              files={files}
-            />
-            <DeleteSubmission event={event} submission={submission} open={open} onDone={refresh} />
+            <GalleryLook submission={submission} files={files} />
+            <DeleteSubmission submission={submission} open={open} onDone={refresh} />
           </aside>
         </form.Form>
       </form.AppForm>
@@ -747,17 +720,16 @@ function SubmissionEditor({
 }
 
 function TeamRubric({
-  eventId,
   submissionId,
   editable,
   showCriteria,
 }: {
-  eventId: string;
   submissionId: string;
   editable: boolean;
   showCriteria: boolean;
 }) {
   const t = useT();
+  const eventId = useEvent().id;
   const { data: rubrics = [] } = useQuery(rubricsQueryOptions(eventId));
   const { data: picked = NO_PROJECT_RUBRIC } = useQuery(submissionRubricQueryOptions(submissionId));
   const { data: criteria } = useQuery({ ...criteriaQueryOptions(eventId), enabled: showCriteria });
@@ -775,7 +747,6 @@ function TeamRubric({
 }
 
 function FileItem({
-  event,
   item,
   submission,
   teamId,
@@ -783,7 +754,6 @@ function FileItem({
   disabled,
   onChanged,
 }: {
-  event: Event;
   item: SubmissionForm["items"][number];
   submission: Submission;
   teamId: string;
@@ -792,6 +762,7 @@ function FileItem({
   onChanged: () => Promise<void>;
 }) {
   const t = useT();
+  const event = useEvent();
   const [problem, setProblem] = useState<string | null>(null);
   const maxMb = useUploadMb(event.id, item.maxMb ?? 50);
   const upload = useMutation({
@@ -855,17 +826,16 @@ function FileItem({
 }
 
 function DeleteSubmission({
-  event,
   submission,
   open,
   onDone,
 }: {
-  event: Event;
   submission: Submission;
   open: boolean;
   onDone: () => Promise<void>;
 }) {
   const t = useT();
+  const event = useEvent();
   const locale = useLocale();
   const { data: settings } = useSuspenseQuery(
     settingsQueryOptions({ eventId: event.id }, ["submissions"]),

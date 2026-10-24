@@ -20,6 +20,7 @@ import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Panel } from "@bogey/ui/components/panel";
 import { cn } from "@bogey/ui/lib/utils";
 import { useT, type PlainKey } from "#/lib/translate.tsx";
+import { useEvent } from "#/lib/viewer.ts";
 
 const IMAGE = /\.(png|jpe?g|gif|webp|avif)$/i;
 
@@ -35,17 +36,14 @@ function cardSize(value: string): CardSize {
 
 /** How a team's project looks in the public gallery: a banner from its images, and a card size, as far as the organizers allow. */
 export function GalleryLook({
-  eventId,
-  slug,
   submission,
   files,
 }: {
-  eventId: string;
-  slug: string;
   submission: Submission;
   files: Tuple<SubmissionFile>;
 }) {
   const t = useT();
+  const { id: eventId, slug } = useEvent();
   const queryClient = useQueryClient();
   const settings = useQuery(settingsQueryOptions({ eventId }, ["gallery"]));
   const images = files.filter((file) => IMAGE.test(file.file_name));

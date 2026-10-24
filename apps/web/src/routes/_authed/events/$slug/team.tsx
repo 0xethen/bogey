@@ -33,7 +33,7 @@ import {
   teamNameSchema,
 } from "#/components/event/team/team-forms.tsx";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
-import { hasTeamPage, inEvent } from "#/lib/viewer.ts";
+import { hasTeamPage, inEvent, useEvent } from "#/lib/viewer.ts";
 import { IconCopy, IconCopyCheck, IconRefresh, IconUserQuestion } from "@tabler/icons-react";
 import { TeamBoard } from "./-components/team-board.tsx";
 
@@ -56,10 +56,11 @@ export const Route = createFileRoute("/_authed/events/$slug/team")({
   component: RouteComponent,
 });
 
-function useTeamMutation<T>(eventId: string, run: (input: T) => Promise<unknown>) {
+function useTeamMutation<T>(run: (eventId: string, input: T) => Promise<unknown>) {
+  const eventId = useEvent().id;
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: run,
+    mutationFn: (input: T) => run(eventId, input),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: myTeamQueryOptions(eventId).queryKey }),
   });
@@ -143,15 +144,9 @@ function ParticipantTeam() {
     >
       {mine ? (
         <>
-          <YourTeam
-            mine={mine}
-            eventId={event.id}
-            teamsOpen={teamsOpen}
-            max={event.team_size_max}
-          />
+          <YourTeam mine={mine} teamsOpen={teamsOpen} />
           {settings.teams.board && teamsOpen && (
             <TeamBoard
-              eventId={event.id}
               team={{
                 full: mine.members.length >= event.team_size_max,
                 editable: !mine.team.locked_at,
@@ -162,7 +157,7 @@ function ParticipantTeam() {
       ) : teamsOpen ? (
         <>
           <StartOrJoinTeam eventId={event.id} />
-          {settings.teams.board && <TeamBoard eventId={event.id} team={null} />}
+          {settings.teams.board && <TeamBoard team={null} />}
         </>
       ) : (
         <Screen.Section title={t("team.notYet")}>
@@ -186,26 +181,16 @@ function ParticipantTeam() {
   );
 }
 
-function YourTeam({
-  mine,
-  eventId,
-  teamsOpen,
-  max,
-}: {
-  mine: MyTeam;
-  eventId: string;
-  teamsOpen: boolean;
-  max: number;
-}) {
+function YourTeam({ mine, teamsOpen }: { mine: MyTeam; teamsOpen: boolean }) {
   const t = useT();
   const { session, event, access, chat } = Route.useRouteContext();
+  const eventId = event.id;
+  const max = event.team_size_max;
   const isCaptain = mine.members.some(
     (member) => member.userId === session.user.id && member.role === "captain",
   );
-  const leave = useTeamMutation(eventId, async () => unwrap(await leaveTeamFn({ data: eventId })));
-  const disband = useTeamMutation(eventId, async () =>
-    unwrap(await disbandMyTeamFn({ data: eventId })),
-  );
+  const leave = useTeamMutation(async (id) => unwrap(await leaveTeamFn({ data: id })));
+  const disband = useTeamMutation(async (id) => unwrap(await disbandMyTeamFn({ data: id })));
   const { data: settings } = useSuspenseQuery(settingsQueryOptions({ eventId }, ["teams"]));
   const canDisband =
     mine.members.length > 1 &&
@@ -235,7 +220,7 @@ function YourTeam({
             editable && !full ? (
               <div className="flex w-full flex-wrap items-center justify-between gap-3">
                 <span>{t("team.shareCode")}</span>
-                <InviteCode code={mine.team.invite_code} eventId={eventId} renew={isCaptain} />
+                <InviteCode code={mine.team.invite_code} renew={isCaptain} />
               </div>
             ) : undefined
           }
@@ -248,7 +233,7 @@ function YourTeam({
           <RowList>
             {isCaptain && (
               <DisclosureRow title={t("team.rename")} meta={mine.team.name}>
-                <RenameTeam mine={mine} eventId={eventId} />
+                <RenameTeam mine={mine} />
               </DisclosureRow>
             )}
             {!mayLeave && (
@@ -335,12 +320,10 @@ function YourTeam({
   );
 }
 
-function InviteCode({ code, eventId, renew }: { code: string; eventId: string; renew: boolean }) {
+function InviteCode({ code, renew }: { code: string; renew: boolean }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
-  const renewCode = useTeamMutation(eventId, async () =>
-    unwrap(await newTeamCodeFn({ data: eventId })),
-  );
+  const renewCode = useTeamMutation(async (id) => unwrap(await newTeamCodeFn({ data: id })));
   return (
     <div className="flex items-center gap-2">
       <code className="rounded-md bg-muted px-2.5 py-1 font-mono text-base tracking-widest text-fg">
@@ -383,7 +366,8 @@ function InviteCode({ code, eventId, renew }: { code: string; eventId: string; r
   );
 }
 
-function RenameTeam({ mine, eventId }: { mine: MyTeam; eventId: string }) {
+function RenameTeam({ mine }: { mine: MyTeam }) {
+  const eventId = useEvent().id;
   const t = useT();
   const queryClient = useQueryClient();
   const form = useAppForm({
