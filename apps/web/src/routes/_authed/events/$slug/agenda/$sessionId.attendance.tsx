@@ -168,18 +168,20 @@ function CheckInCode({
         <div className="flex gap-2">
           <Button
             variant="outline"
+            size="icon"
             className="flex-1"
             onClick={() => {
               void navigator.clipboard
                 .writeText(`${origin}${page}?code=${encodeURIComponent(code)}`)
                 .then(() => setCopied(true));
             }}
+            title={copied ? t("session.copied") : t("session.linkCopy")}
           >
             {copied ? <IconCopyCheck /> : <IconCopy />}
-            {copied ? t("session.copied") : t("session.linkCopy")}
           </Button>
           <Button
             variant="outline"
+            size="icon"
             className="flex-1"
             disabled={rotate.isPending}
             confirm={{
@@ -188,9 +190,9 @@ function CheckInCode({
               label: t("session.replaceLabel"),
             }}
             onClick={() => rotate.mutate()}
+            title={t("session.newCode")}
           >
             <IconRefresh />
-            {t("session.newCode")}
           </Button>
         </div>
       </div>

@@ -195,14 +195,15 @@ function FullscreenButton() {
   return (
     <Button
       variant="outline"
+      size="icon"
       onClick={() =>
         void (
           full ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()
         )?.catch(() => undefined)
       }
+      title={label}
     >
       {full ? <IconMinimize /> : <IconMaximize />}
-      {label}
     </Button>
   );
 }

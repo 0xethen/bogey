@@ -150,7 +150,7 @@ export function Rejudgings({ problems }: { problems: Tuple<Problem> }) {
               <Button
                 type="button"
                 size="sm"
-                className="mt-6"
+                className="mt-8"
                 disabled={submitting}
                 confirm={{
                   title: "Rejudge these solutions?",

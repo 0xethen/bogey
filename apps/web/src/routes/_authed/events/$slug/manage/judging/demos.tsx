@@ -101,7 +101,12 @@ function RouteComponent() {
         <Screen.Section id="panels" title={t("demos.panels")}>
           <p className="text-sm text-muted-fg">
             {t("demos.noRounds")}{" "}
-            <Link to="/events/$slug/manage/judging" hash="rounds" params={{ slug: event.slug }}>
+            <Link
+              to="/events/$slug/manage/judging"
+              hash="rounds"
+              params={{ slug: event.slug }}
+              className="link"
+            >
               {t("demos.toRounds")}
             </Link>
           </p>

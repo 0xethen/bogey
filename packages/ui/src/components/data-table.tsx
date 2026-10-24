@@ -43,8 +43,8 @@ import {
   IconArrowsSort,
   IconChevronRight,
   IconCirclePlus,
+  IconFilterX,
   IconSearch,
-  IconX,
 } from "@tabler/icons-react";
 import { cn } from "@bogey/ui/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table.tsx";
@@ -318,15 +318,15 @@ export function DataTable<T extends RowData>({
           })}
           {filtered && (
             <Button
-              size="sm"
+              size="icon-sm"
               variant="ghost"
               onClick={() => {
                 setColumnFilters([]);
                 setGlobalFilter("");
               }}
+              title={t("ui.resetFilters")}
             >
-              {t("ui.resetFilters")}
-              <IconX />
+              <IconFilterX />
             </Button>
           )}
           <div className="ml-auto flex flex-wrap items-center gap-2">

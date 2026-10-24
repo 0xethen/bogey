@@ -157,7 +157,7 @@ function RouteComponent() {
           ? t("judging.queuePosition", { index: index + 1, total: progress.total })
           : submission.teamName
       }
-      width="wide"
+      width="superwide"
       actions={
         <>
           <FlagMenu

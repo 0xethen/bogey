@@ -48,7 +48,7 @@ export function DesignCards({
             title={sayOr(t, `certKind.${kind}`, CERTIFICATE_LABELS[kind])}
             description={whose}
           >
-            <div className="flex flex-col gap-3 p-(--panel-spacing) pt-0">
+            <div className="flex flex-col gap-3">
               <div className="flex h-44 items-center justify-center rounded-lg bg-muted/50 p-3">
                 <div className={orientation === "landscape" ? "w-56" : "w-28"}>
                   <CertificatePage

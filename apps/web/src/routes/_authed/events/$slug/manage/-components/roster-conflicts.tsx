@@ -5,6 +5,7 @@ import { StatusDot } from "@bogey/ui/components/status-dot";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { useT } from "#/lib/translate.tsx";
 import { LineRefs } from "./line-refs.tsx";
+import { Fragment } from "react/jsx-runtime";
 
 // a long roster can raise dozens; they scroll inside the box so the page doesn't
 export function RosterConflicts({
@@ -50,53 +51,56 @@ export function RosterConflicts({
           </Button>
         )}
       </header>
-      <ul className="flex max-h-[min(30rem,60vh)] flex-col divide-y divide-border overflow-y-auto overscroll-contain px-4">
-        {conflicts.map((conflict) => {
+      <ul className="flex max-h-[min(30rem,60vh)] flex-col divide-y divide-border overflow-y-auto overscroll-contain scroll-fade px-4">
+        {conflicts.map((conflict, i) => {
           const decided = conflict.key in resolutions;
           return (
-            <li
-              key={conflict.key}
-              className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-start sm:gap-4"
-            >
-              <div className="flex min-w-0 flex-1 gap-2.5">
-                <StatusDot
-                  tone={decided ? "done" : "attention"}
-                  label={decided ? t("conflicts.isDecided") : t("conflicts.toDecide")}
-                  className="mt-1.5"
-                />
-                <div className="flex min-w-0 flex-col">
-                  <p className="mb-0 text-fg">{conflict.title}</p>
-                  <ul className="flex flex-col text-xs/5 text-muted-fg">
-                    {conflict.evidence.map((each) => (
-                      <li key={`${each.lines.join(",")}:${each.text}`}>
-                        <LineRefs lines={each.lines} onJump={onJump} />
-                        {each.text}
-                      </li>
-                    ))}
-                  </ul>
+            <Fragment key={conflict.key}>
+              {i === 0 && <li className="py-1 text-xs text-muted-fg">Start</li>}
+              <li className="flex flex-col gap-2 py-2.5 sm:flex-row sm:items-start sm:gap-4">
+                <div className="flex min-w-0 flex-1 gap-2.5">
+                  <StatusDot
+                    tone={decided ? "idle" : "attention"}
+                    label={decided ? t("conflicts.isDecided") : t("conflicts.toDecide")}
+                    className="mt-1.5"
+                  />
+                  <div className="flex min-w-0 flex-col">
+                    <p className="mb-0 text-fg">{conflict.title}</p>
+                    <ul className="flex flex-col text-xs/5 text-muted-fg">
+                      {conflict.evidence.map((each) => (
+                        <li key={`${each.lines.join(",")}:${each.text}`}>
+                          <LineRefs lines={each.lines} onJump={onJump} />
+                          {each.text}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-              <OptSelect
-                size="sm"
-                ariaLabel={conflict.title}
-                placeholder={t("conflicts.choose", {
-                  suggested:
-                    conflict.options.find((option) => option.id === conflict.suggested)?.label ??
-                    "",
-                })}
-                className="max-w-full shrink-0 self-start text-fg sm:w-64"
-                value={resolutions[conflict.key] ?? null}
-                options={conflict.options.map((option) => ({
-                  value: option.id,
-                  label:
-                    option.id === conflict.suggested
-                      ? t("conflicts.suggestedOption", { label: option.label })
-                      : option.label,
-                  description: option.description,
-                }))}
-                onChange={(choice) => onChange({ ...resolutions, [conflict.key]: choice })}
-              />
-            </li>
+                <OptSelect
+                  size="sm"
+                  ariaLabel={conflict.title}
+                  placeholder={t("conflicts.choose", {
+                    suggested:
+                      conflict.options.find((option) => option.id === conflict.suggested)?.label ??
+                      "",
+                  })}
+                  className="max-w-full shrink-0 self-start text-fg sm:w-64"
+                  value={resolutions[conflict.key] ?? null}
+                  options={conflict.options.map((option) => ({
+                    value: option.id,
+                    label:
+                      option.id === conflict.suggested
+                        ? t("conflicts.suggestedOption", { label: option.label })
+                        : option.label,
+                    description: option.description,
+                  }))}
+                  onChange={(choice) => onChange({ ...resolutions, [conflict.key]: choice })}
+                />
+              </li>
+              {conflicts.length > 0 && i === conflicts.length - 1 && (
+                <li className="py-1 text-xs text-muted-fg">End</li>
+              )}
+            </Fragment>
           );
         })}
       </ul>

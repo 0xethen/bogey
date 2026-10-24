@@ -203,7 +203,7 @@ const CHECKERS: Tuple<{ value: Checker; label: string; description: string }> = 
   {
     value: "custom",
     label: "A compare script",
-    description: "Your program decides, the way DOMjudge's output validators do.",
+    description: "Your program decides (like DOMjudge's output validators).",
   },
 ];
 
@@ -780,7 +780,7 @@ function EditorBody({
                     <>
                       <p className="text-sm text-muted-fg">
                         Called as{" "}
-                        <code className="font-mono text-xs">
+                        <code className="text-xs">
                           compare input answer feedback_dir &lt; output
                         </code>
                         , as DOMjudge calls an output validator. Exit 42 to accept and 43 to reject;

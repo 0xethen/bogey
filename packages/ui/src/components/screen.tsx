@@ -4,12 +4,13 @@ import { toSlug } from "@bogey/utils/keys";
 import { cn } from "@bogey/ui/lib/utils";
 import { Skeleton } from "./skeleton.tsx";
 
-type Width = "default" | "narrow" | "wide" | "embedded";
+type Width = "default" | "narrow" | "wide" | "superwide" | "embedded";
 
 const WIDTH: Record<Width, string> = {
   default: "max-w-4xl",
   narrow: "max-w-2xl",
   wide: "max-w-6xl",
+  superwide: "max-w-8xl",
   embedded: "",
 };
 
@@ -17,6 +18,7 @@ const PADDING: Record<Width, string> = {
   default: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
   narrow: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
   wide: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
+  superwide: ["px-4 sm:px-6", "py-5 sm:py-6 lg:py-8"].join(" "),
   // settings layouts pad the sides themselves
   embedded: "py-5 sm:py-6 lg:py-8",
 };

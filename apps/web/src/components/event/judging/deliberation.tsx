@@ -148,7 +148,7 @@ export function DeliberationPanel({
       id="deliberation"
       title={t("deliberation.title")}
       description={flagReason(flag, t)}
-      className="mb-8 rounded-2xl border border-warning/40 p-4"
+      className="mb-8 bg-warning/5 border p-4"
     >
       <ScoreTable data={data} criteria={criteria} />
       <Notes data={data} />

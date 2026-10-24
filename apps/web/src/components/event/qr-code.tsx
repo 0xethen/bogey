@@ -61,7 +61,7 @@ export function ExpandableQrCode({
         className="group relative shrink-0 cursor-zoom-in rounded outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <QrCode value={value} size={size} label={label} className={className} />
-        <span className="absolute inset-0 flex items-center justify-center rounded bg-black/55 text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+        <span className="absolute inset-0 flex items-center justify-center rounded bg-background/80 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
           <IconMaximize className="size-6" />
         </span>
       </DialogTrigger>
