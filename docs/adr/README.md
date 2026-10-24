@@ -38,3 +38,4 @@ changes, write a new ADR that supersedes the old one and link the two.
 | [0030](0030-about-for-members.md)              | One About, for members by default                                                              |
 | [0031](0031-plugin-gates.md)                   | Plugins can close an event to a participant                                                    |
 | [0032](0032-tags.md)                           | Tags label people, can grant permissions, and drive judging rules                              |
+| [0033](0033-runner-isolation.md)               | The runner is its own unit, with a key that can only judge and no Docker socket                |

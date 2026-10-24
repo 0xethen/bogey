@@ -35,6 +35,9 @@ And, optionally:
   Wi-Fi, and tell the database where visitors' IPs come from.
 - **[Event day](self-hosting/event-day.md):** size Auth and Realtime for the
   headcount (`bogey preflight`), monitor `/api/ready`, and the freeze.
+- **[Runner security](self-hosting/runner-security.md):** judging programming
+  contests: the runner's key, its Docker proxy, gVisor, and a runner on its
+  own machine.
 - **[Themes](self-hosting/themes.md):** your own colors, fonts and radius.
 - **[Plugins](plugins.md):** install and write plugins.
 

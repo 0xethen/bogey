@@ -13,6 +13,7 @@ docker compose exec web bogey org init --org acme --name "Acme Hacks" --owner yo
 | File                                         | What it is                                                            |
 | -------------------------------------------- | --------------------------------------------------------------------- |
 | `compose.yml`                                | every service, with the Supabase images pinned                        |
+| `compose.runner.yml`, `Caddyfile.runner`     | the challenges runner, its Docker proxy and its gateway (optional)    |
 | `Caddyfile`, `Caddyfile.hosted`              | the front door: one organization, or many with on-demand certificates |
 | `bogey.config.ts`                            | your name, theme and disabled plugins, mounted read-only into `web`   |
 | `.env.example`                               | every variable; `bogey setup --all-in-one` writes `.env` from it      |

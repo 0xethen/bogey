@@ -23,17 +23,19 @@ async function main() {
   });
 
   await prepareWorkDir(config.workDir);
-  await sandbox.cleanup();
-  for (const left of await clearWorkDir(config.workDir)) {
-    log.error(`warning: couldn't remove ${left}, which a sandbox left; remove it as root`);
-  }
 
+  // the self-test may run beside a judging runner with the same id, so it clears nothing
   if (testing) {
     const only = process.argv
       .find((arg) => arg.startsWith("--language="))
       ?.slice("--language=".length);
     process.exitCode = (await selfTest({ config, sandbox, log, only })) ? 0 : 1;
     return;
+  }
+
+  await sandbox.cleanup();
+  for (const left of await clearWorkDir(config.workDir)) {
+    log.error(`warning: couldn't remove ${left}, which a sandbox left; remove it as root`);
   }
 
   const api = createApi(config);

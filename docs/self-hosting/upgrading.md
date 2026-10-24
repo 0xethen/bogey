@@ -38,6 +38,12 @@ How you upgrade depends on how you run Bogey.
   With your own Supabase, run `docker compose run --rm web bogey db migrate` (and
   `bogey plugins migrate`) first, from the new image.
 
+  The all-in-one's compose files change with releases too (2.4 split the networks and gave the
+  runner its own key and a Docker proxy): copy the new `compose.yml`, `compose.runner.yml` and
+  `Caddyfile.runner` from the release's `bogey-all-in-one-<version>.tar.gz` over yours, keeping
+  `.env` and `bogey.config.ts`, and run `docker compose up -d --remove-orphans`. A runner still on
+  the service key: [Runner security](runner-security.md#coming-from-23-or-earlier).
+
 - **An instance repository** (made from [bogey-instance](https://github.com/0xethen/bogey-instance)): change `BOGEY_VERSION`, build,
   migrate from the new image, start. Its README has the commands.
 - **A fork of Bogey**: `bogey upgrade`, below. This is for people who change Bogey's code.

@@ -1,0 +1,69 @@
+# The challenges runner on a machine of its own (docs/self-hosting/runner-security.md).
+# It reaches the instance's public address with a runner key; nothing else of the instance is here.
+#   cp .env.example .env    # then fill it in
+#   docker compose up -d
+
+name: bogey-runner
+
+x-runner-settings: &runner-settings
+  BOGEY_RUNNER_ID: ${BOGEY_RUNNER_ID:-runner}
+  BOGEY_RUNNER_WORK_DIR: ${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}
+  BOGEY_RUNNER_RUNTIME: ${BOGEY_RUNNER_RUNTIME:-}
+  BOGEY_RUNNER_IMAGES: ${BOGEY_RUNNER_IMAGES:-}
+  BOGEY_RUNNER_MAX_MEMORY_MB: ${BOGEY_RUNNER_MAX_MEMORY_MB:-1024}
+  BOGEY_RUNNER_COMPILE_MEMORY_MB: ${BOGEY_RUNNER_COMPILE_MEMORY_MB:-2048}
+  BOGEY_RUNNER_PIDS: ${BOGEY_RUNNER_PIDS:-128}
+  BOGEY_RUNNER_COMPILE_PIDS: ${BOGEY_RUNNER_COMPILE_PIDS:-512}
+  BOGEY_RUNNER_CPUS: ${BOGEY_RUNNER_CPUS:-1}
+  BOGEY_RUNNER_COMPILE_CPUS: ${BOGEY_RUNNER_COMPILE_CPUS:-2}
+
+services:
+  runner:
+    image: ${BOGEY_RUNNER_IMAGE:-ghcr.io/0xethen/bogey-runner:latest}
+    restart: unless-stopped
+    depends_on:
+      - docker-proxy
+    user: "${BOGEY_RUNNER_UID:-1000}:${BOGEY_RUNNER_UID:-1000}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs:
+      - /tmp:size=16m,nosuid,nodev,noexec
+    mem_limit: 512m
+    pids_limit: 256
+    environment:
+      <<: *runner-settings
+      SUPABASE_URL: ${SUPABASE_URL:?the instance's public address}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?the instance's anon (publishable) key}
+      BOGEY_RUNNER_KEY: ${BOGEY_RUNNER_KEY:?make one with bogey runner add <name>}
+      BOGEY_RUNNER_CONCURRENCY: ${BOGEY_RUNNER_CONCURRENCY:-2}
+      DOCKER_HOST: tcp://docker-proxy:2375
+    volumes:
+      - ${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}:${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}
+    networks: [runner-out, runner-docker]
+
+  docker-proxy:
+    image: ${BOGEY_RUNNER_IMAGE:-ghcr.io/0xethen/bogey-runner:latest}
+    restart: unless-stopped
+    command: ["node", "src/proxy.ts"]
+    user: "${BOGEY_RUNNER_UID:-1000}:${BOGEY_RUNNER_UID:-1000}"
+    group_add:
+      - "${DOCKER_GID:-999}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    pids_limit: 64
+    environment:
+      <<: *runner-settings
+      DOCKER_SOCKET: /var/run/docker.sock
+    volumes:
+      - ${BOGEY_RUNNER_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
+      - ${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}:${BOGEY_RUNNER_WORK_DIR:-/var/lib/bogey-runner}:ro
+    networks: [runner-docker]
+
+networks:
+  # the runner's way to the instance; the proxy is never on it
+  runner-out:
+  runner-docker:
+    internal: true

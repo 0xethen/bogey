@@ -9,6 +9,15 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
 > `challenges_record_judging()` (`migrations/0_schema.sql`). Older notes below that name
 > `challenge_attempts` mean `challenges_solutions` and `challenges_judgings`.
 
+> Since 2.4 the runner holds a runner key, not the service key (ADR 0033,
+> `docs/self-hosting/runner-security.md`). It calls the `challenges_runner_*` wrappers in
+> `migrations/8_runner_keys.sql` as `anon`, which check the key and call the functions above under
+> the runner id `key:<name>/<id>`; it reads test data only through `challenges_runner_test_data`, for
+> a judging it holds. Change claiming or recording in the wrapped functions, not the wrappers. Notes
+> below that say the runner uses the service-role key describe the old path, which still works.
+> Every sandbox the runner starts must pass `tools/runner/src/docker-policy.ts`, which the Docker
+> proxy enforces; a new `docker run` flag needs a matching rule there.
+
 > A claimed judging's `scoring` comes from the problem's type (`kind`): `partial` sends `"ioi"`
 > (score each test), `shortest` sends `"golf"` and `pass_fail` sends `"icpc"`. The contest's own
 > `scoring` setting only decides how the scoreboard ranks. A new problem's type comes from `defaultKind`
@@ -91,7 +100,7 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
 ## Challenges plugin — client preview runner (`preview-runner.ts`)
 
 - Run is a preview only — it never touches `challenges_solutions`, and its result is never
-  a verdict (only the service-role runner writes those).
+  a verdict (only the runner writes those).
 - Code runs in a Worker inside a `sandbox="allow-scripts"` iframe: an opaque origin with no
   cookies, storage or access to the page or Bogey's API. A CSP lets it reach only the CDN
   Pyodide loads from. Never run code in the page's own origin: a same-origin worker can

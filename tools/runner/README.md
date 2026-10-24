@@ -1,18 +1,19 @@
 # The challenges runner
 
-Judges solutions to the [challenges extension](../../packages/plugins/bundled/challenges/manifest.ts), which ships with Bogey. A team submits code; the plugin queues a
+Judges solutions to the [challenges extension](../../packages/plugins/bundled/challenges/manifest.ts), which ships with Bogey. A team submits code; the plugin
 _judging_; this program claims it, compiles the code and runs it against the problem's tests inside
 Docker containers, and records a verdict. Without a runner, solutions queue and wait.
 
-It holds the project's **service key** (it reads hidden tests and writes verdicts), so run it on a machine
-you control, not in a browser or on a participant's laptop.
+It holds a **runner key** (`bogey runner add <name>`), which can claim judgings, read the tests of the ones it
+holds and record verdicts, and nothing else. Its sandboxes, the Docker socket proxy in front of Docker and how to
+run it on its own machine are in [Runner security](../../docs/self-hosting/runner-security.md).
 
 ## What you need
 
 - A **Linux** host with **Docker** and **cgroup v2** (any current distribution). Docker Desktop on a Mac works for trying it out;
   its timings are noisy, so don't run a contest on it.
 - The language images, built once on that host (below).
-- The project's address and service key.
+- The project's address, its anon key when the runner goes through Supabase's gateway, and a runner key.
 
 **Capacity.** A judging takes a second or two (more for Java, Kotlin, Rust and Go, which compile).
 One runner with `BOGEY_RUNNER_CONCURRENCY=2` on 2 cores comfortably serves about **20 teams**; double
@@ -26,35 +27,26 @@ cd tools/runner
 images/build.sh              # builds bogey-runner-python:3.13, -node:22, -gcc:14, -java:21, -kotlin:2.1, -rust:1.85, -go:1.24
 # or: images/build.sh pull   # the published ones, tagged with the same names
 export SUPABASE_URL=https://bogey.example.org
-export SUPABASE_SERVICE_ROLE_KEY=...
+export SUPABASE_ANON_KEY=...       # the anon (publishable) key
+export BOGEY_RUNNER_KEY=...        # bogey runner add <name>
 node src/main.ts --self-test # judges known programs in every language; fix anything marked FAIL
 node src/main.ts             # start judging (Node 22.18 or newer)
 ```
 
-`--self-test` needs no database. It checks, in every language, that a correct program is accepted and a wrong
+`--self-test` needs no database or key. It checks, in every language, that a correct program is accepted and a wrong
 one isn't, and in Python that a crash, an endless loop, endless output and a memory hog get RE, TLE, OLE and MLE,
 and in C that broken code is a compile error. `--self-test --language=java` checks one.
 
-### In a container
+### In containers
 
-```sh
-sudo mkdir -p /var/lib/bogey-runner && sudo chown 1000 /var/lib/bogey-runner
-docker build -t bogey-runner .
-docker run -d --restart unless-stopped --name bogey-runner \
-  -e SUPABASE_URL -e SUPABASE_SERVICE_ROLE_KEY \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /var/lib/bogey-runner:/var/lib/bogey-runner \
-  --group-add "$(stat -c %g /var/run/docker.sock)" \
-  bogey-runner
-```
+With the all-in-one stack, `deploy/all-in-one/compose.runner.yml` runs the runner, the Docker socket proxy and the
+runner's gateway (`docker compose -f compose.yml -f compose.runner.yml up -d`). On a machine of its own,
+`deploy/runner/compose.yml` runs the runner and the proxy. The runner never gets the Docker socket; `docker-proxy`
+(`node src/proxy.ts`, the same image) holds it and lets through only the calls the runner makes.
 
-The work directory is mounted at the **same path** on both sides because the runner asks the host's Docker to
-mount it into the containers it starts. With the all-in-one stack, `deploy/all-in-one/compose.runner.yml` does this
-and joins its network (`docker compose -f compose.yml -f compose.runner.yml up -d`).
-
-**The Docker socket is root on the host.** Anything that can use it can start a privileged container. The runner is
-small and doesn't run what it judges itself (that happens in containers with no network, no capabilities and a
-read-only filesystem), but give it its own machine, or a rootless Docker or Podman, when the contest matters.
+The work directory is mounted at the **same path** in the runner, the proxy and the host, because the runner asks the
+host's Docker to mount its folders into the containers it starts. It must belong to the runner's uid:
+`sudo install -d -o 1000 -g 1000 -m 700 /var/lib/bogey-runner`.
 
 ## How a judging goes
 
@@ -63,8 +55,10 @@ read-only filesystem), but give it its own machine, or a rootless Docker or Podm
    judging back, and after three attempts it ends as a judgement error (`JE`).
 2. The source is saved in a fresh directory as the language says (`main.py`, `Main.java`...). Languages that compile do it once, in a container
    with more time and memory (`BOGEY_RUNNER_COMPILE_*`). A compiler error, or a compiler that takes too long, is `CE`.
-3. Each test runs in its own container: `--network none`, read-only root, a small `/tmp`, the solution mounted read-only,
-   memory (with no swap), CPU and process limits, no capabilities, an unprivileged user. Tests run samples first, then in order.
+3. Each test runs in its own container: `--network none`, read-only root, a small `noexec` `/tmp`, the solution mounted read-only,
+   memory (with no swap), CPU, process, file-size and open-file limits, no capabilities, `no-new-privileges`, an unprivileged user,
+   and no logging. The whole container is killed at the time limit. Tests run samples first, then in order.
+   [Runner security](../../docs/self-hosting/runner-security.md) has every flag and why.
 4. Each run ends as one of:
 
    | Verdict | When                                                              |
@@ -97,7 +91,7 @@ Memory use isn't measured, only whether the limit was hit.
 - `tokens`: the same words, whatever whitespace is between them.
 - `float`: like `tokens`, but numbers within the problem's tolerance, absolute or relative, are equal.
 - `custom`: the jury's own program, in any language the plugin has. It is compiled once per judging and run for each test in its own container (read-only,
-  no network), as Kattis' output validators are: `checker input answer feedback_dir < submission_output`. Exit **42** accepts, **43** rejects, anything else
+  no network, only `feedback_dir` writable), as Kattis' output validators are: `checker input answer feedback_dir < submission_output`. Exit **42** accepts, **43** rejects, anything else
   means the checker is broken, and the judging is handed back instead of blaming the team. In IOI scoring, a rejecting checker may write a number to
   `feedback_dir/score.txt` to give part of the test's points.
 
@@ -114,7 +108,9 @@ All in the environment.
 
 | Variable                                                                               | Default             | What                                                             |
 | -------------------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------- |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`                                            |                     | required                                                         |
+| `SUPABASE_URL`, `BOGEY_RUNNER_KEY`                                                     |                     | required                                                         |
+| `SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`)                                    |                     | sent as `apikey`, to get past Supabase's gateway                 |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                            |                     | the old credential, instead of a runner key; warns, going away   |
 | `BOGEY_RUNNER_ID`                                                                      | host and pid        | name in `runner_id`; set it, so a restart cleans up after itself |
 | `BOGEY_RUNNER_CONCURRENCY`                                                             | 2                   | judgings at once                                                 |
 | `BOGEY_RUNNER_POLL_MS`                                                                 | 2000                | wait when the queue is empty                                     |
@@ -124,9 +120,17 @@ All in the environment.
 | `BOGEY_RUNNER_MAX_TIME_MS`, `_MAX_MEMORY_MB`, `_MAX_OUTPUT_KB`                         | 20000, 1024, 16384  | host ceilings on what a problem asks for                         |
 | `BOGEY_RUNNER_CPUS`, `_PIDS`                                                           | 1, 128              | per test container                                               |
 | `BOGEY_RUNNER_COMPILE_TIME_MS`, `_COMPILE_MEMORY_MB`, `_COMPILE_CPUS`, `_COMPILE_PIDS` | 60000, 2048, 2, 512 | for compiling                                                    |
+| `BOGEY_RUNNER_JUDGING_TIME_MS`                                                         | 900000              | a whole judging, every step; past it the judging goes back       |
+| `BOGEY_RUNNER_NPROC`                                                                   | from the pid limits | `nproc` for the sandbox user, counted across all its containers  |
+| `BOGEY_RUNNER_RUNTIME`                                                                 |                     | `runsc` for gVisor                                               |
+| `BOGEY_RUNNER_IMAGES`                                                                  | `bogey-runner-*`... | images it may run: names, or prefixes ending in `*`              |
 | `BOGEY_RUNNER_BACKEND`                                                                 | `docker`            | the only sandbox in this version; any other value stops startup  |
 
-On stop (SIGTERM) the runner hands judgings in hand back to the queue. On start it removes containers an earlier run of the same `BOGEY_RUNNER_ID` left behind.
+The proxy (`node src/proxy.ts`) reads the same `BOGEY_RUNNER_*` settings, which must match the runner's, plus `DOCKER_SOCKET`
+(`/var/run/docker.sock`), `BOGEY_DOCKER_PROXY_LISTEN` (`0.0.0.0:2375`, or a socket path) and `BOGEY_DOCKER_PROXY_LOG=all`.
+
+On stop (SIGTERM) the runner hands judgings in hand back to the queue. On start it removes containers an earlier run of the same `BOGEY_RUNNER_ID` left behind,
+and what it left in its work folder (`$BOGEY_RUNNER_WORK_DIR/<id>`).
 
 ## Languages
 
@@ -136,8 +140,8 @@ one in SQL and, if it needs a toolchain, an image in `images/` that only contain
 ## Developing
 
 ```sh
-npm test         # node --test; a fake sandbox stands in for Docker
-npm run check    # tsc
+vp test          # a fake sandbox stands in for Docker; tests/deploy.test.ts checks the compose files
+vp check
 ```
 
 No dependencies at runtime. Node 22.18 or newer runs the TypeScript directly.

@@ -25,6 +25,13 @@ the [plain deployment](deploy.md) instead.
 | `caddy`          | the only thing published; certificates and routing                          |
 | `studio`, `meta` | Supabase Studio, only with `--profile studio`, on `localhost` only          |
 
+With `compose.runner.yml` as well, the challenges runner: `runner`, `docker-proxy` (the only service
+with the Docker socket) and `runner-gateway`, on networks of their own. See
+[Runner security](runner-security.md).
+
+Caddy and Kong share the `edge` network with `web`; Postgres and the Supabase services are on
+`backend`, which Caddy isn't on.
+
 <!-- bogey CLI (commenting without ticks for search purposes) ^^ -->
 
 Left out because Bogey doesn't use them: edge functions, analytics, the connection pooler, image
@@ -103,6 +110,18 @@ Set `CADDYFILE=Caddyfile.hosted` in `.env` and `docker compose up -d`. Each host
 gets a certificate on its first visit; see [Deploying](deploy.md#many-organizations). Sign-in links
 only work on hosts listed in `ADDITIONAL_REDIRECT_URLS`; for subdomains use a glob such as
 `https://*.bogey.example.app/**`.
+
+## Judging programming contests
+
+The challenges plugin's runner is an extra compose file. Make the work folder and a key, then start
+it with the rest; [Runner security](runner-security.md#set-up-all-in-one) has the steps and why each
+part is there.
+
+```sh
+sudo install -d -o 1000 -g 1000 -m 700 /var/lib/bogey-runner
+docker compose exec web bogey runner add runner      # put the BOGEY_RUNNER_KEY line in .env
+docker compose -f compose.yml -f compose.runner.yml up -d
+```
 
 ## Sign-in providers
 

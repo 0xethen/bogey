@@ -34,8 +34,11 @@ The database roles:
   database only treats them as admins on a session that passed a second factor
   (`aal2`): `private.is_platform_admin()` checks the JWT, so no admin function or
   policy needs its own check.
-- **`service_role`**: used by the runner, the CLI and `pg_cron` jobs. The
-  web app never uses it for a user's request.
+- **`service_role`**: used by the CLI, the server's admin client and `pg_cron`
+  jobs. The web app never uses it for a user's request.
+- **Runner keys**: the challenges runner calls six `challenges_runner_*`
+  functions as `anon` with a key in the `x-bogey-runner-key` header; they check
+  it and are all it reaches ([ADR 0033](../adr/0033-runner-isolation.md)).
 
 The application roles are org roles and event roles plus the permission
 matrix. See [data-model.md → People](data-model.md#people). One function
@@ -78,7 +81,7 @@ same matrix, so the UI and RLS never disagree about who is a judge.
 
 | Risk                                             | Guard                                                                                                                                                                                                                                                                                  |
 | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A participant sets their own verdict             | `challenges_solutions` and `challenges_judgings` have no client insert or update policy. `challenges_submit()` inserts the solution, and only the runner (service role) writes judgings, and only while it holds the lease.                                                            |
+| A participant sets their own verdict             | `challenges_solutions` and `challenges_judgings` have no client insert or update policy. `challenges_submit()` inserts the solution, and only the runner (with a runner key) writes judgings, and only while it holds the lease.                                                       |
 | Hidden test data leaks                           | `challenges_testcases` has no participant policy. The runner stores output excerpts for samples only, and compile output is shown only to the solution's own team.                                                                                                                     |
 | Score out of range, or scoring as someone else   | A trigger forces `judge_id = auth.uid()` and checks the range. The `judging` window must be open.                                                                                                                                                                                      |
 | Messages posted with a fake role                 | `author_role` is set by a trigger from `has_permission`.                                                                                                                                                                                                                               |
@@ -99,8 +102,8 @@ up on, and nothing in lockdown is presented as proof.
 ## Secrets outside the database
 
 - Keep `.env` at the repository root. It holds the Supabase URL, the
-  publishable key, the service-role key (server and runner only), and the
-  runner's credentials.
+  publishable key, the service-role key (server and CLI only), and the
+  runner's key (the runner only).
 - **Never prefix a secret with `PUBLIC_`.** Anything with that prefix is
   compiled into the client bundle.
 - `bogey.config.ts` holds no secrets. It is the plugin allowlist plus the
@@ -122,8 +125,9 @@ The test reads `supabase/schemas` and fails when a new one appears or `anon`
 gains one, so adding to the API is always deliberate. Signed out, only
 `org_for_host`, `invite_link_view` and `settings_for` are callable. Plugin
 functions (`challenges_*`, `lockdown_*`) ship with their plugin
-and aren't part of this list. Runner RPCs, seeding and org init are granted
-to `service_role` only.
+and aren't part of this list. Seeding and org init are granted
+to `service_role` only. The runner's `challenges_runner_*` functions are granted to `anon` and
+refuse any call without a valid runner key.
 
 The performance advisor should show no warnings. Each table has one
 permissive policy per role and action. Its remaining notices are

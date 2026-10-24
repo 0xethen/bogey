@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { InfraError } from "./types.ts";
 
 export interface Mount {
@@ -180,6 +181,8 @@ function capture(
 
 export class DockerSandbox implements Sandbox {
   private counter = 0;
+  // two runners with one id (a self-test beside the runner) both run as pid 1, so not the pid
+  private readonly instance = randomBytes(4).toString("hex");
   private overhead = new Map<string, number>();
   private readonly options: SandboxOptions;
 
@@ -228,7 +231,7 @@ export class DockerSandbox implements Sandbox {
   }
 
   private once(spec: ExecSpec, signal?: AbortSignal, overheadMs = 0): Promise<ExecResult> {
-    const name = `bogey-${this.options.label}-${process.pid}-${++this.counter}`;
+    const name = `bogey-${this.options.label}-${this.instance}-${++this.counter}`;
     const args = dockerArgs(name, this.options, spec);
     return new Promise((resolve, reject) => {
       const started = Date.now();
