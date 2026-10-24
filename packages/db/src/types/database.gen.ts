@@ -4626,6 +4626,7 @@ export type Database = {
       event_blocked_access: {
         Args: { p_event: string };
         Returns: {
+          area: string;
           at: string;
           ip: string;
           name: string;
@@ -4956,7 +4957,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      record_blocked_access: { Args: { p_event: string }; Returns: boolean };
+      record_blocked_access: { Args: { p_area?: string; p_event: string }; Returns: boolean };
       record_email_send: { Args: { p_kind: string; p_org?: string }; Returns: string };
       register_for_event: {
         Args: { p_answers?: Json; p_event: string; p_full_name?: string; p_token?: string };
