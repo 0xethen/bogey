@@ -2891,6 +2891,31 @@ export type Database = {
           },
         ];
       };
+      sheet_completions: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          judge_id: string;
+          round_id: string;
+          submission_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          judge_id: string;
+          round_id: string;
+          submission_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          judge_id?: string;
+          round_id?: string;
+          submission_id?: string;
+        };
+        Relationships: [];
+      };
       scores: {
         Row: {
           criterion_id: string;
@@ -5094,6 +5119,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      set_sheet_done: { Args: { p_done: boolean; p_submission: string }; Returns: undefined };
       set_submission_rubric: {
         Args: { p_rubric?: string; p_submission: string };
         Returns: undefined;
