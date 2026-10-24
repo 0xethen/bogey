@@ -131,11 +131,9 @@ function RouteComponent() {
       {current !== null && <Stepper steps={visibleSteps} current={current} />}
 
       {step === "name" && <NameStep onDone={next} />}
-      {step === "division" && <DivisionStep eventId={event.id} onDone={next} />}
+      {step === "division" && <DivisionStep onDone={next} />}
       {step === "team" && (
         <TeamStep
-          eventId={event.id}
-          teamSize={event.team_size_max}
           teamsOpen={isWindowOpen(windowByKey(windows, "teams"))}
           canMessage={mayStart(access, chat, "organizers")}
           onDone={next}
@@ -195,8 +193,10 @@ function NameStep({ onDone }: { onDone: () => void }) {
   );
 }
 
-function DivisionStep({ eventId, onDone }: { eventId: string; onDone: () => void }) {
+function DivisionStep({ onDone }: { onDone: () => void }) {
   const t = useT();
+  const { event } = Route.useRouteContext();
+  const eventId = event.id;
   const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(eventId));
   return (
     <ChooseDivision
@@ -210,22 +210,18 @@ function DivisionStep({ eventId, onDone }: { eventId: string; onDone: () => void
 }
 
 function TeamStep({
-  eventId,
-  teamSize,
   teamsOpen,
   canMessage,
   onDone,
 }: {
-  eventId: string;
-  teamSize: number;
   teamsOpen: boolean;
   canMessage: boolean;
   onDone: () => void;
 }) {
   const t = useT();
-  const { session } = Route.useRouteContext();
+  const { session, event } = Route.useRouteContext();
+  const eventId = event.id;
   const queryClient = useQueryClient();
-  const { event } = Route.useRouteContext();
   const { data: settings } = useSuspenseQuery(settingsQueryOptions({ eventId }, ["teams"]));
   const switching = settings.teams.switching;
   const team = useQuery(myTeamQueryOptions(eventId));
@@ -245,7 +241,7 @@ function TeamStep({
           {t("welcome.isItYours")}
         </p>
         <Roster
-          capacity={teamSize}
+          capacity={event.team_size_max}
           members={mine.members.map((member) => ({
             key: member.userId,
             name: member.name,
@@ -293,7 +289,7 @@ function TeamStep({
   return (
     <section className="flex flex-col gap-6">
       {teamsOpen ? (
-        <StartOrJoinTeam eventId={eventId} onDone={onDone} />
+        <StartOrJoinTeam onDone={onDone} />
       ) : (
         <p className="text-sm text-muted-fg">{t("welcome.teamsNotOpen")}</p>
       )}

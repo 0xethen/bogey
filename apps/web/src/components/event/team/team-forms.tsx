@@ -30,6 +30,7 @@ import {
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { useT, type T } from "#/lib/translate.tsx";
+import { useEvent } from "#/lib/viewer.ts";
 
 export const teamNameSchema = (t: T) =>
   z
@@ -58,14 +59,9 @@ export function teamNameCheck(eventId: string, t: T, exceptTeamId?: string) {
   };
 }
 
-export function StartOrJoinTeam({
-  eventId,
-  onDone,
-}: {
-  eventId: string;
-  onDone?: () => Promise<void> | void;
-}) {
+export function StartOrJoinTeam({ onDone }: { onDone?: () => Promise<void> | void }) {
   const t = useT();
+  const eventId = useEvent().id;
   const nameSchema = useMemo(
     () => z.object({ name: teamNameSchema(t).meta({ label: t("teamForm.name") }) }),
     [t],

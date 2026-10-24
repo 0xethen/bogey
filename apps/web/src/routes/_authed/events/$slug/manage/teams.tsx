@@ -287,7 +287,7 @@ function RouteComponent() {
     >
       {creating && <CreateTeam onDone={() => setCreating(false)} />}
       <ErrorAlert error={error} title={t("manageTeams.changeFailed")} />
-      <TeamMatcher eventId={event.id} open={matching} onOpenChange={setMatching} />
+      <TeamMatcher open={matching} onOpenChange={setMatching} />
 
       <TeamActionsContext value={actions}>
         {data.unassigned.length > 0 && (

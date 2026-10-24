@@ -19,13 +19,12 @@ import {
 } from "@bogey/ui/components/dialog";
 import { Label } from "@bogey/ui/components/label";
 import { useT } from "#/lib/translate.tsx";
+import { useEvent } from "#/lib/viewer.ts";
 
 export function TeamMatcher({
-  eventId,
   open,
   onOpenChange,
 }: {
-  eventId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -35,16 +34,17 @@ export function TeamMatcher({
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("teamMatch.title")}</DialogTitle>
-          <TeamMatcherDescription eventId={eventId} />
+          <TeamMatcherDescription />
         </DialogHeader>
-        {open && <Matcher eventId={eventId} onDone={() => onOpenChange(false)} />}
+        {open && <Matcher onDone={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
   );
 }
 
-function TeamMatcherDescription({ eventId }: { eventId: string }) {
+function TeamMatcherDescription() {
   const t = useT();
+  const eventId = useEvent().id;
   const overview = useQuery(teamMatchingOverviewQueryOptions(eventId));
   return (
     <DialogDescription>
@@ -53,8 +53,9 @@ function TeamMatcherDescription({ eventId }: { eventId: string }) {
   );
 }
 
-function Matcher({ eventId, onDone }: { eventId: string; onDone: () => void }) {
+function Matcher({ onDone }: { onDone: () => void }) {
   const t = useT();
+  const eventId = useEvent().id;
   const queryClient = useQueryClient();
   const overview = useQuery(teamMatchingOverviewQueryOptions(eventId));
   const [target, setTarget] = useState<number | null>(null);

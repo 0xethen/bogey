@@ -156,7 +156,7 @@ function ParticipantTeam() {
         </>
       ) : teamsOpen ? (
         <>
-          <StartOrJoinTeam eventId={event.id} />
+          <StartOrJoinTeam />
           {settings.teams.board && <TeamBoard team={null} />}
         </>
       ) : (
