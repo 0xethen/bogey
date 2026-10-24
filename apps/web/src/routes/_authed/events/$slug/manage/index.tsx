@@ -9,6 +9,7 @@ import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Stat, StatGroup } from "@bogey/ui/components/stat";
 import { Steps, type Step } from "#/components/event/submission/steps.tsx";
 import {
+  IconCertificate,
   IconClockHour4,
   IconFileCheck,
   IconGavel,
@@ -18,6 +19,9 @@ import {
 } from "@tabler/icons-react";
 import { LinkRow } from "@bogey/ui/components/row";
 import { eventConversationsQueryOptions } from "@bogey/db/queries/messages";
+import { certificateDesignsQueryOptions } from "@bogey/db/queries/certificates";
+import { settingsQueryOptions } from "@bogey/db/queries/settings";
+import { unsetKinds } from "#/components/event/certificate/certificate-setup.tsx";
 // import { newAnnouncement } from "#/components/event/messaging/announcement-composer.tsx";
 // import { DialogTrigger } from "@bogey/ui/components/dialog";
 import { Screen } from "@bogey/ui/components/screen";
@@ -39,6 +43,12 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/")({
       context.query.ensureQueryData(manageSummaryQueryOptions(context.event.id)),
       context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
       context.query.ensureQueryData(eventConversationsQueryOptions(context.event.id)),
+      context.query.ensureQueryData(
+        settingsQueryOptions({ eventId: context.event.id }, ["certificates"]),
+      ),
+      context.query.ensureQueryData(
+        certificateDesignsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
+      ),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
@@ -60,6 +70,15 @@ function RouteComponent() {
   const previewing = useViewAs();
   const navigate = useNavigate();
   const openQuestions = questions.filter((thread) => thread.status === "open").length;
+  const { data: settings } = useSuspenseQuery(
+    settingsQueryOptions({ eventId: event.id }, ["certificates"]),
+  );
+  const { data: designs } = useSuspenseQuery(
+    certificateDesignsQueryOptions({ orgId: event.org_id, eventId: event.id }),
+  );
+  const certificatesToSetUp = settings.certificates.enabled
+    ? unsetKinds(designs, settings.certificates.kinds).length
+    : 0;
 
   const registration = windowByKey(windows, "registration");
   const params = { slug: event.slug };
@@ -129,6 +148,15 @@ function RouteComponent() {
         leading={<IconMessageQuestion className="size-5 text-warning" />}
         title={t("overview.conversationsWaiting", { count: openQuestions })}
         meta={t("overview.conversationsHelp")}
+      />
+    ),
+    certificatesToSetUp > 0 && (
+      <LinkRow
+        key="certificates"
+        render={<Link to="/events/$slug/manage/certificates" params={params} hash="setup" />}
+        leading={<IconCertificate className="size-5 text-muted-fg" />}
+        title={t("certSetup.todo", { count: certificatesToSetUp })}
+        meta={t("certSetup.todoHelp")}
       />
     ),
   ].filter(Boolean);

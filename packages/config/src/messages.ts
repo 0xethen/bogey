@@ -2644,8 +2644,9 @@ export const en = {
   "certDesign.tooMany": "A certificate holds up to {max} layers.",
   "certDesign.qrOnce": "A certificate has one QR code",
   "certDesign.saved": "Design saved",
-  "certDesign.standardHint":
-    "This is the standard design. Change anything and save to make it your own.",
+  "certDesign.startTitle": "This is the standard design",
+  "certDesign.startBody":
+    "Designed the page somewhere else? Use a picture, or a slide from a .pptx or .pdf, as the background and add the text on top. Or keep this one as it is.",
   "orgCerts.intro": "Designs every event in {org} uses until it customizes its own.",
   "orgCerts.designIntro":
     "Events use this design until they customize their own. Drag layers to place them and snap them to the guides; printing uses the same layout.",
@@ -2700,7 +2701,6 @@ export const en = {
   "certSetup.pickOne": "Pick at least one certificate.",
   "certSetup.next": "Turn on",
   "certSetup.later": "Set up later",
-  "certSetup.designsTitle": "How each certificate looks",
   "certSetup.designsIntro":
     "Import a deck to give several certificates their backgrounds at once, or set each up on its own.",
   "certSetup.stepsTitle": "Set up certificates",
@@ -2710,7 +2710,6 @@ export const en = {
   "certSetup.setUp": "Set up",
   "certSetup.keepStandard": "Keep the standard design",
   "certSetup.done": "Done",
-  "certSetup.notGiven": "Not given",
   "certSetup.todo":
     "{count, plural, one {# certificate still uses the standard design} other {# certificates still use the standard design}}",
   "certSetup.todoHelp": "Give them a background or keep the standard design under Certificates.",

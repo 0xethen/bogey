@@ -526,13 +526,26 @@ shows (division and prize tracks among them) and whether a seconds-left timer ru
 
 ## Certificates
 
-**Manage → Certificates** turns certificates on for the event and shows the design of each kind: participation (for
-people who checked in or submitted), award (for each award a team won, once results are published), judge and volunteer
-(staff). **Edit design** opens an A4 page, landscape or portrait, where you add text boxes, pictures (logos, signatures),
+Certificates are off until you turn them on. **Manage → Certificates → Turn on certificates...** asks which kinds the
+event gives: participation (for people who checked in or submitted), award (for each award a team won, once results are
+published), judge and volunteer (staff). Then it lists each one with **Set up**, **Keep the standard design** and
+**Import slides...**; **Set up later** leaves the rest under **Set up certificates** on that page and in **Needs you** on
+the Manage overview until each has a design of its own (or the organization's). **Change which...** changes the kinds
+later, and the switch turns certificates off again. **Edit design** opens an A4 page, landscape or portrait, where you add text boxes, pictures (logos, signatures),
 a background and the verification QR code, then drag, resize and snap them to the page's edges, its middle and each other
 (arrow keys nudge, Alt with arrows resizes). Text boxes take `{{name}}`, `{{event}}`, `{{award}}`, `{{date}}`, `{{org}}`,
 `{{code}}` and `{{link}}`, and **bold** and _italic_. A preview with a sample recipient sits beside the page; type a long name
 there to see that it fits. Changes join the save bar, and printing draws from the same layout as the preview.
+
+### Importing slides
+
+To design a certificate somewhere else, make the page there (A4 is 297 × 210 mm landscape) and leave space for the
+name. **Background...** in the editor takes a PNG, JPG or SVG as it is, or a `.pdf` or `.pptx` to pick a slide from;
+**Import slides...** on the Certificates page reads one deck and gives a slide to each kind at once. The slide becomes
+the page's background (**Fit** under Page crops, shows all of it or stretches it), the page turns to match its shape,
+and the text, QR code and other layers stay on top. Decks are read in your browser and only the picked slides are
+uploaded, as pictures. Slides from a `.pptx` are redrawn and fonts can differ a little; for an exact copy, export the
+deck as a PDF and import that. A deck can be up to 50 MB, and the first 60 slides are read.
 
 Organization → Settings → Certificates holds designs every event uses until it has its own. On an event, **Customize for
 this event** copies the organization's design, pictures included, so changes on either side stay there. **Use the

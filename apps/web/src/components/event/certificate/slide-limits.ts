@@ -1,4 +1,4 @@
-// What a deck may be before Bogey stops reading it (docs/guides/certificates.md#importing-slides).
+// What a deck may be before Bogey stops reading it (docs/adr/0034-certificate-backgrounds.md).
 export const DECK_LIMITS = {
   fileMb: 50,
   slides: 60,

@@ -74,6 +74,8 @@ begin
 end;
 $$;
 
+-- what p_user can claim: nothing while certificates are off, and only the kinds the event gives
+-- (certificates.kinds; every kind when it isn't set)
 create function private.certificate_options(p_event uuid, p_user uuid)
 returns table (kind text, award_id uuid, label text)
 language plpgsql
@@ -82,9 +84,11 @@ security definer
 set search_path = ''
 as $$
 declare
+  v_settings jsonb := private.event_setting(p_event, 'certificates');
+  v_kinds jsonb := case when jsonb_typeof(v_settings -> 'kinds') = 'array' then v_settings -> 'kinds' end;
   v_role public.event_role;
 begin
-  if not coalesce((private.event_setting(p_event, 'certificates') ->> 'enabled')::boolean, false) then
+  if not coalesce((v_settings ->> 'enabled')::boolean, false) then
     return;
   end if;
   select m.role into v_role from public.event_members m
@@ -93,14 +97,15 @@ begin
     return;
   end if;
   if v_role = 'participant' then
-    if exists (select 1 from public.checkins c where c.event_id = p_event and c.user_id = p_user)
+    if (v_kinds is null or v_kinds ? 'participation') and (
+      exists (select 1 from public.checkins c where c.event_id = p_event and c.user_id = p_user)
       or exists (
         select 1 from public.submissions s
         join public.team_members tm on tm.team_id = s.team_id and tm.user_id = p_user
-        where s.event_id = p_event and s.status = 'submitted') then
+        where s.event_id = p_event and s.status = 'submitted')) then
       return query select 'participation'::text, null::uuid, ''::text;
     end if;
-    if private.latest_publication(p_event) is not null then
+    if (v_kinds is null or v_kinds ? 'award') and private.latest_publication(p_event) is not null then
       return query
       select 'award'::text, a.id, a.label
       from public.awards a
@@ -108,9 +113,9 @@ begin
       join public.team_members tm on tm.team_id = s.team_id and tm.user_id = p_user
       where a.event_id = p_event;
     end if;
-  elsif v_role = 'judge' then
+  elsif v_role = 'judge' and (v_kinds is null or v_kinds ? 'judge') then
     return query select 'judge'::text, null::uuid, ''::text;
-  elsif v_role = 'staff' then
+  elsif v_role = 'staff' and (v_kinds is null or v_kinds ? 'volunteer') then
     return query select 'volunteer'::text, null::uuid, ''::text;
   end if;
 end;

@@ -202,11 +202,12 @@ Set at: instance, org, event.
 
 ## Certificates (`certificates`)
 
-Set at: org, event.
+Set at: event.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `enabled` | on / off | `false` | People can claim certificates for this event: taking part, awards, judging and helping |
+| `kinds` | list | — | Which certificates the event gives; every kind when it isn't set |
 
 ## Announcements (`announcements`)
 

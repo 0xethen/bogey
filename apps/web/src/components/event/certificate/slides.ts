@@ -1,5 +1,5 @@
 // Reads a slide deck (.pptx or .pdf) in the browser into pictures a certificate can use as its
-// background. Nothing is sent anywhere until a slide is picked; see docs/guides/certificates.md.
+// background. Nothing is sent anywhere until a slide is picked; see docs/adr/0034-certificate-backgrounds.md.
 import { DECK_LIMITS, type DeckProblem, type DeckResponse } from "./slide-limits.ts";
 
 export const DECK_ACCEPT =

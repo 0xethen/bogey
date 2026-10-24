@@ -34,6 +34,7 @@ import {
   type CertificateOrientation,
   type CertificateTextLayer,
 } from "@bogey/utils/certificate";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { FileDrop } from "@bogey/ui/components/file-drop";
@@ -237,6 +238,21 @@ export function CertificateEditor({
 
   return (
     <div className="flex flex-col gap-4">
+      {unsavedStandard && (
+        <Alert>
+          <IconPhoto />
+          <AlertTitle>{t("certDesign.startTitle")}</AlertTitle>
+          <AlertDescription>{t("certDesign.startBody")}</AlertDescription>
+          <AlertAction className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setChoosingBackground(true)}>
+              {t("certImport.background")}
+            </Button>
+            <Button size="sm" disabled={save.isPending} onClick={() => save.mutate(draft)}>
+              {t("certSetup.keepStandard")}
+            </Button>
+          </AlertAction>
+        </Alert>
+      )}
       <Toolbar aria-label={t("certDesign.tools")} className="flex-wrap">
         <ToolbarGroup>
           <ToolbarButton
@@ -500,7 +516,6 @@ export function CertificateEditor({
         </div>
       </Panel>
       <ErrorAlert error={save.error} />
-      {unsavedStandard && <p className="text-sm text-muted-fg">{t("certDesign.standardHint")}</p>}
     </div>
   );
 }
