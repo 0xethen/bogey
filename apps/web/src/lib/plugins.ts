@@ -360,7 +360,7 @@ export const savePluginInstanceLimitsFn = createServerFn({ method: "POST" })
     const value: Record<string, number> = {};
     for (const name of Object.keys(manifest.limits ?? {})) {
       const given = data.limits[name];
-      if (given === null || given === undefined) continue;
+      if (given === null || given === undefined || given === 0) continue;
       if (typeof given !== "number" || !Number.isInteger(given) || given < 0 || given > 1e12) {
         return fail("invalid", "Limits are whole numbers, or none.");
       }

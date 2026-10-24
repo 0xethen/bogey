@@ -8,7 +8,8 @@ import {
 } from "@bogey/config/notifications";
 import { installedPlugins, pluginNotificationKinds } from "@bogey/plugins";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
-import { Row, RowList } from "@bogey/ui/components/row";
+import { FieldFrame, FieldLabel } from "@bogey/ui/components/field";
+import { RowList } from "@bogey/ui/components/row";
 import { Switch } from "@bogey/ui/components/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { sayOr, useT, type T } from "#/lib/translate.tsx";
@@ -41,11 +42,12 @@ function KindRow({
   const set = (channel: "inApp" | "email", value: boolean) =>
     onChange({ ...channels, [row.key]: { ...own, [channel]: value } });
   return (
-    <Row
-      render={<li />}
-      title={row.label}
-      meta={row.description}
-      actions={
+    <li className="py-3">
+      <FieldFrame
+        layout="row"
+        label={<FieldLabel>{row.label}</FieldLabel>}
+        description={row.description}
+      >
         <div className="flex items-center gap-5">
           <label className="flex items-center gap-2 text-sm">
             <Switch checked={inApp} onCheckedChange={(checked) => set("inApp", checked)} />
@@ -68,8 +70,8 @@ function KindRow({
             )}
           </Tooltip>
         </div>
-      }
-    />
+      </FieldFrame>
+    </li>
   );
 }
 

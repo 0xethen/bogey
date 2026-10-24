@@ -6,6 +6,7 @@ import { signInProvidersQueryOptions } from "@bogey/db/queries/sign-in";
 import { SIGN_IN_PROVIDERS, providerLabel, isSignInProvider } from "@bogey/config/sign-in";
 import { Button } from "@bogey/ui/components/button";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import { Row, RowList } from "@bogey/ui/components/row";
 import { Screen } from "@bogey/ui/components/screen";
 import { Spinner } from "@bogey/ui/components/spinner";
 import { useT, type T } from "#/lib/translate.tsx";
@@ -77,33 +78,33 @@ export function LinkedSignIns() {
       title={t("security.linked")}
       description={t("security.linkedHelp")}
     >
-      <ul className="flex flex-col gap-2">
+      <RowList render={<ul />}>
         {linked.map((identity) => (
-          <li key={identity.identity_id} className="flex items-center justify-between gap-3">
-            <span className="flex flex-col">
-              <span>{nameOf(identity, t)}</span>
-              {detail(identity) && (
-                <span className="text-sm text-muted-fg">{detail(identity)}</span>
-              )}
-            </span>
-            {linked.length > 1 && (
-              <Button
-                variant="outline"
-                disabled={unlink.isPending}
-                aria-label={`${t("security.unlinkNamed", { name: nameOf(identity, t) })}...`}
-                confirm={{
-                  title: t("security.unlinkTitle", { name: nameOf(identity, t) }),
-                  description: t("security.unlinkBody", { name: nameOf(identity, t) }),
-                  label: t("security.unlink"),
-                }}
-                onClick={() => unlink.mutate(identity)}
-              >
-                {t("security.unlinkButton")}...
-              </Button>
-            )}
-          </li>
+          <Row
+            key={identity.identity_id}
+            render={<li />}
+            title={nameOf(identity, t)}
+            meta={detail(identity)}
+            actions={
+              linked.length > 1 && (
+                <Button
+                  variant="outline"
+                  disabled={unlink.isPending}
+                  aria-label={`${t("security.unlinkNamed", { name: nameOf(identity, t) })}...`}
+                  confirm={{
+                    title: t("security.unlinkTitle", { name: nameOf(identity, t) }),
+                    description: t("security.unlinkBody", { name: nameOf(identity, t) }),
+                    label: t("security.unlink"),
+                  }}
+                  onClick={() => unlink.mutate(identity)}
+                >
+                  {t("security.unlinkButton")}...
+                </Button>
+              )
+            }
+          />
         ))}
-      </ul>
+      </RowList>
       {linkable.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {linkable.map((key) => (

@@ -19,6 +19,8 @@ advisory (see docs/contributing.md#security-releases). -->
 - Challenges: "Show tries waiting for a verdict" can hide pending tries, including those behind the freeze, from the public scoreboard. The jury view always shows them.
 - Challenges: adding a problem offers "A problem package" under "Or start from", next to the problem bank.
 - **Upgrade notes:** run `bogey db migrate` before updating the runner; a new runner records IOI judgings with each test group's points, which the database needs challenges migration 10 for.
+- Account → Notifications and Sign-in & security use the same label, description and control rows as the other settings pages.
+- Admin → Plugins limits and agenda session seats are number fields where empty or 0 reads "No limit"; a plugin limit of 0 now means no limit instead of none allowed.
 
 ## 2.4.0 (2026-10-24)
 

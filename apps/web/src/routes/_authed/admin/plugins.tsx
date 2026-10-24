@@ -196,7 +196,7 @@ function InstanceLimits({ manifest }: { manifest: PluginManifest }) {
 
 const limitsSchema = (t: T) =>
   z.object({
-    limits: z.record(z.string(), z.union([z.nan(), z.number().min(0, t("adminExt.useZero"))])),
+    limits: z.record(z.string(), z.number().min(0, t("adminExt.useZero"))),
   });
 
 function LimitFields({
@@ -214,7 +214,7 @@ function LimitFields({
     ...appFormOptions.strictSchema({
       defaultValues: {
         limits: Object.fromEntries(
-          Object.keys(manifest.limits ?? {}).map((name) => [name, stored[name] ?? Number.NaN]),
+          Object.keys(manifest.limits ?? {}).map((name) => [name, stored[name] ?? 0]),
         ),
       },
       errorVisibility,
@@ -222,10 +222,7 @@ function LimitFields({
     }),
     onSubmit: async ({ value, createValidationError }) => {
       const limits = Object.fromEntries(
-        Object.entries(value.limits).map(([name, limit]) => [
-          name,
-          Number.isNaN(limit) ? null : limit,
-        ]),
+        Object.entries(value.limits).map(([name, limit]) => [name, limit > 0 ? limit : null]),
       );
       const result = await savePluginInstanceLimitsFn({
         data: { key: manifest.key, limits },
@@ -247,13 +244,13 @@ function LimitFields({
                   label={`${limit.label}${limit.unit ? ` (${limit.unit})` : ""}`}
                   description={limit.description}
                   min={0}
+                  emptyLabel={t("settingFields.noLimit")}
                 />
               )}
             </form.Field>
           ))}
         </FieldGroup>
         <form.FormAlert title={t("adminExt.limitsFailed")} />
-        <p className="text-xs text-muted-fg">{t("adminExt.limitsHelp")}</p>
       </form.Form>
     </form.AppForm>
   );

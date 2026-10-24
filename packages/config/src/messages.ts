@@ -1736,7 +1736,6 @@ export const en = {
   "adminExt.useZero": "Use 0 or more",
   "adminExt.limits": "Limits",
   "adminExt.limitsFailed": "Couldn't save the limits",
-  "adminExt.limitsHelp": "Leave empty to remove a limit.",
   "orgExt.noneTitle": "No plugins installed",
   "orgExt.none": "No plugins are installed. Whoever runs it adds them.",
   "orgExt.noneLink": "Learn more",
@@ -3569,9 +3568,8 @@ export const en = {
   "manageAgenda.hosts": "Hosts",
   "manageAgenda.hostsPlaceholder": "Staff, judges or organizers",
   "manageAgenda.hostsHelp": "Hosts take attendance for this session.",
-  "manageAgenda.seatsRule": "A whole number, or empty for no limit",
+  "manageAgenda.seatsRule": "Use a whole number, 0 or more",
   "manageAgenda.seats": "Seats",
-  "manageAgenda.seatsHelp": "Empty for no limit.",
   "manageAgenda.requiredHelp":
     "Marked with a red star, and counts against everyone who doesn't attend.",
   "manageAgenda.attendanceHelp": "Hosts and staff get a roster and a check-in code.",

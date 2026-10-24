@@ -186,10 +186,10 @@ const sessionSchema = (t: T) =>
         .meta({ label: t("manageAgenda.hosts"), placeholder: t("manageAgenda.hostsPlaceholder") })
         .describe(t("manageAgenda.hostsHelp")),
       capacity: z
-        .string()
-        .regex(/^\s*(\d*)\s*$/, t("manageAgenda.seatsRule"))
-        .meta({ label: t("manageAgenda.seats"), placeholder: t("manageReg.noLimit") })
-        .describe(t("manageAgenda.seatsHelp")),
+        .number()
+        .int(t("manageAgenda.seatsRule"))
+        .min(0, t("manageAgenda.seatsRule"))
+        .meta({ label: t("manageAgenda.seats") }),
       required: z
         .boolean()
         .meta({ label: t("agenda.required") })
@@ -265,7 +265,7 @@ function blankSession(): SessionValues {
     ends: "",
     hostNote: "",
     hosts: [],
-    capacity: "",
+    capacity: 0,
     required: false,
     takesAttendance: false,
     visibility: "everyone",
@@ -299,7 +299,7 @@ function toValues(agenda: Agenda, kinds: Tuple<SessionKind>, timeZone: string): 
         ends: isoToWallTime(session.endsAt, timeZone),
         hostNote: session.hostNote ?? "",
         hosts: session.hosts.map((host) => host.id),
-        capacity: session.capacity === null ? "" : String(session.capacity),
+        capacity: session.capacity ?? 0,
         required: session.required,
         takesAttendance: session.takesAttendance,
         visibility: session.visibility,
@@ -317,7 +317,6 @@ function previewOf(
   timeZone: string,
   t: T,
 ): { slot: AgendaSlot; session: AgendaSession } {
-  const capacity = Number.parseInt(session.capacity, 10);
   return {
     slot: {
       id: slot.uid,
@@ -338,7 +337,7 @@ function previewOf(
       startsAt: wallTimeToIso(session.starts, timeZone),
       endsAt: wallTimeToIso(session.ends, timeZone),
       hostNote: session.hostNote.trim() || null,
-      capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : null,
+      capacity: session.capacity > 0 ? session.capacity : null,
       required: slot.kind === "everyone" && session.required,
       takesAttendance: session.takesAttendance,
       visibility: session.visibility,
@@ -438,7 +437,6 @@ function SessionsEditor() {
             startsAt: iso(slot.starts) ?? "",
             endsAt: iso(slot.ends),
             sessions: slot.sessions.map((session) => {
-              const capacity = Number.parseInt(session.capacity, 10);
               return {
                 id: session.id || null,
                 kind: session.kind,
@@ -450,7 +448,7 @@ function SessionsEditor() {
                 endsAt: iso(session.ends),
                 hostNote: session.hostNote,
                 hosts: session.hosts,
-                capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : null,
+                capacity: session.capacity > 0 ? session.capacity : null,
                 required: slot.kind === "everyone" && session.required,
                 takesAttendance: session.takesAttendance,
                 visibility: session.visibility,
@@ -546,7 +544,9 @@ function SessionsEditor() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {choose && (
-            <form.Field name={`${at}.capacity`}>{(field) => <field.TextField />}</form.Field>
+            <form.Field name={`${at}.capacity`}>
+              {(field) => <field.NumberField min={0} emptyLabel={t("manageReg.noLimit")} />}
+            </form.Field>
           )}
           <form.Field name={`${at}.visibility`}>
             {(field) => (
