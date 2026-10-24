@@ -1,4 +1,5 @@
-import { useLayoutEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ScriptOnce,
   HeadContent,
@@ -42,7 +43,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { formDevtoolsPlugin } from "@tanstack/react-form-devtools";
 import { Header, resolveHeader, useResolvedHeader } from "#/components/navigation/header/index.tsx";
-import { useViewAs } from "@bogey/db/permissions";
+import { onViewAsChange, useViewAs } from "@bogey/db/permissions";
 import { INSTANCE_THEME, themeAttribute } from "#/lib/brand-theme.ts";
 import { initTheme } from "#/lib/theme.ts";
 import { brand, publicConfig, publicConfigScript } from "@bogey/config";
@@ -187,6 +188,18 @@ function RouteComponent() {
   const header = useResolvedHeader();
   const classNames = classNamesOf(matches);
   const previewing = useViewAs();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  // the database answers as the previewed role, so nothing loaded as the other one may stay
+  useEffect(
+    () =>
+      onViewAsChange(() => {
+        void queryClient.resetQueries();
+        void router.invalidate();
+      }),
+    [queryClient, router],
+  );
 
   useDocumentChrome(header.type, previewing, classNames?.root, classNames?.body);
   useJumpHighlight();

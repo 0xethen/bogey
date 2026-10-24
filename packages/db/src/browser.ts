@@ -2,12 +2,13 @@ import { createBrowserClient } from "@supabase/ssr";
 import { getPublicEnv } from "./env.ts";
 import { timeoutFetch } from "./fetch.ts";
 import type { Database } from "./types.ts";
+import { withViewAs } from "./view-as.ts";
 
 type BrowserClient = ReturnType<typeof createBrowserClient<Database>>;
 
 let client: BrowserClient | undefined;
 
-const OPTIONS = { global: { fetch: timeoutFetch() } };
+const OPTIONS = { global: { fetch: withViewAs(timeoutFetch()) } };
 
 export function browserClient(): BrowserClient {
   if (!client) {

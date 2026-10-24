@@ -8,6 +8,7 @@ import { requireId } from "./queries/validate.ts";
 import type { CorePermission, Enums } from "./types.ts";
 import { resolveSettings } from "@bogey/config/settings";
 import { TAG_REF, tagRef } from "@bogey/utils/keys";
+import { VIEW_AS_COOKIE, viewAsCookie, type ViewAsRole } from "./view-as.ts";
 
 export type EventRole = Enums<"event_role">;
 
@@ -136,24 +137,18 @@ export const eventGateQueryOptions = (eventId: string) =>
     staleTime: 0,
   });
 
-export const VIEW_AS_ROLES = ["participant", "staff", "judge"] as const satisfies Tuple<EventRole>;
-export type ViewAsRole = (typeof VIEW_AS_ROLES)[number];
+export { VIEW_AS_ROLES, type ViewAsRole } from "./view-as.ts";
 
-const VIEW_AS_KEY = "bogey:view-as";
 let previewCache: ViewAsRole | null = null;
 const previewListeners = new Set<() => void>();
-
-function readPreview(): ViewAsRole | null {
-  if (typeof window === "undefined") return null;
-  const stored = window.sessionStorage.getItem(VIEW_AS_KEY);
-  return VIEW_AS_ROLES.find((role) => role === stored) ?? null;
-}
+// the cookie is shared by every tab, so they all follow a change
+const previewChannel =
+  typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(VIEW_AS_COOKIE);
 
 if (typeof window !== "undefined") {
-  previewCache = readPreview();
-  window.addEventListener("storage", (event) => {
-    if (event.key !== VIEW_AS_KEY) return;
-    previewCache = readPreview();
+  previewCache = viewAsCookie();
+  previewChannel?.addEventListener("message", () => {
+    previewCache = viewAsCookie();
     notifyPreview();
   });
 }
@@ -168,11 +163,19 @@ function subscribePreview(listener: () => void) {
 }
 
 export function setViewAs(role: ViewAsRole | null): void {
-  if (typeof window === "undefined") return;
-  if (role) window.sessionStorage.setItem(VIEW_AS_KEY, role);
-  else window.sessionStorage.removeItem(VIEW_AS_KEY);
+  if (typeof document === "undefined") return;
+  document.cookie = role
+    ? `${VIEW_AS_COOKIE}=${role}; path=/; samesite=lax`
+    : `${VIEW_AS_COOKIE}=; path=/; max-age=0; samesite=lax`;
   previewCache = role;
   notifyPreview();
+  previewChannel?.postMessage(role);
+}
+
+/** Runs on every change of "view as", in this tab or another; returns the unsubscribe. */
+export function onViewAsChange(listener: () => void): () => void {
+  previewListeners.add(listener);
+  return () => previewListeners.delete(listener);
 }
 
 export function useViewAs(): ViewAsRole | null {

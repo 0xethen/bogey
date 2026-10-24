@@ -59,8 +59,13 @@ description: Bogey (hackathon platform) database and packages/db conventions —
 - Access is resolved once in the event route's `beforeLoad`, so loaders can
   redirect before render.
 - "View as" (`useViewAs`, `previewAccess`) only narrows: preview grants are
-  intersected with real ones. Pages that check a real role (Team, Submission)
-  can't be previewed.
+  intersected with real ones. It's a session cookie (`packages/db/src/view-as.ts`)
+  that both Supabase clients send as `x-bogey-view-as`, and the access helpers
+  in `01_access.sql` (`event_role`, `org_role`, `holds_permission`,
+  `is_platform_admin`) answer as the previewed role for someone who manages the
+  event. So RLS and RPCs need no preview logic of their own; use the `real_*`
+  helpers only where previewing must not apply (plugin gates). Pages that check
+  a real role (Team, Submission) can't be previewed.
 
 ## Server functions (`packages/db/src/queries/*`)
 
