@@ -103,6 +103,7 @@ Motion lives in `packages/ui/src/styles/motion.css`: duration and easing tokens 
 | `motion-fade`     | Backdrops and anything that only fades.                                                                                                              |
 | `motion-collapse` | Collapsible panels, which open to their measured height.                                                                                             |
 
+- Menu, select, combobox and command items highlight instantly, with no `motion-hover`: the highlight has to follow the pointer.
 - Enter is short (150ms, ease-out); exit is shorter (100ms, ease-in). Hover is 120ms. Expanding and chevron turns are 200ms.
 - Animate only opacity, transform (scale, translate, rotate) and colors. Never animate width, padding or margin; the one exception is a collapsible's height, which is the point of it.
 - Things that appear because of what people do (popups, dialogs, panels, toasts) animate. Things that are just there on load (pages, lists, table rows) don't.
