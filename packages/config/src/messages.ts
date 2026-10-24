@@ -400,8 +400,8 @@ export const en = {
   "prefs.themeDark": "Dark",
   "prefs.saveFailed": "Couldn't save your preferences",
   "prefs.homeSection": "Home page",
-  "prefs.home": "Where the logo takes you",
-  "prefs.homeHelp": "Also where you land after signing in.",
+  "prefs.home": "Default location",
+  "prefs.homeHelp": "Where you're taken after clicking on the logo, signing in, etc.",
   "prefs.homeDefault": "Default ({place})",
   "prefs.homeEvents": "All events",
   "prefs.homeOrg": "Organization home",
@@ -576,7 +576,7 @@ export const en = {
   "password.intro":
     "You can also sign in with a password, from the sign-in page. Instance admins are still asked for their authenticator app when the instance requires one.",
   "password.failed": "Couldn't set the password",
-  "password.saved": "Saved. Use it next time you sign in.",
+  "password.saved": "Saved. You can use it the next time you sign in.",
   "password.set": "Set password",
   "twoFactor.codeLabel": "Code from your authenticator app",
   "twoFactor.digit": "Digit {n} of {total}",
@@ -993,7 +993,7 @@ export const en = {
   "announcements.emptyManage": "Nothing posted yet.",
   "announcements.empty": "Nothing yet. Check back closer to the event.",
   "announcements.posts": "Posts {when}",
-  "announcements.delete": "Delete announcement...",
+  "announcements.delete": "Delete...",
   "announcements.deleteTitle": "Delete this announcement?",
   "announcements.deleteBody": "It will immediately disappear for everyone. This cannot be undone.",
   "announcements.audienceNote": "The audience gets notified and sees it here.",
@@ -1422,7 +1422,7 @@ export const en = {
   "managePages.forMembers": "People in the event",
   "managePages.forPublic": "Anyone",
   "managePages.body": "Page",
-  "managePages.bodyPlaceholder": "What people should know. Markdown works.",
+  "managePages.bodyPlaceholder": "What people should know.",
   "manageTabs.listTitle": "Tabs",
   "manageTabs.listHelp":
     "Drag them into order; click one to rename it, hide it, or keep it to while a window is open. Organizers always see a tab kept to a window. A hidden page can still be opened from its address or the command menu.",
@@ -1506,8 +1506,8 @@ export const en = {
   "error.tryAgain": "Try again",
   "error.details": "Details",
   "error.copyDetails": "Copy details",
-  "report.needReason": "Say what's wrong with it",
-  "report.reason": "What's wrong with it?",
+  "report.needReason": "Please describe the issue with this page",
+  "report.reason": "What's the problem?",
   "report.description": "Mention any related pages, projects, or people in your report.",
   "report.thanks": "Thanks",
   "report.thanksBody": "The people who run this site will look at it.",
@@ -1521,7 +1521,7 @@ export const en = {
   "cmd.title": "Pages and actions",
   "cmd.description": "Search for a page to open or something to do.",
   "cmd.placeholder": "Search pages and actions...",
-  "cmd.empty": "Nothing matches.",
+  "cmd.empty": "Nothing to show",
   "cmd.recent": "Recent",
   "cmd.actionsOf": "{group} actions",
   "cmd.forActions": "for actions",
@@ -1714,7 +1714,7 @@ export const en = {
   "webhookStatus.failed": "Failed",
 
   "adminExt.installed": "Installed",
-  "adminExt.bundled": "Ships with Bogey",
+  "adminExt.bundled": "Bundled",
   "adminExt.turnedOff": "Turned off",
   "adminExt.incompatible": "Incompatible",
   "adminExt.intro":
@@ -1804,7 +1804,7 @@ export const en = {
   "gallery.showControls": "On screen",
   "gallery.resetSettings": "Reset to defaults",
   "gallery.secondsLeft": "Seconds left on this project",
-  "gallery.nothingMatches": "Nothing matches",
+  "gallery.nothingMatches": "Nothing to see here",
   "gallery.comingSoon": "Coming soon",
   "gallery.adjust": "Try adjusting your filters.",
   "gallery.shareHint": "Projects show up here once their teams share them.",
@@ -1845,14 +1845,13 @@ export const en = {
   "otp.sixDigits": "Sign-in codes are six digits",
   "otp.code": "Code",
   "otp.wrong": "That code isn't right, or it's expired. Send yourself a new one.",
-  "otp.sentTo": "The six-digit code is in the sign‑in email we sent to",
-  "otp.inEmail": "The six-digit code is in the sign‑in email, under the link.",
+  "otp.sentTo": "The six-digit code is in the sign-in email we sent to",
+  "otp.inEmail": "The six-digit code is in the sign-in email, under the link.",
   "otp.differentEmail": "Use a different email",
   "otp.newLink": "Email me a new link",
   "otp.checking": "Checking...",
   "passwordSignIn.title": "Sign in with a password",
-  "passwordSignIn.intro":
-    "If an admin turned on password sign-in for you, sign in with your email and password.",
+  "passwordSignIn.intro": "If you're an admin, sign in with your email and password.",
   "passwordSignIn.needPassword": "Enter your password",
   "passwordSignIn.invalid": "That email and password don't match.",
   "passwordSignIn.notAdmin":
@@ -2024,7 +2023,7 @@ export const en = {
   "deletions.turnOff": "Turn requests off...",
   "deletions.failed": "Couldn't resolve the request",
   "deletions.noneTitle": "No deletion requests",
-  "deletions.none": "No one is waiting.",
+  "deletions.none": "No one is waiting to be deleted.",
   "deletions.asked": "asked",
   "deletions.memberOf": "Member of {orgs}.",
   "deletions.noOrgs": "Not a member of any organization.",
@@ -2050,9 +2049,9 @@ export const en = {
     "The database is {count, plural, one {# migration} other {# migrations}} behind this app",
   "schema.ahead": "The database is newer than this app",
   "schema.behindHelp":
-    "Pages that use the new schema will fail until you run. If you think this is a mistake, try restarting the app.",
+    "Pages that use the new schema will fail until you run. If you think this is a mistake, try restarting the app (bogey restart).",
   "schema.aheadHelp":
-    "Deploy the matching app version to resolve the migrations unfamiliar to this build. If you think this is a mistake, try restarting the app.",
+    "Deploy the matching app version to resolve the migrations unfamiliar to this build. If you think this is a mistake, try restarting the app (bogey restart).",
   "schema.releaseOut": "Bogey {version} is out",
   "schema.runsSee": "This instance runs {version}. See",
   "schema.whatChanged": "what changed",
@@ -2210,7 +2209,7 @@ export const en = {
   "newEvent.arrivalsHelp": "You can change this later in Registration.",
   "newEvent.registeredOnly": "Pre-registered only",
   "newEvent.registeredOnlyHelp": "Only people on the roster check in at the desk.",
-  "newEvent.walkIns": "Walk-ins too",
+  "newEvent.walkIns": "Allow walk-ins",
   "newEvent.walkInsHelp":
     "Staff can add people who turn up without registering, or open a sign-up kiosk that checks them in as they fill it out.",
   "newEvent.review": "Review",
@@ -2234,7 +2233,7 @@ export const en = {
   "newEvent.scheduleHelp":
     "Change anything in Manage > Agenda. Results and the project gallery open manually.",
   "newEvent.scheduleEmpty":
-    "Nothing is scheduled until you add the dates, here or in Manage > Agenda.",
+    "Nothing is scheduled until you add the dates (here or in Manage > Agenda).",
   "copy.title": "Copy event",
   "copy.details": "Details",
   "copy.detailsHelp": "Description, location, website and team sizes.",
@@ -2457,7 +2456,7 @@ export const en = {
     "Everyone stays in the event, on no team. Anything the team submitted is deleted with it.",
   "manageTeams.disband": "Disband",
   "manageTeams.disbandButton": "Disband...",
-  "manageTeams.lockHelp": "Locking stops the team's own changes.",
+  "manageTeams.lockHelp": "Lock a team to freeze changes from its members.",
   "manageTeams.renameFailed": "Couldn't rename the team",
   "manageTeams.startsEmpty": "Starts empty. Add people from their row below.",
   "manageTeams.search": "Search teams or members...",
@@ -3087,7 +3086,7 @@ export const en = {
   "deliberation.chooseDeliberateUnavailable":
     "Not available: deliberation is off for this event, or the project is already flagged.",
   "deliberation.chooseConflictHelp":
-    "You know this team, so you shouldn't score it. It leaves your queue.",
+    "If you know this team, you shouldn't score it. It leaves your queue immediately.",
   "deliberation.flagged": "Flagged",
   "deliberation.flagTitle": "Flag for deliberation",
   "deliberation.flagIntro":
@@ -3134,7 +3133,7 @@ export const en = {
   "netSection.everyTeam": "Every team",
   "netSection.everyDivision": "Every division",
   "netSection.intro":
-    "Limit where participants can take part in the event from, like the venue's Wi-Fi: joining a team, picking sessions, asking questions and submitting. Organizers, staff and judges aren't limited.",
+    "Limit where participants can take part in the event from, like the venue's Wi-Fi. Organizers, staff and judges aren't limited.",
   "netSection.allowed": "Allowed networks",
   "netSection.allowedHelp":
     "Addresses, ranges or AS numbers, one per line; an AS number is saved as the ranges it announces. Leave empty to allow any network.",
@@ -3289,9 +3288,8 @@ export const en = {
   "demos.roundTitle": "Live demos: {round}",
   "demos.panelsHelp":
     "A panel is a group of judges in one place hearing teams one after another. Use one panel for a small event, or several in parallel rooms. Each team presents once, to one panel, and that panel's judges score it in Bogey.",
-  "demos.noRounds":
-    "No round is judged with live demos yet. Pick Live demos for a round under Rounds on the Judging page.",
-  "demos.toRounds": "Open Rounds",
+  "demos.noRounds": "No round is judged with live demos yet. Pick Live demos for a round in",
+  "demos.toRounds": "Rounds",
   "demos.noPanels": "No panels yet. Add one to start the schedule.",
   "demos.panelNoun": "panel",
   "demos.numbered": "Panel {n}",
@@ -3741,7 +3739,7 @@ export const en = {
   "rosterImport.pasteHelp":
     "One person per line, or columns copied from a spreadsheet with their header row.\nDefault columns (w/o header): email, name, team, role, then teammates.",
   "rosterImport.addAs": "Add as",
-  "rosterImport.guessing": "Guessing",
+  "rosterImport.guessing": "Autocorrect values",
   "rosterImport.guess.none": "None",
   "rosterImport.guess.noneHelp":
     "Only exact column names and exact division, session and team names are used. You set everything else by hand.",
@@ -3750,7 +3748,7 @@ export const en = {
     "Recognizes common column names and names that differ by a typo or contain each other, but won't match on a few shared words.",
   "rosterImport.guess.max": "As much as possible",
   "rosterImport.guess.maxHelp":
-    "Also guesses columns from their contents, matches on shared words and merges similarly named teams. Check the corrections it lists.",
+    "Recognizes shared words and typos. Guesses columns from their contents, matches on shared words, and merges similarly named teams.",
   "rosterImport.notify": "Email an invitation",
   "rosterImport.notifyHelp":
     "To people who weren't on the list yet. Leave it off to add them quietly and announce later.",
@@ -3837,8 +3835,8 @@ export const en = {
   "ui.pickAll": "Select all {count}",
   "ui.selectGroup": "Select everyone in this group",
   "ui.search": "Search...",
-  "ui.resetFilters": "Reset",
-  "ui.noMatches": "Nothing matches.",
+  "ui.resetFilters": "Reset filters",
+  "ui.noMatches": "Nothing to see here",
   "ui.nPicked": "{count} selected",
   "ui.columns": "Columns",
   "ui.showColumns": "Show columns",
@@ -3973,7 +3971,7 @@ export const en = {
   "setting.branding.shortName.help": "Used where space is tight, like breadcrumbs.",
   "setting.branding.fallbackMessage": "Message on error pages",
   "setting.branding.fallbackMessage.help":
-    "Shown under the text on the not-found and error pages, for example where to get help. Markdown works.",
+    "Shown under the text on the not-found and error pages (e.g., where to get help).",
   "setting.registration.capacity": "Participant limit",
   "setting.registration.capacity.help":
     "Once this many participants are approved, new registrations join the waitlist.",
@@ -4063,7 +4061,7 @@ export const en = {
     "Shown before the time left in the header while submissions are open, on tablets and computers. Phones show only the time.",
   "setting.schedule.showEventTimezone": "Times in the event's timezone",
   "setting.schedule.showEventTimezone.help":
-    'For in-person events: everyone sees times where the event is, like "8:00 PM EDT". Off, each person sees their own time.',
+    'If enabled, everyone sees times where the event is, like "8:00 PM EDT". Off, each person sees their own time.',
   "setting.schedule.display": "Windows participants see",
   "setting.schedule.display.list": "What's open and next",
   "setting.schedule.display.timeline": "Full timeline",
