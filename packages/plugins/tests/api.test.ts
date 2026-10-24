@@ -19,6 +19,8 @@ import {
   pluginChromeCommands,
   pluginDefaults,
   pluginNamespace,
+  pluginNetworkArea,
+  pluginNetworkAreas,
   pluginWindow,
   settingsEditableAt,
   settingsLockedAbove,
@@ -50,6 +52,7 @@ const example = definePlugin({
   name: "Check-in",
   ...META,
   windows: [{ key: "open", label: "Check-in" }],
+  networkAreas: [{ key: "desk", label: "Desk" }],
   actions: ["checked_in"],
   routes: [{ path: "", label: "Check-in" }, { path: "/history" }],
   settings: {
@@ -277,6 +280,19 @@ describe("namespacing", () => {
     expect(pluginWindow(example, "open")).toBe("checkin.open");
     expect(pluginNamespace(example)).toBe("plugin.checkin");
     expect(pluginAction(example, "checked_in")).toBe("checkin.checked_in");
+  });
+
+  test("network areas are prefixed with the plugin key", () => {
+    expect(pluginNetworkArea(example, "desk")).toBe("checkin.desk");
+    expect(pluginNetworkAreas([example])).toEqual([{ key: "checkin.desk", label: "Desk" }]);
+    expect(() =>
+      definePlugin({
+        key: "valid-key",
+        name: "x",
+        ...META,
+        networkAreas: [{ key: "Bad", label: "x" }],
+      }),
+    ).toThrow(/network area/);
   });
 
   test("routes mount under /x/<key>", () => {

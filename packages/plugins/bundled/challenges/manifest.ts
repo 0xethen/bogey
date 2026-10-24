@@ -53,6 +53,7 @@ export const manifest = definePlugin({
     { key: "contest", label: "Contest" },
     { key: "scoreboard", label: "Scoreboard" },
   ],
+  networkAreas: [{ key: "contest", label: "Contest: sending solutions and flags" }],
   permissions: ["jury"],
   roles: [{ key: "jury", label: "Jury", grants: ["jury"] }],
   actions: [

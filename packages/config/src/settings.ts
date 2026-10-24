@@ -70,6 +70,15 @@ export const networkAddress = z.union(
 export const NETWORK_AREAS = ["sessions", "teams", "messages", "submissions", "voting"] as const;
 export type NetworkArea = (typeof NETWORK_AREAS)[number];
 
+// a core area, or a plugin's as `<plugin>.<area>`
+const networkAreaKey = z.union([
+  z.enum(NETWORK_AREAS),
+  z
+    .string()
+    .regex(/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/, "Use a plugin area like plugin.area")
+    .max(80),
+]);
+
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Use a hex color like #1f6feb");
 
 export const SESSION_KIND_TONES = [
@@ -561,11 +570,11 @@ export const settingsRegistry = {
           "Participants can only take part in the event from these networks; empty allows any",
         ),
       networkAreas: z
-        .array(z.enum(NETWORK_AREAS))
-        .max(NETWORK_AREAS.length)
+        .array(networkAreaKey)
+        .max(60)
         .optional()
         .describe(
-          "Where the networks apply: sessions, teams, messages, submissions or voting; empty is everywhere",
+          "Where the networks apply: sessions, teams, messages, submissions, voting or a plugin's area (plugin.area); empty is everywhere",
         ),
       onlyUsers: z
         .array(z.uuid())

@@ -696,6 +696,17 @@ export function definePlugin<const M extends PluginManifest>(manifest: M): M {
     }
   }
 
+  const networkAreas = new Set<string>();
+  for (const area of manifest.networkAreas ?? []) {
+    if (!ROLE_KEY.test(area.key) || networkAreas.has(area.key)) {
+      throw new Error(
+        `Plugin "${manifest.key}" network area "${area.key}" must be a unique lowercase kebab-case key. ` +
+          `Bogey adds the "${manifest.key}." prefix. See pluginNetworkArea().`,
+      );
+    }
+    networkAreas.add(area.key);
+  }
+
   checkSettingsSections(manifest);
   return manifest;
 }
@@ -832,6 +843,11 @@ export function settingsSectionsOn(
 
 export function pluginWindow(manifest: PluginManifest, window: string): string {
   return `${manifest.key}.${window}`;
+}
+
+/** The name an event's network limit uses for one of the plugin's areas. */
+export function pluginNetworkArea(manifest: PluginManifest, area: string): string {
+  return `${manifest.key}.${area}`;
 }
 
 export function pluginNamespace(manifest: Pick<PluginManifest, "key">): string {
@@ -1090,6 +1106,15 @@ export function pluginWindows(installed: Tuple<PluginManifest>): PluginWindow[] 
     (manifest.windows ?? []).map((window) => ({
       key: pluginWindow(manifest, window.key),
       label: window.label,
+    })),
+  );
+}
+
+export function pluginNetworkAreas(installed: Tuple<PluginManifest>): PluginWindow[] {
+  return installed.flatMap((manifest) =>
+    (manifest.networkAreas ?? []).map((area) => ({
+      key: pluginNetworkArea(manifest, area.key),
+      label: area.label,
     })),
   );
 }

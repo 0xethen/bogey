@@ -245,6 +245,7 @@ async function noteRefusal(
   if (!data) return false;
   const { data: blocked } = await supabase.rpc("record_blocked_access", {
     p_event: data.event_id,
+    p_area: "submissions",
   });
   return blocked === true;
 }

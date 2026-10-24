@@ -389,6 +389,11 @@ person.
 A plugin's windows (`windows` in the manifest) appear in Manage → Agenda's
 add list once the plugin is on for the event, labelled as declared.
 
+A plugin's `networkAreas` (`[{ key: "contest", label: "Contest" }]`) are offered under "Where" in
+Manage → Security → Network, named `<key>.<area>`. Enforce one in the plugin's SQL with
+`private.require_network(event_id, '<key>.<area>')`, or `private.network_allowed(event_id, '<key>.<area>')`
+in a policy; with no areas chosen the limit covers all of them. Organizers and other non-participants are exempt.
+
 ## Submission item types
 
 A plugin can add kinds of answer to submission forms: a sketch pad, a star rating, a repository
@@ -791,7 +796,7 @@ Follow core's rules:
   `private.plugin_enabled(event_id, '<key>')` along with the usual
   `private.has_permission(event_id, '<key>.<permission>')`.
 - Participant writes that should respect an event's network limit call
-  `private.network_allowed(event_id)`.
+  `private.require_network(event_id, '<key>.<area>')`, with the area declared in `networkAreas`.
 - `SECURITY DEFINER` functions check their caller first, and set
   `search_path = ''`.
 - `seed.sql` may define `public.<key>_seed_demo(p_org uuid)`; `bogey seed

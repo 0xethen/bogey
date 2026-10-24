@@ -25,6 +25,8 @@ export {
   pluginChromeCommands,
   pluginDefaults,
   pluginNamespace,
+  pluginNetworkArea,
+  pluginNetworkAreas,
   pluginWindow,
   pluginWindows,
   settingScope,

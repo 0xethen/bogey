@@ -124,6 +124,12 @@ export interface PluginWindowDeclaration {
   label: string;
 }
 
+/** A part of the plugin an event's network limit can be applied to. */
+export interface PluginNetworkAreaDeclaration {
+  key: string;
+  label: string;
+}
+
 export interface PluginRoleDeclaration {
   key: string;
   label: string;
@@ -274,6 +280,7 @@ export interface PluginManifest {
   license?: string;
   source: PluginSource;
   windows?: Tuple<PluginWindowDeclaration>;
+  networkAreas?: Tuple<PluginNetworkAreaDeclaration>;
   actions?: Tuple<string>;
   actionLabels?: Readonly<Record<string, string>>;
   settings?: Record<string, PluginSetting>;

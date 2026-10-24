@@ -139,6 +139,26 @@ export function queueNeighbours(
   return { index, previous: ids[index - 1] ?? null, next: ids[index + 1] ?? null };
 }
 
+export interface JudgeCounts {
+  /** Projects assigned to the judge. */
+  assigned: number;
+  /** Every sheet the judge finished: assigned ones marked done, plus any they completed unassigned. */
+  done: number;
+  /** The part of `done` outside their assignments. */
+  extra: number;
+}
+
+/** An organizer's per-judge counts, matching what the judge sees in their own queue. */
+export function judgeCounts(
+  assignments: readonly { submissionId: string; status: AssignmentStatus }[],
+  completed: Iterable<string>,
+): JudgeCounts {
+  const assignedIds = new Set(assignments.map((row) => row.submissionId));
+  const extra = new Set([...completed].filter((id) => !assignedIds.has(id))).size;
+  const doneAssigned = assignments.filter((row) => row.status === "done").length;
+  return { assigned: assignments.length, done: doneAssigned + extra, extra };
+}
+
 /** What a judge can do once their queue is finished. */
 export function afterSteps(steps: readonly JudgingStep[]): JudgingStep[] {
   return steps.filter((step) => step.optional);

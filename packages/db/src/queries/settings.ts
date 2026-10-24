@@ -321,6 +321,8 @@ export interface BlockedAccess {
   at: string;
   name: string | null;
   ip: string | null;
+  /** Where it was refused: a core area or `plugin.area`; null when unknown. */
+  area: string | null;
 }
 
 export const blockedAccessFn = createServerFn({ method: "GET" })
@@ -329,7 +331,7 @@ export const blockedAccessFn = createServerFn({ method: "GET" })
     const supabase = createServerClient();
     const { data, error } = await supabase.rpc("event_blocked_access", { p_event: eventId });
     if (error) return toFailure(error, "loading blocked attempts");
-    return ok(data.map((row) => ({ at: row.at, name: row.name, ip: row.ip })));
+    return ok(data.map((row) => ({ at: row.at, name: row.name, ip: row.ip, area: row.area })));
   });
 
 export const blockedAccessQueryOptions = (eventId: string) =>

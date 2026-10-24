@@ -15,7 +15,7 @@ import { parseAwards, type Award } from "./awards.ts";
 import { profileNames } from "./profile-names.ts";
 import { slotStart } from "./demos.ts";
 import type { TeamSubmission } from "./submissions.ts";
-import { sheetStatus } from "./judging-flow.ts";
+import { judgeCounts, sheetStatus } from "./judging-flow.ts";
 
 export type Criterion = Tables<"criteria">;
 export type Rubric = Tables<"rubrics">;
@@ -904,7 +904,10 @@ export interface JudgeProgress {
   userId: string;
   name: string;
   assigned: number;
+  /** Every finished sheet, assigned or not. */
   done: number;
+  /** The part of `done` on projects not assigned to the judge. */
+  extra: number;
   scored: number;
 }
 
@@ -918,34 +921,43 @@ export const judgingProgressFn = createServerFn({ method: "GET" })
   .validator((eventId: unknown) => requireId(eventId, "eventId"))
   .handler(async ({ data: eventId }): Promise<DbResult<JudgingProgress>> => {
     const supabase = createServerClient();
-    const [judges, assignments, scores, submissions, rounds, entries] = await Promise.all([
-      supabase
-        .from("event_members")
-        .select("user_id")
-        .eq("event_id", eventId)
-        .eq("role", "judge")
-        .eq("status", "active"),
-      supabase
-        .from("judge_assignments")
-        .select("judge_id, submission_id, round_id, status")
-        .eq("event_id", eventId),
-      supabase.from("scores").select("judge_id, submission_id, round_id").eq("event_id", eventId),
-      supabase
-        .from("submissions")
-        .select("id, form_id, submission_forms!inner(judged)")
-        .eq("event_id", eventId)
-        .eq("status", "submitted")
-        .eq("submission_forms.judged", true),
-      supabase.from("judging_rounds").select("id, form_id, ordinal, name").eq("event_id", eventId),
-      supabase.from("round_entries").select("round_id, submission_id").eq("event_id", eventId),
-    ]);
+    const [judges, assignments, scores, submissions, rounds, entries, completions] =
+      await Promise.all([
+        supabase
+          .from("event_members")
+          .select("user_id")
+          .eq("event_id", eventId)
+          .eq("role", "judge")
+          .eq("status", "active"),
+        supabase
+          .from("judge_assignments")
+          .select("judge_id, submission_id, round_id, status")
+          .eq("event_id", eventId),
+        supabase.from("scores").select("judge_id, submission_id, round_id").eq("event_id", eventId),
+        supabase
+          .from("submissions")
+          .select("id, form_id, submission_forms!inner(judged)")
+          .eq("event_id", eventId)
+          .eq("status", "submitted")
+          .eq("submission_forms.judged", true),
+        supabase
+          .from("judging_rounds")
+          .select("id, form_id, ordinal, name")
+          .eq("event_id", eventId),
+        supabase.from("round_entries").select("round_id, submission_id").eq("event_id", eventId),
+        supabase
+          .from("sheet_completions")
+          .select("judge_id, submission_id, round_id")
+          .eq("event_id", eventId),
+      ]);
     const error =
       judges.error ??
       assignments.error ??
       scores.error ??
       submissions.error ??
       rounds.error ??
-      entries.error;
+      entries.error ??
+      completions.error;
     if (error) return toFailure(error, "loading judging progress");
 
     const roundInfo: RoundInfo[] = (rounds.data ?? []).map((row) => ({
@@ -968,6 +980,7 @@ export const judgingProgressFn = createServerFn({ method: "GET" })
       current.get(row.submission_id) === row.round_id;
     const currentAssignments = (assignments.data ?? []).filter(inCurrent);
     const currentScores = (scores.data ?? []).filter(inCurrent);
+    const currentCompletions = (completions.data ?? []).filter(inCurrent);
 
     const ids = (judges.data ?? []).map((row) => row.user_id);
     const { names } = await profileNames(supabase, ids);
@@ -982,12 +995,16 @@ export const judgingProgressFn = createServerFn({ method: "GET" })
     return ok({
       judges: ids
         .map((id) => {
-          const mine = currentAssignments.filter((row) => row.judge_id === id);
+          const counts = judgeCounts(
+            currentAssignments
+              .filter((row) => row.judge_id === id)
+              .map((row) => ({ submissionId: row.submission_id, status: row.status })),
+            currentCompletions.filter((row) => row.judge_id === id).map((row) => row.submission_id),
+          );
           return {
             userId: id,
             name: names.get(id) ?? "Judge",
-            assigned: mine.length,
-            done: mine.filter((row) => row.status === "done").length,
+            ...counts,
             scored: scoredBy.get(id)?.size ?? 0,
           };
         })

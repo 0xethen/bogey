@@ -2,6 +2,7 @@ import { describe, expect, test } from "vite-plus/test";
 import type { JudgeQueueItem } from "../../src/queries/judging.ts";
 import {
   afterSteps,
+  judgeCounts,
   judgingProgress,
   judgingSteps,
   nextToScore,
@@ -80,6 +81,39 @@ describe("progress and navigation", () => {
   test("knows a project's neighbours", () => {
     expect(queueNeighbours(steps, "b")).toEqual({ index: 1, previous: "a", next: "c" });
     expect(queueNeighbours(steps, "z").index).toBe(-1);
+  });
+});
+
+describe("judgeCounts", () => {
+  test("counts assigned sheets marked done", () => {
+    const counts = judgeCounts(
+      [
+        { submissionId: "a", status: "done" },
+        { submissionId: "b", status: "assigned" },
+      ],
+      [],
+    );
+    expect(counts).toEqual({ assigned: 2, done: 1, extra: 0 });
+  });
+
+  test("counts sheets completed outside the assignments as extra", () => {
+    const counts = judgeCounts([{ submissionId: "a", status: "done" }], ["x", "y"]);
+    expect(counts).toEqual({ assigned: 1, done: 3, extra: 2 });
+  });
+
+  test("an unassigned judge's completions all count", () => {
+    expect(judgeCounts([], ["x"])).toEqual({ assigned: 0, done: 1, extra: 1 });
+  });
+
+  test("a completion on an assigned project isn't extra or counted twice", () => {
+    const counts = judgeCounts(
+      [
+        { submissionId: "a", status: "done" },
+        { submissionId: "b", status: "skipped" },
+      ],
+      ["a", "b"],
+    );
+    expect(counts).toEqual({ assigned: 2, done: 1, extra: 0 });
   });
 });
 

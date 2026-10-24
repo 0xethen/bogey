@@ -205,7 +205,19 @@ function judgeColumns(t: T) {
       ),
     }),
     judgeColumn.accessor("assigned", { header: t("manageJudging.assignedColumn") }),
-    judgeColumn.accessor("done", { header: t("judging.done") }),
+    judgeColumn.accessor("done", {
+      header: t("judging.done"),
+      cell: (info) => (
+        <span>
+          {info.getValue()}
+          {info.row.original.extra > 0 && (
+            <span className="ml-1 text-muted-fg">
+              ({t("manageJudging.extraDone", { count: info.row.original.extra })})
+            </span>
+          )}
+        </span>
+      ),
+    }),
     judgeColumn.accessor("scored", { header: t("manageJudging.scoredColumn") }),
   ]);
 }

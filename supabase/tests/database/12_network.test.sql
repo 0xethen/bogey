@@ -1,5 +1,5 @@
 begin;
-select plan(27);
+select plan(35);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max) values
@@ -103,6 +103,32 @@ select ok(not private.network_allowed(tests.u('ev')), 'with no area named, any l
 select is((public.event_network_status(tests.u('ev')) -> 'areas'), '["submissions"]'::jsonb, 'status lists the areas');
 select pg_temp.from_ip('168.9.213.40');
 select ok(private.network_allowed(tests.u('ev'), 'submissions'), 'on the network a chosen area is open');
+select pg_temp.from_ip('8.8.8.8');
+select ok(public.record_blocked_access(tests.u('ev'), 'submissions'), 'a refusal in a chosen area is recorded');
+select ok(not public.record_blocked_access(tests.u('ev'), 'sessions'), 'one outside the chosen areas is not');
+select ok(public.record_blocked_access(tests.u('ev'), 'submissions'), 'and still reported the next time');
+reset role;
+select is(
+  (select count(*) from public.audit_log
+   where event_id = tests.u('ev') and action = 'access.denied' and meta ->> 'area' = 'submissions'),
+  1::bigint, 'one entry per area per person per 10 minutes');
+select tests.as_user(tests.u('org1'));
+select results_eq(
+  $select area from public.event_blocked_access(tests.u('ev')) where area is not null$,
+  $values ('submissions')$,
+  'the blocked list names the area');
+reset role;
+-- a plugin's area is chosen and refused the same way
+update public.settings set value = jsonb_build_object('allowedNetworks', jsonb_build_array('168.9.212.0/23'),
+  'networkAreas', jsonb_build_array('challenges.contest'))
+  where scope = 'event' and event_id = tests.u('ev') and namespace = 'access';
+select tests.as_user(tests.u('p1'));
+select pg_temp.from_ip('8.8.8.8');
+select ok(not private.network_allowed(tests.u('ev'), 'challenges.contest'), 'a plugin area can be limited');
+select ok(private.network_allowed(tests.u('ev'), 'submissions'), 'and leaves the others open');
+select throws_ok(
+  format('select private.require_network(%L, %L)', tests.u('ev'), 'challenges.contest'),
+  'P0001', 'connect to the event''s network to take part', 'requiring the network in a plugin area refuses');
 reset role;
 update public.settings set value = jsonb_build_object('allowedNetworks', jsonb_build_array('168.9.212.0/23'))
   where scope = 'event' and event_id = tests.u('ev') and namespace = 'access';

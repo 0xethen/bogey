@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useQueryClient, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { NETWORK_AREAS, type NetworkArea } from "@bogey/config/settings";
+import { installedPlugins, pluginNetworkAreas } from "@bogey/plugins";
 import { eventPeopleQueryOptions } from "@bogey/db/queries/manage";
 import { eventTeamsQueryOptions } from "@bogey/db/queries/roster";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
@@ -79,7 +80,15 @@ export function NetworkSection({ eventId }: { eventId: string }) {
     submissions: t("netSection.area.submissions"),
     voting: t("netSection.area.voting"),
   };
-  const areaOptions = NETWORK_AREAS.map((area) => ({ value: area, label: areaLabels[area] }));
+  const areaOptions = [
+    ...NETWORK_AREAS.map((area) => ({ value: area as string, label: areaLabels[area] })),
+    ...pluginNetworkAreas(installedPlugins()).map((area) => ({
+      value: area.key,
+      label: area.label,
+    })),
+  ];
+  const areaLabel = (area: string | null) =>
+    area === null ? null : (areaOptions.find((option) => option.value === area)?.label ?? area);
 
   const known = (saved: Tuple<string> | undefined, options: Tuple<{ value: string }>) =>
     (saved ?? []).filter((id) => options.some((option) => option.value === id));
@@ -87,7 +96,7 @@ export function NetworkSection({ eventId }: { eventId: string }) {
   const form = useAppForm({
     ...appFormOptions.strictSchema({
       defaultValues: {
-        areas: own.networkAreas ?? [],
+        areas: known(own.networkAreas, areaOptions),
         users: known(own.onlyUsers, userOptions),
         teams: known(own.onlyTeams, teamOptions),
         divisions: known(own.onlyDivisions, divisionOptions),
@@ -98,7 +107,9 @@ export function NetworkSection({ eventId }: { eventId: string }) {
     onSubmit: async ({ value, formApi, createValidationError }) => {
       const parsed = schema.parse(value);
       const result = await updateSettings(scope, "access", {
-        networkAreas: NETWORK_AREAS.filter((area) => parsed.areas.includes(area)),
+        networkAreas: areaOptions
+          .map((option) => option.value)
+          .filter((area) => parsed.areas.includes(area)),
         onlyUsers: parsed.users.length ? parsed.users : null,
         onlyTeams: parsed.teams.length ? parsed.teams : null,
         onlyDivisions: parsed.divisions.length ? parsed.divisions : null,
@@ -172,7 +183,13 @@ export function NetworkSection({ eventId }: { eventId: string }) {
                 render={<li />}
                 size="sm"
                 title={attempt.name ?? t("netSection.someone")}
-                meta={attempt.ip && <span className="font-mono">{attempt.ip}</span>}
+                meta={
+                  <>
+                    {areaLabel(attempt.area)}
+                    {attempt.area && attempt.ip && " · "}
+                    {attempt.ip && <span className="font-mono">{attempt.ip}</span>}
+                  </>
+                }
                 actions={
                   <span className="text-sm text-muted-fg">
                     <RelativeTime value={attempt.at} />

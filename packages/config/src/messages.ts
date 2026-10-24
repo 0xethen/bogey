@@ -3132,6 +3132,7 @@ export const en = {
     "{count, plural, one {# judge} other {# judges}} left out for a conflict",
   "manageJudging.assignedColumn": "Assigned",
   "manageJudging.scoredColumn": "Scored",
+  "manageJudging.extraDone": "{count} unassigned",
   "netSection.everyTeam": "Every team",
   "netSection.everyDivision": "Every division",
   "netSection.intro":
