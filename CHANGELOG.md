@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.2 (2026-10-24)
+
 - Contributors: `tsc` at the repository root checks only the root files, and `vpr typecheck` runs tsc in every package (never cached).
 - Loaders use TanStack Query's `queryClient.query` instead of the deprecated `ensureQueryData` and `fetchQuery`; nothing changes for users.
 
