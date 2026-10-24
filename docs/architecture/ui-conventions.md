@@ -119,6 +119,7 @@ Reorderable lists use `EditableList` and `EditableListItem` from `@bogey/ui/comp
 
 - While dragging, the row lifts (shadow and ring) and a dashed slot or a drop line shows where it lands. Under reduced motion (system or the account's setting, `useReducedMotion`) rows move without animating.
 - Alt with an arrow key on the grip moves a row one place, keeps focus on it and announces the new position. Space on the grip also picks it up (dnd-kit's keyboard sensor).
+- Row actions show only on hover or keyboard focus within the row on wide screens with a mouse (`hover: hover`, `pointer: fine`, from 40rem). They float over the row's end so titles get the full width, and fade with `motion-hover`. On touch and narrow screens they stay visible beside the title. The grip is always visible, and a row being edited keeps its Done button shown. It's CSS only (`REVEAL` in `editable-list.tsx`).
 - Items with a large preview, like homepage blocks, pass `title` and `icon`: the header names the item and the preview sits below it, still shown while editing so changes are live.
 
 ## Homepage editor

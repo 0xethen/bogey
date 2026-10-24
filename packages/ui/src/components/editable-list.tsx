@@ -359,6 +359,24 @@ function DropLine({ className }: { className?: string }) {
 const SLOT =
   "data-dnd-placeholder:after:visible data-dnd-placeholder:after:absolute data-dnd-placeholder:after:inset-0 data-dnd-placeholder:after:rounded-[inherit] data-dnd-placeholder:after:border-2 data-dnd-placeholder:after:border-dashed data-dnd-placeholder:after:border-primary/40 data-dnd-placeholder:after:bg-primary/5 data-dnd-placeholder:after:content-['']";
 
+// wide screens with a mouse: actions float over the row's end and show on hover or focus
+const REVEAL = [
+  "motion-hover",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:absolute",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:top-2",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:right-2",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:rounded-lg",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:bg-background",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:pointer-events-none",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:opacity-0",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:group-hover/item:pointer-events-auto",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:group-hover/item:opacity-100",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:group-focus-within/item:pointer-events-auto",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:group-focus-within/item:opacity-100",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:has-aria-expanded:pointer-events-auto",
+  "[@media(hover:hover)_and_(pointer:fine)_and_(min-width:40rem)]:has-aria-expanded:opacity-100",
+].join(" ");
+
 const KEY_STEP: Record<string, number> = {
   ArrowUp: -1,
   ArrowLeft: -1,
@@ -463,7 +481,7 @@ export function EditableListItem({
   );
 
   const actions = !horizontal && (
-    <div className="relative z-1 flex shrink-0 items-center gap-0.5">
+    <div className={cn("relative z-1 flex shrink-0 items-center gap-0.5", !editing && REVEAL)}>
       {extra}
       {clickable && (
         <Button
