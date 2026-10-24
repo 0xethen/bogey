@@ -2891,31 +2891,6 @@ export type Database = {
           },
         ];
       };
-      sheet_completions: {
-        Row: {
-          created_at: string;
-          event_id: string;
-          judge_id: string;
-          round_id: string;
-          submission_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          event_id: string;
-          judge_id: string;
-          round_id: string;
-          submission_id: string;
-        };
-        Update: {
-          created_at?: string;
-          event_id?: string;
-          judge_id?: string;
-          round_id?: string;
-          submission_id?: string;
-        };
-        Relationships: [];
-      };
       scores: {
         Row: {
           criterion_id: string;
@@ -3327,6 +3302,53 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      sheet_completions: {
+        Row: {
+          created_at: string;
+          event_id: string;
+          judge_id: string;
+          round_id: string;
+          submission_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          judge_id: string;
+          round_id: string;
+          submission_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          judge_id?: string;
+          round_id?: string;
+          submission_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sheet_completions_event_id_judge_id_fkey";
+            columns: ["event_id", "judge_id"];
+            isOneToOne: false;
+            referencedRelation: "event_members";
+            referencedColumns: ["event_id", "user_id"];
+          },
+          {
+            foreignKeyName: "sheet_completions_event_id_round_id_fkey";
+            columns: ["event_id", "round_id"];
+            isOneToOne: false;
+            referencedRelation: "judging_rounds";
+            referencedColumns: ["event_id", "id"];
+          },
+          {
+            foreignKeyName: "sheet_completions_event_id_submission_id_fkey";
+            columns: ["event_id", "submission_id"];
+            isOneToOne: false;
+            referencedRelation: "submissions";
+            referencedColumns: ["event_id", "id"];
           },
         ];
       };
