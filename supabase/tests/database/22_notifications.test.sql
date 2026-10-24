@@ -27,16 +27,16 @@ select is(private.notify(array[tests.u('p1')], tests.u('ev'), 'registration.appr
 select is((select count(*)::integer from public.email_outbox where user_id = tests.u('p1') and kind = 'registration.approved'), 2, 'but a transactional email still goes out');
 
 select private.notify(array[tests.u('p1'), tests.u('p2')], tests.u('ev'), 'judging.assigned', 'Judge these', '', null);
-select is((select count(*)::integer from public.email_outbox where kind = 'judging.assigned'), 1, 'an opt-out stops a non-transactional email; the other person still gets theirs');
+select is((select count(*)::integer from public.email_outbox where kind = 'judging.assigned' and event_id = tests.u('ev')), 1, 'an opt-out stops a non-transactional email; the other person still gets theirs');
 
 select private.notify(array[tests.u('p3')], tests.u('ev'), 'team.joined', 'Hi', '', null);
-select is((select count(*)::integer from public.email_outbox where kind = 'team.joined'), 0, 'a kind that is in-app only by default sends no email');
+select is((select count(*)::integer from public.email_outbox where kind = 'team.joined' and event_id = tests.u('ev')), 0, 'a kind that is in-app only by default sends no email');
 select private.notify(array[tests.u('p3')], tests.u('ev'), 'team.joined', 'Hi', '', null, '{}', true);
-select is((select count(*)::integer from public.email_outbox where kind = 'team.joined'), 1, 'the sender can ask for the email');
+select is((select count(*)::integer from public.email_outbox where kind = 'team.joined' and event_id = tests.u('ev')), 1, 'the sender can ask for the email');
 select private.notify(array[tests.u('p1'), tests.u('p3')], tests.u('ev'), 'team.joined', 'Hi', '', null, '{}', false);
-select is((select count(*)::integer from public.email_outbox where kind = 'team.joined'), 1, 'or for none');
+select is((select count(*)::integer from public.email_outbox where kind = 'team.joined' and event_id = tests.u('ev')), 1, 'or for none');
 select private.notify(array[tests.u('p1')], tests.u('ev'), 'judging.assigned', 'Forced', '', null, '{}', true);
-select is((select count(*)::integer from public.email_outbox where kind = 'judging.assigned'), 1, 'an explicit opt-out beats the sender''s request');
+select is((select count(*)::integer from public.email_outbox where kind = 'judging.assigned' and event_id = tests.u('ev')), 1, 'an explicit opt-out beats the sender''s request');
 
 select throws_ok($$select private.notify(array[tests.u('p1')], tests.u('ev'), 'x', 'Bad link', '', 'https://evil.test')$$, '23514', null, 'a link must be a path in this app');
 select throws_ok($$select private.notify(array[tests.u('p1')], tests.u('ev'), 'x', 'Bad link', '', '//evil.test')$$, '23514', null, 'including a protocol-relative one');

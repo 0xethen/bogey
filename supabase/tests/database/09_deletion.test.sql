@@ -35,23 +35,23 @@ insert into public.settings (scope, org_id, namespace, value) values ('org', tes
 select tests.as_user(tests.u('p1'));
 insert into public.submissions (event_id, form_id, team_id, title)
   select tests.u('hack'), tests.u('form'), id, 'Again' from public.teams where name = 'Rockets';
-select is((select public.delete_submission(id) from public.submissions), 'requested', 'with "request" teams only ask');
-select isnt((select deletion_requested_at from public.submissions), null, 'the request is recorded');
-select lives_ok($$select public.cancel_submission_deletion(id) from public.submissions$$, 'teams withdraw a request');
-select is((select deletion_requested_at from public.submissions), null, 'and it clears');
-select public.delete_submission(id) from public.submissions;
+select is((select public.delete_submission(id) from public.submissions where event_id = tests.u('hack')), 'requested', 'with "request" teams only ask');
+select isnt((select deletion_requested_at from public.submissions where event_id = tests.u('hack')), null, 'the request is recorded');
+select lives_ok($$select public.cancel_submission_deletion(id) from public.submissions where event_id = tests.u('hack')$$, 'teams withdraw a request');
+select is((select deletion_requested_at from public.submissions where event_id = tests.u('hack')), null, 'and it clears');
+select public.delete_submission(id) from public.submissions where event_id = tests.u('hack');
 reset role;
 select tests.as_user(tests.u('org1'));
-select lives_ok($$select public.cancel_submission_deletion(id) from public.submissions$$, 'organizers decline');
+select lives_ok($$select public.cancel_submission_deletion(id) from public.submissions where event_id = tests.u('hack')$$, 'organizers decline');
 reset role;
 select is((select count(*)::int from public.audit_log where action = 'submission.deletion_declined'), 1, 'declining is audited');
 
 insert into public.settings (scope, event_id, namespace, value) values ('event', tests.u('hack'), 'submissions', '{"deletion":"none"}');
 select tests.as_user(tests.u('p1'));
-select throws_ok($$select public.delete_submission(id) from public.submissions$$, 'P0001', null, 'with "none" teams cannot delete or ask');
+select throws_ok($$select public.delete_submission(id) from public.submissions where event_id = tests.u('hack')$$, 'P0001', null, 'with "none" teams cannot delete or ask');
 reset role;
 select tests.as_user(tests.u('org1'));
-select is((select public.delete_submission(id) from public.submissions), 'deleted', 'organizers always delete');
+select is((select public.delete_submission(id) from public.submissions where event_id = tests.u('hack')), 'deleted', 'organizers always delete');
 reset role;
 
 select tests.as_user(tests.u('p1'));
