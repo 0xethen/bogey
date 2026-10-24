@@ -41,6 +41,7 @@ async function contestOf(
     durationMs: opens && closes ? new Date(closes).getTime() - new Date(opens).getTime() : null,
     freezeMinutes: numberOr(settings.freezeMinutes, manifest.settings.freezeMinutes.default),
     penaltyMinutes: numberOr(settings.penaltyMinutes, manifest.settings.penaltyMinutes.default),
+    penaltyUnit: settings.penaltyUnit === "seconds" ? "seconds" : "minutes",
   };
 }
 

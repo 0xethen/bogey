@@ -5,6 +5,7 @@ const CellSchema = z.object({
   problem_id: z.string(),
   solved: z.boolean(),
   minutes: z.number().nullable(),
+  seconds: z.number().nullable().optional(),
   attempts: z.number(),
   pending: z.number(),
   score: z.number().nullable(),
@@ -43,7 +44,9 @@ export type CcsContest = {
   startsAt: string | null;
   durationMs: number | null;
   freezeMinutes: number;
+  /** In `penaltyUnit`, which is minutes unless the contest counts seconds. */
   penaltyMinutes: number;
+  penaltyUnit: "minutes" | "seconds";
 };
 
 export type CcsSolution = {
@@ -124,7 +127,11 @@ export function ccsContest(contest: CcsContest) {
     duration: contest.durationMs === null ? null : relTime(contest.durationMs),
     scoreboard_freeze_duration:
       contest.freezeMinutes > 0 ? relTime(contest.freezeMinutes * 60_000) : null,
-    penalty_time: contest.penaltyMinutes,
+    // whole minutes as before; a contest counting seconds needs the newer RELTIME form
+    penalty_time:
+      contest.penaltyUnit === "seconds"
+        ? relTime(contest.penaltyMinutes * 1000)
+        : contest.penaltyMinutes,
   };
 }
 
@@ -133,6 +140,7 @@ export function ccsScoreboard(board: Board, contest: CcsContest, now: Date) {
   const ended =
     start !== null && contest.durationMs !== null && now.getTime() >= start + contest.durationMs;
   const icpc = board.scoring === "icpc";
+  const seconds = contest.penaltyUnit === "seconds";
   return {
     time: now.toISOString(),
     contest_time: start === null ? null : relTime(now.getTime() - start),
@@ -146,13 +154,22 @@ export function ccsScoreboard(board: Board, contest: CcsContest, now: Date) {
     rows: board.rows.map((row) => ({
       rank: row.rank,
       team_id: row.team_id,
-      score: icpc ? { num_solved: row.solved, total_time: row.penalty } : { score: row.score },
+      score: icpc
+        ? {
+            num_solved: row.solved,
+            total_time: seconds ? relTime(row.penalty * 1000) : row.penalty,
+          }
+        : { score: row.score },
       problems: row.cells.map((cell) => ({
         problem_id: cell.problem_id,
         num_judged: cell.attempts,
         num_pending: cell.pending,
         solved: cell.solved,
-        ...(icpc ? { time: cell.minutes } : { score: cell.score }),
+        ...(icpc
+          ? {
+              time: seconds && cell.seconds != null ? relTime(cell.seconds * 1000) : cell.minutes,
+            }
+          : { score: cell.score }),
       })),
     })),
   };

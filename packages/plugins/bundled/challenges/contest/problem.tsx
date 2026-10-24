@@ -260,12 +260,15 @@ function ProblemInfo({
 function scoringRule(settings: Settings, problem: Problem): string {
   const board =
     settings.scoring === "icpc"
-      ? ` The scoreboard counts problems solved; each rejected try before your first accepted one adds ${settings.penaltyMinutes} minutes to your time${settings.countCompileErrors ? ", compile errors included" : ""}.`
+      ? ` The scoreboard counts problems solved; each rejected try before your first accepted one adds ${settings.penaltyMinutes} ${settings.penaltyUnit} to your time${settings.countCompileErrors ? ", compile errors included" : ""}.`
       : "";
   switch (problem.kind) {
     case "shortest":
       return `Your shortest accepted solution counts, measured in ${MEASURE_NOUN[settings.golfMeasure]}. ${golfRule(settings, problem)}${board}`;
     case "partial":
+      if (settings.scoreFrom === "subtasks") {
+        return `Each test or group of tests that passes adds to the problem's points; each group counts its best result across all your solutions.${board}`;
+      }
       return `Each test or group of tests that passes adds to the problem's points; your ${settings.scoreFrom === "last" ? "last judged" : "best"} solution counts.${board}`;
     default:
       return `Solving it, every test passing, earns its points; anything less earns none.${board}`;

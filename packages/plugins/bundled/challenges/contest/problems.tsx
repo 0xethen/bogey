@@ -50,7 +50,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
             </>
           )}
           {settings.scoring === "icpc"
-            ? `Ranked by problems solved, then time (minutes to solve${settings.penaltyMinutes && ` plus ${settings.penaltyMinutes} for each incorrect attempt`}).`
+            ? `Ranked by problems solved, then time (${settings.penaltyUnit} to solve${settings.penaltyMinutes ? ` plus ${settings.penaltyMinutes} for each incorrect attempt` : ""}).`
             : settings.scoring === "golf"
               ? `Code golf: the shortest accepted solution wins, counted in ${MEASURE_NOUN[settings.golfMeasure]}.`
               : "Ranked by points: each problem's type says what a solution to it is worth."}

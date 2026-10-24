@@ -186,6 +186,7 @@ type JudgingRow = {
   attempts: number;
   verdict: Verdict | null;
   score: number | null;
+  group_scores: Json | null;
   max_time_ms: number | null;
   max_memory_kb: number | null;
   compile_output: string | null;
@@ -701,6 +702,7 @@ const cell = z.object({
   problem_id: z.string(),
   solved: z.boolean(),
   minutes: z.number().nullable(),
+  seconds: z.number().nullable().optional(),
   attempts: z.number(),
   pending: z.number(),
   score: z.number().nullable(),
@@ -713,6 +715,7 @@ const scoreboardSchema = z.object({
   scoring: z.enum(["icpc", "ioi", "golf"]),
   measure: z.enum(["characters", "bytes", "characters-no-space"]).optional(),
   golfPoints: z.enum(["length", "brackets", "ratio", "rank"]).optional(),
+  penaltyUnit: z.enum(["minutes", "seconds"]).optional(),
   frozen: z.boolean(),
   freezeAt: z.string().nullable(),
   startedAt: z.string().nullable(),

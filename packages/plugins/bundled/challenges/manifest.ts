@@ -142,6 +142,8 @@ export const manifest = definePlugin({
         scoring: "icpc",
         defaultKind: "pass_fail",
         penaltyMinutes: 20,
+        penaltyUnit: "minutes",
+        testRun: "first_fail",
         countCompileErrors: false,
         attemptLimit: 0,
         idKind: "letter",
@@ -155,13 +157,13 @@ export const manifest = definePlugin({
       key: "ioi",
       label: "IOI style",
       description:
-        "Everyone competes on their own. Problems give points for each test or subtask passed, the best solution counts, and up to 50 tries a problem. Participants see each test's result, and nothing freezes.",
+        "Everyone competes on their own. Problems give points for each test or subtask passed, each subtask's best result across a participant's solutions counts, and up to 50 tries a problem. Participants see each test's result, and nothing freezes.",
       page: "contest",
       teamSize: [1, 1],
       values: {
         scoring: "ioi",
         defaultKind: "partial",
-        scoreFrom: "best",
+        scoreFrom: "subtasks",
         attemptLimit: 50,
         waitForJudging: true,
         resultDetail: "tests",
@@ -198,6 +200,7 @@ export const manifest = definePlugin({
         "golfPoints",
         "golfRankStep",
         "penaltyMinutes",
+        "penaltyUnit",
         "attemptLimit",
         "countCompileErrors",
         "attemptsPerMinute",
@@ -217,6 +220,7 @@ export const manifest = definePlugin({
         "allowEditor",
         "allowUpload",
         "waitForJudging",
+        "testRun",
         "resultDetail",
         "showErrors",
         "separateErrors",
@@ -233,7 +237,14 @@ export const manifest = definePlugin({
       key: "scoreboard",
       title: "Scoreboard",
       page: "contest",
-      settings: ["freezeMinutes", "freezeAt", "revealed", "verificationRequired", "verdictColors"],
+      settings: [
+        "freezeMinutes",
+        "freezeAt",
+        "revealed",
+        "showPending",
+        "verificationRequired",
+        "verdictColors",
+      ],
     },
   ],
   routes: [
@@ -354,6 +365,10 @@ export const manifest = definePlugin({
       options: [
         { value: "best", label: "The team's best solution" },
         { value: "last", label: "The team's last judged solution" },
+        {
+          value: "subtasks",
+          label: "Each subtask's best result, across all the team's solutions (IOI)",
+        },
       ],
     },
     golfMeasure: {
@@ -402,16 +417,32 @@ export const manifest = definePlugin({
         { setting: "golfPoints", in: ["rank"] },
       ],
     },
+    // the key keeps its old name; penaltyUnit says whether it counts minutes or seconds
     penaltyMinutes: {
       type: "number",
-      label: "Penalty per wrong answer (minutes)",
-      description: "Added for each rejected try before a solve. ICPC uses 20.",
+      label: "Penalty per wrong answer",
+      description:
+        "Added for each rejected try before a solve, in the unit below. ICPC uses 20 minutes.",
       default: 20,
       min: 0,
-      max: 240,
+      max: 3600,
       showWhen: [
         { setting: "format", in: ["contest"] },
         { setting: "scoring", in: ["icpc"] },
+      ],
+    },
+    penaltyUnit: {
+      type: "select",
+      label: "Time is counted in",
+      description: "For the penalty and the time to each solve.",
+      default: "minutes",
+      showWhen: [
+        { setting: "format", in: ["contest"] },
+        { setting: "scoring", in: ["icpc"] },
+      ],
+      options: [
+        { value: "minutes", label: "Minutes" },
+        { value: "seconds", label: "Seconds" },
       ],
     },
     verdictColors: {
@@ -442,6 +473,14 @@ export const manifest = definePlugin({
       description: "Unfreezes the scoreboard for everyone.",
       default: false,
     },
+    showPending: {
+      type: "boolean",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Show tries waiting for a verdict",
+      description:
+        "On the scoreboard, including tries hidden by the freeze. Off, a try shows only once its verdict does. The jury view always shows them.",
+      default: true,
+    },
     languages: {
       type: "string",
       showWhen: { setting: "format", in: ["contest"] },
@@ -465,6 +504,18 @@ export const manifest = definePlugin({
       description:
         "A team can't send another solution to a problem until its last one has been judged.",
       default: true,
+    },
+    testRun: {
+      type: "select",
+      showWhen: { setting: "format", in: ["contest"] },
+      label: "Tests a solution runs",
+      description:
+        "For pass/fail and shortest code problems. Partial credit problems always run every test they score.",
+      default: "first_fail",
+      options: [
+        { value: "first_fail", label: "Up to the first failing test (faster)" },
+        { value: "all", label: "Every test, so each test's result is known" },
+      ],
     },
     attemptLimit: {
       type: "number",

@@ -17,6 +17,7 @@ import {
   IconDatabase,
   IconEye,
   IconFileText,
+  IconFileZip,
   IconGauge,
   IconId,
   IconListCheck,
@@ -69,7 +70,7 @@ import {
 } from "../db.ts";
 import { Files, RemoveProblem, Tests, TrySolution } from "./jury.tsx";
 import { JurySolutions } from "./jury-tools.tsx";
-import { ProblemPackage } from "./package-tools.tsx";
+import { ImportPackage, ProblemPackage } from "./package-tools.tsx";
 import { ReuseProblem } from "./reuse.tsx";
 import { FromBank } from "../bank/bank.tsx";
 import {
@@ -93,6 +94,7 @@ import { useChallenges } from "../context.tsx";
 
 type Tab =
   | "bank"
+  | "import"
   | "details"
   | "statement"
   | "limits"
@@ -113,6 +115,8 @@ interface TabDef {
   form?: boolean;
   /** Only while adding a problem. */
   adding?: boolean;
+  /** Only when the organization has a problem bank. */
+  banked?: boolean;
 }
 
 const GROUPS: Tuple<{ label: string; tabs: Tuple<TabDef> }> = [
@@ -126,7 +130,10 @@ const GROUPS: Tuple<{ label: string; tabs: Tuple<TabDef> }> = [
   },
   {
     label: "Or start from",
-    tabs: [{ key: "bank", label: "The problem bank", icon: IconDatabase, adding: true }],
+    tabs: [
+      { key: "bank", label: "The problem bank", icon: IconDatabase, adding: true, banked: true },
+      { key: "import", label: "A problem package", icon: IconFileZip, adding: true },
+    ],
   },
   {
     label: "Judging",
@@ -943,23 +950,26 @@ function EditorBody({
                 <div className="flex flex-wrap items-center gap-3">
                   <form.Submit pending="Adding...">Add the problem</form.Submit>
                   <span className="text-sm text-muted-fg">
-                    Tests, jury solutions and files come once it's added.
+                    Tests, jury solutions and files come once it's added. Or start from{" "}
                     {banked && (
                       <>
-                        {" "}
-                        Or{" "}
                         <Link to="/jury" splat={tabSplat(slug, "bank")} className="link">
-                          start from the problem bank
-                        </Link>
-                        .
+                          the problem bank
+                        </Link>{" "}
+                        or{" "}
                       </>
                     )}
+                    <Link to="/jury" splat={tabSplat(slug, "import")} className="link">
+                      a problem package
+                    </Link>
+                    .
                   </span>
                 </div>
               )}
             </form.Form>
           </form.AppForm>
           {!problem && shown === "bank" && orgId && <FromBank orgId={orgId} />}
+          {!problem && shown === "import" && <ImportPackage next={next} />}
           {problem && shown === "tests" && <Tests problem={problem} />}
           {problem && shown === "solutions" && <JurySolutions problem={problem} />}
           {problem && shown === "try" && <TrySolution problem={problem} />}
@@ -984,7 +994,7 @@ function Pane({ tab, shown, children }: { tab: Tab; shown: Tab; children: ReactN
 
 // the tabs a problem lists: a saved one hides the ways to start one, a new one greys out the rest
 function listed(tabs: Tuple<TabDef>, saved: boolean, banked: boolean): TabDef[] {
-  return tabs.filter((each) => (each.adding ? !saved && banked : true));
+  return tabs.filter((each) => (each.adding ? !saved && (banked || !each.banked) : true));
 }
 
 function EditorNav({

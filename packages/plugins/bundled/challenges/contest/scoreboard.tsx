@@ -30,6 +30,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@bogey/ui/components/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
 import type { View } from "./view-tabs.tsx";
+import { solveTime } from "./times.ts";
 
 export function Scoreboard({ eventId, settings }: PluginContext<Settings>) {
   const jury = useCan("challenges.jury");
@@ -40,7 +41,9 @@ export function Scoreboard({ eventId, settings }: PluginContext<Settings>) {
     refetchInterval: 60_000,
   });
   useLiveContest(eventId);
-  const standings = <Standings board={board} colors={settings.verdictColors} />;
+  const standings = (
+    <Standings board={board} colors={settings.verdictColors} showPending={settings.showPending} />
+  );
 
   return (
     <Screen
@@ -69,16 +72,21 @@ export function Scoreboard({ eventId, settings }: PluginContext<Settings>) {
 
 function describe(settings: Settings, board: ScoreboardData | undefined): string {
   if (board?.frozen) {
-    return "Scoreboard is frozen. Tries show as pending until the final standings are revealed.";
+    return settings.showPending
+      ? "Scoreboard is frozen. Tries show as pending until the final standings are revealed."
+      : "Scoreboard is frozen. Tries since then stay hidden until the final standings are revealed.";
   }
   if (settings.scoring === "icpc") {
-    return "Problems solved, then penalty minutes. Each solved cell shows how many tries it took.";
+    return `Problems solved, then penalty ${settings.penaltyUnit}. Each solved cell shows how many tries it took.`;
   }
   if (settings.scoring === "golf") {
     const noun = MEASURE_NOUN[settings.golfMeasure];
     return settings.golfPoints === "length"
       ? `Problems solved, then the fewest ${noun} in total across accepted solutions. Each cell shows its length; ★ is the shortest.`
       : `Shortest accepted solution wins, counted in ${noun}. Each cell shows its length and the points it earned.`;
+  }
+  if (settings.scoreFrom === "subtasks") {
+    return "Points from the best result on each subtask, across all of a team's solutions to a problem.";
   }
   return settings.scoreFrom === "last"
     ? "Points from each problem's last judged solution."
@@ -88,9 +96,11 @@ function describe(settings: Settings, board: ScoreboardData | undefined): string
 function Standings({
   board,
   colors,
+  showPending,
 }: {
   board: UseQueryResult<ScoreboardData, unknown>;
   colors: Settings["verdictColors"];
+  showPending: boolean;
 }) {
   if (board.isPending) return <Skeleton className="h-64 w-full" />;
   if (board.isError) {
@@ -102,10 +112,16 @@ function Standings({
   }
   if (board.data.rows.length === 0)
     return <p className="py-4 text-sm text-muted-fg">No teams yet.</p>;
+  // with pending tries hidden from the public, the legend lists them only where they show
+  const pending =
+    showPending || board.data.rows.some((row) => row.cells.some((c) => c.pending > 0));
   return (
     <div className="flex flex-col gap-3">
       <ScoreTable board={board.data} colors={colors} />
-      <CellLegend colors={colors} states={["first", "solved", "tried", "pending"]} />
+      <CellLegend
+        colors={colors}
+        states={pending ? ["first", "solved", "tried", "pending"] : ["first", "solved", "tried"]}
+      />
     </div>
   );
 }
@@ -137,7 +153,9 @@ function ScoreTable({
             </TableHead>
             {icpc && (
               <TableHead className="text-right">
-                <Tip text="Minutes until each solve, plus a penalty for each wrong attempt before it">
+                <Tip
+                  text={`${board.penaltyUnit === "seconds" ? "Seconds" : "Minutes"} until each solve, plus a penalty for each wrong attempt before it`}
+                >
                   Penalty
                 </Tip>
               </TableHead>
@@ -199,8 +217,10 @@ function ScoreTable({
                               {cell.attempts}
                               {cell.pending > 0 && `+${cell.pending}`}
                             </span>
-                            {cell.solved && cell.minutes !== null && (
-                              <span className="opacity-70">{cell.minutes}m</span>
+                            {cell.solved && (
+                              <span className="opacity-70">
+                                {solveTime(cell, board.penaltyUnit)}
+                              </span>
                             )}
                           </>
                         ) : problem.kind === "shortest" ? (

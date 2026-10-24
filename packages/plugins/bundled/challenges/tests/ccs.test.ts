@@ -15,6 +15,7 @@ const contest = {
   durationMs: 5 * 3_600_000,
   freezeMinutes: 60,
   penaltyMinutes: 20,
+  penaltyUnit: "minutes" as const,
 };
 
 const board = (scoring: Board["scoring"] = "icpc"): Board => ({
@@ -71,6 +72,20 @@ test("an ICPC scoreboard reports solved and penalty time", () => {
     solved: true,
     time: 15,
   });
+});
+
+test("a contest counting seconds reports its times as RELTIME", () => {
+  const timed = { ...contest, penaltyMinutes: 30, penaltyUnit: "seconds" as const };
+  expect(ccsContest(timed).penalty_time).toBe("0:00:30.000");
+  const seconds = board();
+  seconds.rows = seconds.rows.map((row) => ({
+    ...row,
+    penalty: 935,
+    cells: row.cells.map((cell) => ({ ...cell, seconds: 905 })),
+  }));
+  const out = ccsScoreboard(seconds, timed, new Date("2026-10-10T11:00:00Z"));
+  expect(out.rows[0]?.score).toEqual({ num_solved: 1, total_time: "0:15:35.000" });
+  expect(out.rows[0]?.problems[0]).toMatchObject({ time: "0:15:05.000" });
 });
 
 test("an IOI scoreboard reports scores, and the contest ends on time", () => {
