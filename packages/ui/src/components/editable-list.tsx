@@ -531,6 +531,7 @@ export function EditableListItem({
       className={cn(
         "flex min-w-0 flex-col justify-center transition-opacity",
         !horizontal && "min-h-8",
+        title === undefined && "text-sm",
         dimmed && "opacity-50",
       )}
     >

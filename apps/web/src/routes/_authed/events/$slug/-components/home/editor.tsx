@@ -274,7 +274,7 @@ export function HomeEditor({
     requestAnimationFrame(() =>
       document
         .querySelector(`[data-home-block="${id}"]`)
-        ?.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" }),
+        ?.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" }),
     );
   const add = (key: string, to: EditableListPosition) => {
     const template = palette.flatMap((group) => group.items).find((each) => each.key === key);

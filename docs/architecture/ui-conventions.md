@@ -106,3 +106,15 @@ Motion lives in `packages/ui/src/styles/motion.css`: duration and easing tokens 
 - Animate only opacity, transform (scale, translate, rotate) and colors. Never animate width, padding or margin; the one exception is a collapsible's height, which is the point of it.
 - Things that appear because of what people do (popups, dialogs, panels, toasts) animate. Things that are just there on load (pages, lists, table rows) don't.
 - Reduced motion (the device setting, or Account > Accessibility) turns every transition and animation to an instant change, except spinners.
+
+## Draggable lists
+
+Reorderable lists use `EditableList` and `EditableListItem` from `@bogey/ui/components/editable-list`; don't style rows in the caller. Every row has the same grip at the start, its preview (or fields while editing), and icon actions at the end (`actions` for extra buttons before the built-in edit, duplicate and remove). A row's preview starts at `text-sm`; give titles `font-medium` and details `text-muted-fg`, not headings.
+
+- While dragging, the row lifts (shadow and ring) and a dashed slot or a drop line shows where it lands. Under reduced motion (system or the account's setting, `useReducedMotion`) rows move without animating.
+- Alt with an arrow key on the grip moves a row one place, keeps focus on it and announces the new position. Space on the grip also picks it up (dnd-kit's keyboard sensor).
+- Items with a large preview, like homepage blocks, pass `title` and `icon`: the header names the item and the preview sits below it, still shown while editing so changes are live.
+
+## Homepage editor
+
+Customize on the event homepage follows Framer and Notion: the page is the canvas, a side panel (from `xl`) edits the selected block or, with nothing selected, shows a searchable block picker you can click or drag from. Each column also has an "Add a block..." popover, like Notion's insert menu. Hiding keeps a block's place and settings (`hidden` on the block). Below `xl` a selected block opens for editing in place.

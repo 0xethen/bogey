@@ -3,8 +3,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { IconLayoutDashboard, IconPlug } from "@tabler/icons-react";
 import type { HomeBlock, HomeLayout } from "@bogey/config/settings";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
+import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
 import { Screen } from "@bogey/ui/components/screen";
+import { cn } from "@bogey/ui/lib/utils";
 import {
   BLOCK_GROUPS,
   BLOCK_INFO,
@@ -159,10 +161,11 @@ function LayoutRow({ block }: { block: HomeBlock }) {
   return (
     <li className="flex items-center gap-2.5 rounded-xl bg-muted/40 px-3 py-2 text-sm">
       <Icon className="size-4 shrink-0 text-muted-fg" />
-      <span className="min-w-0 flex-1 truncate">
+      <span className={cn("min-w-0 flex-1 truncate", block.hidden && "text-muted-fg")}>
         {label}
         {heading && heading !== label && <span className="text-muted-fg"> · {heading}</span>}
       </span>
+      {block.hidden && <Badge variant="secondary">{t("homepageSetup.hidden")}</Badge>}
     </li>
   );
 }

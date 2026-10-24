@@ -14,6 +14,10 @@ advisory (see docs/contributing.md#security-releases). -->
 - Menus, selects, popovers, tooltips and dialogs fade and grow out of their trigger with one short, shared animation, and hover colors on buttons, rows, links and menu items ease in. Reduced motion turns all of it off.
 - Rows in lists keep one minimum height with their icons lined up, table rows are the same height whether they hold text or a button, and action columns sit at the right edge.
 
+- Draggable lists (tags, judging criteria and demos, registration and submission forms, sessions, divisions, pages, prizes, awards) share one look: the same drag handle on every row, actions at the end, a lifted row and a drop line while dragging, and Alt with an arrow key on the handle to move a row.
+- Customizing the event homepage: click a block to change it in a side panel while the page updates in place; add blocks from a searchable picker (or the "Add a block..." button under each column), and move a block to the other column from its panel. On narrower screens blocks open for editing in place.
+- Homepage blocks can be hidden: they keep their place and settings but nobody sees them. Manage → Homepage marks hidden blocks.
+- Dragging respects reduced motion, from the system or the account's accessibility setting.
 - Copying an event: every "What to copy" option says what it copies, and Judging sits nested under Submission forms, greyed out with a tooltip while forms are off.
 - New event and Manage → Details: the web address has its label above the input like Name, and Starts and Ends sit side by side with their labels above.
 - Badges and actions on expandable rows (like Installed on Admin → Plugins) now come before the chevron instead of after it.

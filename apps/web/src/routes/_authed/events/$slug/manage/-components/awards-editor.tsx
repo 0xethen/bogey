@@ -165,7 +165,7 @@ export function AwardsEditor({ eventId, rows }: { eventId: string; rows: Tuple<R
                       onRemove={() => list.removeValue(index)}
                       preview={
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-heading font-semibold">
+                          <span className="font-medium">
                             {award.label || t("awardsEditor.unnamed")}
                           </span>
                           <span className="text-sm text-muted-fg">
