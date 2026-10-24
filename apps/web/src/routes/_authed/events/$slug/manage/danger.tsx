@@ -15,7 +15,6 @@ import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { agendaQueryOptions } from "@bogey/db/queries/sessions";
 import { MultiSelect, type SearchSelectOption } from "@bogey/ui/components/search-select";
 import { requestFailure, unwrap } from "@bogey/db/errors";
-import type { Tables } from "@bogey/db/types";
 import { Button } from "@bogey/ui/components/button";
 import {
   Dialog,
@@ -30,9 +29,8 @@ import { Screen } from "@bogey/ui/components/screen";
 import { errorVisibility, rewardEarlyPunishLate, useAppForm } from "@bogey/ui/lib/form";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
+import { useEvent } from "#/lib/viewer.ts";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
-
-type Event = Pick<Tables<"events">, "id" | "slug" | "name">;
 
 const confirmSchema = (t: T, slug: string) =>
   z.object({
@@ -81,23 +79,20 @@ function RouteComponent() {
         }
       >
         <RowList variant="boxed">
-          <PruneParticipants event={event} />
+          <PruneParticipants />
           <ClearAction
-            event={event}
             what="waiting"
             title={t("danger.waiting")}
             help={t("danger.waitingHelp")}
             body={(count) => t("danger.waitingBody", { count })}
           />
           <ClearAction
-            event={event}
             what="judging"
             title={t("danger.judging")}
             help={t("danger.judgingHelp")}
             body={(count) => t("danger.judgingBody", { count })}
           />
           <ClearAction
-            event={event}
             what="participants"
             title={t("danger.participants")}
             help={t("danger.participantsHelp")}
@@ -108,7 +103,7 @@ function RouteComponent() {
       {eventDeletion && (
         <Screen.Section id="delete" title={t("danger.delete")} description={t("danger.deleteHelp")}>
           {access.orgAdmin ? (
-            <DeleteEvent event={event} />
+            <DeleteEvent />
           ) : (
             <p className="text-sm text-muted-fg">{t("danger.deleteAdminsOnly")}</p>
           )}
@@ -145,7 +140,6 @@ function DangerRow({
 
 /** A dialog that asks for the event's address before doing something that can't be undone. */
 function ConfirmDialog({
-  event,
   open,
   onOpenChange,
   title,
@@ -156,7 +150,6 @@ function ConfirmDialog({
   failed,
   onConfirm,
 }: {
-  event: Event;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -168,7 +161,8 @@ function ConfirmDialog({
   onConfirm: (confirm: string) => Promise<string | undefined>;
 }) {
   const t = useT();
-  const schema = useMemo(() => confirmSchema(t, event.slug), [t, event.slug]);
+  const slug = useEvent().slug;
+  const schema = useMemo(() => confirmSchema(t, slug), [t, slug]);
   const form = useAppForm({
     defaultValues: { confirm: "" },
     errorVisibility,
@@ -206,7 +200,8 @@ function ConfirmDialog({
   );
 }
 
-function useClear(event: Event, what: ClearKind, open: boolean) {
+function useClear(what: ClearKind, open: boolean) {
+  const event = useEvent();
   const queryClient = useQueryClient();
   const count = useQuery({
     queryKey: ["clear-count", event.id, what] as const,
@@ -226,13 +221,11 @@ function useClear(event: Event, what: ClearKind, open: boolean) {
 }
 
 function ClearAction({
-  event,
   what,
   title,
   help,
   body,
 }: {
-  event: Event;
   what: ClearKind;
   title: string;
   help: string;
@@ -240,7 +233,7 @@ function ClearAction({
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const { count, run } = useClear(event, what, open);
+  const { count, run } = useClear(what, open);
   return (
     <>
       <DangerRow
@@ -250,7 +243,6 @@ function ClearAction({
         onOpen={() => setOpen(true)}
       />
       <ConfirmDialog
-        event={event}
         open={open}
         onOpenChange={setOpen}
         title={t("danger.clearTitle", { title })}
@@ -268,7 +260,8 @@ function ClearAction({
   );
 }
 
-function PruneParticipants({ event }: { event: Event }) {
+function PruneParticipants() {
+  const event = useEvent();
   const t = useT();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -319,7 +312,6 @@ function PruneParticipants({ event }: { event: Event }) {
         onOpen={() => setOpen(true)}
       />
       <ConfirmDialog
-        event={event}
         open={open}
         onOpenChange={setOpen}
         title={t("danger.clearTitle", { title })}
@@ -368,7 +360,8 @@ const RULE_LABELS = {
   no_submission: "danger.pruneNoSubmission",
 } as const satisfies Record<PruneRule, string>;
 
-function DeleteEvent({ event }: { event: Event }) {
+function DeleteEvent() {
+  const event = useEvent();
   const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -381,7 +374,6 @@ function DeleteEvent({ event }: { event: Event }) {
         </Button>
       </div>
       <ConfirmDialog
-        event={event}
         open={open}
         onOpenChange={setOpen}
         title={t("danger.deleteTitle", { name: event.name })}

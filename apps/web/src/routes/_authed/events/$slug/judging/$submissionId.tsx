@@ -58,7 +58,6 @@ import {
 } from "@bogey/ui/lib/form";
 import { ProjectPanel } from "./-components/project-panel.tsx";
 import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
-import type { Session } from "@bogey/db/auth";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { readGuidance } from "@bogey/utils/guidance";
@@ -88,7 +87,7 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionI
 
 function RouteComponent() {
   const t = useT();
-  const { event, session } = Route.useRouteContext();
+  const { event } = Route.useRouteContext();
   const { submissionId } = Route.useParams();
   const { data: submission } = useSuspenseQuery(submissionDetailQueryOptions(submissionId));
   const { data: criteria } = useSuspenseQuery(criteriaQueryOptions(event.id));
@@ -235,8 +234,6 @@ function RouteComponent() {
             )}
             {round && round.method !== "rubric" ? (
               <MethodPanel
-                eventId={event.id}
-                session={session}
                 method={round.method}
                 formId={round.formId}
                 roundId={round.id}
@@ -294,21 +291,19 @@ function JudgingSplit({ project, score }: { project: ReactNode; score: ReactNode
 }
 
 function MethodPanel({
-  eventId,
-  session,
   method,
   formId,
   roundId,
   submissionId,
 }: {
-  eventId: string;
-  session: Session;
   method: string;
   formId: string;
   roundId: string;
   submissionId: string;
 }) {
   const t = useT();
+  const { event, session } = Route.useRouteContext();
+  const eventId = event.id;
   const key = method.slice(0, method.indexOf("."));
   return (
     <PluginSlot
