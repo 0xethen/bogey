@@ -267,7 +267,7 @@ function Desk() {
 
       <Screen.Section id="scan-or-type-a-code" title={t("checkin.scanOrType")}>
         <codeForm.AppForm>
-          <codeForm.Form className="flex flex-wrap items-end gap-4">
+          <codeForm.Form className="flex flex-col gap-4">
             <codeForm.Field name="code">
               {(field) => (
                 <field.Field>
@@ -281,8 +281,8 @@ function Desk() {
                 </field.Field>
               )}
             </codeForm.Field>
-            <div className="flex flex-1 flex-row sm:flex-col gap-2">
-              <codeForm.Submit className="flex-1">{t("checkin.checkIn")}</codeForm.Submit>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <codeForm.Submit className="sm:flex-1">{t("checkin.checkIn")}</codeForm.Submit>
               <Button type="button" variant="outline" onClick={() => setScanning((on) => !on)}>
                 {scanning ? <IconCameraOff /> : <IconCamera />}
                 {scanning ? t("checkin.stopCamera") : t("checkin.scan")}
@@ -331,31 +331,36 @@ function Desk() {
           description={t("checkin.walkInHelp")}
         >
           <walkInForm.AppForm>
-            <walkInForm.Form className="flex flex-wrap items-end gap-6">
-              <walkInForm.Field name="email">
-                {(field) => <field.TextField type="email" required autoComplete="off" />}
-              </walkInForm.Field>
-              <walkInForm.Field name="name">
-                {(field) => <field.TextField autoComplete="off" />}
-              </walkInForm.Field>
-              <walkInForm.Submit
-                pending={t("checkin.registering")}
-                onClick={() => {
-                  walkInCheckIn.current = true;
-                }}
-              >
-                <IconUserPlus />
-                {t("checkin.registerAndCheckIn")}
-              </walkInForm.Submit>
-              <walkInForm.Submit
-                variant="outline"
-                pending={t("checkin.registering")}
-                onClick={() => {
-                  walkInCheckIn.current = false;
-                }}
-              >
-                {t("checkin.register")}
-              </walkInForm.Submit>
+            <walkInForm.Form className="flex flex-col gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <walkInForm.Field name="email">
+                  {(field) => <field.TextField type="email" required autoComplete="off" />}
+                </walkInForm.Field>
+                <walkInForm.Field name="name">
+                  {(field) => <field.TextField autoComplete="off" />}
+                </walkInForm.Field>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <walkInForm.Submit
+                  className="sm:flex-1"
+                  pending={t("checkin.registering")}
+                  onClick={() => {
+                    walkInCheckIn.current = true;
+                  }}
+                >
+                  <IconUserPlus />
+                  {t("checkin.registerAndCheckIn")}
+                </walkInForm.Submit>
+                <walkInForm.Submit
+                  variant="outline"
+                  pending={t("checkin.registering")}
+                  onClick={() => {
+                    walkInCheckIn.current = false;
+                  }}
+                >
+                  {t("checkin.register")}
+                </walkInForm.Submit>
+              </div>
             </walkInForm.Form>
             <walkInForm.FormAlert title={t("checkin.walkInFailed")} />
           </walkInForm.AppForm>
