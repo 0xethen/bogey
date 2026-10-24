@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.0 (2026-10-24)
+
 - Check-in desk: a Register button next to "Register and check in" adds a walk-in to the roster without checking them in.
 - Manage → People roster import: **Autocorrect values** is picked before you add a roster, defaults to as much as possible, is remembered for next time, and stays fixed for the whole import. To change it, use **Start over...**, which clears the import.
 - Manage → Submissions: the public gallery settings are now their own Public gallery subtab; old #gallery links go there.
@@ -70,8 +72,6 @@ advisory (see docs/contributing.md#security-releases). -->
 - `deploy/runner/` runs the runner on a machine of its own, and [Runner security](docs/self-hosting/runner-security.md) has the threat model and the set-up. Upgrading the all-in-one's runner: copy the new `compose.runner.yml` and `Caddyfile.runner`, make the work folder belong to uid 1000, run `bogey runner add runner` and set `BOGEY_RUNNER_KEY` in `.env` (plugin migration `challenges 9_runner_keys`).
 
 **Upgrade notes:** run `bogey db migrate` (migrations `20261024090000_certificate_designs`, `20261024110000_gallery_view_modes` and `20261024132236_certificate_kinds`, and the challenges plugin's `8_contest_presets`). Existing certificate wording becomes a design of stacked text boxes with the QR code below, so issued certificates look much as before until someone edits them. Manage links moved under their parent pages (for example `/manage/review` is now `/manage/people/review`); the old addresses redirect.
-
-## 2.4.0-beta.0 (2026-10-23)
 
 - Long tables have a search box and pages (25 or 50 rows, changeable under the table): Manage → Submissions, Judging (judges and projects), Results, Registration (invites), Certificates and Audit log; the organization's Members; and the instance's People, Organizations and Reports. Tooltips on buttons use the button's own tooltip.
 - Manage → People's table has a search box (name, email or team), a "Show" select for everyone, checked in or not checked in, and Role and Division comboboxes that pick any number of roles (plugin roles included) and divisions, each showing how many people have it. "Reset" clears them. These replace the Filter popover.
