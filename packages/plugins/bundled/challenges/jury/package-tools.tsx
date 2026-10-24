@@ -18,6 +18,7 @@ import {
   type Problem,
 } from "../db.ts";
 import { Link } from "../shared.tsx";
+import { useChallenges } from "../context.tsx";
 
 function Outcome({ result }: { result: PackageImport }) {
   return (
@@ -40,7 +41,8 @@ function Outcome({ result }: { result: PackageImport }) {
   );
 }
 
-export function ImportPackage({ eventId, next }: { eventId: string; next: string }) {
+export function ImportPackage({ next }: { next: string }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const input = useRef<HTMLInputElement>(null);
   const [label, setLabel] = useState(next);
@@ -89,7 +91,8 @@ export function ImportPackage({ eventId, next }: { eventId: string; next: string
   );
 }
 
-export function ProblemPackage({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function ProblemPackage({ problem }: { problem: Problem }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const input = useRef<HTMLInputElement>(null);
   const replace = useMutation({
@@ -156,7 +159,8 @@ export function ProblemPackage({ eventId, problem }: { eventId: string; problem:
   );
 }
 
-export function ContestExport({ eventId }: { eventId: string }) {
+export function ContestExport() {
+  const { eventId } = useChallenges();
   return (
     <Screen.Section
       title="Contest data"

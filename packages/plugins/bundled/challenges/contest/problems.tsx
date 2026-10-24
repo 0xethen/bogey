@@ -116,7 +116,7 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
                 </span>
                 <span className="font-heading text-lg font-semibold text-fg">{problem.title}</span>
                 <span className="mt-auto flex flex-wrap items-center gap-2 text-sm text-muted-fg">
-                  <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
+                  <DifficultyBadge difficulty={problem.difficulty} />
                   {points(problem.points)}
                   {jury && !problem.visible && <span>· Hidden</span>}
                 </span>

@@ -24,19 +24,13 @@ export function ProblemPage(context: Context) {
 export function JuryPage(context: Context) {
   useLiveContest(context.eventId);
   if (!problemSlug(context.splat)) {
-    return <JuryHome eventId={context.eventId} settings={context.settings} />;
+    return <JuryHome />;
   }
   return <ProblemRoute {...context} view="jury" />;
 }
 
 // /problems/<slug> is what participants see; /jury/<slug>/<tab> edits it. Each links to the other.
-function ProblemRoute({
-  eventId,
-  settings,
-  splat,
-  session,
-  view,
-}: Context & { view: "public" | "jury" }) {
+function ProblemRoute({ eventId, settings, splat, view }: Context & { view: "public" | "jury" }) {
   const jury = useCan("challenges.jury");
   const problems = useProblems(eventId, settings.problemOrder);
   const slug = problemSlug(splat);
@@ -61,16 +55,7 @@ function ProblemRoute({
   }
 
   if (problem && (view === "public" || !jury)) {
-    return <Workspace key={problem.id} eventId={eventId} settings={settings} problem={problem} />;
+    return <Workspace key={problem.id} problem={problem} />;
   }
-  return (
-    <ProblemEditor
-      key={problem?.id ?? "new"}
-      eventId={eventId}
-      orgId={session.org?.id ?? null}
-      settings={settings}
-      problem={problem}
-      tab={splatTab(splat)}
-    />
-  );
+  return <ProblemEditor key={problem?.id ?? "new"} problem={problem} tab={splatTab(splat)} />;
 }

@@ -28,6 +28,7 @@ import {
   rewardEarlyPunishLate,
   useAppForm,
 } from "@bogey/ui/lib/form";
+import { useChallenges } from "../context.tsx";
 
 const askSchema = z.object({
   audience: z.enum(AUDIENCES).meta({ label: "To" }),
@@ -47,18 +48,17 @@ const RECIPIENTS = [
 ] as const;
 
 export function AskAbout({
-  eventId,
   topic,
   subject,
   label = "Ask about this...",
   size = "sm",
 }: {
-  eventId: string;
   topic: string;
   subject: string;
   label?: string;
   size?: "sm" | "default";
 }) {
+  const { eventId } = useChallenges();
   const access = useEventAccess();
   const { data } = useQuery(settingsQueryOptions({ eventId }, ["chat"]));
   const [open, setOpen] = useState(false);

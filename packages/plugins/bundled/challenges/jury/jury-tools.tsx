@@ -43,6 +43,7 @@ import {
   type Verdict,
 } from "../db.ts";
 import { TestVerdict, VERDICTS } from "../shared.tsx";
+import { useChallenges } from "../context.tsx";
 
 const ANY = "__any";
 
@@ -61,7 +62,8 @@ function verdictOrDash(verdict: Verdict | null) {
   return verdict ? <TestVerdict verdict={verdict} /> : <span className="text-muted-fg">–</span>;
 }
 
-export function Rejudgings({ eventId, problems }: { eventId: string; problems: Tuple<Problem> }) {
+export function Rejudgings({ problems }: { problems: Tuple<Problem> }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const sets = useQuery({
     ...rejudgingsQueryOptions(eventId),
@@ -174,7 +176,6 @@ export function Rejudgings({ eventId, problems }: { eventId: string; problems: T
           {sets.data?.map((set) => (
             <li key={set.id}>
               <SetRow
-                eventId={eventId}
                 set={set}
                 problems={problems}
                 open={open === set.id}
@@ -195,13 +196,11 @@ const STATUS: Record<Rejudging["status"], string> = {
 };
 
 function SetRow({
-  eventId,
   set,
   problems,
   open,
   onToggle,
 }: {
-  eventId: string;
   set: Rejudging;
   problems: Tuple<Problem>;
   open: boolean;
@@ -218,20 +217,13 @@ function SetRow({
           {STATUS[set.status]}
         </Badge>
       </button>
-      {open && <SetDiff eventId={eventId} set={set} problems={problems} />}
+      {open && <SetDiff set={set} problems={problems} />}
     </div>
   );
 }
 
-function SetDiff({
-  eventId,
-  set,
-  problems,
-}: {
-  eventId: string;
-  set: Rejudging;
-  problems: Tuple<Problem>;
-}) {
+function SetDiff({ set, problems }: { set: Rejudging; problems: Tuple<Problem> }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const diff = useQuery({
     ...rejudgingDiffQueryOptions(set.id),
@@ -343,7 +335,8 @@ function SetDiff({
   );
 }
 
-export function Verification({ eventId }: { eventId: string }) {
+export function Verification() {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const recent = useQuery(recentAttemptsQueryOptions(eventId));
   const waiting = (recent.data ?? []).filter(
@@ -408,7 +401,8 @@ const JURY_SOLUTION_DEFAULTS: z.input<typeof jurySolutionSchema> = {
   source: "",
 };
 
-export function JurySolutions({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function JurySolutions({ problem }: { problem: Problem }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const options = jurySolutionsQueryOptions(eventId, problem.id);
   const solutions = useQuery({

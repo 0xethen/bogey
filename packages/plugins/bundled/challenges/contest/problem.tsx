@@ -39,6 +39,7 @@ import { ExactTime } from "@bogey/ui/components/relative-time";
 import { Screen } from "@bogey/ui/components/screen";
 import { Textarea } from "@bogey/ui/components/textarea";
 import { AskAbout } from "./ask.tsx";
+import { useChallenges } from "../context.tsx";
 import { StatementPdf } from "./statement-pdf.tsx";
 import {
   attachmentsQueryOptions,
@@ -104,15 +105,8 @@ function useDraft(problemId: string) {
   return [source, update] as const;
 }
 
-export function Workspace({
-  eventId,
-  settings,
-  problem,
-}: {
-  eventId: string;
-  settings: Settings;
-  problem: Problem;
-}) {
+export function Workspace({ problem }: { problem: Problem }) {
+  const { eventId } = useChallenges();
   const [info, setInfo] = useState(false);
   const jury = useCan("challenges.jury");
   useLiveContest(eventId);
@@ -127,7 +121,7 @@ export function Workspace({
           </span>
           <span aria-hidden>·</span>
           {points(problem.points)}
-          <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
+          <DifficultyBadge difficulty={problem.difficulty} />
           <Button
             size="icon-xs"
             variant="ghost"
@@ -175,16 +169,10 @@ export function Workspace({
         </div>
       }
     >
-      <ProblemInfo
-        open={info}
-        onOpenChange={setInfo}
-        eventId={eventId}
-        settings={settings}
-        problem={problem}
-      />
+      <ProblemInfo open={info} onOpenChange={setInfo} problem={problem} />
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <Statement eventId={eventId} problem={problem} />
-        <Editor eventId={eventId} settings={settings} problem={problem} />
+        <Statement problem={problem} />
+        <Editor problem={problem} />
       </div>
     </Screen>
   );
@@ -193,16 +181,13 @@ export function Workspace({
 function ProblemInfo({
   open,
   onOpenChange,
-  eventId,
-  settings,
   problem,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  eventId: string;
-  settings: Settings;
   problem: Problem;
 }) {
+  const { eventId, settings } = useChallenges();
   const languages = useQuery(languagesQueryOptions());
   const allowed = allowedLanguages(languages.data ?? [], settings.languages);
   const contest = useContest(eventId);
@@ -307,7 +292,7 @@ function golfRule(settings: Settings, problem: Problem): string {
   }
 }
 
-function Statement({ eventId, problem }: { eventId: string; problem: Problem }) {
+function Statement({ problem }: { problem: Problem }) {
   const samples = useQuery(samplesQueryOptions(problem.id));
   const files = useQuery(attachmentsQueryOptions(problem.id));
   return (
@@ -361,7 +346,6 @@ function Statement({ eventId, problem }: { eventId: string; problem: Problem }) 
 
       <div>
         <AskAbout
-          eventId={eventId}
           topic={topics.problem(problem.id)}
           subject={`${problem.label}. ${problem.title}`}
           label="Ask about this problem..."
@@ -403,15 +387,8 @@ interface RunOutcome {
   language: EditorLanguage;
 }
 
-function Editor({
-  eventId,
-  settings,
-  problem,
-}: {
-  eventId: string;
-  settings: Settings;
-  problem: Problem;
-}) {
+function Editor({ problem }: { problem: Problem }) {
+  const { eventId, settings } = useChallenges();
   const queryClient = useQueryClient();
   const goTo = useGoTo();
   const access = useEventAccess();
@@ -606,9 +583,7 @@ function Editor({
           lineWrapping: settings.editorLineWrapping,
         }}
       />
-      {problem.kind === "shortest" && (
-        <GolfLength settings={settings} source={source} attempts={tries.data ?? []} />
-      )}
+      {problem.kind === "shortest" && <GolfLength source={source} attempts={tries.data ?? []} />}
       {blocked && <p className="text-sm text-muted-fg">{blocked}</p>}
       <ErrorAlert error={uploadError} title="Couldn't load that file" />
       <ErrorAlert error={submit.error} title="Couldn't submit" />
@@ -702,13 +677,7 @@ function Editor({
       </Tabs>
 
       {competing && (
-        <LatestTry
-          eventId={eventId}
-          problem={problem}
-          settings={settings}
-          attempts={tries.data ?? []}
-          loading={tries.isPending}
-        />
+        <LatestTry problem={problem} attempts={tries.data ?? []} loading={tries.isPending} />
       )}
     </div>
   );
@@ -785,15 +754,8 @@ function RunOutput({ outcome, separate }: { outcome: RunOutcome; separate: boole
   );
 }
 
-function GolfLength({
-  settings,
-  source,
-  attempts,
-}: {
-  settings: Settings;
-  source: string;
-  attempts: Tuple<Attempt>;
-}) {
+function GolfLength({ source, attempts }: { source: string; attempts: Tuple<Attempt> }) {
+  const { settings } = useChallenges();
   const noun = MEASURE_NOUN[settings.golfMeasure];
   const accepted = attempts
     .filter((attempt) => attempt.verdict === "AC")

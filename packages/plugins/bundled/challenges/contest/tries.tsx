@@ -15,6 +15,7 @@ import { OptSelect } from "@bogey/ui/components/opt-select";
 import { Skeleton } from "@bogey/ui/components/skeleton";
 import { cn } from "@bogey/ui/lib/utils";
 import { AskAbout } from "./ask.tsx";
+import { useChallenges } from "../context.tsx";
 import { TestResults } from "./results.tsx";
 import { recentAttemptsQueryOptions, type Attempt, type Problem } from "../db.ts";
 import {
@@ -63,15 +64,8 @@ export function useVerdictSignals(
   }, [attempts, eventId]);
 }
 
-function TrySummary({
-  attempt,
-  problem,
-  settings,
-}: {
-  attempt: Attempt;
-  problem: TryProblem | undefined;
-  settings: Settings;
-}) {
+function TrySummary({ attempt, problem }: { attempt: Attempt; problem: TryProblem | undefined }) {
+  const { settings } = useChallenges();
   return (
     <>
       <span className="text-muted-fg">
@@ -87,17 +81,8 @@ function TrySummary({
   );
 }
 
-function TryDetail({
-  eventId,
-  attempt,
-  problem,
-  settings,
-}: {
-  eventId: string;
-  attempt: Attempt;
-  problem: TryProblem | undefined;
-  settings: Settings;
-}) {
+function TryDetail({ attempt, problem }: { attempt: Attempt; problem: TryProblem | undefined }) {
+  const { settings } = useChallenges();
   return (
     <div className="flex flex-col gap-3">
       {attempt.verdict === "CE" &&
@@ -112,7 +97,6 @@ function TryDetail({
       <TestResults solutionId={attempt.id} judged={attempt.verdict !== null} />
       <div>
         <AskAbout
-          eventId={eventId}
           topic={topics.solution(attempt.id)}
           subject={problem ? `${problem.label}. ${problem.title}: a try` : "A try"}
           label="Ask about this try..."
@@ -124,15 +108,11 @@ function TryDetail({
 
 /** A problem's newest try; every try is on the Submissions page. */
 export function LatestTry({
-  eventId,
   problem,
-  settings,
   attempts,
   loading,
 }: {
-  eventId: string;
   problem: Problem;
-  settings: Settings;
   attempts: Tuple<Attempt>;
   loading: boolean;
 }) {
@@ -155,9 +135,9 @@ export function LatestTry({
     >
       <div className="flex flex-col gap-3 border-y border-border py-3">
         <p className="flex items-center gap-3 text-sm">
-          <TrySummary attempt={latest} problem={problem} settings={settings} />
+          <TrySummary attempt={latest} problem={problem} />
         </p>
-        <TryDetail eventId={eventId} attempt={latest} problem={problem} settings={settings} />
+        <TryDetail attempt={latest} problem={problem} />
       </div>
     </Screen.Section>
   );
@@ -397,16 +377,11 @@ export function Submissions({ eventId, settings, splat }: PluginRouteContext<Set
                           <CollapsibleTrigger className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm">
                             <span className="font-mono font-medium">{problem?.label ?? "?"}</span>
                             <span className="truncate">{problem?.title ?? "A problem"}</span>
-                            <TrySummary attempt={attempt} problem={problem} settings={settings} />
+                            <TrySummary attempt={attempt} problem={problem} />
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="px-4 pb-4">
-                              <TryDetail
-                                eventId={eventId}
-                                attempt={attempt}
-                                problem={problem}
-                                settings={settings}
-                              />
+                              <TryDetail attempt={attempt} problem={problem} />
                             </div>
                           </CollapsibleContent>
                         </Collapsible>

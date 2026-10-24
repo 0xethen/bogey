@@ -41,6 +41,7 @@ import {
 } from "../db.ts";
 import { manifest } from "../manifest.ts";
 import { nextId, PROBLEM_KIND, useGoTo, type Settings } from "../shared.tsx";
+import { useChallenges } from "../context.tsx";
 
 const ALL = "all";
 const NONE = "none";
@@ -446,15 +447,8 @@ function UseInContestForm({
 // ── Add a problem → From the bank ─────────────────────────────────────
 
 /** The new-problem page's other start: pick a problem in the bank and add a copy to this contest. */
-export function FromBank({
-  eventId,
-  orgId,
-  settings,
-}: {
-  eventId: string;
-  orgId: string;
-  settings: Settings;
-}) {
+export function FromBank({ orgId }: { orgId: string }) {
+  const { eventId, settings } = useChallenges();
   const queryClient = useQueryClient();
   const goTo = useGoTo();
   const bank = useQuery(bankQueryOptions(orgId));

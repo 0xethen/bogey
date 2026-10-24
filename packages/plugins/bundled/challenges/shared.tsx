@@ -30,6 +30,7 @@ import {
   type Verdict,
 } from "./db.ts";
 import { manifest } from "./manifest.ts";
+import { useChallenges } from "./context.tsx";
 
 export type Settings = SettingsOf<typeof manifest>;
 
@@ -158,13 +159,8 @@ export function useDifficulties(eventId: string) {
   return difficulties.data ?? [];
 }
 
-export function DifficultyBadge({
-  eventId,
-  difficulty,
-}: {
-  eventId: string;
-  difficulty: Difficulty | null;
-}) {
+export function DifficultyBadge({ difficulty }: { difficulty: Difficulty | null }) {
+  const { eventId } = useChallenges();
   const difficulties = useDifficulties(eventId);
   const found = difficulty ? difficulties.find((each) => each.key === difficulty) : undefined;
   if (!found) return null;

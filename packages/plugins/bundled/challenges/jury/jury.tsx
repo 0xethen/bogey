@@ -95,10 +95,11 @@ import {
   useGoTo,
   useProblems,
   VerdictBadge,
-  type Settings,
 } from "../shared.tsx";
+import { useChallenges } from "../context.tsx";
 
-export function JuryHome({ eventId, settings }: { eventId: string; settings: Settings }) {
+export function JuryHome() {
+  const { eventId, settings } = useChallenges();
   const queryClient = useQueryClient();
   const problems = useProblems(eventId, settings.problemOrder);
   const recent = useQuery({
@@ -177,7 +178,7 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
                       )}
                     </TableCell>
                     <TableCell>
-                      <DifficultyBadge eventId={eventId} difficulty={problem.difficulty} />
+                      <DifficultyBadge difficulty={problem.difficulty} />
                     </TableCell>
                     <TableCell className="text-muted-fg">{points(problem.points)}</TableCell>
                     <TableCell className="text-right">
@@ -226,18 +227,18 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
       </Screen.Section>
 
       {settings.problemOrder === "custom" && (problems.data?.length ?? 0) > 1 && (
-        <ProblemOrder eventId={eventId} problems={problems.data ?? []} />
+        <ProblemOrder problems={problems.data ?? []} />
       )}
 
-      <ImportPackage eventId={eventId} next={nextId(settings.idKind, problems.data ?? [])} />
+      <ImportPackage next={nextId(settings.idKind, problems.data ?? [])} />
 
-      <ContestExport eventId={eventId} />
+      <ContestExport />
 
-      <Difficulties eventId={eventId} />
+      <Difficulties />
 
-      <Rejudgings eventId={eventId} problems={problems.data ?? []} />
+      <Rejudgings problems={problems.data ?? []} />
 
-      {settings.verificationRequired && <Verification eventId={eventId} />}
+      {settings.verificationRequired && <Verification />}
 
       <Screen.Section
         title="Solutions"
@@ -336,7 +337,8 @@ export function JuryHome({ eventId, settings }: { eventId: string; settings: Set
   );
 }
 
-function ProblemOrder({ eventId, problems }: { eventId: string; problems: Tuple<Problem> }) {
+function ProblemOrder({ problems }: { problems: Tuple<Problem> }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const order = useMutation({
     mutationFn: (ids: Tuple<string>) => saveProblemOrder(ids),
@@ -399,25 +401,15 @@ const STARTER: Tuple<Omit<DifficultyDef, "sort">> = [
   { key: "hard", label: "Hard", tone: "red" },
 ];
 
-function Difficulties({ eventId }: { eventId: string }) {
+function Difficulties() {
+  const { eventId } = useChallenges();
   const difficulties = useQuery(difficultiesQueryOptions(eventId));
   if (difficulties.isPending) return <Skeleton className="h-24 w-full" />;
-  return (
-    <DifficultiesForm
-      key={difficulties.dataUpdatedAt}
-      eventId={eventId}
-      current={difficulties.data ?? []}
-    />
-  );
+  return <DifficultiesForm key={difficulties.dataUpdatedAt} current={difficulties.data ?? []} />;
 }
 
-function DifficultiesForm({
-  eventId,
-  current,
-}: {
-  eventId: string;
-  current: Tuple<DifficultyDef>;
-}) {
+function DifficultiesForm({ current }: { current: Tuple<DifficultyDef> }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const [active, setActive] = useState<string | null>(null);
   const form = useAppForm({
@@ -591,7 +583,7 @@ function testValues(cases: Tuple<Testcase>) {
   };
 }
 
-export function Tests({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function Tests({ problem }: { problem: Problem }) {
   const cases = useQuery(testcasesQueryOptions(problem.id));
   if (cases.isPending) return <Skeleton className="h-32 w-full" />;
   if (cases.isError) {
@@ -602,19 +594,10 @@ export function Tests({ eventId, problem }: { eventId: string; problem: Problem 
       />
     );
   }
-  return (
-    <TestsForm key={cases.dataUpdatedAt} eventId={eventId} problem={problem} cases={cases.data} />
-  );
+  return <TestsForm key={cases.dataUpdatedAt} problem={problem} cases={cases.data} />;
 }
 
-function TestsForm({
-  problem,
-  cases,
-}: {
-  eventId: string;
-  problem: Problem;
-  cases: Tuple<Testcase>;
-}) {
+function TestsForm({ problem, cases }: { problem: Problem; cases: Tuple<Testcase> }) {
   const queryClient = useQueryClient();
   const [active, setActive] = useState<string | null>(null);
   const form = useAppForm({
@@ -757,7 +740,8 @@ const RUN_VERDICTS = {
   error: "Error",
 } as const;
 
-export function TrySolution({ problem, settings }: { problem: Problem; settings: Settings }) {
+export function TrySolution({ problem }: { problem: Problem }) {
+  const { settings } = useChallenges();
   const cases = useQuery(testcasesQueryOptions(problem.id));
   const languages = useQuery(languagesQueryOptions());
   const allowed = allowedLanguages(languages.data ?? [], settings.languages);
@@ -918,7 +902,8 @@ export function TrySolution({ problem, settings }: { problem: Problem; settings:
   );
 }
 
-export function Files({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function Files({ problem }: { problem: Problem }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const files = useQuery(attachmentsQueryOptions(problem.id));
   const input = useRef<HTMLInputElement>(null);
@@ -993,7 +978,8 @@ export function Files({ eventId, problem }: { eventId: string; problem: Problem 
   );
 }
 
-export function RemoveProblem({ eventId, problem }: { eventId: string; problem: Problem }) {
+export function RemoveProblem({ problem }: { problem: Problem }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const goTo = useGoTo();
   const remove = useMutation({

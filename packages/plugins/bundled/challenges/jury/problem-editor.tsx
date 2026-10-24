@@ -87,6 +87,7 @@ import {
   useProblems,
   type Settings,
 } from "../shared.tsx";
+import { useChallenges } from "../context.tsx";
 
 // ── tabs ───────────────────────────────────────────────────────────────
 
@@ -405,19 +406,13 @@ function limitsMarkdown(
 
 /** The jury's page for one problem: a sidebar of tabs, like Manage's settings pages. */
 export function ProblemEditor({
-  eventId,
-  orgId,
-  settings,
   problem,
   tab,
 }: {
-  eventId: string;
-  orgId: string | null;
-  settings: Settings;
   problem: Problem | undefined;
-  /** The address's tab, after the problem: `tests` in `/jury/two-sum/tests`. */
-  tab: string;
+  /** The address's tab, after the problem: `tests` in `/jury/two-sum/tests`. */ tab: string;
 }) {
+  const { eventId, settings } = useChallenges();
   const problems = useProblems(eventId, settings.problemOrder);
   // the scripts aren't selectable, so the form waits for them before it starts its draft
   const scripts = useQuery({ ...scriptsQueryOptions(problem?.id ?? ""), enabled: !!problem });
@@ -425,9 +420,6 @@ export function ProblemEditor({
   return (
     <EditorBody
       key={problem?.id ?? "new"}
-      eventId={eventId}
-      orgId={orgId}
-      settings={settings}
       problem={problem}
       requested={tab}
       scripts={scripts.data ?? null}
@@ -437,22 +429,17 @@ export function ProblemEditor({
 }
 
 function EditorBody({
-  eventId,
-  orgId,
-  settings,
   problem,
   requested,
   scripts,
   next,
 }: {
-  eventId: string;
-  orgId: string | null;
-  settings: Settings;
   problem: Problem | undefined;
   requested: string;
   scripts: Scripts | null;
   next: string;
 }) {
+  const { eventId, settings, orgId } = useChallenges();
   const slug = problem?.slug ?? "new";
   const tab = useTabAddress(slug, requested, !!problem);
   // the draft stays while moving between the problem's tabs
@@ -972,20 +959,14 @@ function EditorBody({
               )}
             </form.Form>
           </form.AppForm>
-          {!problem && shown === "bank" && orgId && (
-            <FromBank eventId={eventId} orgId={orgId} settings={settings} />
-          )}
-          {problem && shown === "tests" && <Tests eventId={eventId} problem={problem} />}
-          {problem && shown === "solutions" && (
-            <JurySolutions eventId={eventId} problem={problem} />
-          )}
-          {problem && shown === "try" && <TrySolution problem={problem} settings={settings} />}
-          {problem && shown === "files" && <Files eventId={eventId} problem={problem} />}
-          {problem && shown === "reuse" && (
-            <ReuseProblem eventId={eventId} orgId={orgId} settings={settings} problem={problem} />
-          )}
-          {problem && shown === "package" && <ProblemPackage eventId={eventId} problem={problem} />}
-          {problem && shown === "remove" && <RemoveProblem eventId={eventId} problem={problem} />}
+          {!problem && shown === "bank" && orgId && <FromBank orgId={orgId} />}
+          {problem && shown === "tests" && <Tests problem={problem} />}
+          {problem && shown === "solutions" && <JurySolutions problem={problem} />}
+          {problem && shown === "try" && <TrySolution problem={problem} />}
+          {problem && shown === "files" && <Files problem={problem} />}
+          {problem && shown === "reuse" && <ReuseProblem problem={problem} />}
+          {problem && shown === "package" && <ProblemPackage problem={problem} />}
+          {problem && shown === "remove" && <RemoveProblem problem={problem} />}
         </Screen>
       </SidebarInset>
     </SidebarProvider>

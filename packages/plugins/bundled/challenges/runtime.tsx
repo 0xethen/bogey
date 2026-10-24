@@ -16,6 +16,7 @@ import { CtfJuryPage } from "./ctf/jury.tsx";
 import { BankPage } from "./bank/bank.tsx";
 import { juryChallengesQueryOptions } from "./ctf/database.ts";
 import type { Settings } from "./shared.tsx";
+import { withChallenges } from "./context.tsx";
 
 function titleFrom(queryClient: QueryClient, eventId: string, splat: string, fallback: string) {
   const slug = problemSlug(splat);
@@ -86,21 +87,21 @@ function ToSubmissions({ splat }: PluginRouteContext<Settings>) {
 
 export default definePluginRuntime(manifest, {
   routes: {
-    "": byFormat(ToProblems, ChallengesPage),
+    "": withChallenges(byFormat(ToProblems, ChallengesPage)),
     "/problems": {
-      component: ProblemsRoute,
+      component: withChallenges(ProblemsRoute),
       title: ({ queryClient, eventId, splat }) =>
         titleFrom(queryClient, eventId, splat, "Problems"),
     },
-    "/submissions": Submissions,
+    "/submissions": withChallenges(Submissions),
     "/results": ToSubmissions,
-    "/ctf": ChallengesPage,
+    "/ctf": withChallenges(ChallengesPage),
     "/ctf/manage": ToJury,
     "/problem": ToProblems,
-    "/scoreboard": byFormat(Scoreboard, ScoreboardPage),
+    "/scoreboard": withChallenges(byFormat(Scoreboard, ScoreboardPage)),
     "/bank": BankPage,
     "/jury": {
-      component: byFormat(JuryPage, CtfJuryPage),
+      component: withChallenges(byFormat(JuryPage, CtfJuryPage)),
       title: ({ queryClient, eventId, splat, settings }) =>
         settings.format === "ctf"
           ? challengeTitle(queryClient, eventId, splat)

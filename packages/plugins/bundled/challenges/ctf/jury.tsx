@@ -31,6 +31,7 @@ import {
   type ChallengeInput,
   type JuryChallenge,
 } from "./database.ts";
+import { useChallenges } from "../context.tsx";
 
 type Context = PluginRouteContext<Settings>;
 
@@ -38,7 +39,7 @@ type Context = PluginRouteContext<Settings>;
 export function CtfJuryPage({ eventId, splat }: Context) {
   const id = problemSlug(splat);
   const challenges = useQuery(juryChallengesQueryOptions(eventId));
-  if (!id) return <CtfJuryHome eventId={eventId} />;
+  if (!id) return <CtfJuryHome />;
   if (challenges.isPending) return <Screen.Skeleton width="narrow" />;
   const challenge = challenges.data?.find((each) => each.id === id);
   if (id !== "new" && !challenge) {
@@ -52,7 +53,7 @@ export function CtfJuryPage({ eventId, splat }: Context) {
       </Screen>
     );
   }
-  return <ChallengeEditor key={id} eventId={eventId} challenge={challenge} />;
+  return <ChallengeEditor key={id} challenge={challenge} />;
 }
 
 function BackToJury() {
@@ -64,7 +65,8 @@ function BackToJury() {
   );
 }
 
-function CtfJuryHome({ eventId }: { eventId: string }) {
+function CtfJuryHome() {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const challenges = useQuery(juryChallengesQueryOptions(eventId));
   const remove = useMutation({
@@ -239,13 +241,8 @@ function valuesOf(challenge: JuryChallenge | undefined): ChallengeValues {
   };
 }
 
-function ChallengeEditor({
-  eventId,
-  challenge,
-}: {
-  eventId: string;
-  challenge: JuryChallenge | undefined;
-}) {
+function ChallengeEditor({ challenge }: { challenge: JuryChallenge | undefined }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const goTo = useGoTo();
   const form = useAppForm({

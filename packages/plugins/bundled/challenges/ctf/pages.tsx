@@ -32,6 +32,7 @@ import {
   scoreboardQueryOptions,
   type Challenge,
 } from "./database.ts";
+import { useChallenges } from "../context.tsx";
 
 export function messageOf(error: unknown): string | null {
   if (error === null || error === undefined) return null;
@@ -86,15 +87,8 @@ const flagSchema = z.object({
   flag: z.string().trim().min(1, "Enter a flag").meta({ label: "Flag", placeholder: "flag{...}" }),
 });
 
-function ChallengeCard({
-  eventId,
-  challenge,
-  canPlay,
-}: {
-  eventId: string;
-  challenge: Challenge;
-  canPlay: boolean;
-}) {
+function ChallengeCard({ challenge, canPlay }: { challenge: Challenge; canPlay: boolean }) {
+  const { eventId } = useChallenges();
   const queryClient = useQueryClient();
   const [result, setResult] = useState<string | null>(null);
   const form = useAppForm({
@@ -166,7 +160,7 @@ export function ChallengesPage({ eventId }: PluginContext) {
         <section key={group.category} className="flex flex-col gap-3">
           <h2 className="font-heading text-lg capitalize">{group.category}</h2>
           {group.challenges.map((challenge) => (
-            <ChallengeCard key={challenge.id} eventId={eventId} challenge={challenge} canPlay />
+            <ChallengeCard key={challenge.id} challenge={challenge} canPlay />
           ))}
         </section>
       ))}

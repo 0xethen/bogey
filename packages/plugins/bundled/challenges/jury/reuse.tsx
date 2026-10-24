@@ -19,7 +19,8 @@ import {
   type Problem,
 } from "../db.ts";
 import { manifest } from "../manifest.ts";
-import { nextId, type Settings } from "../shared.tsx";
+import { nextId } from "../shared.tsx";
+import { useChallenges } from "../context.tsx";
 
 /** Categories already in the bank, for the category field to suggest. */
 export function useBankCategories(orgId: string | null): string[] {
@@ -28,36 +29,18 @@ export function useBankCategories(orgId: string | null): string[] {
 }
 
 /** The problem editor's Reuse tab: keep it in the org's bank, or copy it to another contest. */
-export function ReuseProblem({
-  eventId,
-  orgId,
-  settings,
-  problem,
-}: {
-  eventId: string;
-  orgId: string | null;
-  settings: Settings;
-  problem: Problem;
-}) {
+export function ReuseProblem({ problem }: { problem: Problem }) {
+  const { orgId } = useChallenges();
   return (
     <>
-      <SaveToBank eventId={eventId} orgId={orgId} problem={problem} />
-      {orgId && (
-        <CopyToContest eventId={eventId} orgId={orgId} settings={settings} problem={problem} />
-      )}
+      <SaveToBank problem={problem} />
+      {orgId && <CopyToContest orgId={orgId} problem={problem} />}
     </>
   );
 }
 
-function SaveToBank({
-  eventId,
-  orgId,
-  problem,
-}: {
-  eventId: string;
-  orgId: string | null;
-  problem: Problem;
-}) {
+function SaveToBank({ problem }: { problem: Problem }) {
+  const { eventId, orgId } = useChallenges();
   const queryClient = useQueryClient();
   const categories = useBankCategories(orgId);
   const [category, setCategory] = useState("");
@@ -112,17 +95,8 @@ function SaveToBank({
   );
 }
 
-function CopyToContest({
-  eventId,
-  orgId,
-  settings,
-  problem,
-}: {
-  eventId: string;
-  orgId: string;
-  settings: Settings;
-  problem: Problem;
-}) {
+function CopyToContest({ orgId, problem }: { orgId: string; problem: Problem }) {
+  const { eventId, settings } = useChallenges();
   const events = useQuery(juryEventsQueryOptions(orgId));
   const others = (events.data ?? []).filter((each) => each.id !== eventId);
   const [target, setTarget] = useState<string | null>(null);
