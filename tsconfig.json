@@ -1,9 +1,9 @@
 {
+  "extends": "./tsconfig.base.json",
+  "include": ["*.ts"],
   "compilerOptions": {
-    "noEmit": true,
+    "lib": ["ES2024"],
     "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "allowImportingTsExtensions": true,
-    "esModuleInterop": true
+    "moduleResolution": "nodenext"
   }
 }

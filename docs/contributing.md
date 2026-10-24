@@ -91,6 +91,7 @@ A new audit action fails type checking in `packages/db/src/audit.ts` until it ha
 vp install        # after pulling
 vpr dev           # app on :3000, plus `bogey watch`
 vp check --fix    # format, lint, type-check
+vpr typecheck     # tsc in every package (the root tsconfig only covers the root files)
 vpr ready         # check, every package's tests and builds: run before committing
 ```
 

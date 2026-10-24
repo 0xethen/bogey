@@ -10,7 +10,8 @@
     "dev": "vp dev --host 127.0.0.1 --port 3737",
     "build": "vp build",
     "test": "vp test run --passWithNoTests",
-    "check": "vp check"
+    "check": "vp check",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@bogey/ui": "workspace:*",

@@ -8,7 +8,8 @@
     "start": "node src/main.ts",
     "self-test": "node src/main.ts --self-test",
     "test": "vp test",
-    "check": "vp check"
+    "check": "vp check",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",

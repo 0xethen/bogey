@@ -24,7 +24,8 @@
   },
   "scripts": {
     "test": "vp test",
-    "check": "vp check"
+    "check": "vp check",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@bogey/config": "workspace:*",

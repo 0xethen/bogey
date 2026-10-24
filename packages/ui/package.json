@@ -17,7 +17,8 @@
   },
   "scripts": {
     "test": "vp test",
-    "check": "vp check"
+    "check": "vp check",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "catalog:",

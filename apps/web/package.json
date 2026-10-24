@@ -12,6 +12,7 @@
     "preview": "vp preview",
     "test": "vp test run",
     "check": "vp check",
+    "typecheck": "tsc --noEmit",
     "e2e": "playwright test"
   },
   "dependencies": {
