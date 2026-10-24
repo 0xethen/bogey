@@ -13,6 +13,12 @@ advisory (see docs/contributing.md#security-releases). -->
 - Manage > Judging counts every sheet a judge finished as done, including projects that weren't assigned to them, and shows how many of those were unassigned.
 - Plugins can declare network areas, so an event can limit a plugin's pages to its networks; the challenges plugin offers its contest, and sending a solution or a flag from outside the network is refused.
 - The blocked-access list in Manage > Security says which area each refused attempt was in.
+- Challenges: partial-credit problems can score each subtask by its best result across all of a team's solutions (IOI since 2017), next to the best or last solution. The IOI style now picks it.
+- Challenges: "Tests a solution runs" can run every test of a pass/fail or shortest-code problem instead of stopping at the first failure, so each test's result is known.
+- Challenges: the ICPC penalty and solve times can count seconds instead of minutes; the scoreboard then shows solves as 47:05 and the Contest API export writes RELTIME.
+- Challenges: "Show tries waiting for a verdict" can hide pending tries, including those behind the freeze, from the public scoreboard. The jury view always shows them.
+- Challenges: adding a problem offers "A problem package" under "Or start from", next to the problem bank.
+- **Upgrade notes:** run `bogey db migrate` before updating the runner; a new runner records IOI judgings with each test group's points, which the database needs challenges migration 10 for.
 
 ## 2.4.0 (2026-10-24)
 

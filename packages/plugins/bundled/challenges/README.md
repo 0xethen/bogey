@@ -16,7 +16,8 @@ and the page shows it from a copy typed as a PDF, so a file that isn't one can't
 ## Problem packages
 
 The jury can bring a problem in from a Kattis / ICPC problem package (a ZIP) and take one out, from the Jury
-page. A package imported as a new problem is added hidden.
+page, or from "A problem package" under "Or start from" when adding a problem. A package imported as a new problem is
+added hidden.
 
 What is read:
 
@@ -109,16 +110,29 @@ and the event's team size; it lists what it will change before you apply it, and
 | Contest style (ranking)      | ICPC         | IOI            | Code golf     | scoreboard type                      |
 | Type of new problems         | Pass/fail    | Partial credit | Shortest code | problem `points`, `scoring`          |
 | Penalty per wrong answer     | 20 minutes   | (not used)     | (not used)    | `penalty_time`                       |
+| Time is counted in           | Minutes      | (not used)     | (not used)    | `score_in_seconds`                   |
 | Compile errors count         | Off          | (not used)     | (not used)    | `compile_penalty`                    |
-| Which solution scores        | (not used)   | Best           | (not used)    | best submission                      |
+| Which solution scores        | (not used)   | Each subtask   | (not used)    | best submission                      |
 | Tries per problem            | No limit     | 50             | No limit      | `submission_rate_limit`              |
+| Tests a solution runs        | Up to a fail | (every test)   | (default)     | `lazy_eval_results`                  |
 | What teams see of a solution | Verdict only | Each test      | Each test     | `show_compile`, `show_sample_output` |
 | Freeze the scoreboard        | Last 60 min  | Never          | Never         | contest `freeze`                     |
 
 Other DOMjudge settings map to: `verification_required` → "Jury verifies results", `show_compile` → "Show error
-messages", the contest's `unfreeze` → "Reveal the final standings". Lazy evaluation is fixed: pass/fail problems stop at
-the first failing test, partial-credit problems run every test. Scoring each subtask by its best run across solutions
-(IOI since 2017) isn't offered; partial credit takes one solution's score.
+messages", `show_pending` → "Show tries waiting for a verdict", the contest's `unfreeze` → "Reveal the final standings".
+DOMjudge's `show_teams_submissions` is "What teams see of a solution".
+
+- **Which solution scores** (partial credit only): the best solution, the last judged one, or each subtask's best result
+  across all of a team's solutions (IOI since 2017). For that, the runner records each test group's points with the
+  judging (`group_scores`); a test outside any group is a group of its own. A judging from before 2.5 has no group points
+  and counts by its whole score.
+- **Tests a solution runs**: pass/fail and shortest-code problems stop at the first failing test unless this is "Every
+  test". Partial-credit problems always run every test, apart from a group that stops at its first failure.
+- **Time is counted in** seconds: the time to each solve and the penalty are both seconds, and the board shows solves as
+  `47:05`. The setting's key is still `penaltyMinutes`. The Contest API export then writes `penalty_time`, `total_time`
+  and each problem's `time` as RELTIME instead of whole minutes.
+- **Show tries waiting for a verdict** off: the public board leaves out tries that have no verdict yet, including those
+  hidden by the freeze. The jury view always shows them.
 
 ## Tests
 

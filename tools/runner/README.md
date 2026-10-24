@@ -72,10 +72,13 @@ host's Docker to mount its folders into the containers it starts. It must belong
    | `CE`    | it didn't compile                                                 |
    | `JE`    | the problem is broken (no tests), or the runner kept failing      |
 
-   The judging's verdict is the first failure, or `AC`. ICPC and golf stop at the first failure; IOI runs everything.
+   The judging's verdict is the first failure, or `AC`. ICPC and golf stop at the first failure unless the claim says
+   `run_all` (the contest's "Tests a solution runs" is "Every test"); IOI runs everything.
 
-5. `challenges_record_judging` stores the verdict, the score (IOI), the slowest test, and every run with a short excerpt of its
-   output (who may read those is the database's call: teams see their samples only).
+5. `challenges_record_judging` stores the verdict, the score (IOI) and each test group's points (`p_groups`, IOI only), the
+   slowest test, and every run with a short excerpt of its output (who may read those is the database's call: teams see their
+   samples only). A runner of this version needs the database's challenges migration 10 for IOI judgings; update the
+   database first.
 
 Limits arrive from the database already clamped to the organization's limits, and the runner clamps them again to the host's
 (`BOGEY_RUNNER_MAX_*`), so a problem can't ask for more than the machine is willing to give.

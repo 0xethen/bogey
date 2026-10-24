@@ -22,7 +22,9 @@ description: Bogey (hackathon platform) challenges/judging conventions — the o
 > (score each test), `shortest` sends `"golf"` and `pass_fail` sends `"icpc"`. The contest's own
 > `scoring` setting only decides how the scoreboard ranks. A new problem's type comes from `defaultKind`
 > (`"style"` follows `scoring`) in the `challenges_problem_kind` trigger, and `scoreFrom` picks whether a
-> partial problem's best or last judged solution scores. The settings' SQL defaults live in
+> partial problem's best or last judged solution scores, or (`subtasks`) each test group's best points
+> across solutions, from `challenges_judgings.group_scores` that the runner records (`p_groups`). The
+> claim's `run_all` comes from `testRun`. The settings' SQL defaults live in
 > `private.challenges_settings`; keep them equal to the manifest's.
 >
 > Scoring `golf` reaches the runner as `scoring: "golf"` in the claimed judging. A golf
