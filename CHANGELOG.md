@@ -10,6 +10,9 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Contributors: `tsc` at the repository root checks only the root files, and `vpr typecheck` runs tsc in every package (never cached).
+- Loaders use TanStack Query's `queryClient.query` instead of the deprecated `ensureQueryData` and `fetchQuery`; nothing changes for users.
+
 ## 2.4.1 (2026-10-24)
 
 - "View as" now applies to the data too, not only the screens: while previewing a role, the database answers as that role, so a participant preview no longer shows hidden test cases or anything else that role can't see. The preview is kept for the browser session across tabs rather than per tab.
