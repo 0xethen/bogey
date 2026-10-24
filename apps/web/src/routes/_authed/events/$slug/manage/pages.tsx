@@ -177,7 +177,6 @@ function Tabs() {
             index={index}
             noun={each.label}
             numbered={false}
-            handle={false}
             editing={false}
             selected={selected === each.key}
             onEdit={() => setSelected(selected === each.key ? null : each.key)}

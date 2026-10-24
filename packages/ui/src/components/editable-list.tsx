@@ -1,4 +1,12 @@
-import { createContext, useContext, type ComponentProps, type ReactNode } from "react";
+import {
+  Children,
+  createContext,
+  useContext,
+  useState,
+  type ComponentProps,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useUiText } from "../lib/ui-text.ts";
 import { Feedback, PointerActivationConstraints, PointerSensor } from "@dnd-kit/dom";
 import {
@@ -11,6 +19,7 @@ import {
 } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { IconCheck, IconCopy, IconGripVertical, IconPencil, IconTrash } from "@tabler/icons-react";
+import { useReducedMotion } from "@bogey/ui/hooks/reduced-motion";
 import { cn } from "@bogey/ui/lib/utils";
 import { Button } from "./button.tsx";
 
@@ -19,13 +28,23 @@ export interface EditableListPosition {
   index: number;
 }
 
-const InGroup = createContext(false);
+type GroupMove = (from: EditableListPosition, to: EditableListPosition) => void;
+
+interface Mover {
+  move: (from: number, to: number) => void;
+  count: number;
+  announce: (message: string) => void;
+}
+
+const InGroup = createContext<GroupMove | null>(null);
 const Horizontal = createContext(false);
 const ListId = createContext<string | undefined>(undefined);
+const ListMover = createContext<Mover | null>(null);
+const DropBefore = createContext<string | null>(null);
 
 const ITEM = "editable-list-item";
-
-const DropBefore = createContext<string | null>(null);
+const END = ":end";
+const REMOVE = "editable-list:remove";
 
 const sensors: ComponentProps<typeof DragDropProvider>["sensors"] = (defaults) => [
   ...defaults.filter((sensor) => sensor !== PointerSensor),
@@ -37,6 +56,13 @@ const sensors: ComponentProps<typeof DragDropProvider>["sensors"] = (defaults) =
   }),
 ];
 
+const STILL: ComponentProps<typeof DragDropProvider>["plugins"] = (defaults) => [
+  ...defaults.filter((plugin) => plugin !== Feedback),
+  Feedback.configure({ dropAnimation: null, keyboardTransition: null }),
+];
+
+const INSTANT = { duration: 0, idle: false };
+
 const KEEP_IN_PLACE = [Feedback.configure({ feedback: "clone" })];
 
 function addedKey(data: unknown): string | null {
@@ -45,13 +71,27 @@ function addedKey(data: unknown): string | null {
     : null;
 }
 
+function Provider(props: Omit<ComponentProps<typeof DragDropProvider>, "sensors" | "plugins">) {
+  const reduced = useReducedMotion();
+  return <DragDropProvider sensors={sensors} plugins={reduced ? STILL : undefined} {...props} />;
+}
+
+function Announcer({ message }: { message: string }) {
+  return (
+    <p role="status" className="sr-only">
+      {message}
+    </p>
+  );
+}
+
+/** Lets items move between several EditableLists (each with an `id`), and in from sources. */
 export function EditableListGroup({
   onMove,
   onAdd,
   onRemove,
   children,
 }: {
-  onMove: (from: EditableListPosition, to: EditableListPosition) => void;
+  onMove: GroupMove;
   onAdd?: (key: string, to: EditableListPosition) => void;
   onRemove?: (from: EditableListPosition) => void;
   children: ReactNode;
@@ -94,24 +134,23 @@ export function EditableListGroup({
   };
 
   return (
-    <DragDropProvider sensors={sensors} onDragOver={over} onDragEnd={end}>
-      <InGroup value={true}>{children}</InGroup>
-    </DragDropProvider>
+    <Provider onDragOver={over} onDragEnd={end}>
+      <InGroup value={onMove}>{children}</InGroup>
+    </Provider>
   );
 }
 
+/** Something to drag into an EditableListGroup's lists; clicking it calls `onActivate`. */
 export function EditableListSource({
   id,
   onActivate,
   title,
-  onPreview,
   className,
   children,
 }: {
   id: string;
   onActivate?: () => void;
   title?: string;
-  onPreview?: (shown: boolean) => void;
   className?: string;
   children: ReactNode;
 }) {
@@ -126,16 +165,10 @@ export function EditableListSource({
       ref={ref}
       type="button"
       onClick={onActivate}
-      title={onPreview ? undefined : title}
       aria-description={title}
-      onPointerEnter={onPreview && (() => onPreview(true))}
-      onPointerLeave={onPreview && (() => onPreview(false))}
-      onFocus={onPreview && (() => onPreview(true))}
-      onBlur={onPreview && (() => onPreview(false))}
       data-dragging={isDragging || undefined}
       className={cn(
-        "cursor-grab rounded-2xl border border-border bg-background text-left transition-[background-color,border-color,box-shadow] hocus:border-accent/30 hocus:bg-accent/60 active:cursor-grabbing",
-        isDragging && "border-accent/30 bg-accent/60 opacity-60 shadow-lg",
+        "cursor-grab text-left transition-[background-color,border-color,box-shadow,opacity] active:cursor-grabbing data-dragging:opacity-50",
         className,
       )}
     >
@@ -158,16 +191,26 @@ export function EditableList({
   orientation?: "vertical" | "horizontal";
   children: ReactNode;
 }) {
-  const grouped = useContext(InGroup);
-  const hasItems = Array.isArray(children) ? children.length > 0 : !!children;
-  if (grouped && id !== undefined) {
+  const group = useContext(InGroup);
+  const [message, announce] = useState("");
+  const count = Children.toArray(children).length;
+  if (group && id !== undefined) {
     return (
-      <GroupedList id={id} empty={hasItems ? undefined : empty}>
-        {children}
-      </GroupedList>
+      <ListMover
+        value={{
+          move: (from, to) => group({ list: id, index: from }, { list: id, index: to }),
+          count,
+          announce,
+        }}
+      >
+        <GroupedList id={id} empty={count > 0 ? undefined : empty}>
+          {children}
+        </GroupedList>
+        <Announcer message={message} />
+      </ListMover>
     );
   }
-  if (!hasItems && empty) return <p className="text-sm text-muted-fg">{empty}</p>;
+  if (count === 0 && empty) return <p className="text-sm text-muted-fg">{empty}</p>;
 
   const end = (event: DragEndEvent) => {
     const { source } = event.operation;
@@ -176,24 +219,25 @@ export function EditableList({
   };
 
   return (
-    <DragDropProvider sensors={sensors} onDragEnd={end}>
-      <Horizontal value={orientation === "horizontal"}>
-        <ol
-          className={cn(
-            "flex gap-3",
-            orientation === "horizontal" ? "flex-row flex-wrap gap-2" : "flex-col",
-          )}
-        >
-          {children}
-        </ol>
-      </Horizontal>
-    </DragDropProvider>
+    <Provider onDragEnd={end}>
+      <ListMover value={{ move: (from, to) => onMove?.(from, to), count, announce }}>
+        <Horizontal value={orientation === "horizontal"}>
+          <ol
+            className={cn(
+              "flex",
+              orientation === "horizontal" ? "flex-row flex-wrap gap-2" : "flex-col gap-2",
+            )}
+          >
+            {children}
+          </ol>
+        </Horizontal>
+        <Announcer message={message} />
+      </ListMover>
+    </Provider>
   );
 }
 
-const END = ":end";
-const REMOVE = "editable-list:remove";
-
+/** Holds EditableListSources; while an item is dragged it turns into a place to drop it to remove it. */
 export function EditableListPalette({
   label,
   removeLabel,
@@ -263,9 +307,9 @@ function GroupedList({
           data-adding={adding || undefined}
           data-over={over || undefined}
           className={cn(
-            "flex flex-col gap-3 rounded-3xl transition-[background-color,box-shadow,padding,margin] duration-200 ease-out",
-            "data-adding:-m-3 data-adding:bg-accent/50 data-adding:p-3 data-adding:ring-1 data-adding:ring-border",
-            "data-over:bg-accent data-over:ring-ring/40",
+            "flex flex-col gap-3 rounded-3xl outline-offset-8 transition-[background-color,outline-color] duration-200 ease-out",
+            "data-adding:outline-2 data-adding:outline-border data-adding:outline-dashed",
+            "data-over:bg-primary/5 data-over:outline-primary/40",
           )}
         >
           {children}
@@ -283,7 +327,7 @@ function DropZone({ id, children }: { id: string; children: ReactNode }) {
     <li
       ref={ref}
       data-over={isDropTarget || undefined}
-      className="flex min-h-12 items-center rounded-2xl border border-dashed border-border px-4 text-sm text-muted-fg transition-colors duration-200 data-over:border-ring data-over:bg-accent data-over:text-fg"
+      className="flex min-h-12 items-center justify-center rounded-2xl border border-dashed border-border px-4 text-center text-sm text-muted-fg transition-colors duration-200 data-over:border-primary/50 data-over:bg-primary/5 data-over:text-fg"
     >
       {children}
     </li>
@@ -293,12 +337,7 @@ function DropZone({ id, children }: { id: string; children: ReactNode }) {
 function EndZone({ id }: { id: string }) {
   const { ref, isDropTarget } = useDroppable({ id, type: "editable-list", accept: ITEM });
   return (
-    <li
-      ref={ref}
-      aria-hidden
-      data-over={isDropTarget || undefined}
-      className="relative min-h-16 flex-1 rounded-2xl transition-colors duration-200 data-over:bg-accent"
-    >
+    <li ref={ref} aria-hidden className="relative min-h-16 flex-1 rounded-2xl">
       {isDropTarget && <DropLine className="top-0" />}
     </li>
   );
@@ -308,47 +347,68 @@ function DropLine({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "pointer-events-none absolute inset-x-1 h-1 rounded-full bg-primary shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] animate-in duration-200 fade-in slide-in-from-top-2",
+        "pointer-events-none absolute inset-x-0 h-0.5 rounded-full bg-primary motion-safe:animate-in motion-safe:fade-in",
+        "before:absolute before:-top-[3px] before:-left-1 before:size-2 before:rounded-full before:border-2 before:border-primary before:bg-background",
         className,
       )}
     />
   );
 }
 
+// the empty slot dnd-kit leaves where a dragged item will land
+const SLOT =
+  "data-dnd-placeholder:after:visible data-dnd-placeholder:after:absolute data-dnd-placeholder:after:inset-0 data-dnd-placeholder:after:rounded-[inherit] data-dnd-placeholder:after:border-2 data-dnd-placeholder:after:border-dashed data-dnd-placeholder:after:border-primary/40 data-dnd-placeholder:after:bg-primary/5 data-dnd-placeholder:after:content-['']";
+
+const KEY_STEP: Record<string, number> = {
+  ArrowUp: -1,
+  ArrowLeft: -1,
+  ArrowDown: 1,
+  ArrowRight: 1,
+};
+
+/**
+ * A row in an EditableList: a drag handle, a preview (or the fields while editing), and actions
+ * at the end. Alt and an arrow key on the handle moves it. See docs/architecture/ui-conventions.md.
+ */
 export function EditableListItem({
   id,
   index,
   noun = "item",
   title,
+  icon,
+  numbered = true,
   onRemove,
   onDuplicate,
   confirmRemove,
+  actions: extra,
   footer,
   preview,
   editing = true,
   selected = false,
+  dimmed = false,
   onEdit,
   onDone,
-  numbered = true,
-  handle = true,
-  editWith = "card",
   children,
 }: {
   id: string;
   index: number;
   noun?: string;
+  /** A header above the preview, for items that show a large preview like a homepage block. */
   title?: ReactNode;
+  icon?: ReactNode;
   numbered?: boolean;
-  handle?: boolean;
-  editWith?: "card" | "button";
   onRemove?: () => void;
   onDuplicate?: () => void;
   confirmRemove?: string;
+  /** More buttons, shown before the built-in ones. */
+  actions?: ReactNode;
   footer?: ReactNode;
   preview?: ReactNode;
   editing?: boolean;
   /** Marked as the one being edited elsewhere, like a tab whose settings show below the row. */
   selected?: boolean;
+  /** Fades the preview, for items that are kept but not shown. */
+  dimmed?: boolean;
   onEdit?: () => void;
   onDone?: () => void;
   children?: ReactNode;
@@ -356,33 +416,56 @@ export function EditableListItem({
   const t = useUiText();
   const group = useContext(ListId);
   const horizontal = useContext(Horizontal);
+  const mover = useContext(ListMover);
   const dropsBefore = useContext(DropBefore) === id;
+  const reduced = useReducedMotion();
   const { ref, handleRef, isDragging } = useSortable({
     id,
     index,
     type: ITEM,
     accept: ITEM,
-    disabled: !handle && editing && preview !== undefined,
+    ...(reduced ? { transition: INSTANT } : {}),
     ...(group !== undefined ? { group } : {}),
   });
   const label = numbered ? `${noun} ${index + 1}` : noun;
   const previewing = preview !== undefined && !editing;
-  const cardClicks = previewing && editWith === "card";
+  const clickable = previewing && onEdit !== undefined;
 
-  const grip = handle && (
+  const keyMove = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const step = KEY_STEP[event.key];
+    if (!event.altKey || step === undefined || !mover) return;
+    event.preventDefault();
+    const to = index + step;
+    if (to < 0 || to >= mover.count) return;
+    const handle = event.currentTarget;
+    mover.move(index, to);
+    mover.announce(t("ui.movedTo", { name: label, position: to + 1, count: mover.count }));
+    // reordering the list drops focus from the moved row
+    requestAnimationFrame(() => handle.focus());
+  };
+
+  const grip = (
     <button
       ref={handleRef}
       type="button"
+      data-slot="editable-handle"
       aria-label={t("ui.reorder", { name: label })}
-      className="relative z-1 flex h-6 w-5 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-fg hocus:bg-muted hocus:text-fg active:cursor-grabbing"
+      aria-description={t("ui.reorderHint")}
+      aria-keyshortcuts={horizontal ? "Alt+ArrowLeft Alt+ArrowRight" : "Alt+ArrowUp Alt+ArrowDown"}
+      onKeyDown={keyMove}
+      className={cn(
+        "relative z-1 flex shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-muted-fg/70 transition-colors hocus:bg-muted hocus:text-fg active:cursor-grabbing group-data-dragging/item:text-fg",
+        horizontal ? "size-6" : "size-8",
+      )}
     >
       <IconGripVertical className="size-4" />
     </button>
   );
 
-  const actions = (
+  const actions = !horizontal && (
     <div className="relative z-1 flex shrink-0 items-center gap-0.5">
-      {previewing && editWith === "button" && (
+      {extra}
+      {clickable && (
         <Button
           type="button"
           size="icon-sm"
@@ -441,12 +524,27 @@ export function EditableListItem({
     </div>
   );
 
-  const content = cardClicks ? (
+  const shown = (
+    <div
+      inert
+      data-slot="editable-content"
+      className={cn(
+        "flex min-w-0 flex-col justify-center transition-opacity",
+        !horizontal && "min-h-8",
+        dimmed && "opacity-50",
+      )}
+    >
+      {preview}
+    </div>
+  );
+
+  const body = clickable ? (
     <div
       role="button"
       tabIndex={0}
       data-slot="editable-preview"
       aria-label={t("ui.editNamed", { name: label })}
+      aria-pressed={selected || undefined}
       onClick={onEdit}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -457,69 +555,83 @@ export function EditableListItem({
       }}
       className="min-w-0 flex-1 outline-none after:absolute after:inset-0 after:rounded-[inherit]"
     >
-      <div inert className={cn(!horizontal && "py-1.5")}>
-        {preview}
-      </div>
-    </div>
-  ) : previewing ? (
-    <div inert className="min-w-0 flex-1 py-1.5">
-      {preview}
+      {shown}
     </div>
   ) : (
-    <div className="flex min-w-0 flex-1 flex-col gap-3">{children}</div>
+    <div className="min-w-0 flex-1">{shown}</div>
   );
+
+  const heading =
+    title !== undefined ? (
+      <div className="flex h-8 min-w-0 flex-1 items-center gap-2 text-sm font-medium">
+        {icon && <span className="flex shrink-0 text-muted-fg [&_svg]:size-4">{icon}</span>}
+        <span className="min-w-0 truncate">{title}</span>
+      </div>
+    ) : editing ? (
+      <div className="flex h-8 min-w-0 flex-1 items-center text-sm font-medium text-muted-fg first-letter:uppercase">
+        {label}
+      </div>
+    ) : (
+      <>
+        {numbered && (
+          <span className="flex h-8 w-5 shrink-0 items-center justify-end text-sm text-muted-fg tabular-nums">
+            {index + 1}
+          </span>
+        )}
+        {icon && (
+          <span className="flex h-8 shrink-0 items-center text-muted-fg [&_svg]:size-4">
+            {icon}
+          </span>
+        )}
+        {body}
+      </>
+    );
 
   return (
     <li
       ref={ref}
       data-dragging={isDragging || undefined}
-      className={cn(
-        "relative flex flex-col gap-3 rounded-2xl border border-border bg-background transition-[background-color,border-color,box-shadow]",
-        horizontal ? "px-3 py-1.5" : "p-3",
-        cardClicks &&
-          "has-[[data-slot=editable-preview]:hover]:border-accent/30 has-[[data-slot=editable-preview]:hover]:bg-accent/60 has-[[data-slot=editable-preview]:focus-visible]:focus-ring",
-        !handle &&
-          previewing &&
-          "cursor-grab hover:border-accent/30 hover:bg-accent/60 active:cursor-grabbing",
-        ((preview !== undefined && editing) || selected) && "border-accent/30 bg-accent/60",
-        isDragging && "border-accent/30 bg-accent/60 shadow-lg backdrop-blur-xs",
-      )}
+      data-selected={selected || undefined}
+      className={cn("group/item relative", horizontal ? "rounded-xl" : "rounded-2xl", SLOT)}
     >
       {dropsBefore && <DropLine className="-top-2" />}
-      {title !== undefined ? (
-        <>
-          <header className="-mx-3 flex items-center gap-2 border-b border-border px-3 pb-3">
-            {grip}
-            <div className="min-w-0 flex-1 truncate text-xs font-medium tracking-wide text-muted-fg uppercase">
-              {title}
-            </div>
-            {actions}
-          </header>
-          {content}
-        </>
-      ) : (
-        <div className={cn("flex items-start", !horizontal && "gap-2")}>
-          {grip && <div className="flex h-8 shrink-0 items-center">{grip}</div>}
-          {numbered && (
-            <span className="flex h-8 w-5 shrink-0 items-center text-sm text-muted-fg tabular-nums">
-              {index + 1}.
-            </span>
-          )}
-          {content}
-          {actions}
-        </div>
-      )}
-      {footer && (
+      <div
+        className={cn(
+          "relative flex flex-col rounded-[inherit] border border-border bg-background transition-[background-color,border-color,box-shadow]",
+          clickable &&
+            "has-[[data-slot=editable-preview]:hover]:border-ring/30 has-[[data-slot=editable-preview]:hover]:bg-accent/40 has-[[data-slot=editable-preview]:focus-visible]:focus-ring",
+          editing && preview !== undefined && "border-ring/40 shadow-sm",
+          selected && "border-primary/50 bg-accent/40 ring-2 ring-primary/15",
+          "group-data-dragging/item:cursor-grabbing group-data-dragging/item:border-primary/40 group-data-dragging/item:shadow-xl group-data-dragging/item:ring-2 group-data-dragging/item:ring-primary/15",
+        )}
+      >
         <div
           className={cn(
-            "text-xs text-muted-fg",
-            title === undefined && (handle || numbered) && "pl-7",
-            title === undefined && handle && numbered && "pl-14",
+            "flex gap-1",
+            horizontal ? "items-center py-1 pr-3 pl-1" : "items-start p-2",
           )}
         >
-          {footer}
+          {grip}
+          {heading}
+          {actions}
         </div>
-      )}
+        {title !== undefined && preview !== undefined && (
+          <div className="flex border-t border-border p-3">{body}</div>
+        )}
+        {editing && children && (
+          <div
+            className={cn(
+              "flex flex-col gap-3 px-3 pb-3",
+              title !== undefined ? "border-t border-border pt-3" : "sm:pl-11",
+            )}
+          >
+            {children}
+          </div>
+        )}
+        {footer && !horizontal && (
+          <div className="-mt-1 px-3 pb-2.5 text-xs text-muted-fg sm:pl-11">{footer}</div>
+        )}
+      </div>
     </li>
   );
 }
