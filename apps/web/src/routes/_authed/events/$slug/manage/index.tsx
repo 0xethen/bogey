@@ -90,8 +90,8 @@ function RouteComponent() {
     <Button
       size="sm"
       variant={variant}
-      nativeButton={false}
       render={<Link to={`/events/$slug/manage/${to}`} params={params} />}
+      nativeButton={false}
     >
       {label}
     </Button>

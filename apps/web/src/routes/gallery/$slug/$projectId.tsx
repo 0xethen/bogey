@@ -78,8 +78,8 @@ function Project({ gallery, project }: { gallery: Gallery; project: TeamSubmissi
           variant="ghost"
           tooltip={t("gallery.backToProjects")}
           aria-label={t("gallery.backToProjects")}
-          nativeButton={false}
           render={<Link to="/gallery/$slug" params={{ slug: gallery.event.slug }} />}
+          nativeButton={false}
         >
           <IconArrowLeft />
         </Button>

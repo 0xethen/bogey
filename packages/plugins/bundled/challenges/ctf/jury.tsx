@@ -58,7 +58,7 @@ export function CtfJuryPage({ eventId, splat }: Context) {
 
 function BackToJury() {
   return (
-    <Button variant="outline" nativeButton={false} render={<Link to="/jury" />}>
+    <Button variant="outline" render={<Link to="/jury" />} nativeButton={false}>
       <IconArrowLeft />
       All challenges
     </Button>

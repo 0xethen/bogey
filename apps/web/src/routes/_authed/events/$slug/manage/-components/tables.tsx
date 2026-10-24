@@ -101,9 +101,9 @@ export function Tables({ eventId, slug }: { eventId: string; slug: string }) {
         <Button
           size="sm"
           variant="outline"
-          nativeButton={false}
           disabled={numbered === 0}
           render={<Link to="/events/$slug/tables" params={{ slug }} />}
+          nativeButton={false}
         >
           {t("tablesEditor.print")}...
         </Button>

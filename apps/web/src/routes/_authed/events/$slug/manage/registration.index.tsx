@@ -92,8 +92,8 @@ function RouteComponent() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={exportHref(event.slug, "registrations")} download />}
+            nativeButton={false}
           >
             <IconDownload />
             {t("manageReg.export")}

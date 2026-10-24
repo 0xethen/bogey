@@ -76,8 +76,8 @@ function RouteComponent() {
         <Button
           size="sm"
           variant="ghost"
-          nativeButton={false}
           render={<Link to="/events/$slug/results" params={{ slug: event.slug }} />}
+          nativeButton={false}
         >
           <IconArrowLeft />
           {t("results.back")}

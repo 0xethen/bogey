@@ -47,7 +47,7 @@ export function Scoreboard({ eventId, settings }: PluginContext<Settings>) {
       title="Scoreboard"
       description={describe(settings, board.data)}
       actions={
-        <Button size="sm" variant="outline" nativeButton={false} render={<Link to="/problems" />}>
+        <Button size="sm" variant="outline" render={<Link to="/problems" />} nativeButton={false}>
           Problems
         </Button>
       }
@@ -244,8 +244,8 @@ export function ContestPanel({ eventId, settings }: PluginContext<Settings>) {
         <Button
           size="sm"
           variant={running ? "default" : "outline"}
-          nativeButton={false}
           render={<Link to="/problems" />}
+          nativeButton={false}
         >
           {running ? `Go to ${ctf ? "Challenges" : "Problems"}` : ctf ? "Challenges" : "Problems"}
         </Button>

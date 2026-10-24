@@ -171,9 +171,9 @@ function RouteComponent() {
           tooltip={t("gallery.backToProjects")}
           size="icon-sm"
           variant="ghost"
-          nativeButton={false}
           aria-label={t("gallery.backToProjects")}
           render={<Link to="/gallery/$slug" params={{ slug }} search={filter} />}
+          nativeButton={false}
         >
           <IconArrowLeft />
         </Button>

@@ -193,8 +193,8 @@ function ParticipantSubmission() {
           <p className="text-sm text-muted-fg">{t("sub.teamFirst")}</p>
           <div>
             <Button
-              nativeButton={false}
               render={<Link to="/events/$slug/team" params={{ slug: event.slug }} />}
+              nativeButton={false}
             >
               {t("sub.goToTeam")}
             </Button>

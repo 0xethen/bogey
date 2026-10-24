@@ -116,8 +116,8 @@ export function NextSteps({
                 <Button
                   key="register"
                   size="sm"
-                  nativeButton={false}
                   render={<Link to="/events/$slug/register" params={params} />}
+                  nativeButton={false}
                 >
                   {t("steps.register")}
                 </Button>,
@@ -205,8 +205,8 @@ export function NextSteps({
               <Button
                 key="team"
                 size="sm"
-                nativeButton={false}
                 render={<Link to="/events/$slug/team" params={params} />}
+                nativeButton={false}
               >
                 {t("steps.goToTeam")}
               </Button>,
@@ -237,10 +237,10 @@ export function NextSteps({
               <Button
                 key="submit"
                 size="sm"
-                nativeButton={false}
                 render={
                   <Link to="/events/$slug/submission" params={params} search={{ form: form.key }} />
                 }
+                nativeButton={false}
               >
                 {submission ? t("steps.continue") : t("steps.start")}
               </Button>,

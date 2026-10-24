@@ -35,7 +35,7 @@ export function PublicBar({
       <div className="flex items-center gap-1">
         <ReportPage />
         {signedIn ? (
-          <Button size="sm" variant="outline" nativeButton={false} render={<Link to="/events" />}>
+          <Button size="sm" variant="outline" render={<Link to="/events" />} nativeButton={false}>
             {t("nav.yourEvents")}
           </Button>
         ) : (
@@ -43,8 +43,8 @@ export function PublicBar({
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<Link to="/auth/login" search={{ redirect: here }} />}
+              nativeButton={false}
             >
               {t("nav.signIn")}
             </Button>

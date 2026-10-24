@@ -106,8 +106,8 @@ function RouteComponent() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={exportHref(event.slug, "votes")} download />}
+            nativeButton={false}
           >
             <IconDownload />
             {t("manageJudging.voteCounts")}
@@ -169,8 +169,8 @@ function Results() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={exportHref(event.slug, "results")} download />}
+            nativeButton={false}
           >
             <IconDownload />
             {t("results.title")}
@@ -178,8 +178,8 @@ function Results() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={exportHref(event.slug, "scores")} download />}
+            nativeButton={false}
           >
             <IconDownload />
             {t("manageJudging.scores")}
@@ -187,8 +187,8 @@ function Results() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={exportHref(event.slug, "awards")} download />}
+            nativeButton={false}
           >
             <IconDownload />
             {t("results.awards")}

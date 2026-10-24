@@ -242,7 +242,6 @@ function ExportForm({ event, formKey }: { event: { id: string; slug: string }; f
         <div className="flex items-center gap-3">
           {tried && columns.length === 0 && <FieldError>{t("projectExport.pickOne")}</FieldError>}
           <Button
-            nativeButton={false}
             render={
               <a
                 href={projectExportHref(event.slug, { form: form.key, columns, format })}
@@ -253,6 +252,7 @@ function ExportForm({ event, formKey }: { event: { id: string; slug: string }; f
                 }}
               />
             }
+            nativeButton={false}
           >
             <IconDownload />
             {t("projectExport.download")}

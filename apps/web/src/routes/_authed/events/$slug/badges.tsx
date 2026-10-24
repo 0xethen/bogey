@@ -70,8 +70,8 @@ function Badges() {
           <Button
             size="sm"
             variant="ghost"
-            nativeButton={false}
             render={<Link to="/events/$slug/manage/people" params={{ slug: event.slug }} />}
+            nativeButton={false}
           >
             {t("common.back")}
           </Button>

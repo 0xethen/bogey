@@ -38,8 +38,8 @@ function RouteComponent() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={exportHref(filteredEvent.slug, "audit")} download />}
+            nativeButton={false}
           >
             <IconDownload />
             {t("audit.export", { event: filteredEvent.name })}

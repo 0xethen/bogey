@@ -186,8 +186,8 @@ function RouteComponent() {
               <Button
                 size="sm"
                 variant="outline"
-                nativeButton={false}
                 render={<Link to="/events/$slug/manage" params={{ slug: event.slug }} />}
+                nativeButton={false}
               >
                 {t("home.manage")}
               </Button>

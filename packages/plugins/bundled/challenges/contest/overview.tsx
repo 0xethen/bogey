@@ -39,8 +39,8 @@ export function ManageOverview({ eventId, settings }: PluginContext<Settings>) {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<RouterLink to={settingsUrl} />}
+            nativeButton={false}
           >
             All settings
           </Button>

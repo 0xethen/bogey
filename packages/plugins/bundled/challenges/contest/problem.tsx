@@ -139,8 +139,8 @@ export function Workspace({ problem }: { problem: Problem }) {
           variant="ghost"
           tooltip="Back to problems"
           aria-label="Back to problems"
-          nativeButton={false}
           render={<Link to="/problems" />}
+          nativeButton={false}
         >
           <IconArrowLeft />
         </Button>
@@ -151,8 +151,8 @@ export function Workspace({ problem }: { problem: Problem }) {
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<Link to="/jury" splat={problem.slug} />}
+              nativeButton={false}
             >
               Edit
             </Button>
@@ -160,8 +160,8 @@ export function Workspace({ problem }: { problem: Problem }) {
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<Link to="/scoreboard" />}
+              nativeButton={false}
             >
               Scoreboard
             </Button>

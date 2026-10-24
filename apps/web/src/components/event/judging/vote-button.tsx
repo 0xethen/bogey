@@ -50,8 +50,8 @@ export function VoteButton({ eventId, submissionId }: { eventId: string; submiss
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<Link to="/auth/login" />}
+            nativeButton={false}
           >
             <IconThumbUp />
             {t("vote.signIn")}

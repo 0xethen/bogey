@@ -34,7 +34,7 @@ export function NotFoundComponent() {
     >
       <FallbackMessage />
       <Screen.Actions>
-        <Button nativeButton={false} render={<a href="/" />}>
+        <Button render={<a href="/" />} nativeButton={false}>
           {t("notFound.home")}
         </Button>
         {canGoBack && (

@@ -98,7 +98,7 @@ function RouteComponent() {
   if (!source) {
     return (
       <Screen title={t("copy.title")} description={t("copy.choose")} width="narrow">
-        <Button nativeButton={false} render={<Link to="/events" />}>
+        <Button render={<Link to="/events" />} nativeButton={false}>
           {t("copy.backToEvents")}
         </Button>
       </Screen>
@@ -198,8 +198,8 @@ function CopyForm({
         </Alert>
         <div>
           <Button
-            nativeButton={false}
             render={<Link to="/events/$slug/manage" params={{ slug: reenter.slug }} />}
+            nativeButton={false}
           >
             {t("copy.openNew")}
           </Button>

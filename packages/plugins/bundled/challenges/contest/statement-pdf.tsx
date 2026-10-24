@@ -36,8 +36,8 @@ export function StatementPdf({ path, title }: { path: string; title: string }) {
         <Button
           size="sm"
           variant="outline"
-          nativeButton={false}
           render={<a href={url} download={`${title}.pdf`} />}
+          nativeButton={false}
         >
           <IconDownload />
           Download the statement

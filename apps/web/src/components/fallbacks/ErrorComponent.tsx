@@ -142,7 +142,7 @@ export function ErrorComponent({ error, reset }: ErrorComponentProps) {
             {t("notFound.back")}
           </Button>
         ) : (
-          <Button variant="outline" nativeButton={false} render={<a href="/" />}>
+          <Button variant="outline" render={<a href="/" />} nativeButton={false}>
             {t("notFound.home")}
           </Button>
         )}

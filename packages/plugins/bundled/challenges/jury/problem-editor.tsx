@@ -1088,8 +1088,8 @@ function MobileNav({ tab, slug, banked }: { tab: Tab; slug: string | undefined; 
               <Button
                 size="sm"
                 variant={tab === each.key ? "secondary" : "ghost"}
-                nativeButton={false}
                 render={<Link to="/jury" splat={tabSplat(slug ?? "new", each.key)} />}
+                nativeButton={false}
               >
                 {each.label}
               </Button>

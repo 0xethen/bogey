@@ -115,7 +115,7 @@ function RouteComponent() {
               <form.Submit pending={`${t("teamForm.creating")}...`}>
                 {t("adminOrgs.create")}
               </form.Submit>
-              <Button variant="ghost" nativeButton={false} render={<Link to="/admin/orgs" />}>
+              <Button variant="ghost" render={<Link to="/admin/orgs" />} nativeButton={false}>
                 {t("common.cancel")}
               </Button>
             </div>

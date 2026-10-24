@@ -172,8 +172,8 @@ function RouteComponent() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<Link to="/admin/orgs/$slug/limits" params={{ slug: org.slug }} />}
+            nativeButton={false}
           >
             {t("adminOrgs.limits")}
           </Button>
@@ -199,8 +199,8 @@ function RouteComponent() {
         <Button
           size="sm"
           variant="outline"
-          nativeButton={false}
           render={<Link to="/admin/orgs/new" />}
+          nativeButton={false}
         >
           <IconPlus />
           {t("adminOrgs.new")}
@@ -231,10 +231,10 @@ function OpenSite({ hostnames }: { hostnames: Tuple<string> }) {
         <Button
           size="sm"
           variant="outline"
-          nativeButton={false}
           render={
             <a href={siteUrl(hostnames[0] ?? "")} target="_blank" rel="noreferrer noopener" />
           }
+          nativeButton={false}
         >
           <IconExternalLink />
           {t("adminOrgs.openSite")}

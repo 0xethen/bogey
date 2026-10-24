@@ -302,13 +302,13 @@ export function AgendaView({
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    nativeButton={false}
                                     render={
                                       <Link
                                         to="/events/$slug/agenda/$sessionId/attendance"
                                         params={{ slug, sessionId: session.id }}
                                       />
                                     }
+                                    nativeButton={false}
                                   >
                                     {t("agenda.takeAttendance")}...
                                   </Button>

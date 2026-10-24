@@ -62,15 +62,15 @@ function RouteComponent() {
         size="icon"
         className="sm:hidden"
         aria-label={t("events.new")}
-        nativeButton={false}
         render={<Link to="/events/new" />}
+        nativeButton={false}
       >
         <IconPlus />
       </Button>
       <Button
         className="hidden sm:inline-flex"
-        nativeButton={false}
         render={<Link to="/events/new" />}
+        nativeButton={false}
       >
         <IconPlus />
         {t("events.new")}
@@ -135,8 +135,8 @@ function RouteComponent() {
                   <Button
                     size="sm"
                     variant="outline"
-                    nativeButton={false}
                     render={<Link to="/events/copy" search={{ from: template.id }} />}
+                    nativeButton={false}
                   >
                     {t("events.useTemplate")}...
                   </Button>

@@ -144,8 +144,8 @@ export function ProblemPackage({ problem }: { problem: Problem }) {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={problemPackageUrl(eventId, problem.id)} download />}
+            nativeButton={false}
           >
             <IconDownload />
             Export
@@ -169,8 +169,8 @@ export function ContestExport() {
         <Button
           size="sm"
           variant="outline"
-          nativeButton={false}
           render={<a href={ccsExportUrl(eventId)} download />}
+          nativeButton={false}
         >
           <IconDownload />
           Download

@@ -52,10 +52,10 @@ function RouteComponent() {
             <div className="flex flex-col gap-3 text-center">
               <Button
                 className="w-full"
-                nativeButton={false}
                 render={
                   <Link to="/auth/login" search={{ redirect: `/join/${token}`, invite: token }} />
                 }
+                nativeButton={false}
               >
                 {t("join.signIn")}
               </Button>
@@ -90,8 +90,8 @@ function SignedInJoin({
         <p className="text-sm">{t("join.registered")}</p>
         <Button
           className="w-full"
-          nativeButton={false}
           render={<Link to="/events/$slug" params={{ slug: eventSlug }} />}
+          nativeButton={false}
         >
           {t("welcome.goToEvent")}
         </Button>

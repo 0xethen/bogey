@@ -387,16 +387,16 @@ function RouteComponent() {
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<Link to="/events/$slug/badges" params={{ slug: event.slug }} />}
+              nativeButton={false}
             >
               {t("managePeople.printBadges")}...
             </Button>
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<a href={exportHref(event.slug, "members")} download />}
+              nativeButton={false}
             >
               <IconDownload />
               {t("manageTeams.export")}

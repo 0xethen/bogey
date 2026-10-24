@@ -126,8 +126,8 @@ export function LatestTry({
         <Button
           size="sm"
           variant="ghost"
-          nativeButton={false}
           render={<Link to="/submissions" splat={latest.id} />}
+          nativeButton={false}
         >
           {attempts.length > 1 ? `View all ${attempts.length}` : "Submissions"}
         </Button>
@@ -282,7 +282,7 @@ export function Submissions({ eventId, settings, splat }: PluginRouteContext<Set
       width="wide"
       description="Every solution your team has sent, and how each was judged."
       actions={
-        <Button size="sm" variant="outline" nativeButton={false} render={<Link to="/problems" />}>
+        <Button size="sm" variant="outline" render={<Link to="/problems" />} nativeButton={false}>
           Problems
         </Button>
       }

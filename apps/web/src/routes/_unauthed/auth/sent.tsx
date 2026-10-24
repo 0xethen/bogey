@@ -43,7 +43,6 @@ function RouteComponent() {
         </p> */}
         <Button
           variant="outline"
-          nativeButton={false}
           render={
             <Link
               to="/auth/otp"
@@ -51,6 +50,7 @@ function RouteComponent() {
               mask={{ to: "/auth/otp", search: { redirect } }}
             />
           }
+          nativeButton={false}
         >
           <IconPassword />
           {t("sent.enterCode")}

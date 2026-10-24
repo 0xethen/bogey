@@ -217,13 +217,13 @@ function RouteComponent() {
       {next && !progress.finished && (
         <div>
           <Button
-            nativeButton={false}
             render={
               <Link
                 to="/events/$slug/judging/$submissionId"
                 params={{ slug: event.slug, submissionId: next.submissionId }}
               />
             }
+            nativeButton={false}
           >
             {next.table
               ? t("judging.nextTable", { table: next.table })

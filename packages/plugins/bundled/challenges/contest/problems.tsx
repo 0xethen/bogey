@@ -59,15 +59,15 @@ export function Problems({ eventId, settings }: PluginRouteContext<Settings>) {
       actions={
         <div className="flex gap-2">
           {jury && (
-            <Button size="sm" variant="ghost" nativeButton={false} render={<Link to="/jury" />}>
+            <Button size="sm" variant="ghost" render={<Link to="/jury" />} nativeButton={false}>
               Jury
             </Button>
           )}
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<Link to="/scoreboard" />}
+            nativeButton={false}
           >
             Scoreboard
           </Button>

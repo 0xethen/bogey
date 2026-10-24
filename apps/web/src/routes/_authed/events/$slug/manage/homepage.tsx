@@ -57,10 +57,10 @@ function RouteComponent() {
       width="embedded"
       actions={
         <Button
-          nativeButton={false}
           render={
             <Link to="/events/$slug" params={{ slug: event.slug }} search={{ customize: "" }} />
           }
+          nativeButton={false}
         >
           <IconLayoutDashboard />
           {t("homepageSetup.customize")}...

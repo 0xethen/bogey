@@ -63,8 +63,8 @@ function Attendance() {
         <Button
           size="sm"
           variant="outline"
-          nativeButton={false}
           render={<a href={exportHref(event.slug, "attendance")} download />}
+          nativeButton={false}
         >
           <IconDownload />
           {t("manageTeams.export")}
@@ -94,13 +94,13 @@ function Attendance() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  nativeButton={false}
                   render={
                     <Link
                       to="/events/$slug/agenda/$sessionId/attendance"
                       params={{ slug: event.slug, sessionId: session.id }}
                     />
                   }
+                  nativeButton={false}
                 >
                   {t("agenda.takeAttendance")}...
                 </Button>

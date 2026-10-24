@@ -43,7 +43,6 @@ function Tables() {
           <Button
             size="sm"
             variant="ghost"
-            nativeButton={false}
             render={
               <Link
                 to="/events/$slug/manage/judging/demos"
@@ -51,6 +50,7 @@ function Tables() {
                 params={{ slug: event.slug }}
               />
             }
+            nativeButton={false}
           >
             {t("common.back")}
           </Button>

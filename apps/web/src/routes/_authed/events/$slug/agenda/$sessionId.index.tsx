@@ -59,13 +59,13 @@ function RouteComponent() {
               <Button
                 size="sm"
                 variant="outline"
-                nativeButton={false}
                 render={
                   <Link
                     to="/events/$slug/agenda/$sessionId/attendance"
                     params={{ slug: event.slug, sessionId: session.id }}
                   />
                 }
+                nativeButton={false}
               >
                 {t("agenda.takeAttendance")}...
               </Button>
@@ -74,7 +74,6 @@ function RouteComponent() {
               <Button
                 size="icon-sm"
                 variant="ghost"
-                nativeButton={false}
                 aria-label={t("agenda.editSession")}
                 tooltip={t("agenda.editSession")}
                 render={
@@ -85,6 +84,7 @@ function RouteComponent() {
                     hash="sessions"
                   />
                 }
+                nativeButton={false}
               >
                 <IconPencil />
               </Button>

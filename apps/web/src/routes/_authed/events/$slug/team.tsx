@@ -169,8 +169,8 @@ function ParticipantTeam() {
           <div>
             <Button
               variant="outline"
-              nativeButton={false}
               render={<Link to="/events/$slug/messages" params={{ slug: event.slug }} />}
+              nativeButton={false}
             >
               {t("team.messages")}
             </Button>
@@ -245,8 +245,8 @@ function YourTeam({ mine, teamsOpen }: { mine: MyTeam; teamsOpen: boolean }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    nativeButton={false}
                     render={<Link to="/events/$slug/messages" params={{ slug: event.slug }} />}
+                    nativeButton={false}
                   >
                     {t("team.messageOrganizers")}
                   </Button>

@@ -44,7 +44,6 @@ function RouteComponent() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={
               <Link
                 to="/events/$slug/messages"
@@ -52,6 +51,7 @@ function RouteComponent() {
                 search={{ c: ANNOUNCEMENTS }}
               />
             }
+            nativeButton={false}
           >
             {t("announcements.all")}
           </Button>

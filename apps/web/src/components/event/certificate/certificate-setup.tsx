@@ -215,7 +215,6 @@ export function SetupList({
                 <Button
                   size="sm"
                   variant={state === "standard" ? "default" : "outline"}
-                  nativeButton={false}
                   render={
                     <Link
                       to="/events/$slug/manage/certificates/$kind"
@@ -223,6 +222,7 @@ export function SetupList({
                       onClick={onLeave}
                     />
                   }
+                  nativeButton={false}
                 >
                   {state === "standard" ? t("certSetup.setUp") : t("manageCerts.edit")}
                 </Button>

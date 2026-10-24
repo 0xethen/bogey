@@ -163,8 +163,8 @@ function RouteComponent() {
               <Button
                 size="sm"
                 variant="outline"
-                nativeButton={false}
                 render={<Link to="/events/copy" search={{ from: event.id, template: true }} />}
+                nativeButton={false}
               >
                 {t("details.saveTemplate")}...
               </Button>
@@ -172,16 +172,16 @@ function RouteComponent() {
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<Link to="/events/copy" search={{ from: event.id }} />}
+              nativeButton={false}
             >
               {t("details.duplicate")}...
             </Button>
             <Button
               size="sm"
               variant="outline"
-              nativeButton={false}
               render={<a href={`/api/events/${event.slug}/archive`} download />}
+              nativeButton={false}
             >
               {t("details.archive")}...
             </Button>

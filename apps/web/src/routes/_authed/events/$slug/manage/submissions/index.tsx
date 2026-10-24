@@ -123,8 +123,8 @@ function RouteComponent() {
           <Button
             size="sm"
             variant="outline"
-            nativeButton={false}
             render={<a href={exportHref(event.slug, "submission-files", form.key)} download />}
+            nativeButton={false}
           >
             <IconDownload />
             {t("manageSubs.zip")}
@@ -134,8 +134,8 @@ function RouteComponent() {
       <Button
         size="sm"
         variant="outline"
-        nativeButton={false}
         render={<Link to="/events/$slug/manage/submissions/forms" params={{ slug: event.slug }} />}
+        nativeButton={false}
       >
         <IconForms />
         {t("manageSubs.forms")}

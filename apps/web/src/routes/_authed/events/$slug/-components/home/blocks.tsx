@@ -408,8 +408,8 @@ function PrizesBlock({
         <Button
           size="sm"
           variant="outline"
-          nativeButton={false}
           render={<Link to="/events/$slug/prizes" params={{ slug }} />}
+          nativeButton={false}
         >
           {t("home.allPrizes")}
         </Button>
@@ -467,8 +467,8 @@ export function HomeBlockView({
               <Button
                 size="sm"
                 variant="outline"
-                nativeButton={false}
                 render={<Link to="/events/$slug/agenda" params={{ slug: event.slug }} />}
+                nativeButton={false}
               >
                 {t("home.fullAgenda")}
               </Button>
@@ -678,8 +678,8 @@ export function HomeBlockView({
               <Button
                 key={`${link.url}-${index}`}
                 variant="outline"
-                nativeButton={false}
                 render={<a href={link.url} target="_blank" rel="noreferrer noopener" />}
+                nativeButton={false}
               >
                 {link.label}
                 <IconExternalLink />
