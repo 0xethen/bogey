@@ -124,7 +124,7 @@ export function LinkRow({
     props: {
       className: cn(
         rowVariants(),
-        "-mx-2 gap-4 rounded-2xl px-2 text-fg no-underline transition-colors duration-200 hover:bg-fg/5 focus-visible:bg-fg/5",
+        "-mx-2 gap-4 rounded-2xl px-2 text-fg no-underline motion-hover hover:bg-fg/5 focus-visible:bg-fg/5",
       ),
       children: (
         <>
@@ -186,7 +186,7 @@ export function DisclosureRow({
             tabIndex={-1}
             className="group -mr-1 flex shrink-0 items-center p-1"
           >
-            <IconChevronDown className="size-4 text-muted-fg transition-transform group-data-[panel-open]:rotate-180" />
+            <IconChevronDown className="size-4 text-muted-fg transition-transform duration-(--motion-expand) ease-emphasized group-data-[panel-open]:rotate-180" />
           </CollapsibleTrigger>
         )}
       </div>

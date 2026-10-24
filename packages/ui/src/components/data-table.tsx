@@ -77,6 +77,16 @@ import { useUiText } from "../lib/ui-text.ts";
 export interface DataColumnMeta {
   /** Names the column in the columns menu when its header isn't plain text. */
   label?: string;
+  /** `end` lines the header and cells up at the right: numbers, and trailing actions (the default for an `actions` column). */
+  align?: "start" | "end";
+}
+
+// end-aligned columns: numbers line up by digit, and an `actions` column hugs the right edge
+function alignClass(column: { id: string; columnDef: { meta?: DataColumnMeta } }) {
+  const end =
+    (column.columnDef.meta?.align ?? (column.id === "actions" ? "end" : "start")) === "end";
+  if (!end) return undefined;
+  return cn("text-end *:data-[slot]:ml-auto", column.id === "actions" && "w-px");
 }
 
 // a faceted filter's value is the list of picked values; a row passes when it has any of them
@@ -348,6 +358,7 @@ export function DataTable<T extends RowData>({
                   return (
                     <TableHead
                       key={header.id}
+                      className={alignClass(header.column)}
                       aria-sort={
                         direction === "asc"
                           ? "ascending"
@@ -752,7 +763,7 @@ function GroupRow({
         >
           <IconChevronRight
             className={cn(
-              "size-4 text-muted-fg transition-transform motion-reduce:transition-none",
+              "size-4 text-muted-fg transition-transform duration-(--motion-expand) ease-emphasized",
               open && "rotate-90",
             )}
           />
@@ -817,12 +828,12 @@ const DataRow = memo(
                 type="button"
                 aria-expanded={open}
                 aria-label={open ? t("ui.hideDetails") : t("ui.showDetails")}
-                className="grid size-6 place-items-center rounded-md text-muted-fg hocus:text-fg"
+                className="-my-0.5 grid size-6 place-items-center rounded-md text-muted-fg motion-hover hocus:text-fg"
                 onClick={() => setOpen((current) => !current)}
               >
                 <IconChevronRight
                   className={cn(
-                    "size-4 transition-transform motion-reduce:transition-none",
+                    "size-4 transition-transform duration-(--motion-expand) ease-emphasized",
                     open && "rotate-90",
                   )}
                 />
@@ -830,7 +841,7 @@ const DataRow = memo(
             </TableCell>
           )}
           {row.getVisibleCells().map((cell) => (
-            <TableCell key={cell.id} className="align-middle">
+            <TableCell key={cell.id} className={cn("align-middle", alignClass(cell.column))}>
               {render(cell)}
             </TableCell>
           ))}

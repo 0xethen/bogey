@@ -1,0 +1,147 @@
+/* Motion tokens and utilities; see docs/architecture/ui-conventions.md#motion */
+
+@theme {
+  --ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 120ms;
+}
+
+:root {
+  --motion-hover: 120ms;
+  --motion-enter: 150ms;
+  --motion-exit: 100ms;
+  --motion-expand: 200ms;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-shift: 0.25rem;
+}
+
+/* hover, focus and press feedback on controls, rows, links and menu items */
+@utility motion-hover {
+  transition-property:
+    color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+    box-shadow, opacity, scale;
+  transition-duration: var(--motion-hover);
+  transition-timing-function: var(--motion-ease);
+}
+
+/* floating popups (menus, selects, popovers, tooltips): fade and grow out of the trigger */
+@utility motion-popup {
+  transform-origin: var(--transform-origin);
+  transition-property: opacity, scale, translate;
+  transition-duration: var(--motion-enter);
+  transition-timing-function: var(--motion-ease-out);
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+    scale: 0.96;
+  }
+  &[data-ending-style] {
+    transition-duration: var(--motion-exit);
+    transition-timing-function: var(--motion-ease-in);
+  }
+  &[data-side="bottom"]:is([data-starting-style], [data-ending-style]) {
+    translate: 0 calc(var(--motion-shift) * -1);
+  }
+  &[data-side="top"]:is([data-starting-style], [data-ending-style]) {
+    translate: 0 var(--motion-shift);
+  }
+  &:is([data-side="right"], [data-side="inline-end"]):is(
+      [data-starting-style],
+      [data-ending-style]
+    ) {
+    translate: calc(var(--motion-shift) * -1) 0;
+  }
+  &:is([data-side="left"], [data-side="inline-start"]):is(
+      [data-starting-style],
+      [data-ending-style]
+    ) {
+    translate: var(--motion-shift) 0;
+  }
+  /* a select that opens over its trigger only fades */
+  &[data-side="none"] {
+    scale: 1;
+    translate: none;
+  }
+  &[data-instant] {
+    transition-duration: 0ms;
+  }
+}
+
+/* dialogs are centered with translate, so they only fade and grow */
+@utility motion-dialog {
+  transition-property: opacity, scale;
+  transition-duration: var(--motion-enter);
+  transition-timing-function: var(--motion-ease-out);
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+    scale: 0.96;
+  }
+  &[data-ending-style] {
+    transition-duration: var(--motion-exit);
+    transition-timing-function: var(--motion-ease-in);
+  }
+}
+
+/* backdrops and anything else that only fades */
+@utility motion-fade {
+  transition-property: opacity;
+  transition-duration: var(--motion-enter);
+  transition-timing-function: var(--motion-ease);
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+  }
+  &[data-ending-style] {
+    transition-duration: var(--motion-exit);
+  }
+}
+
+/* collapsible panels open to their measured height */
+@utility motion-collapse {
+  height: var(--collapsible-panel-height, var(--accordion-panel-height));
+  overflow: hidden;
+  transition-property: height;
+  transition-duration: var(--motion-expand);
+  transition-timing-function: var(--motion-ease-out);
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    height: 0;
+  }
+  &[data-ending-style] {
+    transition-timing-function: var(--motion-ease);
+  }
+}
+
+/* frosted surface for menus, selects and comboboxes; the blur sits on the popup itself so it
+   keeps working while the popup fades */
+@utility popup-glass {
+  background-color: color-mix(in oklab, var(--popover) 70%, transparent);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5);
+  backdrop-filter: blur(40px) saturate(1.5);
+}
+
+/* reduced motion, from the device or Account > Accessibility; spinners keep turning */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+:root[data-motion="reduce"] *:not(.animate-spin),
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

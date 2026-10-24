@@ -10,6 +10,7 @@
 @import "./themes.css";
 @import "./typeset.css";
 @import "./utilities.css";
+@import "./motion.css";
 
 @source "../../../apps/**/*.{ts,tsx}";
 /*@source "../../../components/**[SLASH]*.{ts,tsx}";*/
@@ -106,15 +107,6 @@
 }
 :root[data-spacing="wide"] :is(p, li, dd) {
   margin-block-end: 0.5em;
-}
-
-:root[data-motion="reduce"] *,
-:root[data-motion="reduce"] *::before,
-:root[data-motion="reduce"] *::after {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
-  scroll-behavior: auto !important;
 }
 
 :root[data-links="underline"] a:not([data-slot="button"]) {
