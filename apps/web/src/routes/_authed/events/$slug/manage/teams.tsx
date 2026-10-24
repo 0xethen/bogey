@@ -499,7 +499,7 @@ function RenameTeam({ team }: { team: RosterTeam }) {
   const { event } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { name: team.name },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
@@ -547,7 +547,7 @@ function CreateTeam({ onDone }: { onDone: () => void }) {
   const { event } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { name: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

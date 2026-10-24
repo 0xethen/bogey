@@ -42,7 +42,7 @@ function ReportForm({ orgId, path }: { orgId: string; path: string }) {
   const t = useT();
   const schema = useMemo(() => reportSchema(t), [t]);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { reason: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

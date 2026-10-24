@@ -376,7 +376,7 @@ function RouteComponent() {
   const [note, setNote] = useState<ImportNote | null>(null);
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         rubrics: rubrics.map((rubric) => toRubricValues(rubric, links)),
         items: criteria.map(toValues),

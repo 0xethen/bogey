@@ -137,7 +137,7 @@ export function TagsEditor({ scope }: { scope: TagScope }) {
   }));
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { items: own.map(toValues) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

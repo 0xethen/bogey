@@ -371,7 +371,7 @@ function ScoreCard({
   );
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         scores,
         feedback: sheet.feedback?.body ?? "",

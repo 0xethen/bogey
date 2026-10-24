@@ -81,7 +81,7 @@ export function FlagDialog({
   const schema = useMemo(() => reasonSchema(t), [t]);
   const refresh = useRefresh(submissionId);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { reason: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
@@ -239,7 +239,7 @@ function NoteForm({ flagId, submissionId }: { flagId: string; submissionId: stri
   const schema = useMemo(() => noteSchema(t), [t]);
   const refresh = useRefresh(submissionId);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { body: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
@@ -284,7 +284,7 @@ function ResolveForm({ flagId, submissionId }: { flagId: string; submissionId: s
   const schema = useMemo(() => resolveSchema(t), [t]);
   const refresh = useRefresh(submissionId);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { resolution: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

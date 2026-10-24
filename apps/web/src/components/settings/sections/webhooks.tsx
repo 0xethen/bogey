@@ -171,7 +171,7 @@ function AddWebhook({ scope, onSecret }: { scope: Scope; onSecret: (secret: stri
   const schema = useMemo(() => webhookSchema(t), [t]);
   const queryClient = useQueryClient();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { url: "", events: [] as string[] },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

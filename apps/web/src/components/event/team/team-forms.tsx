@@ -102,7 +102,7 @@ export function StartOrJoinTeam({ onDone }: { onDone?: () => Promise<void> | voi
     defaultValues: { code: "" },
     errorVisibility,
     validators: [rewardEarlyPunishLate(codeSchema)],
-    onSubmit: async ({ schemaOutputs: [parsed], createValidationError }) => {
+    onSubmit: async ({ validatorOutputs: [parsed], createValidationError }) => {
       const result = await teamPreviewFn({ data: parsed.code }).catch(requestFailure);
       if (!result.ok) return createValidationError({ fields: { code: result.error.message } });
       setPending({ code: parsed.code, team: result.data });

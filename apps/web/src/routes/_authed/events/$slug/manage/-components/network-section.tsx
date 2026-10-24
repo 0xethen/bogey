@@ -94,7 +94,7 @@ export function NetworkSection({ eventId }: { eventId: string }) {
     (saved ?? []).filter((id) => options.some((option) => option.value === id));
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         areas: known(own.networkAreas, areaOptions),
         users: known(own.onlyUsers, userOptions),

@@ -348,7 +348,7 @@ function useOnboardingForm(
   const t = useT();
   const schema = useMemo(() => formSchema(t), [t]);
   return useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { questions: fields.map(toDraft) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

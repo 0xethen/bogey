@@ -353,7 +353,7 @@ function AddHostnameForm({ org }: { org: InstanceOrg }) {
   const schema = useMemo(() => addHostnameSchema(t), [t]);
   const queryClient = useQueryClient();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { hostname: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

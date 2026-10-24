@@ -246,7 +246,7 @@ function ChallengeEditor({ challenge }: { challenge: JuryChallenge | undefined }
   const queryClient = useQueryClient();
   const goTo = useGoTo();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(challengeSchema, {
       defaultValues: valuesOf(challenge),
       errorVisibility,
       validators: [rewardEarlyPunishLate(challengeSchema)],

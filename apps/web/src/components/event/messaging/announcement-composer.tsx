@@ -90,8 +90,9 @@ const announcementSchema = (t: T) =>
       }
     });
 
-const composerOptions = (t: T) =>
-  appFormOptions.strictSchema({
+const composerOptions = (t: T) => {
+  const schema = announcementSchema(t);
+  return appFormOptions.strictSchema(schema, {
     defaultValues: {
       title: "",
       body: "",
@@ -103,8 +104,9 @@ const composerOptions = (t: T) =>
       notify: false,
     },
     errorVisibility,
-    validators: [rewardEarlyPunishLate(announcementSchema(t))],
+    validators: [rewardEarlyPunishLate(schema)],
   });
+};
 
 export interface AnnouncementDraft {
   title: string;

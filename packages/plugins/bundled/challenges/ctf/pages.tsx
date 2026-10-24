@@ -92,7 +92,7 @@ function ChallengeCard({ challenge, canPlay }: { challenge: Challenge; canPlay: 
   const queryClient = useQueryClient();
   const [result, setResult] = useState<string | null>(null);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(flagSchema, {
       defaultValues: { flag: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(flagSchema)],

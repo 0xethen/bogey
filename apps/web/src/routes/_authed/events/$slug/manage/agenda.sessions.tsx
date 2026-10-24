@@ -420,7 +420,7 @@ function SessionsEditor() {
   );
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(agendaForm, {
       defaultValues: toValues(agenda, kinds, zone),
       errorVisibility,
       validators: [rewardEarlyPunishLate(agendaForm)],

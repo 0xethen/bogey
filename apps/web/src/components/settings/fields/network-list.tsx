@@ -63,17 +63,14 @@ export function NetworkListForm({
 }) {
   const t = useT();
   const queryClient = useQueryClient();
+  const schema = z.object({
+    networks: networkListSchema(asn, t).meta({ label, placeholder }).describe(description),
+  });
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { networks: (saved ?? []).join("\n") },
       errorVisibility,
-      validators: [
-        rewardEarlyPunishLate(
-          z.object({
-            networks: networkListSchema(asn, t).meta({ label, placeholder }).describe(description),
-          }),
-        ),
-      ],
+      validators: [rewardEarlyPunishLate(schema)],
     }),
     onSubmit: async ({ value, formApi, createValidationError }) => {
       const expanded = await expandNetworkList(value.networks);

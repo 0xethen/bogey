@@ -86,7 +86,7 @@ function LimitsForm({ org, limits }: { org: InstanceOrg; limits: Tuple<OrgLimit>
   const schema = useMemo(() => limitsSchema(t), [t]);
   const queryClient = useQueryClient();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         limits: limits.map((limit) => ({ key: limit.key, ...startingDraft(limit) })),
       },

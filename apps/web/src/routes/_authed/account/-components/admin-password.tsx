@@ -32,7 +32,7 @@ export function AdminPasswordSection() {
   const passwordSchema = useMemo(() => schema(t), [t]);
   const [saved, setSaved] = useState(false);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(passwordSchema, {
       defaultValues: { password: "", confirm: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(passwordSchema)],

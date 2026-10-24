@@ -66,7 +66,7 @@ export function MessageBox({
   const files = useRef<HTMLInputElement>(null);
   const pictures = useRef<HTMLInputElement>(null);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { body: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

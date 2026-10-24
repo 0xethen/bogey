@@ -463,7 +463,7 @@ function EditorBody({
   const pdfPath = problem?.statement_pdf_path ?? null;
   const schema = problemSchema(settings, pdfPath);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: valuesOf(problem, scripts, next, settings),
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

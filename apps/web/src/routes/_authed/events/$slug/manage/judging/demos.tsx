@@ -192,7 +192,7 @@ function DemoRound({ round, title }: { round: JudgingRound; title: string }) {
   });
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { panels: panels.map(toValues) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

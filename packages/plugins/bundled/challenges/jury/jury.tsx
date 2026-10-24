@@ -413,7 +413,7 @@ function DifficultiesForm({ current }: { current: Tuple<DifficultyDef> }) {
   const queryClient = useQueryClient();
   const [active, setActive] = useState<string | null>(null);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(difficultiesSchema, {
       defaultValues: {
         difficulties: current.map((each) => ({
           uid: each.key,
@@ -601,7 +601,7 @@ function TestsForm({ problem, cases }: { problem: Problem; cases: Tuple<Testcase
   const queryClient = useQueryClient();
   const [active, setActive] = useState<string | null>(null);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(testsSchema, {
       defaultValues: testValues(cases),
       errorVisibility,
       validators: [rewardEarlyPunishLate(testsSchema)],

@@ -106,7 +106,7 @@ export function AwardsEditor({ eventId, rows }: { eventId: string; rows: Tuple<R
   const finalRows = rows.filter((row) => row.roundOrdinal === lastRound.get(row.formId));
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { awards: drafts.map(toDraft) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

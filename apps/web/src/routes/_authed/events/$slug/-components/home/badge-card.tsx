@@ -38,7 +38,7 @@ export function BadgeCard({ eventId, endsAt }: { eventId: string; endsAt: string
   const now = useNow(60_000);
   const locale = useLocale();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(venueCodeSchema, {
       defaultValues: { code: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(venueCodeSchema)],

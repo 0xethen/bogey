@@ -154,12 +154,14 @@ const linkSchema = (t: T) =>
       .describe(t("manageReg.stopsHelp")),
   });
 
-const linkOptions = (t: T) =>
-  appFormOptions.strictSchema({
+const linkOptions = (t: T) => {
+  const schema = linkSchema(t);
+  return appFormOptions.strictSchema(schema, {
     defaultValues: { label: "", autoApprove: false, capacity: Number.NaN, closesAt: "" },
     errorVisibility,
-    validators: [rewardEarlyPunishLate(linkSchema(t))],
+    validators: [rewardEarlyPunishLate(schema)],
   });
+};
 
 function linkState(link: InviteLink, t: T): { open: boolean; reason: string } {
   if (link.disabled_at) return { open: false, reason: t("manageReg.turnedOff") };

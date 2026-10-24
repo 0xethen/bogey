@@ -217,7 +217,7 @@ function RouteComponent() {
   };
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         name: "",
         slug: "",

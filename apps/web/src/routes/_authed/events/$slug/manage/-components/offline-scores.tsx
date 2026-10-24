@@ -70,7 +70,7 @@ export function OfflineScores({ eventId }: { eventId: string }) {
   }));
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { items: defaults },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

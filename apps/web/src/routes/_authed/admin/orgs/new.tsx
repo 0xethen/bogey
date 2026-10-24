@@ -57,7 +57,7 @@ function RouteComponent() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { name: "", slug: "", hostname: "", ownerEmail: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

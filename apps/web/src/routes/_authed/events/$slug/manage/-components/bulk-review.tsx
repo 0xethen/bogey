@@ -59,7 +59,7 @@ export function BulkReview({
       queryClient.invalidateQueries({ queryKey: manageSummaryQueryOptions(eventId).queryKey }),
     ]);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { note: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

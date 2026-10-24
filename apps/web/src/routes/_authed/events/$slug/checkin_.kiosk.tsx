@@ -218,7 +218,7 @@ function WhoForm({
   const t = useT();
   const schema = useMemo(() => whoSchema(t), [t]);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { name: "", email: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

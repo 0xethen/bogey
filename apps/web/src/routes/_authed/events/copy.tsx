@@ -145,7 +145,7 @@ function CopyForm({
   const [reenter, setReenter] = useState<{ slug: string; names: string[] } | null>(null);
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         name: template
           ? t("copy.templateName", { name: sourceName })

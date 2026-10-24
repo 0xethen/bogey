@@ -90,7 +90,7 @@ export function SessionTypes({ eventId }: { eventId: string }) {
   }
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { kinds: toKindValues(settings.agenda.kinds, agenda) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

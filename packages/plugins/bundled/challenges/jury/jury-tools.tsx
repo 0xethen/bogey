@@ -72,7 +72,7 @@ export function Rejudgings({ problems }: { problems: Tuple<Problem> }) {
   const languages = useQuery(languagesQueryOptions());
   const [open, setOpen] = useState<string | null>(null);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(rejudgeSchema, {
       defaultValues: { problem: ANY, language: ANY, reason: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(rejudgeSchema)],
@@ -415,7 +415,7 @@ export function JurySolutions({ problem }: { problem: Problem }) {
   const languages = useQuery(languagesQueryOptions());
   const refresh = () => queryClient.invalidateQueries({ queryKey: options.queryKey });
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(jurySolutionSchema, {
       defaultValues: JURY_SOLUTION_DEFAULTS,
       errorVisibility,
       validators: [rewardEarlyPunishLate(jurySolutionSchema)],

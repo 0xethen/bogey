@@ -143,7 +143,7 @@ function Desk() {
     },
   });
   const codeForm = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(codeSchema, {
       defaultValues: { code: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(codeSchema)],
@@ -158,7 +158,7 @@ function Desk() {
   // which walk-in button was pressed (Enter presses the first)
   const walkInCheckIn = useRef(true);
   const walkInForm = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(walkSchema, {
       defaultValues: { email: "", name: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(walkSchema)],

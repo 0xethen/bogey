@@ -148,7 +148,7 @@ function RouteComponent() {
   const count = (id: string) => people.members.filter((member) => member.divisionId === id).length;
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { items: divisions.map((division) => toValues(division, links)) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

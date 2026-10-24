@@ -326,7 +326,7 @@ function EmailSettingsForm({
   const entries = useMemo(() => emailKindEntries(pluginKinds), [pluginKinds]);
   const schema = useMemo(() => settingsSchema(entries, t), [entries, t]);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         senderName: current.senderName ?? "",
         layout: current.layout ?? "",

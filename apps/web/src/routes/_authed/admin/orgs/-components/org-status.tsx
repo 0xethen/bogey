@@ -53,7 +53,7 @@ function StatusForm({ org }: { org: InstanceOrg }) {
   const schema = useMemo(() => statusSchema(t), [t]);
   const queryClient = useQueryClient();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { status: org.status, reason: org.statusReason ?? "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

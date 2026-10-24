@@ -109,7 +109,7 @@ export function ManualAssignments({ eventId }: { eventId: string }) {
     return undefined;
   };
   const pairForm = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(pairs, {
       defaultValues: {
         judgeId: "",
         teamId: "",
@@ -130,7 +130,7 @@ export function ManualAssignments({ eventId }: { eventId: string }) {
     },
   });
   const pasteForm = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(pasted, {
       defaultValues: { pasted: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(pasted)],

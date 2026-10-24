@@ -110,7 +110,7 @@ export function AssignmentRules({ event }: { event: { id: string; org_id: string
   const scope = { scope: "event", eventId: event.id } as const;
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: toValues(settings.judging.assignment),
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

@@ -69,7 +69,7 @@ export function Tables({ eventId, slug }: { eventId: string; slug: string }) {
   const judged = forms.filter((form) => form.judged);
   const [notice, setNotice] = useState<string | null>(null);
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         formId: judged[0]?.id ?? "",
         scheme: "numeric",

@@ -66,7 +66,7 @@ export function AskAbout({
   const queryClient = useQueryClient();
   const { slug = "" } = useParams({ strict: false });
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(askSchema, {
       defaultValues: ASK_DEFAULTS,
       errorVisibility,
       validators: [rewardEarlyPunishLate(askSchema)],

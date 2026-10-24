@@ -161,7 +161,7 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
     planRoster(text, { kinds, rules, resolutions, catalog, maxTeamSize, guess, say, locale });
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { text: "", role: "participant", notify: false },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

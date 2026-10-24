@@ -384,7 +384,7 @@ function SubmissionEditor({
   const nextStep = steps[index + 1]?.key;
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         title: submission.title,
         isPublic: submission.is_public,

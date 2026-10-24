@@ -615,7 +615,7 @@ function BlockButton({ conversation }: { conversation: Conversation }) {
     ...(conversation.teamId ? [{ value: "team" as const, label: t("conv.blockTeam") }] : []),
   ];
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { target: targets[0]?.value ?? "person", reason: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
@@ -719,7 +719,7 @@ function NewConversationDialog({
   const schema = useMemo(() => startSchema(t), [t]);
   const queryClient = useQueryClient();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         audience: audiences[0] ?? "organizers",
         subject: "",
@@ -816,7 +816,7 @@ function MessageTeamDialog({ onStarted }: { onStarted: (id: string) => void }) {
   const queryClient = useQueryClient();
   const teams = useQuery(audienceChoicesQueryOptions(eventId));
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { teamId: "", subject: "", body: "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

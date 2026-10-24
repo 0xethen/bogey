@@ -377,7 +377,7 @@ function Pages() {
   const [active, setActive] = useState<string | null>(null);
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { items: pages.map(toValues) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

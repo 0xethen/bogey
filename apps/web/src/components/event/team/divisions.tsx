@@ -136,7 +136,7 @@ export function ChooseDivision({
     },
   });
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { divisionId: current ?? "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

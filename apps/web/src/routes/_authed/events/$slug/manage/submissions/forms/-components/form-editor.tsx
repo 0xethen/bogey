@@ -337,7 +337,7 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
   ];
 
   const editor = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         title: form?.title ?? "",
         description: form?.description_md ?? "",

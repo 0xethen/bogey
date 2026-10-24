@@ -113,7 +113,7 @@ function RoundRow({
     ]);
   };
   const settings = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(roundForm, {
       defaultValues: {
         name: round.name,
         windowKey: round.windowKey ?? EVENT_WINDOW,
@@ -140,7 +140,7 @@ function RoundRow({
     },
   });
   const assignment = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(assignForm, {
       defaultValues: { per: 2 },
       errorVisibility,
       validators: [rewardEarlyPunishLate(assignForm)],
@@ -156,7 +156,7 @@ function RoundRow({
     },
   });
   const advancing = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(advanceForm, {
       defaultValues: { top: 5 },
       errorVisibility,
       validators: [rewardEarlyPunishLate(advanceForm)],

@@ -160,7 +160,7 @@ function NameStep({ onDone }: { onDone: () => void }) {
   const { session } = Route.useRouteContext();
   const refreshSession = useSessionRefresh();
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { displayName: session.profile?.display_name ?? "" },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],

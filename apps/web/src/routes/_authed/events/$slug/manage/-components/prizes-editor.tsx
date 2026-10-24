@@ -182,7 +182,7 @@ export function PrizesSections({ eventId }: { eventId: string }) {
   ];
 
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: { prizes: prizes.map(toDraft) },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
