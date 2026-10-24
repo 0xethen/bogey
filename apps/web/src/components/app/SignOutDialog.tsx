@@ -26,6 +26,7 @@ export function SignOutDialog() {
         <AlertDialogFooter>
           <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
+            variant="secondary"
             onClick={() => signOutDialog.close()}
             render={<Link to="/auth/logout" />}
             nativeButton={false}

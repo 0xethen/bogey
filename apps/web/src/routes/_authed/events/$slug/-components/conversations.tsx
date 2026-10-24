@@ -134,7 +134,7 @@ export function Conversations({
   const archived = conversations.filter((conversation) => conversation.archived);
 
   return (
-    <div className={cn(FRAME, "grid lg:grid-cols-[20rem_minmax(0,1fr)]")}>
+    <div className={cn(FRAME, "lg:grid lg:grid-cols-[20rem_minmax(0,1fr)]")}>
       <aside
         className={cn(
           "flex min-h-0 flex-col border-border lg:border-r",

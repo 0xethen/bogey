@@ -515,7 +515,7 @@ export function HomeBlockView({
                   }
                   nativeButton={false}
                 >
-                  {t("eventTab.messages")}
+                  {t("home.allMessages")}
                   {unread > 0 && ` (${unread})`}
                 </Button>
               )}
@@ -758,7 +758,7 @@ export function HomeBlockView({
                   />
                 );
                 const tile =
-                  "flex h-20 items-center justify-center rounded-2xl border border-border bg-white p-4 transition-[border-color,box-shadow]";
+                  "flex h-20 items-center justify-center rounded-2xl border border-border bg-white p-4 transition";
                 return (
                   <li key={`${sponsor.name}-${index}`}>
                     {sponsor.url ? (
@@ -767,7 +767,7 @@ export function HomeBlockView({
                         target="_blank"
                         rel="noreferrer noopener"
                         title={sponsor.name}
-                        className={cn(tile, "hocus:border-fg/20 hocus:shadow-md")}
+                        className={cn(tile, "hocus:border-fg/20 hocus:opacity-70")}
                       >
                         {logo}
                       </a>

@@ -176,7 +176,7 @@ function WindowEditor({
     onSuccess: refreshEvent,
   });
   const form = useAppForm({
-    ...appFormOptions.strictSchema({
+    ...appFormOptions.strictSchema(schema, {
       defaultValues: {
         mode: window.override ?? "scheduled",
         opens: isoToWallTime(window.opens_at, timeZone),
@@ -257,12 +257,7 @@ function WindowEditor({
                   >
                     {(
                       [
-                        [
-                          "default",
-                          fallback > 0
-                            ? t("manageAgenda.reminderDefault", { minutes: fallback })
-                            : t("manageAgenda.reminderDefaultOff"),
-                        ],
+                        ["default", t("manageAgenda.reminderDefault")],
                         ["none", t("manageAgenda.reminderNone")],
                         ["custom", t("manageAgenda.reminderCustom")],
                       ] as const
@@ -290,11 +285,14 @@ function WindowEditor({
                 }
               </form.Subscribe>
               <FieldDescription>
+                {fallback > 0
+                  ? t("manageAgenda.reminderDefaultHelp", { minutes: fallback })
+                  : t("manageAgenda.reminderDefaultHelpOff")}{" "}
                 <SettingLink
                   to={`/events/${eventSlug}/manage/agenda`}
                   hash="agenda.reminderMinutes"
                 >
-                  {t("manageAgenda.reminderDefaultLink")}
+                  {t("manageAgenda.reminderDefaultLink")}...
                 </SettingLink>
               </FieldDescription>
             </PopoverContent>

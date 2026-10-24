@@ -93,7 +93,7 @@ name in the code disagrees with this file, one of them is wrong; fix it.
   scanning or typing the code on the person's badge, by searching, or for a walk-in; a person
   can do it themselves with the venue code. Organizers can require it before participants
   compete.
-- **Template**: an event kept as a private pattern. New events start from it by copying its
+- **Template**: an event kept as a private starting point. New events start from it by copying its
   setup (`clone_event`); it holds no people, teams or entries.
 - **Export**: a CSV or ZIP of one kind of event data, downloaded from the page that shows it
   and read with the downloader's own access. Each download is audited as `export.downloaded`.
