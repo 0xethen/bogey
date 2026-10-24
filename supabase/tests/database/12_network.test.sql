@@ -114,8 +114,8 @@ select is(
   1::bigint, 'one entry per area per person per 10 minutes');
 select tests.as_user(tests.u('org1'));
 select results_eq(
-  $select area from public.event_blocked_access(tests.u('ev')) where area is not null$,
-  $values ('submissions')$,
+  $$select area from public.event_blocked_access(tests.u('ev')) where area is not null$$,
+  $$values ('submissions')$$,
   'the blocked list names the area');
 reset role;
 -- a plugin's area is chosen and refused the same way

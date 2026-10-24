@@ -35,8 +35,8 @@ reset role;
 
 select set_config('role', 'service_role', true);
 select is((public.challenges_claim_judging('r1') -> 'problem' ->> 'label'), 'A', 'runner claims the queued judging');
-select ok(not public.challenges_record_judging((select id from public.challenges_judgings limit 1), 'r2', 'AC', null, 10, 1000, null, '[]'), 'a runner without the lease cannot record');
-select ok(public.challenges_record_judging((select id from public.challenges_judgings limit 1), 'r1', 'WA', null, 10, 1000, null,
+select ok(not public.challenges_record_judging((select id from public.challenges_judgings where event_id = tests.u('cup') limit 1), 'r2', 'AC', null, 10, 1000, null, '[]'), 'a runner without the lease cannot record');
+select ok(public.challenges_record_judging((select id from public.challenges_judgings where event_id = tests.u('cup') limit 1), 'r1', 'WA', null, 10, 1000, null,
   jsonb_build_array(
     jsonb_build_object('testcase_id', tests.u('ta1'), 'verdict', 'AC', 'output_excerpt', '3'),
     jsonb_build_object('testcase_id', tests.u('ta2'), 'verdict', 'WA', 'output_excerpt', 'SECRET', 'stderr_excerpt', 'SECRET'))), 'lease holder records');
@@ -44,7 +44,7 @@ select is((select output_excerpt from public.challenges_judging_runs where testc
 reset role;
 
 select tests.as_user(tests.u('amy'));
-select is((select verdict::text from public.challenges_judgings), 'WA', 'team sees its verdict');
+select is((select verdict::text from public.challenges_judgings where event_id = tests.u('cup')), 'WA', 'team sees its verdict');
 select results_eq('select testcase_id from public.challenges_judging_runs', array[tests.u('ta1')], 'team sees sample runs only');
 select set_config('t.sol', (select id::text from public.challenges_solutions limit 1), true);
 select is((select count(*)::int from public.challenges_attempt_tests(current_setting('t.sol')::uuid)), 2, 'team gets each test''s result');
