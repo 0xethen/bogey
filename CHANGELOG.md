@@ -21,7 +21,8 @@ advisory (see docs/contributing.md#security-releases). -->
 - Challenges: adding a problem offers "A problem package" under "Or start from", next to the problem bank.
 - **Upgrade notes:** run `bogey db migrate` before updating the runner; a new runner records IOI judgings with each test group's points, which the database needs challenges migration 10 for.
 - Account → Notifications and Sign-in & security use the same label, description and control rows as the other settings pages.
-- Admin → Plugins limits and agenda session seats are number fields where empty or 0 reads "No limit"; a plugin limit of 0 now means no limit instead of none allowed.
+- Admin → Plugins limits and agenda session seats are number fields; an empty plugin limit reads "No limit", and empty or 0 seats read "No limit".
+- Instance limits (Admin → Settings → Limits) and plugin limits accept 0, which allows none: 0 MB of storage or uploads turns uploads off for every organization. Leave a limit empty for no limit.
 - Draggable list rows show their actions only on hover or keyboard focus on wide screens with a mouse, so titles in narrow places like the homepage editor's side column are no longer cut off. Touch and narrow screens still show them.
 
 ## 2.4.0 (2026-10-24)

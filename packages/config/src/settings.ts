@@ -672,49 +672,49 @@ export const settingsRegistry = {
     schema: z.object({
       eventsPerOrg: z
         .int()
-        .min(1)
+        .min(0)
         .max(100_000)
         .optional()
         .describe("Most events one organization can have"),
       adminsPerOrg: z
         .int()
-        .min(1)
+        .min(0)
         .max(100_000)
         .optional()
         .describe("Most owners and admins one organization can have"),
       participantsPerEvent: z
         .int()
-        .min(1)
+        .min(0)
         .max(1_000_000)
         .optional()
         .describe("Most participants one event can have"),
       emailsPerDay: z
         .int()
-        .min(1)
+        .min(0)
         .max(10_000_000)
         .optional()
         .describe("Most emails Bogey sends for one organization in a day"),
       storageMbPerOrg: z
         .int()
-        .min(1)
+        .min(0)
         .max(100_000_000)
         .optional()
         .describe("Most megabytes of uploads one organization can keep"),
       maxUploadMb: z
         .int()
-        .min(1)
+        .min(0)
         .max(10_000)
         .optional()
         .describe("Largest single file, in megabytes, anyone in one organization can upload"),
       customDomainsPerOrg: z
         .int()
-        .min(1)
+        .min(0)
         .max(1_000)
         .optional()
         .describe("Most hostnames one organization can have"),
       pendingInvitesPerOrg: z
         .int()
-        .min(1)
+        .min(0)
         .max(100_000)
         .optional()
         .describe("Most open invite links one organization can have"),

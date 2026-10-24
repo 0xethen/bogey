@@ -118,14 +118,14 @@ Set at: instance.
 
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `eventsPerOrg` | whole number (1 to 100000) | — | Most events one organization can have |
-| `adminsPerOrg` | whole number (1 to 100000) | — | Most owners and admins one organization can have |
-| `participantsPerEvent` | whole number (1 to 1000000) | — | Most participants one event can have |
-| `emailsPerDay` | whole number (1 to 10000000) | — | Most emails Bogey sends for one organization in a day |
-| `storageMbPerOrg` | whole number (1 to 100000000) | — | Most megabytes of uploads one organization can keep |
-| `maxUploadMb` | whole number (1 to 10000) | — | Largest single file, in megabytes, anyone in one organization can upload |
-| `customDomainsPerOrg` | whole number (1 to 1000) | — | Most hostnames one organization can have |
-| `pendingInvitesPerOrg` | whole number (1 to 100000) | — | Most open invite links one organization can have |
+| `eventsPerOrg` | whole number (0 to 100000) | — | Most events one organization can have |
+| `adminsPerOrg` | whole number (0 to 100000) | — | Most owners and admins one organization can have |
+| `participantsPerEvent` | whole number (0 to 1000000) | — | Most participants one event can have |
+| `emailsPerDay` | whole number (0 to 10000000) | — | Most emails Bogey sends for one organization in a day |
+| `storageMbPerOrg` | whole number (0 to 100000000) | — | Most megabytes of uploads one organization can keep |
+| `maxUploadMb` | whole number (0 to 10000) | — | Largest single file, in megabytes, anyone in one organization can upload |
+| `customDomainsPerOrg` | whole number (0 to 1000) | — | Most hostnames one organization can have |
+| `pendingInvitesPerOrg` | whole number (0 to 100000) | — | Most open invite links one organization can have |
 
 ## Submissions (`submissions`)
 
