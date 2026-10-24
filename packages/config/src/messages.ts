@@ -2651,6 +2651,71 @@ export const en = {
     "Events use this design until they customize their own. Drag layers to place them and snap them to the guides; printing uses the same layout.",
   "orgCerts.goBackBody":
     "The design and its pictures are deleted. Events that customized it keep their own copies.",
+  "certDesign.backgroundFit": "Fit",
+  "certDesign.bgFitCover": "Fill the page",
+  "certDesign.bgFitContain": "Show all of it",
+  "certDesign.bgFitStretch": "Stretch to the page",
+  "certImport.background": "Background...",
+  "certImport.choose": "Choose...",
+  "certImport.change": "Change...",
+  "certImport.title": "Background",
+  "certImport.intro":
+    "Design the page in PowerPoint, Keynote, Canva or any other tool, then add the text here. A PNG, JPG or SVG is used as it is; from a .pptx or .pdf, pick a slide.",
+  "certImport.reading": "Reading the slides...",
+  "certImport.slide": "Slide {number}",
+  "certImport.useSlide": "Use slide {number}",
+  "certImport.usedFor": "Slide {number}: {kinds}",
+  "certImport.another": "Choose another file",
+  "certImport.pptxNote":
+    "Slides from a .pptx are redrawn here, so fonts and effects can differ a little. For an exact copy, export the deck as a PDF and use that.",
+  "certImport.tooBig":
+    "That file is too big to read here. A deck can be up to {mb} MB, and the first {slides} slides are used.",
+  "certImport.empty": "That file has no slides.",
+  "certImport.unreadable":
+    "That file couldn't be read. Try exporting the deck as a PDF and using that instead.",
+  "certImport.timeout":
+    "Reading that file took too long. Try a PDF, or a deck with only the slides you need.",
+  "certImport.kind": "Use a .pptx or .pdf deck, or a PNG, JPG or SVG picture.",
+  "certImport.importSlides": "Import slides...",
+  "certImport.assignTitle": "Import slides",
+  "certImport.assignIntro":
+    "Pick the slide each certificate uses as its background. Its text, QR code and other layers stay on top, and you can move them afterwards.",
+  "certImport.keep": "Keep its background",
+  "certImport.apply": "Use these slides",
+  "certImport.applying": "Saving...",
+  "certImport.applied": "{count, plural, one {# design} other {# designs}} updated",
+  "certImport.noneAssigned": "Pick a slide for at least one certificate.",
+  "certSetup.offTitle": "Certificates are off",
+  "certSetup.offBody":
+    "Turn them on to give participants, judges and staff a certificate they can download and anyone can verify.",
+  "certSetup.turnOn": "Turn on certificates...",
+  "certSetup.title": "Set up certificates",
+  "certSetup.intro":
+    "Choose which certificates this event gives. You can set up how each one looks now or later; until then they use the standard design.",
+  "certSetup.which": "Which certificates",
+  "certSetup.participationHelp": "Everyone who checked in or submitted a project.",
+  "certSetup.awardHelp": "Each team member of a winning project, once results are published.",
+  "certSetup.judgeHelp": "Everyone who judged.",
+  "certSetup.volunteerHelp": "Staff who helped run the event.",
+  "certSetup.pickOne": "Pick at least one certificate.",
+  "certSetup.next": "Turn on",
+  "certSetup.later": "Set up later",
+  "certSetup.designsTitle": "How each certificate looks",
+  "certSetup.designsIntro":
+    "Import a deck to give several certificates their backgrounds at once, or set each up on its own.",
+  "certSetup.stepsTitle": "Set up certificates",
+  "certSetup.stepHelp": "Using the standard design. Give it a background or keep it as it is.",
+  "certSetup.stepOrg": "Uses the organization's design.",
+  "certSetup.stepOwn": "This event's own design.",
+  "certSetup.setUp": "Set up",
+  "certSetup.keepStandard": "Keep the standard design",
+  "certSetup.done": "Done",
+  "certSetup.notGiven": "Not given",
+  "certSetup.todo":
+    "{count, plural, one {# certificate still uses the standard design} other {# certificates still use the standard design}}",
+  "certSetup.todoHelp": "Give them a background or keep the standard design under Certificates.",
+  "certSetup.change": "Change which...",
+  "certSetup.given": "Given: {kinds}.",
   "manageCerts.kindColumn": "Kind",
   "manageCerts.labelColumn": "Label",
 
@@ -4003,6 +4068,8 @@ export const en = {
   "setting.certificates.enabled": "Certificates",
   "setting.certificates.enabled.help":
     "Lets participants, judges and staff claim a certificate from the event's Certificates page. Organizers can also issue them all at once.",
+  "setting.certificates.kinds": "Certificates given",
+  "setting.certificates.kinds.help": "The kinds of certificate people can claim from this event.",
   "setting.announcements.toasts": "Show notifications",
   "setting.announcements.toasts.help":
     "People with the event open see a new announcement pop up in the corner, wherever they are in the event.",

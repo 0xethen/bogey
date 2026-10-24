@@ -14,11 +14,14 @@ import { sayOr, useT } from "#/lib/translate.tsx";
 /** One card per kind of certificate: what it looks like now, whose design it is, and a way in. */
 export function DesignCards({
   level,
+  kinds = CERTIFICATE_KINDS,
   designs,
   sample,
   edit,
 }: {
   level: "event" | "org";
+  /** The kinds shown; every kind by default. */
+  kinds?: Tuple<CertificateKind>;
   designs: CertificateDesigns;
   sample: Omit<CertificateValues, "name">;
   edit: (kind: CertificateKind) => ReactNode;
@@ -26,7 +29,7 @@ export function DesignCards({
   const t = useT();
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      {CERTIFICATE_KINDS.map((kind) => {
+      {kinds.map((kind) => {
         const own = designs.own.find((design) => design.kind === kind);
         const org = designs.org.find((design) => design.kind === kind);
         const shown = own ?? org;

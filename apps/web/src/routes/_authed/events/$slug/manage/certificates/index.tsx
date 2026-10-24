@@ -18,12 +18,29 @@ import {
 import { Button } from "@bogey/ui/components/button";
 import { DataTable, dataColumns, type DataTableFilter } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@bogey/ui/components/empty";
+import { IconCertificate } from "@tabler/icons-react";
 import { Panel } from "@bogey/ui/components/panel";
 import { Screen } from "@bogey/ui/components/screen";
 import { toast } from "@bogey/ui/components/toast";
 import { CertificatePrintPage, CertificateSheet } from "#/components/event/certificate-sheet.tsx";
 import { useCertificateSample } from "#/components/event/certificate/certificate-sample.ts";
 import { DesignCards } from "#/components/event/certificate/design-cards.tsx";
+import {
+  CertificateSetupDialog,
+  certificateKindName,
+  givenKinds,
+  SetupList,
+  unsetKinds,
+} from "#/components/event/certificate/certificate-setup.tsx";
+import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import {
   prefetchSettingFields,
   SettingFields,
@@ -56,6 +73,9 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/certificates/
         certificateDesignsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
       ),
       context.query.ensureQueryData(eventCertificatesQueryOptions(context.event.id)),
+      context.query.ensureQueryData(
+        settingsQueryOptions({ eventId: context.event.id }, ["certificates"]),
+      ),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
@@ -180,79 +200,143 @@ function RouteComponent() {
     },
   });
   const [printing, setPrinting] = useState(false);
+  const { data: settings } = useSuspenseQuery(
+    settingsQueryOptions({ eventId: event.id }, ["certificates"]),
+  );
+  const { enabled, kinds } = settings.certificates;
+  const given = givenKinds(kinds);
+  const unset = unsetKinds(designs, kinds);
+  const [setup, setSetup] = useState(false);
   return (
     <Screen
       title={t("certificates.title")}
       description={t("manageCerts.intro")}
       width="embedded"
       actions={
-        <>
-          <Button
-            size="sm"
-            variant="outline"
-            confirm={{
-              title: t("manageCerts.issueTitle"),
-              description: t("manageCerts.issueBody"),
-              label: t("manageCerts.issueLabel"),
-              variant: "default",
-            }}
-            disabled={issue.isPending}
-            onClick={() => issue.mutate()}
-          >
-            {t("manageCerts.issueAll")}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={issued.length === 0}
-            tooltip={issued.length === 0 ? t("manageCerts.noneIssued") : undefined}
-            onClick={() => {
-              setPrinting(true);
-              setTimeout(() => {
-                window.print();
-                setPrinting(false);
-              }, 100);
-            }}
-          >
-            {t("manageCerts.printAll")}
-          </Button>
-        </>
-      }
-    >
-      <ErrorAlert error={issue.error} />
-      <Screen.Section id="certificates" title={t("certificates.title")}>
-        <SettingFields scope={scope} namespace="certificates" keys={["enabled"]} />
-      </Screen.Section>
-      <Screen.Section
-        id="designs"
-        title={t("manageCerts.designs")}
-        description={t("manageCerts.designsIntro", {
-          variables: Object.keys(CERTIFICATE_VARIABLES)
-            .map((name) => `{{${name}}}`)
-            .join(", "),
-        })}
-      >
-        <DesignCards
-          level="event"
-          designs={designs}
-          sample={sample}
-          edit={(kind) => (
+        enabled && (
+          <>
             <Button
               size="sm"
               variant="outline"
-              render={
-                <Link
-                  to="/events/$slug/manage/certificates/$kind"
-                  params={{ slug: event.slug, kind }}
-                />
-              }
-              nativeButton={false}
+              confirm={{
+                title: t("manageCerts.issueTitle"),
+                description: t("manageCerts.issueBody"),
+                label: t("manageCerts.issueLabel"),
+                variant: "default",
+              }}
+              disabled={issue.isPending}
+              onClick={() => issue.mutate()}
             >
-              {t("manageCerts.edit")}
+              {t("manageCerts.issueAll")}
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={issued.length === 0}
+              tooltip={issued.length === 0 ? t("manageCerts.noneIssued") : undefined}
+              onClick={() => {
+                setPrinting(true);
+                setTimeout(() => {
+                  window.print();
+                  setPrinting(false);
+                }, 100);
+              }}
+            >
+              {t("manageCerts.printAll")}
+            </Button>
+          </>
+        )
+      }
+    >
+      <ErrorAlert error={issue.error} />
+      <CertificateSetupDialog
+        open={setup}
+        onOpenChange={setSetup}
+        orgId={event.org_id}
+        eventId={event.id}
+        slug={event.slug}
+        enabled={enabled}
+        kinds={kinds}
+        designs={designs}
+      />
+      {enabled ? (
+        <>
+          <Screen.Section
+            id="certificates"
+            title={t("certificates.title")}
+            actions={
+              <Button size="sm" variant="outline" onClick={() => setSetup(true)}>
+                {t("certSetup.change")}
+              </Button>
+            }
+          >
+            <SettingFields scope={scope} namespace="certificates" keys={["enabled"]} />
+            <p className="text-sm text-muted-fg">
+              {t("certSetup.given", {
+                kinds: given.map((kind) => certificateKindName(t, kind)).join(", "),
+              })}
+            </p>
+          </Screen.Section>
+          {unset.length > 0 && (
+            <Screen.Section
+              id="setup"
+              title={t("certSetup.stepsTitle")}
+              description={t("certSetup.todo", { count: unset.length })}
+            >
+              <SetupList
+                scope={{ orgId: event.org_id, eventId: event.id }}
+                slug={event.slug}
+                kinds={unset}
+                designs={designs}
+              />
+            </Screen.Section>
           )}
-        />
-      </Screen.Section>
+          <Screen.Section
+            id="designs"
+            title={t("manageCerts.designs")}
+            description={t("manageCerts.designsIntro", {
+              variables: Object.keys(CERTIFICATE_VARIABLES)
+                .map((name) => `{{${name}}}`)
+                .join(", "),
+            })}
+          >
+            <DesignCards
+              level="event"
+              kinds={given}
+              designs={designs}
+              sample={sample}
+              edit={(kind) => (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  render={
+                    <Link
+                      to="/events/$slug/manage/certificates/$kind"
+                      params={{ slug: event.slug, kind }}
+                    />
+                  }
+                  nativeButton={false}
+                >
+                  {t("manageCerts.edit")}
+                </Button>
+              )}
+            />
+          </Screen.Section>
+        </>
+      ) : (
+        <Empty id="certificates" className="jump-target">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconCertificate />
+            </EmptyMedia>
+            <EmptyTitle>{t("certSetup.offTitle")}</EmptyTitle>
+            <EmptyDescription>{t("certSetup.offBody")}</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={() => setSetup(true)}>{t("certSetup.turnOn")}</Button>
+          </EmptyContent>
+        </Empty>
+      )}
       {issued.length > 0 && <Issued certificates={issued} eventId={event.id} />}
       {printing && (
         <div data-print-area className="hidden print:block">

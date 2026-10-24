@@ -12,6 +12,8 @@ import {
   eventDates,
   fillCertificate,
   isCertificateKind,
+  orientationFor,
+  withBackgroundPicture,
 } from "../src/certificate.ts";
 
 test("variables are filled in and unknown ones come out empty", () => {
@@ -60,6 +62,7 @@ test("wording becomes centered text boxes, headings bigger, with the QR code und
   expect(layout.background).toEqual({
     color: "#ffffff",
     image: { url: "https://x.test/bg.png" },
+    fit: "cover",
     frame: true,
   });
 });
@@ -102,7 +105,12 @@ test("a stored design is read leniently: broken layers drop, odd values fall bac
       },
     ],
   });
-  expect(layout.background).toEqual({ color: "#ffffff", image: null, frame: false });
+  expect(layout.background).toEqual({
+    color: "#ffffff",
+    image: null,
+    fit: "cover",
+    frame: false,
+  });
   expect(layout.layers.map((layer) => layer.id)).toEqual(["a", "c"]);
   expect(layout.layers[0]).toMatchObject({
     size: 200,
@@ -129,6 +137,18 @@ test("uploads go in the event's folder, or the organization's", () => {
   expect(certificateFolder({ orgId: "o", eventId: null, kind: "award" })).toBe(
     "org/o/certificates/award",
   );
+});
+
+test("a picture designed elsewhere becomes the whole page, turning it to match", () => {
+  const draft = { layout: defaultCertificateLayout("award"), orientation: "landscape" as const };
+  const image = { url: "https://s.test/e/bg.png", path: "e/bg.png" };
+  const next = withBackgroundPicture(draft, image, { width: 1240, height: 1754 });
+  expect(next.orientation).toBe("portrait");
+  expect(next.layout.background).toMatchObject({ image, fit: "cover", frame: false });
+  expect(next.layout.layers.length).toBe(draft.layout.layers.length);
+  expect(orientationFor(1920, 1080)).toBe("landscape");
+  const stretched = parseCertificateLayout({ background: { fit: "stretch" }, layers: [] });
+  expect(stretched.background.fit).toBe("stretch");
 });
 
 test("text boxes split into bold and italic runs", () => {

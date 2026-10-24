@@ -9,6 +9,7 @@ import {
   IconBold,
   IconCopy,
   IconItalic,
+  IconPhoto,
   IconPhotoPlus,
   IconQrcode,
   IconTextPlus,
@@ -22,7 +23,9 @@ import {
   CERTIFICATE_VARIABLES,
   certificateFolder,
   turnCertificatePage,
+  withBackgroundPicture,
   type CertificateAlign,
+  type CertificateBackgroundFit,
   type CertificateFont,
   type CertificateImage,
   type CertificateKind,
@@ -62,6 +65,7 @@ import {
   uploadImage,
 } from "#/components/event/submission/image-input.tsx";
 import { useT, type T } from "#/lib/translate.tsx";
+import { BackgroundDialog } from "./background-import.tsx";
 
 export interface CertificateDraft {
   layout: CertificateLayout;
@@ -120,6 +124,7 @@ export function CertificateEditor({
   const [draft, setDraft] = useState(initial);
   const [selected, setSelected] = useState<string | null>(null);
   const [sampleName, setSampleName] = useState(() => t("certDesign.sampleNameValue"));
+  const [choosingBackground, setChoosingBackground] = useState(false);
   const page = CERTIFICATE_PAGES[draft.orientation];
   const folder = certificateFolder({ orgId: scope.orgId, eventId: scope.eventId, kind });
 
@@ -295,6 +300,13 @@ export function CertificateEditor({
         </ToolbarGroup>
         <ToolbarSeparator />
         <ToolbarGroup>
+          <ToolbarButton size="sm" onClick={() => setChoosingBackground(true)}>
+            <IconPhoto />
+            {t("certImport.background")}
+          </ToolbarButton>
+        </ToolbarGroup>
+        <ToolbarSeparator />
+        <ToolbarGroup>
           <Label className="sr-only" htmlFor={`${folder}-orientation`}>
             {t("manageCerts.orientation")}
           </Label>
@@ -334,6 +346,15 @@ export function CertificateEditor({
           }}
         />
       </Toolbar>
+      <BackgroundDialog
+        open={choosingBackground}
+        onOpenChange={setChoosingBackground}
+        folder={folder}
+        onPick={(image, size) => {
+          setDraft((current) => withBackgroundPicture(current, image, size ?? page));
+          setSelected(null);
+        }}
+      />
       <ErrorAlert error={upload.error} title={t("image.failed")} />
       {full && (
         <p className="text-sm text-muted-fg">
@@ -467,7 +488,7 @@ export function CertificateEditor({
           ) : (
             <PageInspector
               layout={draft.layout}
-              folder={folder}
+              onChoose={() => setChoosingBackground(true)}
               onChange={(background) =>
                 setLayout((layout) => ({
                   ...layout,
@@ -540,43 +561,70 @@ function PictureDrop({
 
 function PageInspector({
   layout,
-  folder,
+  onChoose,
   onChange,
 }: {
   layout: CertificateLayout;
-  folder: string;
+  onChoose: () => void;
   onChange: (background: Partial<CertificateLayout["background"]>) => void;
 }) {
   const t = useT();
   const id = useId();
+  const image = layout.background.image;
   return (
-    <div className="grid gap-4 md:grid-cols-[auto_1fr]">
-      <div className="flex flex-col gap-4">
-        <Row label={t("certDesign.backgroundColor")} htmlFor={`${id}-color`}>
-          <Input
-            id={`${id}-color`}
-            type="color"
-            className="h-9 w-20 p-1"
-            value={layout.background.color}
-            onChange={(event) => onChange({ color: event.target.value })}
+    <div className="flex flex-wrap items-end gap-4">
+      <Row label={t("certDesign.background")}>
+        <div className="flex flex-wrap items-center gap-2">
+          {image && (
+            <img
+              src={image.url}
+              alt=""
+              referrerPolicy="no-referrer"
+              className="h-9 w-14 rounded border border-border object-cover"
+            />
+          )}
+          <Button size="sm" variant="outline" onClick={onChoose}>
+            {image ? t("certImport.change") : t("certImport.choose")}
+          </Button>
+          {image && (
+            <Button size="sm" variant="ghost" onClick={() => onChange({ image: null })}>
+              {t("certDesign.remove")}
+            </Button>
+          )}
+        </div>
+      </Row>
+      {image && (
+        <Row label={t("certDesign.backgroundFit")} htmlFor={`${id}-fit`}>
+          <OptSelect<CertificateBackgroundFit>
+            id={`${id}-fit`}
+            size="sm"
+            value={layout.background.fit}
+            options={[
+              { value: "cover", label: t("certDesign.bgFitCover") },
+              { value: "contain", label: t("certDesign.bgFitContain") },
+              { value: "stretch", label: t("certDesign.bgFitStretch") },
+            ]}
+            onChange={(fit) => onChange({ fit })}
           />
         </Row>
-        <div className="flex items-center gap-2">
-          <Switch
-            id={`${id}-frame`}
-            checked={layout.background.frame}
-            onCheckedChange={(frame) => onChange({ frame })}
-          />
-          <Label htmlFor={`${id}-frame`}>{t("certDesign.frame")}</Label>
-        </div>
-      </div>
-      <Row label={t("certDesign.background")}>
-        <PictureDrop
-          folder={folder}
-          image={layout.background.image}
-          onChange={(image) => onChange({ image })}
+      )}
+      <Row label={t("certDesign.backgroundColor")} htmlFor={`${id}-color`}>
+        <Input
+          id={`${id}-color`}
+          type="color"
+          className="h-9 w-20 p-1"
+          value={layout.background.color}
+          onChange={(event) => onChange({ color: event.target.value })}
         />
       </Row>
+      <div className="flex h-9 items-center gap-2">
+        <Switch
+          id={`${id}-frame`}
+          checked={layout.background.frame}
+          onCheckedChange={(frame) => onChange({ frame })}
+        />
+        <Label htmlFor={`${id}-frame`}>{t("certDesign.frame")}</Label>
+      </div>
     </div>
   );
 }

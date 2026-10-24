@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { layoutProblem } from "@bogey/utils/email-layout";
+import { CERTIFICATE_KINDS } from "@bogey/utils/certificate";
 import { TAG_REF } from "@bogey/utils/keys";
 import { en, type MessageKey } from "./messages.ts";
 import { SIGN_IN_PROVIDER_KEYS } from "./sign-in.ts";
@@ -1012,7 +1013,7 @@ export const settingsRegistry = {
   }),
   certificates: namespace({
     label: "Certificates",
-    scopes: ["org", "event"],
+    scopes: ["event"],
     defaults: { enabled: false },
     schema: z.object({
       enabled: z
@@ -1021,11 +1022,24 @@ export const settingsRegistry = {
         .describe(
           "People can claim certificates for this event: taking part, awards, judging and helping",
         ),
+      kinds: z
+        .array(z.enum(CERTIFICATE_KINDS))
+        .max(CERTIFICATE_KINDS.length)
+        .optional()
+        .describe("Which certificates the event gives; every kind when it isn't set"),
     }),
     fields: {
       enabled: {
         label: say("setting.certificates.enabled"),
         description: say("setting.certificates.enabled.help"),
+      },
+      kinds: {
+        label: say("setting.certificates.kinds"),
+        description: say("setting.certificates.kinds.help"),
+        choices: CERTIFICATE_KINDS.map((kind) => ({
+          value: kind,
+          label: say(`certKind.${kind}`),
+        })),
       },
     },
   }),

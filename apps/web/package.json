@@ -42,6 +42,8 @@
     "mesurer": "catalog:",
     "nitro": "catalog:",
     "nodemailer": "catalog:",
+    "pdfjs-dist": "catalog:",
+    "pptx-glimpse": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "read-excel-file": "catalog:",

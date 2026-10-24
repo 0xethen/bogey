@@ -160,7 +160,14 @@ export function CertificateBackdrop({
           alt=""
           referrerPolicy="no-referrer"
           draggable={false}
-          className="absolute inset-0 size-full object-cover"
+          className={cn(
+            "absolute inset-0 size-full",
+            layout.background.fit === "contain"
+              ? "object-contain"
+              : layout.background.fit === "stretch"
+                ? "object-fill"
+                : "object-cover",
+          )}
         />
       )}
       {layout.background.frame && (

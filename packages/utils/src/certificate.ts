@@ -72,6 +72,8 @@ export const CERTIFICATE_FONTS = ["sans", "serif", "mono"] as const;
 export type CertificateFont = (typeof CERTIFICATE_FONTS)[number];
 export const CERTIFICATE_ALIGNS = ["left", "center", "right"] as const;
 export type CertificateAlign = (typeof CERTIFICATE_ALIGNS)[number];
+export const CERTIFICATE_BACKGROUND_FITS = ["cover", "contain", "stretch"] as const;
+export type CertificateBackgroundFit = (typeof CERTIFICATE_BACKGROUND_FITS)[number];
 export const CERTIFICATE_MAX_LAYERS = 40;
 export const CERTIFICATE_MAX_TEXT = 1000;
 
@@ -115,7 +117,13 @@ export interface CertificateQrLayer extends LayerBox {
 export type CertificateLayer = CertificateTextLayer | CertificateImageLayer | CertificateQrLayer;
 
 export interface CertificateLayout {
-  background: { color: string; image: CertificateImage | null; frame: boolean };
+  background: {
+    color: string;
+    image: CertificateImage | null;
+    /** How the picture meets the page: cropped to fill it, all of it shown, or stretched. */
+    fit: CertificateBackgroundFit;
+    frame: boolean;
+  };
   layers: CertificateLayer[];
 }
 
@@ -197,6 +205,7 @@ export function parseCertificateLayout(value: unknown): CertificateLayout {
           ? background.color
           : "#ffffff",
       image: parseImage(background.image),
+      fit: oneOf(background.fit, CERTIFICATE_BACKGROUND_FITS, "cover"),
       frame: background.frame === true,
     },
     layers: layers
@@ -271,7 +280,12 @@ export function certificateLayoutFromMarkdown(
     },
   );
   return {
-    background: { color: "#ffffff", image: background ? { url: background } : null, frame: true },
+    background: {
+      color: "#ffffff",
+      image: background ? { url: background } : null,
+      fit: "cover",
+      frame: true,
+    },
     layers,
   };
 }
@@ -312,6 +326,26 @@ export function turnCertificatePage(
         h: round(layer.h * sy),
       };
     }),
+  };
+}
+
+/** The orientation that fits a picture of this shape best. */
+export function orientationFor(width: number, height: number): CertificateOrientation {
+  return height > width ? "portrait" : "landscape";
+}
+
+/** A design with `image` as its whole background (a page designed elsewhere): the page turns to
+ * match the picture, the frame goes, and the layers stay on top. */
+export function withBackgroundPicture(
+  draft: { layout: CertificateLayout; orientation: CertificateOrientation },
+  image: CertificateImage,
+  size: { width: number; height: number },
+): { layout: CertificateLayout; orientation: CertificateOrientation } {
+  const orientation = orientationFor(size.width, size.height);
+  const layout = turnCertificatePage(draft.layout, draft.orientation, orientation);
+  return {
+    orientation,
+    layout: { ...layout, background: { ...layout.background, image, fit: "cover", frame: false } },
   };
 }
 
