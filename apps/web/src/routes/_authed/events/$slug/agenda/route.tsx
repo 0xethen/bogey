@@ -4,6 +4,7 @@ import { msg } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/agenda")({
   staticData: { title: msg("eventTab.agenda") },
-  loader: ({ context }) => context.query.ensureQueryData(agendaQueryOptions(context.event.id)),
+  loader: ({ context }) =>
+    context.query.query({ ...agendaQueryOptions(context.event.id), staleTime: "static" }),
   component: Outlet,
 });

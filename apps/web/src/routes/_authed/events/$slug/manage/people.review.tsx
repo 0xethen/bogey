@@ -53,8 +53,11 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/people/review
   validateSearch: z.object({ link: z.uuid().optional().catch(undefined) }),
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventInviteLinksQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPeopleQueryOptions(context.event.id)),
+      context.query.query({
+        ...eventInviteLinksQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...eventPeopleQueryOptions(context.event.id), staleTime: "static" }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

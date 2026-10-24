@@ -40,16 +40,18 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/plugins")({
   staticData: { title: msg("accountNav.plugins") },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["plugins"]),
-      ),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["plugins"]),
+        staleTime: "static",
+      }),
       ...installedPlugins().map((manifest) =>
-        context.query.ensureQueryData(
-          ownPluginSettingsQueryOptions(
+        context.query.query({
+          ...ownPluginSettingsQueryOptions(
             { scope: "event", eventId: context.event.id },
             manifest.key,
           ),
-        ),
+          staleTime: "static",
+        }),
       ),
     ]),
   component: RouteComponent,

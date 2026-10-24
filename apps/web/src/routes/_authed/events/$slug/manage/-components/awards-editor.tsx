@@ -116,7 +116,7 @@ export function AwardsEditor({ eventId, rows }: { eventId: string; rows: Tuple<R
         data: { eventId, awards: value.awards.map(toInput) },
       }).catch(requestFailure);
       if (!result.ok) return createValidationError(result.error.message);
-      const saved = await queryClient.fetchQuery({
+      const saved = await queryClient.query({
         ...draftAwardsQueryOptions(eventId),
         staleTime: 0,
       });

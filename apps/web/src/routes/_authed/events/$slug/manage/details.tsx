@@ -74,9 +74,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/details")({
         "venue",
         "branding",
       ]),
-      context.query.ensureQueryData(
-        ownSettingsQueryOptions({ scope: "event", eventId: context.event.id }, "about"),
-      ),
+      context.query.query({
+        ...ownSettingsQueryOptions({ scope: "event", eventId: context.event.id }, "about"),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,

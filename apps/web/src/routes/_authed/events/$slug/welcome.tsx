@@ -35,18 +35,25 @@ import { msg, useT, type T } from "#/lib/translate.tsx";
 export const Route = createFileRoute("/_authed/events/$slug/welcome")({
   staticData: { title: msg("welcome.title"), command: false },
   beforeLoad: async ({ context, params }) => {
-    const needs = await context.query.ensureQueryData(
-      identitySetupPendingQueryOptions(context.event.id),
-    );
+    const needs = await context.query.query({
+      ...identitySetupPendingQueryOptions(context.event.id),
+      staleTime: "static",
+    });
     if (!isPending(needs)) throw Route.redirect({ to: "/events/$slug", params, replace: true });
     return { needs };
   },
   loader: ({ context }) =>
     Promise.all([
       context.needs.division
-        ? context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id))
+        ? context.query.query({
+            ...eventDivisionsQueryOptions(context.event.id),
+            staleTime: "static",
+          })
         : null,
-      context.query.ensureQueryData(settingsQueryOptions({ eventId: context.event.id }, ["teams"])),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["teams"]),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
 });

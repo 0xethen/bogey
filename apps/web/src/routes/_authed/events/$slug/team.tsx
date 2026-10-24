@@ -48,10 +48,13 @@ export const Route = createFileRoute("/_authed/events/$slug/team")({
   loader: ({ context }) =>
     Promise.all([
       context.participant
-        ? context.query.ensureQueryData(myTeamQueryOptions(context.event.id))
+        ? context.query.query({ ...myTeamQueryOptions(context.event.id), staleTime: "static" })
         : null,
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(settingsQueryOptions({ eventId: context.event.id }, ["teams"])),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["teams"]),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
 });

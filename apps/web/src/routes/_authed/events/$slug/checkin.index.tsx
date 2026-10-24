@@ -52,10 +52,11 @@ export const Route = createFileRoute("/_authed/events/$slug/checkin/")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(checkinRosterQueryOptions(context.event.id)),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["checkin"]),
-      ),
+      context.query.query({ ...checkinRosterQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["checkin"]),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
 });

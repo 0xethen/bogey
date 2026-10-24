@@ -41,8 +41,8 @@ export const prizesSearch = (t: T): SettingsSearchEntry[] => [
 
 export const loadPrizes = (query: QueryClient, eventId: string) =>
   Promise.all([
-    query.ensureQueryData(eventPrizesQueryOptions(eventId)),
-    query.ensureQueryData(submissionFormsQueryOptions(eventId)),
+    query.query({ ...eventPrizesQueryOptions(eventId), staleTime: "static" }),
+    query.query({ ...submissionFormsQueryOptions(eventId), staleTime: "static" }),
     prefetchSettingFields(query, { scope: "event", eventId }, ["submissions"]),
   ]);
 
@@ -193,7 +193,7 @@ export function PrizesSections({ eventId }: { eventId: string }) {
       }).catch(requestFailure);
       if (!result.ok) return createValidationError(result.error.message);
       await queryClient.invalidateQueries({ queryKey: eventPrizesQueryOptions(eventId).queryKey });
-      const saved = await queryClient.fetchQuery({
+      const saved = await queryClient.query({
         ...eventPrizesQueryOptions(eventId),
         staleTime: 0,
       });

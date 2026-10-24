@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authed")({
     classNames: { root: "overscroll-y-none" },
   },
   beforeLoad: async ({ context, location }) => {
-    const result = await context.query.fetchQuery(sessionQueryOptions());
+    const result = await context.query.query(sessionQueryOptions());
 
     if (result.status === "unavailable") {
       throw new BogeyRequestError({
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authed")({
     const chosen = result.session.profile?.locale;
     await Promise.all([
       chosen && applyAccountLocale(context.query, chosen),
-      context.query.ensureQueryData(rolesQueryOptions()),
+      context.query.query({ ...rolesQueryOptions(), staleTime: "static" }),
     ]);
     return { session: result.session };
   },
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authed")({
 });
 
 async function applyAccountLocale(query: QueryClient, chosen: string) {
-  const current = await query.ensureQueryData(localizationQueryOptions());
+  const current = await query.query({ ...localizationQueryOptions(), staleTime: "static" });
   const codes = current.languages.map((language) => language.code);
   if (negotiateLocale([chosen], codes) === current.locale) return;
   query.setQueryData(localizationQueryOptions().queryKey, await localizationFn({ data: chosen }));

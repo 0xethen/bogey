@@ -16,7 +16,7 @@ import { msg, useT } from "#/lib/translate.tsx";
 export const Route = createFileRoute("/_authed/events/$slug/results/")({
   staticData: { title: msg("results.title"), command: { when: inEvent(hasResults) } },
   loader: ({ context }) =>
-    context.query.ensureQueryData(publishedResultsQueryOptions(context.event.id)),
+    context.query.query({ ...publishedResultsQueryOptions(context.event.id), staleTime: "static" }),
   component: RouteComponent,
 });
 

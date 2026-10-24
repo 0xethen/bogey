@@ -16,8 +16,8 @@ const agendaSettings = (eventId: string) =>
 export const Route = createFileRoute("/_authed/events/$slug/agenda/")({
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(agendaSettings(context.event.id)),
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
+      context.query.query({ ...agendaSettings(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
     ]),
   component: RouteComponent,
 });

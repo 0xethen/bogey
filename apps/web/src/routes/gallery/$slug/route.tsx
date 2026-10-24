@@ -8,8 +8,8 @@ export const Route = createFileRoute("/gallery/$slug")({
   staticData: { title: msg("gallery.title"), command: false },
   loader: async ({ context, params }) => {
     const [gallery] = await Promise.all([
-      context.query.ensureQueryData(galleryQueryOptions(params.slug)),
-      context.query.ensureQueryData(sessionQueryOptions()),
+      context.query.query({ ...galleryQueryOptions(params.slug), staleTime: "static" }),
+      context.query.query({ ...sessionQueryOptions(), staleTime: "static" }),
     ]);
     if (!gallery) throw notFound();
     return { title: gallery.event.name, gallery };

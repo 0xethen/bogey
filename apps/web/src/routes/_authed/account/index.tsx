@@ -119,8 +119,8 @@ export const Route = createFileRoute("/_authed/account/")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(accountDeletionQueryOptions()),
-      context.query.ensureQueryData(portfoliosEnabledQueryOptions()),
+      context.query.query({ ...accountDeletionQueryOptions(), staleTime: "static" }),
+      context.query.query({ ...portfoliosEnabledQueryOptions(), staleTime: "static" }),
     ]),
   component: RouteComponent,
 });

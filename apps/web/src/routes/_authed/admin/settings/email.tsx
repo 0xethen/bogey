@@ -19,8 +19,11 @@ export const Route = createFileRoute("/_authed/admin/settings/email")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(ownSettingsQueryOptions(INSTANCE, "email")),
-      context.query.ensureQueryData(ownSettingsQueryOptions(INSTANCE, "branding")),
+      context.query.query({ ...ownSettingsQueryOptions(INSTANCE, "email"), staleTime: "static" }),
+      context.query.query({
+        ...ownSettingsQueryOptions(INSTANCE, "branding"),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,

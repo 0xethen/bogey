@@ -66,18 +66,34 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionI
   staticData: { title: msg("judging.project") },
   loader: async ({ context, params }) => {
     const [submission] = await Promise.all([
-      context.query.ensureQueryData(submissionDetailQueryOptions(params.submissionId)),
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgeProjectQueryOptions(params.submissionId)),
-      context.query.ensureQueryData(criteriaQueryOptions(context.event.id)),
-      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(deliberationQueryOptions(params.submissionId)),
-      context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgeSheetQueryOptions(context.event.id, params.submissionId)),
-      context.query.ensureQueryData(judgeQueueQueryOptions(context.event.id)),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
-      ),
+      context.query.query({
+        ...submissionDetailQueryOptions(params.submissionId),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...submissionFormsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...judgeProjectQueryOptions(params.submissionId),
+        staleTime: "static",
+      }),
+      context.query.query({ ...criteriaQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...rubricsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...deliberationQueryOptions(params.submissionId),
+        staleTime: "static",
+      }),
+      context.query.query({ ...judgingRoundsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...judgeSheetQueryOptions(context.event.id, params.submissionId),
+        staleTime: "static",
+      }),
+      context.query.query({ ...judgeQueueQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
+        staleTime: "static",
+      }),
     ]);
     if (!submission || submission.status !== "submitted") throw notFound();
     return { title: submission.title };

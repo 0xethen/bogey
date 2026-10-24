@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/registration/
     ],
   },
   loader: ({ context }) =>
-    context.query.ensureQueryData(onboardingFormQueryOptions(context.event.id)),
+    context.query.query({ ...onboardingFormQueryOptions(context.event.id), staleTime: "static" }),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
 });

@@ -38,11 +38,15 @@ export const Route = createFileRoute("/_authed/events/$slug/messages")({
   beforeLoad: ({ context }) => ({ manager: can(context.access, "event.manage") }),
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(
-        eventAnnouncementsQueryOptions(context.event.id, context.manager ? "all" : "published"),
-      ),
+      context.query.query({
+        ...eventAnnouncementsQueryOptions(context.event.id, context.manager ? "all" : "published"),
+        staleTime: "static",
+      }),
       chats(context)
-        ? context.query.ensureQueryData(eventConversationsQueryOptions(context.event.id))
+        ? context.query.query({
+            ...eventConversationsQueryOptions(context.event.id),
+            staleTime: "static",
+          })
         : null,
     ]),
   component: RouteComponent,

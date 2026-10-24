@@ -9,16 +9,18 @@ import { settingsQueryOptions } from "@bogey/db/queries/settings";
 export const Route = createFileRoute("/_authed/org/x/$key/$")({
   staticData: { title: msg("plugin.one") },
   beforeLoad: async ({ context, params }) => {
-    const { plugins } = await context.query.ensureQueryData(
-      settingsQueryOptions({ orgId: context.org.id }, ["plugins"]),
-    );
+    const { plugins } = await context.query.query({
+      ...settingsQueryOptions({ orgId: context.org.id }, ["plugins"]),
+      staleTime: "static",
+    });
     return { page: findPluginPage(offeredPlugins(plugins), "org", params) };
   },
   loader: async ({ context }) => {
     const { page, org, session, query } = context;
-    const stored = await query.ensureQueryData(
-      pluginSettingsAtQueryOptions({ orgId: org.id }, page.manifest.key),
-    );
+    const stored = await query.query({
+      ...pluginSettingsAtQueryOptions({ orgId: org.id }, page.manifest.key),
+      staleTime: "static",
+    });
     return loadPluginPage(
       "org",
       page,

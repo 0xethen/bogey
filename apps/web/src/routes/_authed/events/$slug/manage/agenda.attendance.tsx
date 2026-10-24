@@ -157,8 +157,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda/attend
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(agendaQueryOptions(context.event.id)),
-      context.query.ensureQueryData(attendanceQueryOptions(context.event.id)),
+      context.query.query({ ...agendaQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...attendanceQueryOptions(context.event.id), staleTime: "static" }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

@@ -119,7 +119,7 @@ export function SessionTypes({ eventId }: { eventId: string }) {
         requestFailure,
       );
       if (!saved.ok) return createValidationError(saved.error.message);
-      const fresh = await queryClient.fetchQuery({
+      const fresh = await queryClient.query({
         ...agendaQueryOptions(eventId),
         staleTime: 0,
       });

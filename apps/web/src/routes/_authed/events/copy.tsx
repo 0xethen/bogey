@@ -41,7 +41,8 @@ export const Route = createFileRoute("/_authed/events/copy")({
       throw Route.redirect({ to: "/events", replace: true });
     return { org };
   },
-  loader: ({ context }) => context.query.ensureQueryData(eventsQueryOptions(context.org.id)),
+  loader: ({ context }) =>
+    context.query.query({ ...eventsQueryOptions(context.org.id), staleTime: "static" }),
   component: RouteComponent,
 });
 

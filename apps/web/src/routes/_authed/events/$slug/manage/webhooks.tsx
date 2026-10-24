@@ -18,8 +18,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/webhooks")({
   loader: ({ context }) => {
     const scope = { orgId: context.event.org_id, eventId: context.event.id };
     return Promise.all([
-      context.query.ensureQueryData(webhooksQueryOptions(scope)),
-      context.query.ensureQueryData(webhookDeliveriesQueryOptions(scope)),
+      context.query.query({ ...webhooksQueryOptions(scope), staleTime: "static" }),
+      context.query.query({ ...webhookDeliveriesQueryOptions(scope), staleTime: "static" }),
     ]);
   },
   component: RouteComponent,

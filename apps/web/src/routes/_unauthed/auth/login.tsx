@@ -52,13 +52,14 @@ export const Route = createFileRoute("/_unauthed/auth/login")({
   staticData: { title: "Sign in" },
   validateSearch: searchSchema,
   loader: async ({ context }) => {
-    const org = await context.query.ensureQueryData(orgQueryOptions());
+    const org = await context.query.query({ ...orgQueryOptions(), staleTime: "static" });
     if (org) {
       await Promise.all([
-        context.query.ensureQueryData(
-          settingsQueryOptions({ orgId: org.id }, ["registration", "branding"]),
-        ),
-        context.query.ensureQueryData(signInProvidersQueryOptions()),
+        context.query.query({
+          ...settingsQueryOptions({ orgId: org.id }, ["registration", "branding"]),
+          staleTime: "static",
+        }),
+        context.query.query({ ...signInProvidersQueryOptions(), staleTime: "static" }),
       ]);
     }
     return { org };

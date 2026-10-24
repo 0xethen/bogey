@@ -18,8 +18,8 @@ export const Route = createFileRoute("/_authed/admin/")({
   staticData: { command: { label: msg("adminTab.overview") } },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(instanceOverviewQueryOptions()),
-      context.query.ensureQueryData(instanceOrgsQueryOptions()),
+      context.query.query({ ...instanceOverviewQueryOptions(), staleTime: "static" }),
+      context.query.query({ ...instanceOrgsQueryOptions(), staleTime: "static" }),
     ]),
   component: RouteComponent,
 });

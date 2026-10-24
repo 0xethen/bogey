@@ -31,14 +31,17 @@ import { IconCopy, IconCopyCheck, IconRefresh } from "@tabler/icons-react";
 
 export const Route = createFileRoute("/_authed/events/$slug/agenda/$sessionId/attendance")({
   loader: async ({ context, params }) => {
-    const agenda = await context.query.ensureQueryData(agendaQueryOptions(context.event.id));
+    const agenda = await context.query.query({
+      ...agendaQueryOptions(context.event.id),
+      staleTime: "static",
+    });
     const session = agenda.slots
       .flatMap((slot) => slot.sessions)
       .find((entry) => entry.id === params.sessionId);
     if (!session?.canTakeAttendance) throw notFound();
     await Promise.all([
-      context.query.ensureQueryData(rosterQueryOptions(session.id)),
-      context.query.ensureQueryData(sessionCodeQueryOptions(session.id)),
+      context.query.query({ ...rosterQueryOptions(session.id), staleTime: "static" }),
+      context.query.query({ ...sessionCodeQueryOptions(session.id), staleTime: "static" }),
     ]);
     return { title: session.name };
   },

@@ -20,11 +20,20 @@ import { Banner, WinnerBadges } from "#/routes/gallery/$slug/-components/project
 export const Route = createFileRoute("/gallery/$slug/$projectId")({
   staticData: { title: msg("judging.project") },
   loader: async ({ context, params }) => {
-    const gallery = await context.query.ensureQueryData(galleryQueryOptions(params.slug));
+    const gallery = await context.query.query({
+      ...galleryQueryOptions(params.slug),
+      staleTime: "static",
+    });
     if (!gallery) throw notFound();
     const [project] = await Promise.all([
-      context.query.ensureQueryData(galleryProjectQueryOptions(params.slug, params.projectId)),
-      context.query.ensureQueryData(submissionFormsQueryOptions(gallery.event.id)),
+      context.query.query({
+        ...galleryProjectQueryOptions(params.slug, params.projectId),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...submissionFormsQueryOptions(gallery.event.id),
+        staleTime: "static",
+      }),
     ]);
     if (!project) throw notFound();
     return { title: project.title };

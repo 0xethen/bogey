@@ -23,7 +23,8 @@ export const Route = createFileRoute("/_authed/account")({
     title: "Account",
     command: { group: "Account", keywords: ["profile", "preferences"] },
   },
-  loader: ({ context }) => context.query.ensureQueryData(preferencesQueryOptions()),
+  loader: ({ context }) =>
+    context.query.query({ ...preferencesQueryOptions(), staleTime: "static" }),
   component: RouteComponent,
 });
 

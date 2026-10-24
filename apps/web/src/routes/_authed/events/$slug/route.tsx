@@ -46,13 +46,11 @@ export const Route = createFileRoute("/_authed/events/$slug")({
   beforeLoad: async ({ context, params, location }) => {
     const org = context.session.org;
     if (!org) throw notFound();
-    const event = await orNotFound(
-      context.query.fetchQuery(eventQueryOptions(org.id, params.slug)),
-    );
+    const event = await orNotFound(context.query.query(eventQueryOptions(org.id, params.slug)));
     const [access, windows, settings, agenda] = await Promise.all([
-      context.query.fetchQuery(eventAccessQueryOptions(event.id)),
-      context.query.fetchQuery(eventWindowsQueryOptions(event.id)),
-      context.query.fetchQuery(
+      context.query.query(eventAccessQueryOptions(event.id)),
+      context.query.query(eventWindowsQueryOptions(event.id)),
+      context.query.query(
         settingsQueryOptions({ eventId: event.id }, [
           "plugins",
           "chat",
@@ -61,15 +59,15 @@ export const Route = createFileRoute("/_authed/events/$slug")({
           "tabs",
         ]),
       ),
-      context.query.ensureQueryData(agendaQueryOptions(event.id)),
-      context.query.ensureQueryData(eventPagesQueryOptions(event.id)),
+      context.query.query({ ...agendaQueryOptions(event.id), staleTime: "static" }),
+      context.query.query({ ...eventPagesQueryOptions(event.id), staleTime: "static" }),
     ]);
     const plugins = enabledPlugins(settings.plugins);
     // A plugin (lockdown) that has closed the event to this participant leaves them only its home,
     // where the plugin says why. The database already refuses them everything else.
     const gate =
       access.role === "participant"
-        ? await context.query.fetchQuery(eventGateQueryOptions(event.id))
+        ? await context.query.query(eventGateQueryOptions(event.id))
         : null;
     if (gate && !isEventHome(location.pathname, params.slug)) {
       throw Route.redirect({ to: "/events/$slug", params, replace: true });
@@ -77,17 +75,23 @@ export const Route = createFileRoute("/_authed/events/$slug")({
     const checkSetup =
       !gate && access.role === "participant" && !location.pathname.endsWith("/welcome");
     const [pending, shownWhen] = await Promise.all([
-      checkSetup ? context.query.fetchQuery(identitySetupPendingQueryOptions(event.id)) : null,
+      checkSetup ? context.query.query(identitySetupPendingQueryOptions(event.id)) : null,
       Promise.all(
         plugins
           .filter((plugin) => plugin.routes?.some((route) => route.showWhen))
           .map(async (plugin) => [
             plugin.key,
-            await context.query.ensureQueryData(pluginSettingsQueryOptions(event.id, plugin.key)),
+            await context.query.query({
+              ...pluginSettingsQueryOptions(event.id, plugin.key),
+              staleTime: "static",
+            }),
           ]),
       ),
       ...eventWrapperPlugins(plugins).map((plugin) =>
-        context.query.ensureQueryData(pluginSettingsQueryOptions(event.id, plugin.key)),
+        context.query.query({
+          ...pluginSettingsQueryOptions(event.id, plugin.key),
+          staleTime: "static",
+        }),
       ),
     ]);
     if (pending && isPending(pending)) {

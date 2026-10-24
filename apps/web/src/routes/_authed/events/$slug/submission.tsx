@@ -89,17 +89,19 @@ export const Route = createFileRoute("/_authed/events/$slug/submission")({
   loader: async ({ context }) => {
     if (!context.participant) return;
     await Promise.all([
-      context.query.ensureQueryData(mySubmissionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["submissions"]),
-      ),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
-      ),
-      context.query.ensureQueryData(networkStatusQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPrizesQueryOptions(context.event.id)),
-      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
+      context.query.query({ ...mySubmissionsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["submissions"]),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
+        staleTime: "static",
+      }),
+      context.query.query({ ...networkStatusQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventPrizesQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...rubricsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
     ]);
   },
   component: RouteComponent,

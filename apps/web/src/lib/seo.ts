@@ -7,10 +7,11 @@ export type Seo = ResolvedValue<"seo">;
 
 export async function loadSeo(query: QueryClient): Promise<Seo> {
   try {
-    const org = await query.ensureQueryData(orgQueryOptions());
-    const settings = await query.ensureQueryData(
-      settingsQueryOptions(org ? { orgId: org.id } : {}, ["seo"]),
-    );
+    const org = await query.query({ ...orgQueryOptions(), staleTime: "static" });
+    const settings = await query.query({
+      ...settingsQueryOptions(org ? { orgId: org.id } : {}, ["seo"]),
+      staleTime: "static",
+    });
     return settings.seo;
   } catch {
     return resolveSettings("seo", undefined);

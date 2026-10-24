@@ -43,12 +43,15 @@ const scopeSchema = (t: T) =>
 
 export function prefetchNetworkSection(query: QueryClient, eventId: string) {
   return Promise.all([
-    query.ensureQueryData(networkStatusQueryOptions(eventId)),
-    query.ensureQueryData(blockedAccessQueryOptions(eventId)),
-    query.ensureQueryData(eventPeopleQueryOptions(eventId)),
-    query.ensureQueryData(eventTeamsQueryOptions(eventId)),
-    query.ensureQueryData(eventDivisionsQueryOptions(eventId)),
-    query.ensureQueryData(ownSettingsQueryOptions({ scope: "event", eventId }, "access")),
+    query.query({ ...networkStatusQueryOptions(eventId), staleTime: "static" }),
+    query.query({ ...blockedAccessQueryOptions(eventId), staleTime: "static" }),
+    query.query({ ...eventPeopleQueryOptions(eventId), staleTime: "static" }),
+    query.query({ ...eventTeamsQueryOptions(eventId), staleTime: "static" }),
+    query.query({ ...eventDivisionsQueryOptions(eventId), staleTime: "static" }),
+    query.query({
+      ...ownSettingsQueryOptions({ scope: "event", eventId }, "access"),
+      staleTime: "static",
+    }),
   ]);
 }
 

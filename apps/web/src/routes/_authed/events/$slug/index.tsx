@@ -46,13 +46,19 @@ export const Route = createFileRoute("/_authed/events/$slug/")({
   }),
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPagesQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventAnnouncementsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(homeSettings(context.event.id)),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventPagesQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...eventAnnouncementsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...homeSettings(context.event.id), staleTime: "static" }),
       ...context.plugins.flatMap((manifest) => [
         loadPluginRuntime(manifest.key).then(() => null),
-        context.query.ensureQueryData(pluginSettingsQueryOptions(context.event.id, manifest.key)),
+        context.query.query({
+          ...pluginSettingsQueryOptions(context.event.id, manifest.key),
+          staleTime: "static",
+        }),
       ]),
     ]),
   component: RouteComponent,

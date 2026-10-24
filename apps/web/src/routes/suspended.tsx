@@ -7,10 +7,14 @@ import { msg, useT } from "#/lib/translate.tsx";
 export const Route = createFileRoute("/suspended")({
   staticData: { title: msg("suspended.title") },
   beforeLoad: async ({ context }) => {
-    const suspension = await context.query.ensureQueryData(suspensionQueryOptions());
+    const suspension = await context.query.query({
+      ...suspensionQueryOptions(),
+      staleTime: "static",
+    });
     if (!suspension) throw redirect({ to: "/", replace: true });
   },
-  loader: ({ context }) => context.query.ensureQueryData(suspensionQueryOptions()),
+  loader: ({ context }) =>
+    context.query.query({ ...suspensionQueryOptions(), staleTime: "static" }),
   component: RouteComponent,
 });
 

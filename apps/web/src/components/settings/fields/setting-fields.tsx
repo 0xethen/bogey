@@ -368,10 +368,10 @@ export function prefetchSettingFields(
 ): Promise<unknown[]> {
   return Promise.all(
     namespaces.flatMap((namespace) => [
-      query.ensureQueryData(ownSettingsQueryOptions(scope, namespace)),
-      query.ensureQueryData(inheritedSettingsQueryOptions(scope, namespace)),
+      query.query({ ...ownSettingsQueryOptions(scope, namespace), staleTime: "static" }),
+      query.query({ ...inheritedSettingsQueryOptions(scope, namespace), staleTime: "static" }),
       ...(scopesBelow(namespace, scope.scope).length > 0
-        ? [query.ensureQueryData(ownLocksQueryOptions(scope, namespace))]
+        ? [query.query({ ...ownLocksQueryOptions(scope, namespace), staleTime: "static" })]
         : []),
     ]),
   );

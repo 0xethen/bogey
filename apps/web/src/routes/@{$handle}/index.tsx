@@ -13,8 +13,8 @@ export const Route = createFileRoute("/@{$handle}/")({
   staticData: { title: msg("accountNav.profile"), command: false },
   loader: async ({ context, params }) => {
     const [portfolio] = await Promise.all([
-      context.query.ensureQueryData(portfolioQueryOptions(params.handle)),
-      context.query.ensureQueryData(sessionQueryOptions()),
+      context.query.query({ ...portfolioQueryOptions(params.handle), staleTime: "static" }),
+      context.query.query({ ...sessionQueryOptions(), staleTime: "static" }),
     ]);
     if (!portfolio) throw notFound();
     return { title: portfolio.name };

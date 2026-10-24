@@ -95,7 +95,7 @@ export function OfflineScores({ eventId }: { eventId: string }) {
         if (!result.ok) return createValidationError(result.error.message);
       }
       await queryClient.invalidateQueries({ queryKey: ["results-preview", eventId] });
-      const next = await queryClient.fetchQuery({
+      const next = await queryClient.query({
         ...offlineScoresQueryOptions(eventId),
         staleTime: 0,
       });

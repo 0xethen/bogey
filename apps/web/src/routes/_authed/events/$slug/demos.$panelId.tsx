@@ -57,7 +57,7 @@ export const Route = createFileRoute("/_authed/events/$slug/demos/$panelId")({
     }
   },
   loader: ({ context, params }) =>
-    context.query.ensureQueryData(panelPresentationQueryOptions(params.panelId)),
+    context.query.query({ ...panelPresentationQueryOptions(params.panelId), staleTime: "static" }),
   component: RouteComponent,
 });
 

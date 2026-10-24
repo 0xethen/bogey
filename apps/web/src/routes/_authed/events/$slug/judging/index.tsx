@@ -44,11 +44,12 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/")({
   staticData: { title: msg("judging.title") },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(judgeQueueQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
-      ),
+      context.query.query({ ...judgeQueueQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...judgingRoundsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
 });

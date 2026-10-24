@@ -9,8 +9,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/f
   staticData: { title: msg("manageForms.newTitle") },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,

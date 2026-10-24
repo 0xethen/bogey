@@ -81,14 +81,20 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/people/")({
   }),
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventInviteLinksQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPeopleQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(rosterOverlapsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(checkinRosterQueryOptions(context.event.id)),
-      context.query.ensureQueryData(tagScopeQueries(context.event).tags),
-      context.query.ensureQueryData(tagScopeQueries(context.event).holders),
-      context.query.ensureQueryData(settingsQueryOptions({ eventId: context.event.id }, ["tags"])),
+      context.query.query({
+        ...eventInviteLinksQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...eventPeopleQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...rosterOverlapsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...checkinRosterQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...tagScopeQueries(context.event).tags, staleTime: "static" }),
+      context.query.query({ ...tagScopeQueries(context.event).holders, staleTime: "static" }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["tags"]),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

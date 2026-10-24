@@ -15,7 +15,8 @@ import { msg, useT } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/prizes")({
   staticData: { title: msg("prizes.title") },
-  loader: ({ context }) => context.query.ensureQueryData(eventPrizesQueryOptions(context.event.id)),
+  loader: ({ context }) =>
+    context.query.query({ ...eventPrizesQueryOptions(context.event.id), staleTime: "static" }),
   component: RouteComponent,
 });
 

@@ -13,13 +13,15 @@ export const Route = createFileRoute("/_authed/org/plugins")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(
-        ownSettingsQueryOptions({ scope: "org", orgId: context.org.id }, "plugins"),
-      ),
+      context.query.query({
+        ...ownSettingsQueryOptions({ scope: "org", orgId: context.org.id }, "plugins"),
+        staleTime: "static",
+      }),
       ...installedPlugins().map((manifest) =>
-        context.query.ensureQueryData(
-          ownPluginSettingsQueryOptions({ scope: "org", orgId: context.org.id }, manifest.key),
-        ),
+        context.query.query({
+          ...ownPluginSettingsQueryOptions({ scope: "org", orgId: context.org.id }, manifest.key),
+          staleTime: "static",
+        }),
       ),
     ]),
   component: RouteComponent,

@@ -24,7 +24,7 @@ import { msg, sayOr, useT } from "#/lib/translate.tsx";
 export const Route = createFileRoute("/_authed/events/$slug/certificates")({
   staticData: { title: msg("certificates.title") },
   loader: ({ context }) =>
-    context.query.ensureQueryData(myCertificatesQueryOptions(context.event.id)),
+    context.query.query({ ...myCertificatesQueryOptions(context.event.id), staleTime: "static" }),
   component: RouteComponent,
 });
 

@@ -8,7 +8,10 @@ import { msg } from "#/lib/translate.tsx";
 export const Route = createFileRoute("/_authed/events/$slug/pages/$page")({
   staticData: { title: msg("page.title") },
   loader: async ({ context, params }) => {
-    const pages = await context.query.ensureQueryData(eventPagesQueryOptions(context.event.id));
+    const pages = await context.query.query({
+      ...eventPagesQueryOptions(context.event.id),
+      staleTime: "static",
+    });
     const page = pages.find((candidate) => candidate.slug === params.page);
     if (!page) throw notFound();
     return { title: page.title };

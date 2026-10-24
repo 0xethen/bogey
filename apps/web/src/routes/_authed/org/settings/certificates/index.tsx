@@ -20,9 +20,10 @@ export const Route = createFileRoute("/_authed/org/settings/certificates/")({
     ],
   },
   loader: ({ context }) =>
-    context.query.ensureQueryData(
-      certificateDesignsQueryOptions({ orgId: context.org.id, eventId: null }),
-    ),
+    context.query.query({
+      ...certificateDesignsQueryOptions({ orgId: context.org.id, eventId: null }),
+      staleTime: "static",
+    }),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,
 });

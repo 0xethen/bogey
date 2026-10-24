@@ -35,8 +35,11 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/messages")({
   loader: ({ context }) =>
     Promise.all([
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, ["chat"]),
-      context.query.ensureQueryData(chatBlocksQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventConversationsQueryOptions(context.event.id)),
+      context.query.query({ ...chatBlocksQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...eventConversationsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

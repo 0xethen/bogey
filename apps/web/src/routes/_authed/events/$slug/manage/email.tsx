@@ -18,15 +18,17 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/email")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(
-        settingsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }, [
+      context.query.query({
+        ...settingsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }, [
           "branding",
           "email",
         ]),
-      ),
-      context.query.ensureQueryData(
-        ownSettingsQueryOptions({ scope: "event", eventId: context.event.id }, "email"),
-      ),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...ownSettingsQueryOptions({ scope: "event", eventId: context.event.id }, "email"),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

@@ -55,8 +55,11 @@ export const Route = createFileRoute("/_authed/events/new")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(settingsQueryOptions({ orgId: context.org.id }, ["plugins"])),
-      context.query.ensureQueryData(eventsQueryOptions(context.org.id)),
+      context.query.query({
+        ...settingsQueryOptions({ orgId: context.org.id }, ["plugins"]),
+        staleTime: "static",
+      }),
+      context.query.query({ ...eventsQueryOptions(context.org.id), staleTime: "static" }),
     ]),
   component: RouteComponent,
 });

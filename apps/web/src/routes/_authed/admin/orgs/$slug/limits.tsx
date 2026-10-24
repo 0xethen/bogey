@@ -9,9 +9,9 @@ import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.ts
 export const Route = createFileRoute("/_authed/admin/orgs/$slug/limits")({
   staticData: { title: msg("adminOrgs.limits") },
   loader: async ({ context, params }) => {
-    const orgs = await context.query.ensureQueryData(instanceOrgsQueryOptions());
+    const orgs = await context.query.query({ ...instanceOrgsQueryOptions(), staleTime: "static" });
     const org = orgs.find((each) => each.slug === params.slug);
-    if (org) await context.query.ensureQueryData(orgLimitsQuery(org.id));
+    if (org) await context.query.query({ ...orgLimitsQuery(org.id), staleTime: "static" });
   },
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton />,

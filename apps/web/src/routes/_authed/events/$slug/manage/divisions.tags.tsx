@@ -18,10 +18,14 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/divisions/tag
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(
-        tagsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
-      ),
-      context.query.ensureQueryData(settingsQueryOptions({ eventId: context.event.id }, ["tags"])),
+      context.query.query({
+        ...tagsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["tags"]),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

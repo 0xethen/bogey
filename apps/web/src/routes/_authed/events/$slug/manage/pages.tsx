@@ -69,9 +69,12 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/pages")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(settingsQueryOptions({ eventId: context.event.id }, ["tabs"])),
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPagesQueryOptions(context.event.id)),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["tabs"]),
+        staleTime: "static",
+      }),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventPagesQueryOptions(context.event.id), staleTime: "static" }),
       loadPrizes(context.query, context.event.id),
     ]),
   component: RouteComponent,

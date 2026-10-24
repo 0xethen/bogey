@@ -459,7 +459,7 @@ export function FromBank({ orgId }: { orgId: string }) {
   const add = useMutation({
     mutationFn: (bankId: string) => addFromBank(bankId, eventId, next),
     onSuccess: async (id) => {
-      const fresh = await queryClient.fetchQuery(problemsQueryOptions(eventId));
+      const fresh = await queryClient.query(problemsQueryOptions(eventId));
       const added = fresh.find((each) => each.id === id);
       if (added) await goTo("/jury", { splat: added.slug, replace: true });
     },

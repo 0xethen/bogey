@@ -405,8 +405,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda/")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(agendaSettings(context.event.id)),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...agendaSettings(context.event.id), staleTime: "static" }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "schedule",
         "agenda",

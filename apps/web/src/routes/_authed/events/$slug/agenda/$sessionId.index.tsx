@@ -21,8 +21,8 @@ export const Route = createFileRoute("/_authed/events/$slug/agenda/$sessionId/")
   validateSearch: z.object({ code: z.string().max(12).optional() }),
   loader: async ({ context, params }) => {
     const [agenda] = await Promise.all([
-      context.query.ensureQueryData(agendaQueryOptions(context.event.id)),
-      context.query.ensureQueryData(agendaSettings(context.event.id)),
+      context.query.query({ ...agendaQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...agendaSettings(context.event.id), staleTime: "static" }),
     ]);
     const session = agenda.slots
       .flatMap((slot) => slot.sessions)

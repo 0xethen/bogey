@@ -59,22 +59,29 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/resul
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(previewResultsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventFlagsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(draftAwardsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(voteCountsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPrizesQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventEntriesQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(offlineScoresQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventSubmissionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }, [
+      context.query.query({ ...previewResultsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventFlagsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...draftAwardsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...voteCountsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventPrizesQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventEntriesQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...judgingRoundsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...submissionFormsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...offlineScoresQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...eventSubmissionsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...settingsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }, [
           "judging",
         ]),
-      ),
+        staleTime: "static",
+      }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "judging",
         "voting",

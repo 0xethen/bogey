@@ -3,7 +3,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_unauthed")({
   beforeLoad: async ({ context }) => {
-    const result = await context.query.ensureQueryData(sessionQueryOptions());
+    const result = await context.query.query({ ...sessionQueryOptions(), staleTime: "static" });
 
     if (result.status === "authenticated") {
       throw Route.redirect({ to: "/" });

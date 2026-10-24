@@ -68,13 +68,21 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/certificates/
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "certificates",
       ]),
-      context.query.ensureQueryData(
-        certificateDesignsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
-      ),
-      context.query.ensureQueryData(eventCertificatesQueryOptions(context.event.id)),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["certificates"]),
-      ),
+      context.query.query({
+        ...certificateDesignsQueryOptions({
+          orgId: context.event.org_id,
+          eventId: context.event.id,
+        }),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...eventCertificatesQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["certificates"]),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

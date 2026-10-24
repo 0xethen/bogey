@@ -10,9 +10,10 @@ export const Route = createFileRoute("/_authed/account/x/$key/$")({
   beforeLoad: ({ params }) => ({ page: findPluginPage(installedPlugins(), "account", params) }),
   loader: async ({ context }) => {
     const { page, session, query } = context;
-    const stored = await query.ensureQueryData(
-      pluginSettingsAtQueryOptions({ orgId: session.org?.id }, page.manifest.key),
-    );
+    const stored = await query.query({
+      ...pluginSettingsAtQueryOptions({ orgId: session.org?.id }, page.manifest.key),
+      staleTime: "static",
+    });
     return loadPluginPage(
       "account",
       page,

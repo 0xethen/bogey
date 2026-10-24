@@ -29,7 +29,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/homepage")({
     ],
   },
   loader: ({ context }) =>
-    context.query.ensureQueryData(settingsQueryOptions({ eventId: context.event.id }, ["home"])),
+    context.query.query({
+      ...settingsQueryOptions({ eventId: context.event.id }, ["home"]),
+      staleTime: "static",
+    }),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
 });

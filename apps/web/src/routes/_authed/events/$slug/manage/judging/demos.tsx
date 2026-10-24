@@ -67,12 +67,21 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/demos
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(demoPanelsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgingProgressQueryOptions(context.event.id)),
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventSubmissionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(tableListQueryOptions(context.event.id)),
+      context.query.query({ ...judgingRoundsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...demoPanelsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...judgingProgressQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...submissionFormsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...eventSubmissionsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...tableListQueryOptions(context.event.id), staleTime: "static" }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "judging",
       ]),
@@ -213,7 +222,7 @@ function DemoRound({ round, title }: { round: JudgingRound; title: string }) {
       }).catch(requestFailure);
       if (!result.ok) return createValidationError(result.error.message);
       await refresh();
-      const saved = await queryClient.fetchQuery({
+      const saved = await queryClient.query({
         ...demoPanelsQueryOptions(event.id),
         staleTime: 0,
       });

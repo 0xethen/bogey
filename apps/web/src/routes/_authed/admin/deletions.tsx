@@ -20,7 +20,8 @@ import { msg, useT } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/admin/deletions")({
   staticData: { title: msg("adminTab.deletions") },
-  loader: ({ context }) => context.query.ensureQueryData(deletionRequestsQueryOptions()),
+  loader: ({ context }) =>
+    context.query.query({ ...deletionRequestsQueryOptions(), staleTime: "static" }),
   component: RouteComponent,
 });
 

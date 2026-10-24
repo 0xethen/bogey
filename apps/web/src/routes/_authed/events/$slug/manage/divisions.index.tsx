@@ -50,10 +50,13 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/divisions/")(
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPeopleQueryOptions(context.event.id)),
-      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(rubricDivisionsQueryOptions(context.event.id)),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventPeopleQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...rubricsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...rubricDivisionsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "divisions",
       ]),
@@ -181,7 +184,7 @@ function RouteComponent() {
             }).catch(requestFailure)
           : null;
       await queryClient.invalidateQueries({ queryKey: ["divisions", event.id] });
-      const savedLinks = await queryClient.fetchQuery({
+      const savedLinks = await queryClient.query({
         ...rubricDivisionsQueryOptions(event.id),
         staleTime: 0,
       });

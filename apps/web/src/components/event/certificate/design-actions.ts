@@ -33,11 +33,11 @@ export function useDesignActions(scope: DesignScope) {
   // an event building on the organization's design takes its own copy first, pictures included
   const current = async (kind: CertificateKind) => {
     const options = certificateDesignsQueryOptions(scope);
-    let designs = await queryClient.fetchQuery(options);
+    let designs = await queryClient.query(options);
     let own = designs.own.find((design) => design.kind === kind);
     if (!own && scope.eventId && designs.org.some((design) => design.kind === kind)) {
       unwrap(await copyCertificateDesignFn({ data: { eventId: scope.eventId, kind } }));
-      designs = await queryClient.fetchQuery({ ...options, staleTime: 0 });
+      designs = await queryClient.query({ ...options, staleTime: 0 });
       own = designs.own.find((design) => design.kind === kind);
     }
     return own

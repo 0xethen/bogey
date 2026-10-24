@@ -68,17 +68,26 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventFlagsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgingProgressQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventConflictsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventPinsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgeCalibrationQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventTeamsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(assignmentQueries(context.event).settings),
-      context.query.ensureQueryData(assignmentQueries(context.event).tags),
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
+      context.query.query({ ...eventFlagsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...judgingProgressQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...judgingRoundsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventConflictsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventPinsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...judgeCalibrationQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...eventTeamsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...submissionFormsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...assignmentQueries(context.event).settings, staleTime: "static" }),
+      context.query.query({ ...assignmentQueries(context.event).tags, staleTime: "static" }),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "judging",
       ]),

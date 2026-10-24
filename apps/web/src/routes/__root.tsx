@@ -57,7 +57,7 @@ export const Route = createRootRouteWithContext<Context>()({
     if (location.pathname !== "/suspended") {
       // unreachable: the page below shows the error in the app shell; org_for_host hides a suspended org anyway
       const suspension = await context.query
-        .ensureQueryData(suspensionQueryOptions())
+        .query({ ...suspensionQueryOptions(), staleTime: "static" })
         .catch((error: unknown) => {
           if (isUnreachable(error)) return null;
           throw error;
@@ -90,8 +90,8 @@ export const Route = createRootRouteWithContext<Context>()({
   loader: async ({ context }) => {
     const [seo, localization] = await Promise.all([
       loadSeo(context.query),
-      context.query.ensureQueryData(localizationQueryOptions()),
-      context.query.ensureQueryData(browserTimeZoneQueryOptions()),
+      context.query.query({ ...localizationQueryOptions(), staleTime: "static" }),
+      context.query.query({ ...browserTimeZoneQueryOptions(), staleTime: "static" }),
     ]);
     return { seo, localization };
   },

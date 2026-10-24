@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authed/events/$slug/register")({
     }
   },
   loader: ({ context }) =>
-    context.query.ensureQueryData(myRegistrationQueryOptions(context.event.id)),
+    context.query.query({ ...myRegistrationQueryOptions(context.event.id), staleTime: "static" }),
   component: RouteComponent,
 });
 

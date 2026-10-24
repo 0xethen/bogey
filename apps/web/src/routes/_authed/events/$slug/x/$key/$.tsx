@@ -15,9 +15,10 @@ export const Route = createFileRoute("/_authed/events/$slug/x/$key/$")({
   },
   loader: async ({ context }) => {
     const { page, event, session, query } = context;
-    const stored = await query.ensureQueryData(
-      pluginSettingsQueryOptions(event.id, page.manifest.key),
-    );
+    const stored = await query.query({
+      ...pluginSettingsQueryOptions(event.id, page.manifest.key),
+      staleTime: "static",
+    });
     return loadPluginPage(
       "event",
       page,

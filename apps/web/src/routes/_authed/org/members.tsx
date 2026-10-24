@@ -36,9 +36,12 @@ export const Route = createFileRoute("/_authed/org/members")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(orgMembersQueryOptions(context.org.id)),
-      context.query.ensureQueryData(tagsQueryOptions({ orgId: context.org.id })),
-      context.query.ensureQueryData(tagHoldersQueryOptions({ orgId: context.org.id })),
+      context.query.query({ ...orgMembersQueryOptions(context.org.id), staleTime: "static" }),
+      context.query.query({ ...tagsQueryOptions({ orgId: context.org.id }), staleTime: "static" }),
+      context.query.query({
+        ...tagHoldersQueryOptions({ orgId: context.org.id }),
+        staleTime: "static",
+      }),
       prefetchSettingFields(context.query, { scope: "org", orgId: context.org.id }, ["tags"]),
     ]),
   component: RouteComponent,

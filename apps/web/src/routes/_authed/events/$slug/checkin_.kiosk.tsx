@@ -35,10 +35,11 @@ export const Route = createFileRoute("/_authed/events/$slug/checkin_/kiosk")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["checkin"]),
-      ),
-      context.query.ensureQueryData(myRegistrationQueryOptions(context.event.id)),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["checkin"]),
+        staleTime: "static",
+      }),
+      context.query.query({ ...myRegistrationQueryOptions(context.event.id), staleTime: "static" }),
     ]),
   component: RouteComponent,
 });

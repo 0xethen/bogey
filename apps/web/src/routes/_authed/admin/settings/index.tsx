@@ -34,8 +34,8 @@ export const Route = createFileRoute("/_authed/admin/settings/")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(instanceOrgsQueryOptions()),
-      context.query.ensureQueryData(ownSettingsQueryOptions(INSTANCE, "tenancy")),
+      context.query.query({ ...instanceOrgsQueryOptions(), staleTime: "static" }),
+      context.query.query({ ...ownSettingsQueryOptions(INSTANCE, "tenancy"), staleTime: "static" }),
       prefetchSettingFields(context.query, INSTANCE, ["branding", "audit"]),
     ]),
   component: RouteComponent,

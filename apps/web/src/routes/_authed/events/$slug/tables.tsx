@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authed/events/$slug/tables")({
       throw Route.redirect({ to: "/events/$slug", params, replace: true });
     }
   },
-  loader: ({ context }) => context.query.ensureQueryData(tableListQueryOptions(context.event.id)),
+  loader: ({ context }) =>
+    context.query.query({ ...tableListQueryOptions(context.event.id), staleTime: "static" }),
   component: RouteComponent,
 });
 

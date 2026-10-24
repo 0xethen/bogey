@@ -17,7 +17,8 @@ import { msg, useT } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/admin/reports")({
   staticData: { title: msg("adminTab.reports"), command: { label: msg("adminTab.reports") } },
-  loader: ({ context }) => context.query.ensureQueryData(pageReportsQueryOptions(true)),
+  loader: ({ context }) =>
+    context.query.query({ ...pageReportsQueryOptions(true), staleTime: "static" }),
   component: RouteComponent,
 });
 

@@ -71,12 +71,18 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/crite
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(criteriaQueryOptions(context.event.id)),
-      context.query.ensureQueryData(rubricsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(rubricDivisionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(judgingRoundsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
+      context.query.query({ ...criteriaQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...rubricsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...rubricDivisionsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...judgingRoundsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...submissionFormsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "judging",
       ]),
@@ -420,9 +426,9 @@ function RouteComponent() {
         queryKey: previewResultsQueryOptions(event.id).queryKey,
       });
       const [saved, savedRubrics, savedLinks] = await Promise.all([
-        queryClient.fetchQuery({ ...criteriaQueryOptions(event.id), staleTime: 0 }),
-        queryClient.fetchQuery({ ...rubricsQueryOptions(event.id), staleTime: 0 }),
-        queryClient.fetchQuery({ ...rubricDivisionsQueryOptions(event.id), staleTime: 0 }),
+        queryClient.query({ ...criteriaQueryOptions(event.id), staleTime: 0 }),
+        queryClient.query({ ...rubricsQueryOptions(event.id), staleTime: 0 }),
+        queryClient.query({ ...rubricDivisionsQueryOptions(event.id), staleTime: 0 }),
       ]);
       formApi.reset({
         rubrics: savedRubrics.map((rubric) => toRubricValues(rubric, savedLinks)),

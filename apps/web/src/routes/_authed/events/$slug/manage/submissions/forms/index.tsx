@@ -30,9 +30,12 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/f
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
+      context.query.query({
+        ...submissionFormsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "submissions",
       ]),

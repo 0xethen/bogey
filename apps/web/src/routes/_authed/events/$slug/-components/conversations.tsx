@@ -75,7 +75,7 @@ const eventRoute = getRouteApi("/_authed/events/$slug");
 
 export const messagesSearch = z.object({
   c: z
-    .union([z.literal(ANNOUNCEMENTS), z.string().uuid()])
+    .union([z.literal(ANNOUNCEMENTS), z.uuid()])
     .optional()
     .catch(undefined),
 });

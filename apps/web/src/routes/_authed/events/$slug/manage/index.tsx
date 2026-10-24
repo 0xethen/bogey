@@ -40,15 +40,23 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(manageSummaryQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventWindowsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventConversationsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(
-        settingsQueryOptions({ eventId: context.event.id }, ["certificates"]),
-      ),
-      context.query.ensureQueryData(
-        certificateDesignsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
-      ),
+      context.query.query({ ...manageSummaryQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...eventConversationsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["certificates"]),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...certificateDesignsQueryOptions({
+          orgId: context.event.org_id,
+          eventId: context.event.id,
+        }),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

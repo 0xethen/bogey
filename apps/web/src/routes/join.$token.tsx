@@ -13,8 +13,8 @@ export const Route = createFileRoute("/join/$token")({
   staticData: { title: msg("join.title") },
   loader: async ({ context, params }) => {
     const [link] = await Promise.all([
-      context.query.ensureQueryData(inviteLinkViewQueryOptions(params.token)),
-      context.query.ensureQueryData(sessionQueryOptions()),
+      context.query.query({ ...inviteLinkViewQueryOptions(params.token), staleTime: "static" }),
+      context.query.query({ ...sessionQueryOptions(), staleTime: "static" }),
     ]);
     return { title: link?.eventName ?? "" };
   },

@@ -58,7 +58,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage")({
     if (!can(context.access, "event.manage")) throw notFound();
     // throw Route.redirect({ to: "/events/$slug", params, replace: true });
   },
-  loader: ({ context }) => context.query.ensureQueryData(preferencesQueryOptions()),
+  loader: ({ context }) =>
+    context.query.query({ ...preferencesQueryOptions(), staleTime: "static" }),
   component: RouteComponent,
   notFoundComponent: NotFoundComponent,
 });

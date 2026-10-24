@@ -9,10 +9,14 @@ export const Route = createFileRoute("/_authed/org/settings/sign-in")({
   staticData: { title: msg("signInMethods.title"), settings: (t) => [signInSearch(t)] },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(ownSettingsQueryOptions({ scope: "instance" }, "signin")),
-      context.query.ensureQueryData(
-        ownSettingsQueryOptions({ scope: "org", orgId: context.org.id }, "signin"),
-      ),
+      context.query.query({
+        ...ownSettingsQueryOptions({ scope: "instance" }, "signin"),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...ownSettingsQueryOptions({ scope: "org", orgId: context.org.id }, "signin"),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,

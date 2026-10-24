@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authed/admin/settings/accounts")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(ownSettingsQueryOptions(INSTANCE, "signin")),
+      context.query.query({ ...ownSettingsQueryOptions(INSTANCE, "signin"), staleTime: "static" }),
       prefetchSettingFields(context.query, INSTANCE, ["accounts"]),
     ]),
   component: RouteComponent,

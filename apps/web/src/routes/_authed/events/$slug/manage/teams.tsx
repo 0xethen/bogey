@@ -59,8 +59,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/teams")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventTeamsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(eventDivisionsQueryOptions(context.event.id)),
+      context.query.query({ ...eventTeamsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "teams",
       ]),

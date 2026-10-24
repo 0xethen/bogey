@@ -13,8 +13,8 @@ export const Route = createFileRoute("/certificates/$code")({
   staticData: { title: msg("certificates.one"), command: false },
   loader: async ({ context, params }) => {
     const [certificate] = await Promise.all([
-      context.query.ensureQueryData(certificateQueryOptions(params.code)),
-      context.query.ensureQueryData(sessionQueryOptions()),
+      context.query.query({ ...certificateQueryOptions(params.code), staleTime: "static" }),
+      context.query.query({ ...sessionQueryOptions(), staleTime: "static" }),
     ]);
     if (!certificate) throw notFound();
     return { title: `${certificate.name}, ${certificate.event}` };

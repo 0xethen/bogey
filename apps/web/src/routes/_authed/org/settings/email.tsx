@@ -17,12 +17,14 @@ export const Route = createFileRoute("/_authed/org/settings/email")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(
-        settingsQueryOptions({ orgId: context.org.id }, ["branding", "email"]),
-      ),
-      context.query.ensureQueryData(
-        ownSettingsQueryOptions({ scope: "org", orgId: context.org.id }, "email"),
-      ),
+      context.query.query({
+        ...settingsQueryOptions({ orgId: context.org.id }, ["branding", "email"]),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...ownSettingsQueryOptions({ scope: "org", orgId: context.org.id }, "email"),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,

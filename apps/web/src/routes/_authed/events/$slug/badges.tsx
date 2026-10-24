@@ -22,7 +22,8 @@ export const Route = createFileRoute("/_authed/events/$slug/badges")({
       throw Route.redirect({ to: "/events/$slug", params, replace: true });
     }
   },
-  loader: ({ context }) => context.query.ensureQueryData(badgeSheetQueryOptions(context.event.id)),
+  loader: ({ context }) =>
+    context.query.query({ ...badgeSheetQueryOptions(context.event.id), staleTime: "static" }),
   component: RouteComponent,
 });
 

@@ -41,9 +41,9 @@ export const Route = createFileRoute("/_authed/admin/people")({
   loaderDeps: ({ search }) => ({ q: search.q ?? "" }),
   loader: ({ context, deps }) =>
     Promise.all([
-      context.query.ensureQueryData(instanceAdminsQueryOptions()),
-      context.query.ensureQueryData(instancePeopleQueryOptions(deps.q)),
-      context.query.ensureQueryData(instanceAuditQueryOptions()),
+      context.query.query({ ...instanceAdminsQueryOptions(), staleTime: "static" }),
+      context.query.query({ ...instancePeopleQueryOptions(deps.q), staleTime: "static" }),
+      context.query.query({ ...instanceAuditQueryOptions(), staleTime: "static" }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="wide" layout="table" />,

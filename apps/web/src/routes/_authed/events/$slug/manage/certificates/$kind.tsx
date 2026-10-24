@@ -28,9 +28,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/certificates/
     return { kind: params.kind };
   },
   loader: ({ context }) =>
-    context.query.ensureQueryData(
-      certificateDesignsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
-    ),
+    context.query.query({
+      ...certificateDesignsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
+      staleTime: "static",
+    }),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
 });

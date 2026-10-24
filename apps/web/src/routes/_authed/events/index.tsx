@@ -25,13 +25,17 @@ export const Route = createFileRoute("/_authed/events/")({
     return { org: context.session.org };
   },
   loader: async ({ context }) => {
-    const events = await context.query.ensureQueryData(eventsQueryOptions(context.org.id));
-    await context.query.ensureQueryData(
-      eventListIconsQueryOptions(
+    const events = await context.query.query({
+      ...eventsQueryOptions(context.org.id),
+      staleTime: "static",
+    });
+    await context.query.query({
+      ...eventListIconsQueryOptions(
         context.org.id,
         events.map((event) => event.id),
       ),
-    );
+      staleTime: "static",
+    });
   },
   component: RouteComponent,
 });

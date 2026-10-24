@@ -17,7 +17,8 @@ import { msg, useT, type T } from "#/lib/translate.tsx";
 
 export const Route = createFileRoute("/_authed/org/settings")({
   staticData: { title: msg("orgTab.settings"), command: { label: msg("orgSettings.command") } },
-  loader: ({ context }) => context.query.ensureQueryData(preferencesQueryOptions()),
+  loader: ({ context }) =>
+    context.query.query({ ...preferencesQueryOptions(), staleTime: "static" }),
   component: RouteComponent,
 });
 

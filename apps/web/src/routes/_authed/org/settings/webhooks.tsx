@@ -17,8 +17,14 @@ export const Route = createFileRoute("/_authed/org/settings/webhooks")({
   },
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(webhooksQueryOptions({ orgId: context.org.id })),
-      context.query.ensureQueryData(webhookDeliveriesQueryOptions({ orgId: context.org.id })),
+      context.query.query({
+        ...webhooksQueryOptions({ orgId: context.org.id }),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...webhookDeliveriesQueryOptions({ orgId: context.org.id }),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,

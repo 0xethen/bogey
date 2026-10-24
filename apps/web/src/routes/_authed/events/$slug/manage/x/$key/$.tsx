@@ -29,9 +29,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/x/$key/$")({
     const { target, event, session, query } = context;
     if (target.kind === "settings") return { title: target.own.label };
     const { page } = target;
-    const stored = await query.ensureQueryData(
-      pluginSettingsQueryOptions(event.id, page.manifest.key),
-    );
+    const stored = await query.query({
+      ...pluginSettingsQueryOptions(event.id, page.manifest.key),
+      staleTime: "static",
+    });
     return loadPluginPage(
       "manage",
       page,

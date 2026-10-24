@@ -64,8 +64,14 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/"
   validateSearch: z.object({ form: z.string().optional().catch(undefined) }),
   loader: ({ context }) =>
     Promise.all([
-      context.query.ensureQueryData(eventSubmissionsQueryOptions(context.event.id)),
-      context.query.ensureQueryData(submissionFormsQueryOptions(context.event.id)),
+      context.query.query({
+        ...eventSubmissionsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
+      context.query.query({
+        ...submissionFormsQueryOptions(context.event.id),
+        staleTime: "static",
+      }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "submissions",
       ]),
