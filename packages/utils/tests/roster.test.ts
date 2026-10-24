@@ -330,3 +330,36 @@ test("similar team names only merge when guessing", () => {
   expect(similar("some")).toBeGreaterThan(0);
   expect(similar("max")).toBeGreaterThan(0);
 });
+
+test("one guess level applies to every row of a batch", () => {
+  const text = [
+    "Email,Full name,Grade level,Workshop",
+    "a@x.com,Ann,High school,Git and GitHub",
+    "b@x.com,Bo,high school students,Programming AI",
+    "c@x.com,Cy,Middle school,Programming with AI",
+  ].join("\n");
+  const batch = (guess: "none" | "some" | "max") =>
+    planRoster(text, { kinds: { 2: "division", 3: "session" }, catalog, guess }).people.map(
+      (each) => [each.email, each.division ?? "", each.sessions.join()],
+    );
+  expect(batch("none")).toEqual([
+    ["a@x.com", "hs", "git"],
+    ["b@x.com", "", ""],
+    ["c@x.com", "ms", "ai"],
+  ]);
+  expect(batch("some")).toEqual([
+    ["a@x.com", "hs", "git"],
+    ["b@x.com", "hs", ""],
+    ["c@x.com", "ms", "ai"],
+  ]);
+  expect(batch("max")).toEqual([
+    ["a@x.com", "hs", "git"],
+    ["b@x.com", "hs", "ai"],
+    ["c@x.com", "ms", "ai"],
+  ]);
+});
+
+test("guessing defaults to max when no level is given", () => {
+  const text = "a@x.com,Ann,Cobolers\nb@x.com,Bo,Coboler\n";
+  expect(planRoster(text).conflicts).toEqual(planRoster(text, { guess: "max" }).conflicts);
+});

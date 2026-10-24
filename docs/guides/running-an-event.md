@@ -249,10 +249,7 @@ or someone listed on two teams (pick one, or skip them). The roster also shows
 when someone's email is in other events, so duplicates are visible rather than
 merged.
 
-The import's **Guessing** setting (none, some, or as much as possible, the default) is
-per import. None uses only exact column and division, session and team names; some
-adds common headers and near matches; as much as possible also guesses from
-contents and shared words and merges similar team names.
+Pick **Autocorrect values** (none, some, or as much as possible, the default) before you paste or drop a roster. It applies to every row of that import and can't change partway: once rows are in it shows as a summary, and **Start over...** clears the import so you can pick again. Your last pick is remembered as the default for the next import in that browser. None uses only exact column and division, session and team names; some adds common headers and near matches; as much as possible also guesses from contents and shared words and merges similar team names.
 
 **Manage → Teams** lists the teams in a table you can search, sort and filter by division. Open a team to
 rename, lock or disband it and move people between teams. A team's division belongs to the team: set it in the

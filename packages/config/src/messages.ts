@@ -3742,15 +3742,23 @@ export const en = {
     "One person per line, or columns copied from a spreadsheet with their header row.\nDefault columns (w/o header): email, name, team, role, then teammates.",
   "rosterImport.addAs": "Add as",
   "rosterImport.guessing": "Autocorrect values",
+  "rosterImport.guessingHelp":
+    "Pick before adding a roster. It applies to every row of this import, and Bogey remembers it for next time.",
+  "rosterImport.guessLocked":
+    "Set for this import so every row is read the same way. Start over to change it.",
+  "rosterImport.startOver": "Start over",
+  "rosterImport.startOverTitle": "Start this import over?",
+  "rosterImport.startOverHelp":
+    "This clears the roster you added and your column and conflict choices, so you can pick how much to autocorrect again.",
   "rosterImport.guess.none": "None",
   "rosterImport.guess.noneHelp":
-    "Only exact column names and exact division, session and team names are used. You set everything else by hand.",
+    "Only exact column names and exact division, session and team names. You set the rest.",
   "rosterImport.guess.some": "Some",
   "rosterImport.guess.someHelp":
-    "Recognizes common column names and names that differ by a typo or contain each other, but won't match on a few shared words.",
+    "Also common column names, typos, and names that contain each other.",
   "rosterImport.guess.max": "As much as possible",
   "rosterImport.guess.maxHelp":
-    "Recognizes shared words and typos. Guesses columns from their contents, matches on shared words, and merges similarly named teams.",
+    "Also guesses columns from their contents, matches on shared words, and merges similar team names.",
   "rosterImport.notify": "Email an invitation",
   "rosterImport.notifyHelp":
     "To people who weren't on the list yet. Leave it off to add them quietly and announce later.",

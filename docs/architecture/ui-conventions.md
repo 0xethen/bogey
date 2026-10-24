@@ -124,3 +124,7 @@ Reorderable lists use `EditableList` and `EditableListItem` from `@bogey/ui/comp
 ## Homepage editor
 
 Customize on the event homepage follows Framer and Notion: the page is the canvas, a side panel (from `xl`) edits the selected block or, with nothing selected, shows a searchable block picker you can click or drag from. Each column also has an "Add a block..." popover, like Notion's insert menu. Hiding keeps a block's place and settings (`hidden` on the block). Below `xl` a selected block opens for editing in place.
+
+## Imports
+
+Choices that change how pasted or uploaded rows are read (Manage → People's **Autocorrect values**) are picked in the import's first step, before any rows are in. Once the import has rows they show as a one-line summary with **Start over...**, which clears the import; they never change mid-import, so rows aren't read two ways. The last pick is the default next time (per browser). The lock lives in `import-choices.ts` beside the roster import.

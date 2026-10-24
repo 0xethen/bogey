@@ -33,7 +33,16 @@ import {
   CollapsibleTrigger,
 } from "@bogey/ui/components/collapsible";
 import { FileDrop } from "@bogey/ui/components/file-drop";
+import { Button } from "@bogey/ui/components/button";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@bogey/ui/components/field";
 import { OptSelect, type SelectOption } from "@bogey/ui/components/opt-select";
+import { RadioGroup, RadioGroupItem } from "@bogey/ui/components/radio-group";
 import { Screen } from "@bogey/ui/components/screen";
 import {
   appFormOptions,
@@ -43,6 +52,7 @@ import {
   useAppForm,
   schemaMetaOf,
 } from "@bogey/ui/lib/form";
+import { useImportChoices } from "./import-choices.ts";
 import { ImportRules, ValueMapper } from "./import-rules.tsx";
 import type { EditorHandle } from "@bogey/ui/components/code-editor";
 import type { LineMark } from "@bogey/ui/lib/editor-lines";
@@ -69,12 +79,6 @@ const kindOptions = (t: T): Tuple<SelectOption<ColumnKind>> =>
     description: each.description
       ? sayOr(t, `columnKind.${each.kind}.help`, each.description)
       : undefined,
-  }));
-
-const guessOptions = (t: T): Tuple<SelectOption<GuessLevel>> =>
-  GUESS_LEVELS.map((level) => ({
-    value: level,
-    label: t(`rosterImport.guess.${level}`),
   }));
 
 const ACCEPT = ".csv,.tsv,.txt,.xlsx";
@@ -145,7 +149,8 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
   const [kinds, setKinds] = useState<Readonly<Record<number, ColumnKind>>>({});
-  const [guess, setGuess] = useState<GuessLevel>("max");
+  const choices = useImportChoices();
+  const { guess } = choices;
   const [rules, setRules] = useState<ImportRule[]>([]);
   const [resolutions, setResolutions] = useState<RosterResolutions>({});
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -197,6 +202,7 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
       if (!imported.ok) return createValidationError(imported.error.message);
       setResult(imported.data);
       reset();
+      choices.startOver();
       formApi.reset({ text: "", role: value.role, notify: false });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: eventPeopleQueryOptions(eventId).queryKey }),
@@ -223,6 +229,7 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
       reset();
       setResult(null);
       setFileName(file.name);
+      choices.start();
       form.setFieldValue("text", text);
     } catch (error) {
       setReadError(
@@ -236,6 +243,13 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
     }
   };
 
+  const startOver = () => {
+    reset();
+    setResult(null);
+    choices.startOver();
+    form.setFieldValue("text", "");
+  };
+
   return (
     <Screen.Section
       id="add-people-from-a-roster"
@@ -244,6 +258,16 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
     >
       <form.AppForm>
         <form.Form unsaved="draft" className="flex flex-col gap-4">
+          <form.Subscribe selector={(state) => state.values.text.trim() !== ""}>
+            {(hasText) => (
+              <GuessChoice
+                guess={guess}
+                locked={choices.started || hasText}
+                onPick={choices.pick}
+                onStartOver={startOver}
+              />
+            )}
+          </form.Subscribe>
           <FileDrop
             files={fileName ? [{ id: fileName, name: fileName, sizeBytes: 0 }] : []}
             accept={ACCEPT}
@@ -253,10 +277,7 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
               const [file] = files;
               if (file) void load(file);
             }}
-            onRemove={() => {
-              reset();
-              form.setFieldValue("text", "");
-            }}
+            onRemove={startOver}
           />
           {readError && <p className="text-sm text-destructive">{readError}</p>}
           <form.Field
@@ -264,9 +285,11 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
             listeners={[
               {
                 triggers: ["change"],
-                run: () => {
+                run: ({ value }) => {
                   setResult(null);
                   setResolutions({});
+                  if (value.trim()) choices.start();
+                  else choices.startOver();
                 },
               },
             ]}
@@ -315,23 +338,6 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
             }
           </form.Subscribe>
 
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="font-medium">{t("rosterImport.guessing")}</span>
-              <OptSelect
-                size="sm"
-                ariaLabel={t("rosterImport.guessing")}
-                value={guess}
-                options={guessOptions(t)}
-                onChange={(next) => {
-                  setGuess(next);
-                  setResolutions({});
-                }}
-              />
-            </div>
-            <p className="text-sm text-muted-fg">{t(`rosterImport.guess.${guess}Help`)}</p>
-          </div>
-
           <div className="flex flex-wrap items-center gap-3">
             <form.Field name="role">
               {(field) => (
@@ -366,6 +372,70 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
         </form.Form>
       </form.AppForm>
     </Screen.Section>
+  );
+}
+
+// picked before the import starts; once rows are in, only starting over changes it
+function GuessChoice({
+  guess,
+  locked,
+  onPick,
+  onStartOver,
+}: {
+  guess: GuessLevel;
+  locked: boolean;
+  onPick: (guess: GuessLevel) => void;
+  onStartOver: () => void;
+}) {
+  const t = useT();
+  if (locked) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl bg-muted/40 px-4 py-2.5 text-sm">
+        <p className="min-w-0 flex-1">
+          <span className="font-medium">{t("rosterImport.guessing")}:</span>{" "}
+          {t(`rosterImport.guess.${guess}`)}
+          <span className="block text-muted-fg">{t("rosterImport.guessLocked")}</span>
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onStartOver}
+          confirm={{
+            title: t("rosterImport.startOverTitle"),
+            description: t("rosterImport.startOverHelp"),
+            label: t("rosterImport.startOver"),
+          }}
+        >
+          {t("rosterImport.startOver")}...
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <FieldSet>
+      <FieldLegend variant="label">{t("rosterImport.guessing")}</FieldLegend>
+      <FieldDescription>{t("rosterImport.guessingHelp")}</FieldDescription>
+      <RadioGroup
+        value={guess}
+        onValueChange={(next) => {
+          const level = GUESS_LEVELS.find((each) => each === next);
+          if (level) onPick(level);
+        }}
+        className="sm:grid-cols-3"
+      >
+        {GUESS_LEVELS.map((level) => (
+          <Field key={level} orientation="horizontal" className="items-start">
+            <RadioGroupItem value={level} id={`roster-guess-${level}`} className="mt-0.5" />
+            <FieldLabel htmlFor={`roster-guess-${level}`} className="flex-col items-start gap-0">
+              <span>{t(`rosterImport.guess.${level}`)}</span>
+              <span className="font-normal text-muted-fg">
+                {t(`rosterImport.guess.${level}Help`)}
+              </span>
+            </FieldLabel>
+          </Field>
+        ))}
+      </RadioGroup>
+    </FieldSet>
   );
 }
 

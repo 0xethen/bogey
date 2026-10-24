@@ -11,6 +11,7 @@ advisory (see docs/contributing.md#security-releases). -->
 ## Unreleased
 
 - Check-in desk: a Register button next to "Register and check in" adds a walk-in to the roster without checking them in.
+- Manage → People roster import: **Autocorrect values** is picked before you add a roster, defaults to as much as possible, is remembered for next time, and stays fixed for the whole import. To change it, use **Start over...**, which clears the import.
 - Manage → Submissions: the public gallery settings are now their own Public gallery subtab; old #gallery links go there.
 - Menus, selects, popovers, tooltips and dialogs fade and grow out of their trigger with one short, shared animation, and hover colors on buttons, rows, links and menu items ease in. Reduced motion turns all of it off.
 - Rows in lists keep one minimum height with their icons lined up, table rows are the same height whether they hold text or a button, and action columns sit at the right edge.
