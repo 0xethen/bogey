@@ -23,6 +23,7 @@ advisory (see docs/contributing.md#security-releases). -->
 - Account → Notifications and Sign-in & security use the same label, description and control rows as the other settings pages.
 - Admin → Plugins limits and agenda session seats are number fields; an empty plugin limit reads "No limit", and empty or 0 seats read "No limit".
 - Instance limits (Admin → Settings → Limits) and plugin limits accept 0, which allows none: 0 MB of storage or uploads turns uploads off for every organization. Leave a limit empty for no limit.
+- Links and other controls inside a hidden spoiler only work once it's revealed, so clicking a spoiler shows it instead of opening the link under it.
 - Draggable list rows show their actions only on hover or keyboard focus on wide screens with a mouse, so titles in narrow places like the homepage editor's side column are no longer cut off. Touch and narrow screens still show them.
 
 ## 2.4.0 (2026-10-24)

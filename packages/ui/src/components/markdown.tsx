@@ -41,7 +41,9 @@ function Spoiler({ children }: ComponentProps<"span">) {
           setShown(true);
         }}
       >
-        <span aria-hidden>{children}</span>
+        <span aria-hidden inert className="pointer-events-none">
+          {children}
+        </span>
       </span>
     );
   }
@@ -66,7 +68,10 @@ function Spoiler({ children }: ComponentProps<"span">) {
       }}
       onKeyUp={release}
     >
-      <span aria-hidden={!held}>{children}</span>
+      {/* links inside only work while it's showing */}
+      <span aria-hidden={!held} inert={!held} className={held ? undefined : "pointer-events-none"}>
+        {children}
+      </span>
     </span>
   );
 }
