@@ -34,15 +34,12 @@ export function jumpTo(id: string): void {
 }
 
 function flash(target: HTMLElement): Animation {
-  const style = getComputedStyle(target);
-  const wash = style.getPropertyValue("--color-accent").trim() || "transparent";
-  // the spread shadow pads the wash past the row's edges without moving it
-  const pad = `calc(${style.getPropertyValue("--spacing").trim() || "0.25rem"} * 2)`;
+  const wash = getComputedStyle(target).getPropertyValue("--color-accent").trim() || "transparent";
   return target.animate(
     [
-      { backgroundColor: wash, boxShadow: `0 0 0 ${pad} ${wash}`, offset: 0 },
-      { backgroundColor: wash, boxShadow: `0 0 0 ${pad} ${wash}`, offset: 0.4 },
-      { backgroundColor: "transparent", boxShadow: `0 0 0 ${pad} transparent` },
+      { backgroundColor: wash, offset: 0 },
+      { backgroundColor: wash, offset: 0.4 },
+      { backgroundColor: "transparent" },
     ],
     { duration: FLASH_MS, easing: "ease-out" },
   );

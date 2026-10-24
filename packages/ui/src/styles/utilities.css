@@ -128,7 +128,7 @@
 
 .jump-target {
   scroll-margin-top: calc(var(--layout-offset, 0px) + 1rem);
-  border-radius: var(--radius-lg);
+  @apply rounded;
 }
 
 @utility scrollbar-thin {

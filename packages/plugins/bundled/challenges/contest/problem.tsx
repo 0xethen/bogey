@@ -80,7 +80,6 @@ import {
   useLiveContest,
   type Settings,
 } from "../shared.tsx";
-import { Separator } from "@bogey/ui/components/separator";
 import { Spinner } from "@bogey/ui/components/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
 
@@ -216,8 +215,7 @@ function ProblemInfo({
           </DrawerTitle>
           <DrawerDescription>{points(problem.points)}</DrawerDescription>
         </DrawerHeader>
-        <Separator className="my-4" />
-        <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
+        <div className="flex flex-col gap-6 overflow-y-auto px-4 pt-4 pb-6">
           <Facts
             facts={[
               {
