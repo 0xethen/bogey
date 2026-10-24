@@ -25,28 +25,8 @@ import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { toast } from "@bogey/ui/components/toast";
 import { sayOr, useT, type PlainKey, type T } from "#/lib/translate.tsx";
 import { AssignSlidesDialog } from "./background-import.tsx";
+import { designState, givenKinds, unsetKinds } from "./certificate-status.ts";
 import { useDesignActions } from "./design-actions.ts";
-
-export type DesignState = "own" | "org" | "standard";
-
-/** Kinds the event gives, in order: every kind unless the event picked some. */
-export function givenKinds(kinds: Tuple<CertificateKind> | undefined): CertificateKind[] {
-  return CERTIFICATE_KINDS.filter((kind) => !kinds || kinds.includes(kind));
-}
-
-export function designState(designs: CertificateDesigns, kind: CertificateKind): DesignState {
-  if (designs.own.some((design) => design.kind === kind)) return "own";
-  if (designs.org.some((design) => design.kind === kind)) return "org";
-  return "standard";
-}
-
-/** Given kinds still on the standard design: the setup an event hasn't done yet. */
-export function unsetKinds(
-  designs: CertificateDesigns,
-  kinds: Tuple<CertificateKind> | undefined,
-): CertificateKind[] {
-  return givenKinds(kinds).filter((kind) => designState(designs, kind) === "standard");
-}
 
 export function certificateKindName(t: T, kind: CertificateKind): string {
   return sayOr(t, `certKind.${kind}`, CERTIFICATE_LABELS[kind]);

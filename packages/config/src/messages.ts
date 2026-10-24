@@ -2663,6 +2663,7 @@ export const en = {
   "certImport.intro":
     "Design the page in PowerPoint, Keynote, Canva or any other tool, then add the text here. A PNG, JPG or SVG is used as it is; from a .pptx or .pdf, pick a slide.",
   "certImport.reading": "Reading the slides...",
+  "certImport.readFailed": "Couldn't read that file",
   "certImport.slide": "Slide {number}",
   "certImport.useSlide": "Use slide {number}",
   "certImport.usedFor": "Slide {number}: {kinds}",

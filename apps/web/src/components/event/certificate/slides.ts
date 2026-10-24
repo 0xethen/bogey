@@ -43,13 +43,18 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 function toBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
-  return new Promise((resolve, reject) =>
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new DeckError("unreadable"))),
-      type,
-      quality,
-    ),
-  );
+  return new Promise((resolve, reject) => {
+    try {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new DeckError("unreadable"))),
+        type,
+        quality,
+      );
+    } catch {
+      // a canvas the browser considers tainted can't be read back
+      reject(new DeckError("unreadable"));
+    }
+  });
 }
 
 function canvasFor(width: number, height: number, side: number): HTMLCanvasElement {

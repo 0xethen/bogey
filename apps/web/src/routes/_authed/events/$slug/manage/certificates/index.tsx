@@ -36,10 +36,9 @@ import { DesignCards } from "#/components/event/certificate/design-cards.tsx";
 import {
   CertificateSetupDialog,
   certificateKindName,
-  givenKinds,
   SetupList,
-  unsetKinds,
 } from "#/components/event/certificate/certificate-setup.tsx";
+import { givenKinds, unsetKinds } from "#/components/event/certificate/certificate-status.ts";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import {
   prefetchSettingFields,

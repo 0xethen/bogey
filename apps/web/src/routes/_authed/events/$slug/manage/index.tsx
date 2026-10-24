@@ -21,7 +21,7 @@ import { LinkRow } from "@bogey/ui/components/row";
 import { eventConversationsQueryOptions } from "@bogey/db/queries/messages";
 import { certificateDesignsQueryOptions } from "@bogey/db/queries/certificates";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
-import { unsetKinds } from "#/components/event/certificate/certificate-setup.tsx";
+import { unsetKinds } from "#/components/event/certificate/certificate-status.ts";
 // import { newAnnouncement } from "#/components/event/messaging/announcement-composer.tsx";
 // import { DialogTrigger } from "@bogey/ui/components/dialog";
 import { Screen } from "@bogey/ui/components/screen";

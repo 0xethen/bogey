@@ -215,7 +215,8 @@ export function BackgroundDialog({
             accept={`${IMAGE_ACCEPT},${DECK_ACCEPT}`}
             maxMb={DECK_LIMITS.fileMb}
             multiple={false}
-            busy={read.isPending || use.isPending}
+            busy={use.isPending}
+            disabled={read.isPending}
             onAdd={([file]) => {
               if (!file) return;
               if (isDeckFile(file)) read.mutate(file);
@@ -225,9 +226,10 @@ export function BackgroundDialog({
           />
         )}
         {read.isPending && <Reading />}
-        <ErrorAlert error={read.error ?? use.error} title={t("image.failed")} />
+        <ErrorAlert error={read.error} title={t("certImport.readFailed")} />
+        <ErrorAlert error={use.error} title={t("image.failed")} />
         <DialogFooter>
-          {use.isPending && (
+          {use.isPending && deck && (
             <p className="flex items-center gap-2 text-sm text-muted-fg">
               <Spinner />
               {t("image.uploading")}
@@ -365,7 +367,7 @@ export function AssignSlidesDialog({
             accept={DECK_ACCEPT}
             maxMb={DECK_LIMITS.fileMb}
             multiple={false}
-            busy={read.isPending}
+            disabled={read.isPending}
             onAdd={([file]) => {
               if (file) read.mutate(file);
             }}
@@ -373,7 +375,8 @@ export function AssignSlidesDialog({
           />
         )}
         {read.isPending && <Reading />}
-        <ErrorAlert error={read.error ?? save.error} title={t("image.failed")} />
+        <ErrorAlert error={read.error} title={t("certImport.readFailed")} />
+        <ErrorAlert error={save.error} title={t("image.failed")} />
         {missing && <ErrorAlert error={t("certImport.noneAssigned")} />}
         <DialogFooter>
           {deck && (
