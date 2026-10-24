@@ -444,7 +444,9 @@ begin
 end;
 $$;
 
-create function private.network_allowed(p_event uuid)
+-- p_area names where the check applies: null means any area; an event can limit the
+-- network to some areas (access.networkAreas), and the rest stay open.
+create function private.network_allowed(p_event uuid, p_area text)
 returns boolean
 language plpgsql
 stable
@@ -454,12 +456,16 @@ as $$
 declare
   v_access jsonb := private.event_setting(p_event, 'access');
   v_networks jsonb := v_access -> 'allowedNetworks';
+  v_areas jsonb := coalesce(v_access -> 'networkAreas', '[]');
   v_role public.event_role;
   v_ip inet;
 begin
   if v_networks is null or jsonb_array_length(v_networks) = 0
      or (select auth.role()) = 'service_role'
      or private.can_manage(p_event) then
+    return true;
+  end if;
+  if p_area is not null and jsonb_array_length(v_areas) > 0 and not (v_areas ? p_area) then
     return true;
   end if;
   v_role := private.event_role(p_event);
@@ -476,7 +482,17 @@ begin
 end;
 $$;
 
-create function private.require_network(p_event uuid)
+create function private.network_allowed(p_event uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.network_allowed(p_event, null);
+$$;
+
+create function private.require_network(p_event uuid, p_area text)
 returns void
 language plpgsql
 stable
@@ -484,10 +500,20 @@ security definer
 set search_path = ''
 as $$
 begin
-  if not private.network_allowed(p_event) then
+  if not private.network_allowed(p_event, p_area) then
     raise exception 'connect to the event''s network to take part' using errcode = 'P0001';
   end if;
 end;
+$$;
+
+create function private.require_network(p_event uuid)
+returns void
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.require_network(p_event, null);
 $$;
 
 create function public.event_network_status(p_event uuid)
@@ -508,13 +534,15 @@ begin
     'restricted', coalesce(jsonb_array_length(v_networks), 0) > 0
       and (private.event_role(p_event) is null or private.network_limit_covers(p_event, v_access)),
     'allowed', private.network_allowed(p_event),
+    'areas', coalesce(v_access -> 'networkAreas', '[]'),
     'ip', host(private.request_ip())
   );
 end;
 $$;
 
 grant execute on function private.request_ip(), private.network_limit_covers(uuid, jsonb),
-  private.network_allowed(uuid), private.require_network(uuid)
+  private.network_allowed(uuid), private.network_allowed(uuid, text),
+  private.require_network(uuid), private.require_network(uuid, text)
 to anon, authenticated, service_role;
 grant execute on function public.event_network_status(uuid) to authenticated;
 

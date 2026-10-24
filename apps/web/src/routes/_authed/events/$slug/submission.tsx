@@ -456,7 +456,10 @@ function SubmissionEditor({
 
   const submitted = submission.status === "submitted";
   const { data: network } = useSuspenseQuery(networkStatusQueryOptions(event.id));
-  const offNetwork = network.restricted && !network.allowed;
+  const offNetwork =
+    network.restricted &&
+    !network.allowed &&
+    (network.areas.length === 0 || network.areas.includes("submissions"));
   const editable = open && submission.status !== "disqualified" && !offNetwork;
   const blind = settings.judging.blind === true && definition.judged;
   const { data: submissionSettings } = useSuspenseQuery(

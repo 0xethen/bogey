@@ -3045,7 +3045,16 @@ export const en = {
   "netSection.allowedHelp":
     "Addresses, ranges or AS numbers, one per line; an AS number is saved as the ranges it announces. Leave empty to allow any network.",
   "netSection.youreOn": "You're on IP:",
-  "netSection.scope": "Scope",
+  "netSection.where": "Where",
+  "netSection.whereHelp":
+    "Choose the parts of the event the limit applies to. Leave empty for everywhere in the event.",
+  "netSection.everywhere": "Everywhere in the event",
+  "netSection.area.sessions": "Sessions and check-in",
+  "netSection.area.teams": "Teams and divisions",
+  "netSection.area.messages": "Questions and team messages",
+  "netSection.area.submissions": "Submissions",
+  "netSection.area.voting": "Voting",
+  "netSection.scope": "Who",
   "netSection.scopeHelp":
     "Limit everyone by default. Pick people, teams or divisions to limit only them; anyone else can take part from any network.",
   "netSection.noParticipants": "No participants yet.",
@@ -3446,7 +3455,9 @@ export const en = {
   "manageAgenda.participantsSee": "What participants see",
   "manageAgenda.attendance": "Attendance",
   "manageAgenda.intro":
-    "The sessions people go to, and the windows that open and close parts of the event. Times are in {zone}.",
+    "The windows that open and close parts of the event, and what participants see. Times are in {zone}.",
+  "manageAgenda.sessionsIntro":
+    "The sessions people go to, and the types they come in. Times are in {zone}.",
   "manageAgenda.forEveryone": "For everyone",
   "manageAgenda.forEveryoneHelp": "Everyone attends; no sign-up",
   "manageAgenda.chooseHelp": "People sign up for one session",

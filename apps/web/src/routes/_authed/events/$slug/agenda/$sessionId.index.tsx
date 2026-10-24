@@ -79,7 +79,7 @@ function RouteComponent() {
                 tooltip={t("agenda.editSession")}
                 render={
                   <Link
-                    to="/events/$slug/manage/agenda"
+                    to="/events/$slug/manage/agenda/sessions"
                     params={{ slug: event.slug }}
                     search={{ session: session.id }}
                     hash="sessions"

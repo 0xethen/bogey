@@ -2,6 +2,7 @@ import { Blurred } from "@bogey/ui/components/blurred";
 import { useMemo } from "react";
 import { useQueryClient, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { NETWORK_AREAS, type NetworkArea } from "@bogey/config/settings";
 import { eventPeopleQueryOptions } from "@bogey/db/queries/manage";
 import { eventTeamsQueryOptions } from "@bogey/db/queries/roster";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
@@ -25,6 +26,9 @@ import { useT, type T } from "#/lib/translate.tsx";
 
 const scopeSchema = (t: T) =>
   z.object({
+    areas: z
+      .array(z.string())
+      .meta({ label: t("netSection.where"), placeholder: t("netSection.everywhere") }),
     users: z
       .array(z.string())
       .meta({ label: t("adminTab.people"), placeholder: t("badges.everyone") }),
@@ -68,12 +72,22 @@ export function NetworkSection({ eventId }: { eventId: string }) {
     label: division.name,
   }));
 
+  const areaLabels: Record<NetworkArea, string> = {
+    sessions: t("netSection.area.sessions"),
+    teams: t("netSection.area.teams"),
+    messages: t("netSection.area.messages"),
+    submissions: t("netSection.area.submissions"),
+    voting: t("netSection.area.voting"),
+  };
+  const areaOptions = NETWORK_AREAS.map((area) => ({ value: area, label: areaLabels[area] }));
+
   const known = (saved: Tuple<string> | undefined, options: Tuple<{ value: string }>) =>
     (saved ?? []).filter((id) => options.some((option) => option.value === id));
 
   const form = useAppForm({
     ...appFormOptions.strictSchema({
       defaultValues: {
+        areas: own.networkAreas ?? [],
         users: known(own.onlyUsers, userOptions),
         teams: known(own.onlyTeams, teamOptions),
         divisions: known(own.onlyDivisions, divisionOptions),
@@ -84,6 +98,7 @@ export function NetworkSection({ eventId }: { eventId: string }) {
     onSubmit: async ({ value, formApi, createValidationError }) => {
       const parsed = schema.parse(value);
       const result = await updateSettings(scope, "access", {
+        networkAreas: NETWORK_AREAS.filter((area) => parsed.areas.includes(area)),
         onlyUsers: parsed.users.length ? parsed.users : null,
         onlyTeams: parsed.teams.length ? parsed.teams : null,
         onlyDivisions: parsed.divisions.length ? parsed.divisions : null,
@@ -114,6 +129,11 @@ export function NetworkSection({ eventId }: { eventId: string }) {
       />
       <form.AppForm>
         <form.Form unsaved="save" className="flex flex-col gap-4">
+          <p>{t("netSection.where")}</p>
+          <p className="text-sm text-muted-fg">{t("netSection.whereHelp")}</p>
+          <form.Field name="areas">
+            {(field) => <field.MultiSelectField options={areaOptions} empty="" />}
+          </form.Field>
           <p>{t("netSection.scope")}</p>
           <p className="text-sm text-muted-fg">{t("netSection.scopeHelp")}</p>
           <div className="grid gap-4 sm:grid-cols-3">

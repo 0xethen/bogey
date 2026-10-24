@@ -90,7 +90,7 @@ security definer
 set search_path = ''
 as $$
   select private.submission_window_open(p_form) and coalesce((
-    select private.network_allowed(f.event_id) and private.check_in_ok(f.event_id)
+    select private.network_allowed(f.event_id, 'submissions') and private.check_in_ok(f.event_id)
     from public.submission_forms f where f.id = p_form
   ), false);
 $$;
@@ -274,7 +274,7 @@ begin
   if not private.submission_window_open(v_row.form_id) then
     raise exception 'submissions are closed' using errcode = 'P0001';
   end if;
-  if not private.network_allowed(v_row.event_id) then
+  if not private.network_allowed(v_row.event_id, 'submissions') then
     raise exception 'connect to the event''s network to submit' using errcode = 'P0001';
   end if;
   if v_row.status = 'disqualified' then
@@ -346,7 +346,7 @@ begin
     if v_row.status = 'disqualified' then
       raise exception 'this submission was disqualified' using errcode = 'P0001';
     end if;
-    if not private.network_allowed(v_row.event_id) then
+    if not private.network_allowed(v_row.event_id, 'submissions') then
       raise exception 'connect to the event''s network to change submissions' using errcode = 'P0001';
     end if;
     v_policy := private.submission_deletion(v_row.event_id);
@@ -804,7 +804,7 @@ begin
      or not private.window_open(v_sub.event_id, 'voting') then
     raise exception 'voting is not open' using errcode = '42501';
   end if;
-  if not private.network_allowed(v_sub.event_id) then
+  if not private.network_allowed(v_sub.event_id, 'voting') then
     raise exception 'voting isn''t allowed from this network' using errcode = '42501';
   end if;
   if not private.check_in_ok(v_sub.event_id) then

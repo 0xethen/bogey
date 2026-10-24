@@ -288,6 +288,7 @@ export const inheritedSettingsQueryOptions = <N extends CoreNamespace>(
 export interface NetworkStatus {
   restricted: boolean;
   allowed: boolean;
+  areas: string[];
   ip: string | null;
 }
 
@@ -301,6 +302,9 @@ export const networkStatusFn = createServerFn({ method: "GET" })
     return ok({
       restricted: status.restricted === true,
       allowed: status.allowed !== false,
+      areas: Array.isArray(status.areas)
+        ? status.areas.filter((area): area is string => typeof area === "string")
+        : [],
       ip: typeof status.ip === "string" ? status.ip : null,
     });
   });

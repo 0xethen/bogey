@@ -65,6 +65,10 @@ export const networkAddress = z.union(
   "Use an address or range like 168.9.212.0/23",
 );
 
+// where the event's network limit can apply; none chosen means everywhere
+export const NETWORK_AREAS = ["sessions", "teams", "messages", "submissions", "voting"] as const;
+export type NetworkArea = (typeof NETWORK_AREAS)[number];
+
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Use a hex color like #1f6feb");
 
 export const SESSION_KIND_TONES = [
@@ -551,6 +555,13 @@ export const settingsRegistry = {
         .optional()
         .describe(
           "Participants can only take part in the event from these networks; empty allows any",
+        ),
+      networkAreas: z
+        .array(z.enum(NETWORK_AREAS))
+        .max(NETWORK_AREAS.length)
+        .optional()
+        .describe(
+          "Where the networks apply: sessions, teams, messages, submissions or voting; empty is everywhere",
         ),
       onlyUsers: z
         .array(z.uuid())

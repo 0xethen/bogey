@@ -476,7 +476,7 @@ declare
   v_id uuid := gen_random_uuid();
   v_row public.clarifications;
 begin
-  perform private.require_network(p_event);
+  perform private.require_network(p_event, 'messages');
   insert into public.clarifications (id, event_id, subject, topic, audience)
   values (v_id, p_event, trim(p_subject), p_topic, p_audience);
   insert into public.clarification_messages (event_id, clarification_id, body_md)
@@ -499,7 +499,7 @@ declare
   v_id uuid := gen_random_uuid();
   v_row public.clarifications;
 begin
-  perform private.require_network(p_event);
+  perform private.require_network(p_event, 'messages');
   insert into public.clarifications (id, event_id, team_id, subject, audience)
   values (v_id, p_event, p_team, trim(p_subject),
     case when private.can_manage(p_event) then 'organizers' else 'judges' end);
@@ -548,7 +548,7 @@ as $$
     select 1 from public.clarifications c
     where c.id = p_clarification
       and private.chat_allows(c.event_id, 'enabled')
-      and private.network_allowed(c.event_id)
+      and private.network_allowed(c.event_id, 'messages')
       and (
         ((private.can_manage(c.event_id) or private.has_permission(c.event_id, 'clarifications.answer'))
           and (c.audience <> 'staff' or private.chat_allows(c.event_id, 'staff')))

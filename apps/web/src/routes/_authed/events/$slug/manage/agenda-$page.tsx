@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/agenda-$page"
     if (!PAGES.includes(params.page)) throw notFound();
     const hash = location.hash ? `#${location.hash}` : "";
     throw redirect({
-      href: `/events/${params.slug}/manage/agenda/${params.page}${location.searchStr}${hash}`,
+      href: `/events/${params.slug}/manage/agenda/${params.page === "windows" ? "" : params.page}${location.searchStr}${hash}`,
       replace: true,
     });
   },

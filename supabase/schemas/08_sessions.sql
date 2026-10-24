@@ -422,7 +422,7 @@ begin
      or not private.can_see_session(v_session.event_id, v_session.id, v_session.visibility) then
     raise exception 'session not found' using errcode = 'P0002';
   end if;
-  perform private.require_network(v_session.event_id);
+  perform private.require_network(v_session.event_id, 'sessions');
   select kind into v_kind from public.session_slots where id = v_session.slot_id;
   if v_kind <> 'choose' then
     raise exception 'everyone attends this one; there''s nothing to pick' using errcode = '22023';
@@ -453,7 +453,7 @@ begin
   if v_event is null then
     return;
   end if;
-  perform private.require_network(v_event);
+  perform private.require_network(v_event, 'sessions');
   if not private.window_open(v_event, 'sessions') then
     raise exception 'session sign-ups are closed' using errcode = '42501';
   end if;
@@ -576,7 +576,7 @@ begin
   if not private.has_permission(p_event, 'event.view') then
     raise exception 'not a member of this event' using errcode = '42501';
   end if;
-  perform private.require_network(p_event);
+  perform private.require_network(p_event, 'sessions');
   select s.* into v_session
   from public.session_codes c join public.event_sessions s on s.id = c.session_id
   where c.event_id = p_event and c.code = upper(trim(p_code)) and s.takes_attendance;

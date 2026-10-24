@@ -293,7 +293,7 @@ begin
   if not private.has_permission(p_event, 'event.compete') then
     raise exception 'only participants can join teams' using errcode = '42501';
   end if;
-  perform private.require_network(p_event);
+  perform private.require_network(p_event, 'teams');
   if not private.check_in_ok(p_event) then
     raise exception 'check in at the desk first' using errcode = 'P0001';
   end if;
@@ -560,7 +560,7 @@ begin
   if not private.has_permission(p_event, 'event.compete') then
     raise exception 'only participants choose a division' using errcode = '42501';
   end if;
-  perform private.require_network(p_event);
+  perform private.require_network(p_event, 'teams');
   select * into v_target from public.divisions where id = p_division and event_id = p_event;
   if v_target.id is null then
     raise exception 'no such division' using errcode = 'P0002';
@@ -597,7 +597,7 @@ begin
   if not private.has_permission(p_event, 'event.compete') then
     raise exception 'only participants choose a division' using errcode = '42501';
   end if;
-  perform private.require_network(p_event);
+  perform private.require_network(p_event, 'teams');
   select t.* into v_team from public.teams t
   join public.team_members tm on tm.team_id = t.id
   where tm.event_id = p_event and tm.user_id = (select auth.uid());
@@ -757,7 +757,7 @@ create policy teams_update on public.teams for update to authenticated
     (
       locked_at is null
       and (select private.window_open(event_id, 'teams'))
-      and (select private.network_allowed(event_id))
+      and (select private.network_allowed(event_id, 'teams'))
       and exists (
       select 1 from public.team_members tm
       where tm.team_id = teams.id and tm.user_id = (select auth.uid()) and tm.role = 'captain'

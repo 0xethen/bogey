@@ -175,11 +175,7 @@ function RouteComponent() {
           <Linked
             text={t("manageSubs.noWindow", { form: form.title, agenda: LINK })}
             links={[
-              <SettingLink
-                key="agenda"
-                to={`/events/${event.slug}/manage/agenda/windows`}
-                hash="windows"
-              >
+              <SettingLink key="agenda" to={`/events/${event.slug}/manage/agenda`} hash="windows">
                 {t("path.agenda")}
               </SettingLink>,
             ]}
@@ -190,7 +186,7 @@ function RouteComponent() {
           <>
             {t("manageSubs.isClosed", { form: form.title })}{" "}
             <Route.Link
-              to="/events/$slug/manage/agenda/windows"
+              to="/events/$slug/manage/agenda"
               params={{ slug: event.slug }}
               className="link"
             >

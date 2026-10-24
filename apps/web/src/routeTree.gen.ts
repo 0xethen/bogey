@@ -151,6 +151,7 @@ import { Route as AuthedEventsSlugAgendaSessionIdIndexRouteImport } from './rout
 import { Route as AuthedEventsSlugAgendaSessionIdAttendanceRouteImport } from './routes/_authed/events/$slug/agenda/$sessionId.attendance'
 import { Route as AuthedEventsSlugManageAgendaIndexRouteImport } from './routes/_authed/events/$slug/manage/agenda.index'
 import { Route as AuthedEventsSlugManageAgendaAttendanceRouteImport } from './routes/_authed/events/$slug/manage/agenda.attendance'
+import { Route as AuthedEventsSlugManageAgendaSessionsRouteImport } from './routes/_authed/events/$slug/manage/agenda.sessions'
 import { Route as AuthedEventsSlugManageAgendaTypesRouteImport } from './routes/_authed/events/$slug/manage/agenda.types'
 import { Route as AuthedEventsSlugManageAgendaWindowsRouteImport } from './routes/_authed/events/$slug/manage/agenda.windows'
 import { Route as AuthedEventsSlugManageCertificatesIndexRouteImport } from './routes/_authed/events/$slug/manage/certificates/index'
@@ -949,6 +950,12 @@ const AuthedEventsSlugManageAgendaAttendanceRoute =
     path: '/agenda/attendance',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
+const AuthedEventsSlugManageAgendaSessionsRoute =
+  AuthedEventsSlugManageAgendaSessionsRouteImport.update({
+    id: '/agenda/sessions',
+    path: '/agenda/sessions',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
 const AuthedEventsSlugManageAgendaTypesRoute =
   AuthedEventsSlugManageAgendaTypesRouteImport.update({
     id: '/agenda/types',
@@ -1215,6 +1222,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/events/$slug/': typeof ApiV1EventsSlugIndexRoute
   '/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
   '/events/$slug/manage/agenda/attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  '/events/$slug/manage/agenda/sessions': typeof AuthedEventsSlugManageAgendaSessionsRoute
   '/events/$slug/manage/agenda/types': typeof AuthedEventsSlugManageAgendaTypesRoute
   '/events/$slug/manage/agenda/windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/events/$slug/manage/certificates/$kind': typeof AuthedEventsSlugManageCertificatesKindRoute
@@ -1364,6 +1372,7 @@ export interface FileRoutesByTo {
   '/api/v1/events/$slug': typeof ApiV1EventsSlugIndexRoute
   '/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
   '/events/$slug/manage/agenda/attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  '/events/$slug/manage/agenda/sessions': typeof AuthedEventsSlugManageAgendaSessionsRoute
   '/events/$slug/manage/agenda/types': typeof AuthedEventsSlugManageAgendaTypesRoute
   '/events/$slug/manage/agenda/windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/events/$slug/manage/certificates/$kind': typeof AuthedEventsSlugManageCertificatesKindRoute
@@ -1530,6 +1539,7 @@ export interface FileRoutesById {
   '/api/v1/events/$slug/': typeof ApiV1EventsSlugIndexRoute
   '/_authed/events/$slug/agenda/$sessionId/attendance': typeof AuthedEventsSlugAgendaSessionIdAttendanceRoute
   '/_authed/events/$slug/manage/agenda/attendance': typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  '/_authed/events/$slug/manage/agenda/sessions': typeof AuthedEventsSlugManageAgendaSessionsRoute
   '/_authed/events/$slug/manage/agenda/types': typeof AuthedEventsSlugManageAgendaTypesRoute
   '/_authed/events/$slug/manage/agenda/windows': typeof AuthedEventsSlugManageAgendaWindowsRoute
   '/_authed/events/$slug/manage/certificates/$kind': typeof AuthedEventsSlugManageCertificatesKindRoute
@@ -1695,6 +1705,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/$slug/'
     | '/events/$slug/agenda/$sessionId/attendance'
     | '/events/$slug/manage/agenda/attendance'
+    | '/events/$slug/manage/agenda/sessions'
     | '/events/$slug/manage/agenda/types'
     | '/events/$slug/manage/agenda/windows'
     | '/events/$slug/manage/certificates/$kind'
@@ -1844,6 +1855,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/$slug'
     | '/events/$slug/agenda/$sessionId/attendance'
     | '/events/$slug/manage/agenda/attendance'
+    | '/events/$slug/manage/agenda/sessions'
     | '/events/$slug/manage/agenda/types'
     | '/events/$slug/manage/agenda/windows'
     | '/events/$slug/manage/certificates/$kind'
@@ -2009,6 +2021,7 @@ export interface FileRouteTypes {
     | '/api/v1/events/$slug/'
     | '/_authed/events/$slug/agenda/$sessionId/attendance'
     | '/_authed/events/$slug/manage/agenda/attendance'
+    | '/_authed/events/$slug/manage/agenda/sessions'
     | '/_authed/events/$slug/manage/agenda/types'
     | '/_authed/events/$slug/manage/agenda/windows'
     | '/_authed/events/$slug/manage/certificates/$kind'
@@ -3064,6 +3077,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManageAgendaAttendanceRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
+    '/_authed/events/$slug/manage/agenda/sessions': {
+      id: '/_authed/events/$slug/manage/agenda/sessions'
+      path: '/agenda/sessions'
+      fullPath: '/events/$slug/manage/agenda/sessions'
+      preLoaderRoute: typeof AuthedEventsSlugManageAgendaSessionsRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
     '/_authed/events/$slug/manage/agenda/types': {
       id: '/_authed/events/$slug/manage/agenda/types'
       path: '/agenda/types'
@@ -3384,6 +3404,7 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageWebhooksRoute: typeof AuthedEventsSlugManageWebhooksRoute
   AuthedEventsSlugManageIndexRoute: typeof AuthedEventsSlugManageIndexRoute
   AuthedEventsSlugManageAgendaAttendanceRoute: typeof AuthedEventsSlugManageAgendaAttendanceRoute
+  AuthedEventsSlugManageAgendaSessionsRoute: typeof AuthedEventsSlugManageAgendaSessionsRoute
   AuthedEventsSlugManageAgendaTypesRoute: typeof AuthedEventsSlugManageAgendaTypesRoute
   AuthedEventsSlugManageAgendaWindowsRoute: typeof AuthedEventsSlugManageAgendaWindowsRoute
   AuthedEventsSlugManageCertificatesKindRoute: typeof AuthedEventsSlugManageCertificatesKindRoute
@@ -3434,6 +3455,8 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
     AuthedEventsSlugManageIndexRoute: AuthedEventsSlugManageIndexRoute,
     AuthedEventsSlugManageAgendaAttendanceRoute:
       AuthedEventsSlugManageAgendaAttendanceRoute,
+    AuthedEventsSlugManageAgendaSessionsRoute:
+      AuthedEventsSlugManageAgendaSessionsRoute,
     AuthedEventsSlugManageAgendaTypesRoute:
       AuthedEventsSlugManageAgendaTypesRoute,
     AuthedEventsSlugManageAgendaWindowsRoute:

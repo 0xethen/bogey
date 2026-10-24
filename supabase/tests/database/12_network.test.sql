@@ -1,5 +1,5 @@
 begin;
-select plan(21);
+select plan(27);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max) values
@@ -89,6 +89,26 @@ select pg_temp.from_ip('8.8.8.8');
 select ok(not private.network_allowed(tests.u('ev')), 'a named team''s members are limited');
 select pg_temp.from_ip('168.9.213.40');
 select ok(private.network_allowed(tests.u('ev')), 'unless they are on the network');
+reset role;
+
+-- areas: the limit applies only where the event chose
+update public.settings set value = jsonb_build_object('allowedNetworks', jsonb_build_array('168.9.212.0/23'),
+  'networkAreas', jsonb_build_array('submissions'))
+  where scope = 'event' and event_id = tests.u('ev') and namespace = 'access';
+select tests.as_user(tests.u('p1'));
+select pg_temp.from_ip('8.8.8.8');
+select ok(not private.network_allowed(tests.u('ev'), 'submissions'), 'a chosen area is limited');
+select ok(private.network_allowed(tests.u('ev'), 'sessions'), 'one that was not chosen is open');
+select ok(not private.network_allowed(tests.u('ev')), 'with no area named, any limited area counts');
+select is((public.event_network_status(tests.u('ev')) -> 'areas'), '["submissions"]'::jsonb, 'status lists the areas');
+select pg_temp.from_ip('168.9.213.40');
+select ok(private.network_allowed(tests.u('ev'), 'submissions'), 'on the network a chosen area is open');
+reset role;
+update public.settings set value = jsonb_build_object('allowedNetworks', jsonb_build_array('168.9.212.0/23'))
+  where scope = 'event' and event_id = tests.u('ev') and namespace = 'access';
+select tests.as_user(tests.u('p1'));
+select pg_temp.from_ip('8.8.8.8');
+select ok(not private.network_allowed(tests.u('ev'), 'sessions'), 'with no areas chosen it applies everywhere');
 reset role;
 
 select * from finish();

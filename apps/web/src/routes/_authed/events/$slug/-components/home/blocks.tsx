@@ -596,11 +596,7 @@ export function HomeBlockView({
             <Linked
               text={t("home.badgeOff", { agenda: LINK })}
               links={[
-                <SettingLink
-                  key="agenda"
-                  to={`/events/${event.slug}/manage/agenda/windows`}
-                  hash="windows"
-                >
+                <SettingLink key="agenda" to={`/events/${event.slug}/manage/agenda`} hash="windows">
                   {t("path.manageAgenda")}
                 </SettingLink>,
               ]}

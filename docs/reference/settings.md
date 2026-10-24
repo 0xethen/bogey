@@ -86,6 +86,7 @@ Set at: org, event.
 | Key | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `allowedNetworks` | list | `[]` | Participants can only take part in the event from these networks; empty allows any |
+| `networkAreas` | list | — | Where the networks apply: sessions, teams, messages, submissions or voting; empty is everywhere |
 | `onlyUsers` | list | `[]` | Limit only these people to the networks; with no teams or divisions, everyone |
 | `onlyTeams` | list | `[]` | Limit only the members of these teams to the networks |
 | `onlyDivisions` | list | `[]` | Limit only the members of these divisions to the networks |
