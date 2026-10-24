@@ -175,7 +175,7 @@ function CheckInCode({
                 .writeText(`${origin}${page}?code=${encodeURIComponent(code)}`)
                 .then(() => setCopied(true));
             }}
-            title={copied ? t("session.copied") : t("session.linkCopy")}
+            tooltip={copied ? t("session.copied") : t("session.linkCopy")}
           >
             {copied ? <IconCopyCheck /> : <IconCopy />}
           </Button>
@@ -190,7 +190,7 @@ function CheckInCode({
               label: t("session.replaceLabel"),
             }}
             onClick={() => rotate.mutate()}
-            title={`${t("session.newCode")}...`}
+            tooltip={`${t("session.newCode")}...`}
           >
             <IconRefresh />
           </Button>

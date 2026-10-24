@@ -324,7 +324,7 @@ export function DataTable<T extends RowData>({
                 setColumnFilters([]);
                 setGlobalFilter("");
               }}
-              title={t("ui.resetFilters")}
+              tooltip={t("ui.resetFilters")}
             >
               <IconFilterX />
             </Button>

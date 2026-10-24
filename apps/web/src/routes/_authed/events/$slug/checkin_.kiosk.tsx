@@ -201,7 +201,7 @@ function FullscreenButton() {
           full ? document.exitFullscreen() : document.documentElement.requestFullscreen?.()
         )?.catch(() => undefined)
       }
-      title={label}
+      tooltip={label}
     >
       {full ? <IconMinimize /> : <IconMaximize />}
     </Button>
