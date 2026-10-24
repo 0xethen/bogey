@@ -15,6 +15,7 @@ import { parseAwards, type Award } from "./awards.ts";
 import { profileNames } from "./profile-names.ts";
 import { slotStart } from "./demos.ts";
 import type { TeamSubmission } from "./submissions.ts";
+import { sheetStatus } from "./judging-flow.ts";
 
 export type Criterion = Tables<"criteria">;
 export type Rubric = Tables<"rubrics">;
@@ -390,7 +391,7 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
     const userId = userData.user?.id;
     if (!userId) return fail("forbidden", "Sign in first.");
 
-    const [submissions, assignments, scores, roundData, conflicts, flags, slots] =
+    const [submissions, assignments, scores, roundData, conflicts, flags, slots, completions] =
       await Promise.all([
         supabase
           .from("submissions")
@@ -427,6 +428,11 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
             "round_id, submission_id, position, judging_panels(id, name, location, starts_at, slot_minutes, now_position)",
           )
           .eq("event_id", eventId),
+        supabase
+          .from("sheet_completions")
+          .select("submission_id, round_id")
+          .eq("event_id", eventId)
+          .eq("judge_id", userId),
       ]);
     if (!roundData.ok) return roundData;
     const error =
@@ -435,7 +441,8 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
       scores.error ??
       conflicts.error ??
       flags.error ??
-      slots.error;
+      slots.error ??
+      completions.error;
     if (error) return toFailure(error, "loading your judging queue");
     const barred = new Set((conflicts.data ?? []).map((row) => row.team_id));
     const flagged = new Set((flags.data ?? []).map((row) => row.submission_id));
@@ -446,6 +453,9 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
     const rounds = roundData.data;
     const status = new Map(
       (assignments.data ?? []).map((row) => [`${row.submission_id}:${row.round_id}`, row.status]),
+    );
+    const completed = new Set(
+      (completions.data ?? []).map((row) => `${row.submission_id}:${row.round_id}`),
     );
     const scored = new Map<string, number>();
     for (const row of scores.data ?? []) {
@@ -477,7 +487,7 @@ export const judgeQueueFn = createServerFn({ method: "GET" })
               table: row.table_label,
               trackIds: row.submission_tracks.map((link) => link.track_id),
               assigned: status.has(key),
-              status: status.get(key) ?? null,
+              status: sheetStatus(status.get(key), completed.has(key)),
               scored: scored.get(key) ?? 0,
               flagged: flagged.has(row.id),
               demo:
@@ -592,7 +602,7 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
     if (!userId) return fail("forbidden", "Sign in first.");
     const round = await currentRound(supabase, data.submissionId);
     if (!round.ok) return round;
-    const [scores, feedback, assignment, rubric] = await Promise.all([
+    const [scores, feedback, assignment, completion, rubric] = await Promise.all([
       supabase
         .from("scores")
         .select("criterion_id, value")
@@ -615,9 +625,16 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
         .eq("round_id", round.data.id)
         .eq("judge_id", userId)
         .maybeSingle(),
+      supabase
+        .from("sheet_completions")
+        .select("submission_id")
+        .eq("submission_id", data.submissionId)
+        .eq("round_id", round.data.id)
+        .eq("judge_id", userId)
+        .maybeSingle(),
       loadProjectRubric(supabase, data.submissionId),
     ]);
-    const error = scores.error ?? feedback.error ?? assignment.error;
+    const error = scores.error ?? feedback.error ?? assignment.error ?? completion.error;
     if (error) return toFailure(error, "loading your scores");
     if (!rubric.ok) return rubric;
     return ok({
@@ -634,7 +651,7 @@ export const judgeSheetFn = createServerFn({ method: "GET" })
             visibility: feedback.data.visibility,
           }
         : null,
-      status: assignment.data?.status ?? null,
+      status: sheetStatus(assignment.data?.status, !!completion.data),
       rubricId: rubricOf(rubric.data),
       rubric: rubric.data,
     });
@@ -733,12 +750,22 @@ export const saveSheetFn = createServerFn({ method: "POST" })
       if (error) return toFailure(error, "saving your note");
     }
 
-    await supabase
+    const updated = await supabase
       .from("judge_assignments")
       .update({ status: data.done ? "done" : "started" })
       .eq("submission_id", data.submissionId)
       .eq("round_id", roundId)
-      .eq("judge_id", userId);
+      .eq("judge_id", userId)
+      .select("id");
+    if (updated.error) return toFailure(updated.error, "saving your progress");
+    // a judge with no assignment has no row to update
+    if (!updated.data.length) {
+      const { error } = await supabase.rpc("set_sheet_done", {
+        p_submission: data.submissionId,
+        p_done: data.done,
+      });
+      if (error) return toFailure(error, "saving your progress");
+    }
     return ok(null);
   });
 

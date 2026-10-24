@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { IconFlag } from "@tabler/icons-react";
 import { z } from "zod";
 import {
   addDeliberationNoteFn,
@@ -13,15 +12,12 @@ import {
 import type { Criterion } from "@bogey/db/queries/judging";
 import { requestFailure } from "@bogey/db/errors";
 import { Badge } from "@bogey/ui/components/badge";
-import { Button } from "@bogey/ui/components/button";
 import {
-  createDialogHandle,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@bogey/ui/components/dialog";
 import { FieldGroup } from "@bogey/ui/components/field";
 import { Markdown } from "@bogey/ui/components/markdown";
@@ -42,8 +38,6 @@ import {
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { useT, type T } from "#/lib/translate.tsx";
-
-const flagDialog = createDialogHandle<undefined>();
 
 const reasonSchema = (t: T) =>
   z.object({
@@ -74,7 +68,15 @@ export function flagReason(flag: JudgingFlag, t: T): string {
     : flag.reason;
 }
 
-export function FlagButton({ submissionId }: { submissionId: string }) {
+export function FlagDialog({
+  submissionId,
+  open,
+  onOpenChange,
+}: {
+  submissionId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const t = useT();
   const schema = useMemo(() => reasonSchema(t), [t]);
   const refresh = useRefresh(submissionId);
@@ -90,17 +92,13 @@ export function FlagButton({ submissionId }: { submissionId: string }) {
       }).catch(requestFailure);
       if (!result.ok) return createValidationError(result.error.message);
       formApi.reset();
-      flagDialog.close();
+      onOpenChange(false);
       await refresh();
       return undefined;
     },
   });
   return (
-    <Dialog handle={flagDialog}>
-      <DialogTrigger render={<Button size="sm" variant="ghost" />}>
-        <IconFlag />
-        {t("deliberation.flag")}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("deliberation.flagTitle")}</DialogTitle>
@@ -113,7 +111,7 @@ export function FlagButton({ submissionId }: { submissionId: string }) {
                 {(field) => <field.TextAreaField rows={3} required />}
               </form.Field>
               <form.FormAlert title={t("deliberation.flagFailed")} />
-              <form.Submit pending={t("common.saving")}>{t("deliberation.flag")}</form.Submit>
+              <form.Submit pending={t("common.saving")}>{t("deliberation.flagSubmit")}</form.Submit>
             </FieldGroup>
           </form.Form>
         </form.AppForm>

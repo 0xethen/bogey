@@ -1,6 +1,5 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { declareConflictFn } from "@bogey/db/queries/conflicts";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   criteriaFor,
@@ -29,11 +28,12 @@ import {
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { queueSheet } from "#/lib/pending-scores.ts";
-import { requestFailure, unwrap } from "@bogey/db/errors";
+import { requestFailure } from "@bogey/db/errors";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
 import { CriterionField } from "#/components/event/judging/criterion-field.tsx";
-import { DeliberationPanel, FlagButton } from "#/components/event/judging/deliberation.tsx";
+import { DeliberationPanel } from "#/components/event/judging/deliberation.tsx";
+import { FlagMenu } from "#/components/event/judging/flag-menu.tsx";
 import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
 import { deliberationQueryOptions } from "@bogey/db/queries/deliberation";
 import { useCan } from "@bogey/db/permissions";
@@ -60,7 +60,7 @@ import { ProjectPanel } from "./-components/project-panel.tsx";
 import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
 import type { Session } from "@bogey/db/auth";
 import { msg, useT, type T } from "#/lib/translate.tsx";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { readGuidance } from "@bogey/utils/guidance";
 
 export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionId")({
@@ -99,13 +99,10 @@ function RouteComponent() {
   const { data: roundData } = useSuspenseQuery(judgingRoundsQueryOptions(event.id));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const declare = useMutation({
-    mutationFn: async () => unwrap(await declareConflictFn({ data: { submissionId, reason: "" } })),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey });
-      await navigate({ to: "/events/$slug/judging", params: { slug: event.slug } });
-    },
-  });
+  const leaveProject = async () => {
+    await queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey });
+    await navigate({ to: "/events/$slug/judging", params: { slug: event.slug } });
+  };
   const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
   const { data: settings } = useSuspenseQuery(
     settingsQueryOptions({ eventId: event.id }, ["judging"]),
@@ -128,8 +125,8 @@ function RouteComponent() {
   const hotkey = (name: string) => ({
     meta: { name, description: t("judging.shortcutNextHelp"), group: "Judging" },
   });
-  useHotkey("J", () => void go(next), { ...hotkey(t("judging.nextProject")), enabled: !!next });
-  useHotkey("K", () => void go(previous), {
+  useHotkey("K", () => void go(next), { ...hotkey(t("judging.nextProject")), enabled: !!next });
+  useHotkey("J", () => void go(previous), {
     ...hotkey(t("judging.previousProject")),
     enabled: !!previous,
   });
@@ -164,27 +161,18 @@ function RouteComponent() {
       width="wide"
       actions={
         <>
-          {flagging && <FlagButton submissionId={submissionId} />}
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={declare.isPending}
-            confirm={{
-              title: t("judging.conflictTitle"),
-              description: t("judging.conflictBody"),
-              label: t("judging.conflictLabel"),
-            }}
-            onClick={() => declare.mutate()}
-          >
-            {t("judging.conflictButton")}
-          </Button>
+          <FlagMenu
+            submissionId={submissionId}
+            canDeliberate={flagging}
+            onConflict={leaveProject}
+          />
           <Button
             size="icon-sm"
             variant="outline"
             aria-label={t("judging.previousProject")}
             tooltip={
               <>
-                {t("judging.previousProject")} <Kbd>K</Kbd>
+                {t("judging.previousProject")} <Kbd>J</Kbd>
               </>
             }
             disabled={!previous}
@@ -198,7 +186,7 @@ function RouteComponent() {
             aria-label={t("judging.nextProject")}
             tooltip={
               <>
-                {t("judging.nextProject")} <Kbd>J</Kbd>
+                {t("judging.nextProject")} <Kbd>K</Kbd>
               </>
             }
             disabled={!next}
@@ -292,14 +280,14 @@ function JudgingSplit({ project, score }: { project: ReactNode; score: ReactNode
       orientation="horizontal"
       defaultLayout={defaultLayout}
       onLayoutChanged={onLayoutChanged}
-      className="h-[calc(100dvh-var(--layout-offset)-12rem)] min-h-112 rounded-2xl border border-border"
+      className="h-[calc(100dvh-var(--layout-offset)-12rem)] min-h-112"
     >
       <ResizablePanel id="project" defaultSize="62%" minSize={320}>
-        <div className="h-full overflow-y-auto p-5">{project}</div>
+        <div className="h-full overflow-y-auto rounded-2xl border border-border p-5">{project}</div>
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel id="score" defaultSize="38%" minSize={300}>
-        <div className="h-full overflow-y-auto p-5">{score}</div>
+        <div className="h-full overflow-y-auto rounded-2xl border border-border p-5">{score}</div>
       </ResizablePanel>
     </ResizablePanelGroup>
   );
@@ -420,7 +408,6 @@ function ScoreCard({
       const result = await saveSheetFn({ data: changes }).catch(requestFailure);
       const finish = () => {
         saved.current = JSON.stringify(value);
-        setSavedAt(Date.now());
         // keep anything typed while the save was in flight
         if (JSON.stringify(formApi.state.values) === saved.current) formApi.reset(value);
       };
@@ -447,7 +434,6 @@ function ScoreCard({
   const values = useSelector(form.atom, (state) => state.values);
   const saving = useSelector(form.atom, (state) => state.isSubmitting);
   const saved = useRef(JSON.stringify(form.state.values));
-  const [savedAt, setSavedAt] = useState<number | null>(null);
   useEffect(() => {
     if (!open || JSON.stringify(values) === saved.current) return;
     const timer = setTimeout(() => {
@@ -475,10 +461,7 @@ function ScoreCard({
 
   return (
     <form.AppForm>
-      <form.Form
-        unsaved="draft"
-        className="flex flex-col gap-5 rounded-2xl border border-border p-4"
-      >
+      <form.Form unsaved="draft" className="flex flex-col gap-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-heading text-lg font-semibold">
             {sheet.roundOrdinal > 1
@@ -486,9 +469,9 @@ function ScoreCard({
               : t("judging.yourScores")}
           </h2>
           <span className="flex items-center gap-2">
-            {open && (saving || savedAt !== null) && (
+            {open && saving && (
               <span className="text-xs text-muted-fg" aria-live="polite">
-                {saving ? t("judging.autosaving") : t("judging.autosaved")}
+                {t("judging.autosaving")}
               </span>
             )}
             {sheet.status === "done" && <Badge variant="secondary">{t("judging.done")}</Badge>}

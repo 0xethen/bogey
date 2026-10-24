@@ -1,4 +1,4 @@
-import type { JudgeQueueItem } from "./judging.ts";
+import type { AssignmentStatus, JudgeQueueItem } from "./judging.ts";
 
 // A judge's session as an ordered list of steps; add a builder to add a step.
 
@@ -24,6 +24,14 @@ export interface JudgingFlowInput {
 }
 
 type StepBuilder = (input: JudgingFlowInput, queue: readonly JudgeQueueItem[]) => JudgingStep[];
+
+/** A sheet's status: the assignment's, else done when the judge marked an unassigned project done. */
+export function sheetStatus(
+  assignment: AssignmentStatus | null | undefined,
+  completed: boolean,
+): AssignmentStatus | null {
+  return assignment ?? (completed ? "done" : null);
+}
 
 /** The projects a judge is asked to score: their assignments, or every project when they have none. */
 export function judgeQueue(queue: readonly JudgeQueueItem[]): JudgeQueueItem[] {

@@ -663,7 +663,6 @@ export const en = {
   "judging.conflictBody":
     "You won't be asked to score this team, and any scores you gave it stop counting. Only an organizer can undo this.",
   "judging.conflictLabel": "Declare",
-  "judging.conflictButton": "I have a conflict...",
   "judging.nextProject": "Next project",
   "judging.formRemoved": "This project's form was removed.",
   "judging.methodMissing":
@@ -684,7 +683,6 @@ export const en = {
   "judging.queuePosition": "{index} of {total} in your queue",
   "judging.yourQueue": "Your queue",
   "judging.autosaving": "Saving...",
-  "judging.autosaved": "Saved",
   "judging.autosaveHelp": "Scores save as you go. Mark it done when you've scored everything.",
   "judging.factTeam": "Team",
   "judging.factDivision": "Division",
@@ -2993,7 +2991,16 @@ export const en = {
   "deliberation.manageHelp":
     "Judges flag projects they want to discuss. While a project is flagged, the judges deliberating see each other's scores and notes on it, then resolve the flag.",
   "deliberation.queueHelp": "Flagged projects you can discuss with the other judges.",
-  "deliberation.flag": "Flag",
+  "deliberation.flag": "Flag...",
+  "deliberation.flagSubmit": "Flag",
+  "deliberation.chooseTitle": "Flag this project",
+  "deliberation.chooseIntro": "Pick what you want to do about it.",
+  "deliberation.chooseDeliberateHelp":
+    "Ask the judges on this project to look at it together. They see each other's scores and notes until it's resolved.",
+  "deliberation.chooseDeliberateUnavailable":
+    "Not available: deliberation is off for this event, or the project is already flagged.",
+  "deliberation.chooseConflictHelp":
+    "You know this team, so you shouldn't score it. It leaves your queue.",
   "deliberation.flagged": "Flagged",
   "deliberation.flagTitle": "Flag for deliberation",
   "deliberation.flagIntro":

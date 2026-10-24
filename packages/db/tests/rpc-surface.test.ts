@@ -177,6 +177,8 @@ const SIGNED_IN = {
   set_division_rubrics: "organizers replace which rubrics divisions use, and it's audited",
   flag_submission:
     "a judge who may deliberate on a project flags it, once at a time, and it's audited",
+  set_sheet_done:
+    "a judge marks a project done or reopens it, even without an assignment, in a round they may score",
   resolve_flag: "closes a flag for the judges deliberating on it, and audits it",
   add_deliberation_note: "adds a note to an open flag the caller deliberates on",
   save_prizes: "replaces the prize list in one transaction and audits it",

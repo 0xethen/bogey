@@ -357,7 +357,8 @@ Judges score from their own queue while the Judging window is open. A project op
 side: the project (team, division, table or demo slot, round, submitted time, links, and every
 form its team submitted, each collapsible) and the scoring panel, with a handle to resize them.
 Scores save as the judge goes; **Save and mark done** (or Mod+Enter) moves to the next unfinished
-project, and J and K step through the queue. Once the queue is done, the judge sees what's next:
+project, and K (next) and J (previous) step through the queue. **Flag...** offers flagging the
+project for deliberation or declaring a conflict. Once the queue is done, the judge sees what's next:
 flagged projects to discuss (when deliberation is on and they're part of it), and other projects
 to browse when **Judges can browse other projects** is on in Manage → Judging (off by default;
 judges without assignments always see every project).

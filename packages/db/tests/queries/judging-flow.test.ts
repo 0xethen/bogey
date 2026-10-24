@@ -6,6 +6,7 @@ import {
   judgingSteps,
   nextToScore,
   queueNeighbours,
+  sheetStatus,
 } from "../../src/queries/judging-flow.ts";
 
 const item = (id: string, patch: Partial<JudgeQueueItem> = {}): JudgeQueueItem => ({
@@ -79,5 +80,22 @@ describe("progress and navigation", () => {
   test("knows a project's neighbours", () => {
     expect(queueNeighbours(steps, "b")).toEqual({ index: 1, previous: "a", next: "c" });
     expect(queueNeighbours(steps, "z").index).toBe(-1);
+  });
+});
+
+describe("sheetStatus", () => {
+  test("an assignment's status wins", () => {
+    expect(sheetStatus("started", true)).toBe("started");
+    expect(sheetStatus("done", false)).toBe("done");
+  });
+
+  test("an unassigned project counts as done once the judge marked it", () => {
+    expect(sheetStatus(null, true)).toBe("done");
+    expect(sheetStatus(undefined, false)).toBeNull();
+  });
+
+  test("a judge with no assignments sees their marked projects in the progress", () => {
+    const queue = [item("a"), item("b", { status: sheetStatus(null, true) })];
+    expect(judgingProgress(judgingSteps({ queue }))).toMatchObject({ done: 1, total: 2 });
   });
 });
