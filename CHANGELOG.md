@@ -13,7 +13,6 @@ advisory (see docs/contributing.md#security-releases). -->
 - Manage → Submissions: the public gallery settings are now their own Public gallery subtab; old #gallery links go there.
 - Menus, selects, popovers, tooltips and dialogs fade and grow out of their trigger with one short, shared animation, and hover colors on buttons, rows, links and menu items ease in. Reduced motion turns all of it off.
 - Rows in lists keep one minimum height with their icons lined up, table rows are the same height whether they hold text or a button, and action columns sit at the right edge.
-
 - Draggable lists (tags, judging criteria and demos, registration and submission forms, sessions, divisions, pages, prizes, awards) share one look: the same drag handle on every row, actions at the end, a lifted row and a drop line while dragging, and Alt with an arrow key on the handle to move a row.
 - Customizing the event homepage: click a block to change it in a side panel while the page updates in place; add blocks from a searchable picker (or the "Add a block..." button under each column), and move a block to the other column from its panel. On narrower screens blocks open for editing in place.
 - Homepage blocks can be hidden: they keep their place and settings but nobody sees them. Manage → Homepage marks hidden blocks.
