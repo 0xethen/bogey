@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.9 (2026-10-25)
+
 - Criteria can be pasted in from a rubric written as text: each criterion's name, then its scores (`0 points.`, `1-3 pts:`) with what earns them, with lines like `Row A` starting a criterion. **Import criteria** on the criteria page is now an editor like the roster import's: paste a rubric or a spreadsheet, or drop a CSV, Excel or text file into it, check the criteria it found and any lines it couldn't read, then **Add to criteria**.
 - Organizers can upload a PDF under **Guide for judges** on the criteria page (`judging.guide`). Judges switch between **Project** and **Guide** beside the score sheet to read it. Only judges and organizers can open it.
 - Moving between projects with J and K, or the arrows, is immediate: the projects either side are loaded ahead, and a project that isn't shows its page with placeholders while it loads, instead of waiting on the old one.
