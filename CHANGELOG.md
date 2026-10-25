@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.6 (2026-10-25)
+
 - The web server exits when it's told to stop. Since 2.4.1 a channel opened for "View as" kept the process alive after it closed its server, so a restart without a forced kill left the app down: on SparkCloud, `bogeyctl restart web` and `bogey-upgrade` waited forever and the site returned 502; under Docker, stopping the container took the full 10 seconds.
 - SparkCloud: `bogeyctl restart` sends SIGKILL to a service that hasn't exited 10 seconds after SIGTERM, as `docker stop` does, and `bogey-upgrade` does the same when it switches or rolls back the app. Rolling back now restores the previous box scripts (it failed with "cannot stat run.prev/run/*").
 - SparkCloud: the box installs `libatomic1`, which the Node 26 in 2.4.5's image needs; `bogey-upgrade` installs it on boxes that don't have it before it migrates.
