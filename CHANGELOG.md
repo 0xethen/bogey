@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.11 (2026-10-25)
+
 - Manage → Teams: **New team** can pick its members from participants without a team, and each team's details have an **Add a participant** search, so a walk-in can be put on a team in a couple of clicks.
 - SparkCloud: `bogey-upgrade` keeps a custom logo (or any file in `public/brand`) whole. It was served cut off at the size of the image's own file.
 
