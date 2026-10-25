@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.8 (2026-10-25)
+
 - Registration questions and submission items can be for chosen divisions and tags only, under **Only for** when editing one. People are asked a question when they're in one of its divisions or hold one of its tags; before they join, their division is the one their invite link puts them in. A team fills in an item when it's in one of its divisions or a member holds one of its tags. Deleting a division or tag drops it from these lists, and copying an event carries them over to the copy's divisions. The check-in kiosk asks walk-ins only the questions for everyone.
 - Submission forms open on their own page from **Submissions → Forms** instead of expanding in the list.
 - **Smallest team** and **Largest team** moved from **Details** to a **Team size** section on **Teams**. **Teams** is always in the menu now; for a solo event it holds just that section.
