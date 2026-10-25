@@ -23,6 +23,7 @@ import { DisclosureRow, RowList } from "@bogey/ui/components/row";
 import { DataTable, dataColumns, type DataTableFilter } from "@bogey/ui/components/data-table";
 import { ErrorAlert } from "@bogey/ui/components/error-alert";
 import { OptSelect } from "@bogey/ui/components/opt-select";
+import { SearchSelect } from "@bogey/ui/components/search-select";
 import { StatusDot } from "@bogey/ui/components/status-dot";
 import { PageControls, usePaged } from "@bogey/ui/components/page-controls";
 import { Screen } from "@bogey/ui/components/screen";
@@ -92,12 +93,22 @@ const nameSchema = (t: T) =>
       .meta({ label: t("teamForm.name") }),
   });
 
+const createSchema = (t: T, max: number) =>
+  nameSchema(t).extend({
+    members: z
+      .array(z.string())
+      .max(max, t("manageTeams.tooMany", { max }))
+      .meta({ label: t("manageTeams.membersColumn") }),
+  });
+
 type Division = { id: string; name: string };
 
 interface TeamActions {
   divisions: Tuple<Division>;
+  unassigned: Tuple<{ userId: string; name: string }>;
   busy: boolean;
   moveSelect: (userId: string, name: string, current: string | null) => ReactNode;
+  onAdd: (userId: string, teamId: string) => void;
   onDivision: (teamIds: string[], divisionId: string | undefined) => void;
   onLock: (id: string, locked: boolean) => void;
   onDisband: (id: string) => void;
@@ -188,6 +199,7 @@ function RouteComponent() {
     ];
     return {
       divisions,
+      unassigned: data.unassigned,
       busy: moving || placing || locking || disbanding,
       moveSelect: (userId, name, current) => (
         <OptSelect
@@ -199,6 +211,7 @@ function RouteComponent() {
           onChange={(next) => moveMember({ userId, teamId: next === NO_TEAM ? null : next })}
         />
       ),
+      onAdd: (userId, teamId) => moveMember({ userId, teamId }),
       onDivision: (teamIds, divisionId) => placeTeams({ teamIds, divisionId }),
       onLock: (id, locked) => lockTeam({ id, locked }),
       onDisband: (id) => disbandTeam(id),
@@ -206,6 +219,7 @@ function RouteComponent() {
   }, [
     t,
     data.teams,
+    data.unassigned,
     event.team_size_max,
     divisions,
     moving,
@@ -299,7 +313,7 @@ function RouteComponent() {
         )
       }
     >
-      {creating && <CreateTeam onDone={() => setCreating(false)} />}
+      {creating && <CreateTeam unassigned={data.unassigned} onDone={() => setCreating(false)} />}
       <ErrorAlert error={error} title={t("manageTeams.changeFailed")} />
       <TeamMatcher open={matching} onOpenChange={setMatching} />
 
@@ -517,9 +531,21 @@ function DivisionCell({ team }: { team: RosterTeam }) {
 
 function TeamDetail({ team }: { team: RosterTeam }) {
   const t = useT();
-  const { moveSelect, busy, onLock, onDisband } = useTeamActions();
+  const { event } = Route.useRouteContext();
+  const { moveSelect, unassigned, busy, onAdd, onLock, onDisband } = useTeamActions();
+  const full = team.members.length >= event.team_size_max;
   return (
     <div className="flex flex-col gap-4">
+      {!full && unassigned.length > 0 && (
+        <SearchSelect
+          className="max-w-sm"
+          options={unassigned.map((person) => ({ value: person.userId, label: person.name }))}
+          value={undefined}
+          onValueChange={(userId) => userId && onAdd(userId, team.id)}
+          placeholder={`${t("manageTeams.addMember")}...`}
+          empty={t("manageTeams.noneUnassigned")}
+        />
+      )}
       <ul className="flex flex-col gap-2">
         {team.members.map((member) => (
           <li key={member.userId} className="flex flex-wrap items-center gap-3">
@@ -613,14 +639,20 @@ function RenameTeam({ team }: { team: RosterTeam }) {
   );
 }
 
-function CreateTeam({ onDone }: { onDone: () => void }) {
+function CreateTeam({
+  unassigned,
+  onDone,
+}: {
+  unassigned: Tuple<{ userId: string; name: string }>;
+  onDone: () => void;
+}) {
   const t = useT();
-  const schema = useMemo(() => nameSchema(t), [t]);
   const { event } = Route.useRouteContext();
+  const schema = useMemo(() => createSchema(t, event.team_size_max), [t, event.team_size_max]);
   const queryClient = useQueryClient();
   const form = useAppForm({
     ...appFormOptions.strictSchema(schema, {
-      defaultValues: { name: "" },
+      defaultValues: { name: "", members: [] as string[] },
       errorVisibility,
       validators: [rewardEarlyPunishLate(schema)],
     }),
@@ -633,6 +665,17 @@ function CreateTeam({ onDone }: { onDone: () => void }) {
           ? createValidationError({ fields: { name: result.error.message } })
           : createValidationError(result.error.message);
       }
+      for (const userId of value.members) {
+        const added = await setTeamMembershipFn({
+          data: { eventId: event.id, userId, teamId: result.data.id },
+        }).catch(requestFailure);
+        if (!added.ok) {
+          await queryClient.invalidateQueries({
+            queryKey: eventTeamsQueryOptions(event.id).queryKey,
+          });
+          return createValidationError(added.error.message);
+        }
+      }
       await queryClient.invalidateQueries({ queryKey: eventTeamsQueryOptions(event.id).queryKey });
       onDone();
       return undefined;
@@ -642,9 +685,18 @@ function CreateTeam({ onDone }: { onDone: () => void }) {
   return (
     <form.AppForm>
       <form.Form className="flex flex-col gap-3 rounded-2xl border border-border p-4">
-        <form.Field name="name">
-          {(field) => <field.TextField required description={t("manageTeams.startsEmpty")} />}
-        </form.Field>
+        <form.Field name="name">{(field) => <field.TextField required />}</form.Field>
+        {unassigned.length > 0 && (
+          <form.Field name="members">
+            {(field) => (
+              <field.MultiSelectField
+                options={unassigned.map((person) => ({ value: person.userId, label: person.name }))}
+                placeholder={`${t("manageTeams.addMember")}...`}
+                description={t("manageTeams.membersHelp")}
+              />
+            )}
+          </form.Field>
+        )}
         <form.FormAlert title={t("teamForm.createFailed")} />
         <div className="flex gap-2">
           <form.Submit pending={`${t("teamForm.creating")}...`}>{t("teamForm.create")}</form.Submit>
