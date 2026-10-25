@@ -1,3 +1,5 @@
+import { parseTable } from "./roster.ts";
+
 /** What a band of scores on one criterion means, like "7-8: works end to end". */
 export interface GuidanceBand {
   min: number;
@@ -212,4 +214,121 @@ export function readGuidanceTable(rows: Tuple<GuidanceRow>): GuidanceImport {
   }
   for (const criterion of order) criterion.guidance = sortBands(criterion.guidance);
   return { criteria: order, problems };
+}
+
+// "Row A", "Criterion 2: Impact", "Part III"
+const MARKER =
+  /^(?:row|criterion|criteria|category|part|section)\s+(?:[a-z]|\d+|[ivx]+)\b\s*[:.)–—-]?\s*(.*)$/i;
+// "0 points.", "7-8 pts: works", "3:", "2)"
+const SCORE =
+  /^(\d{1,3})(?:\s*(?:-|–|—|to)\s*(\d{1,3}))?\s*(points?|pts?)?\b\s*([.:)–—-])?\s*(.*)$/i;
+const BULLET = /^(?:[-*•]\s+|#{1,6}\s+)/;
+
+/** A pasted line that starts a score band, with the text after it. */
+export function scoreLine(text: string): { min: number; max: number; rest: string } | null {
+  const match = SCORE.exec(text.trim().replace(BULLET, ""));
+  if (!match) return null;
+  const [, low, high, points, mark, rest = ""] = match;
+  if (!points && !mark && rest) return null;
+  const min = Number(low);
+  const max = Number(high ?? low);
+  return { min: Math.min(min, max), max: Math.max(min, max), rest: rest.trim() };
+}
+
+/** Whether a pasted line marks the start of a criterion, like "Row A". */
+export const isMarkerLine = (text: string) => MARKER.test(text.trim());
+
+/**
+ * Reads a rubric written out as text: a criterion's name, then its score bands
+ * ("0 points." followed by what earns them). "Row A" style lines and headings
+ * start a criterion; a band whose score starts over also does.
+ */
+export function readGuidanceText(text: string): GuidanceImport {
+  const lines = text.split(/\r?\n/);
+  const criteria: ImportedCriterion[] = [];
+  const problems: GuidanceProblem[] = [];
+  let current: ImportedCriterion | null = null;
+  let band: GuidanceBand | null = null;
+  let fresh = false;
+  const bodyOf = (at: number) => {
+    for (let next = at + 1; next < lines.length; next++) {
+      const line = lines[next]!.trim();
+      if (line) return line;
+    }
+    return "";
+  };
+
+  lines.forEach((raw, index) => {
+    const line = raw.trim();
+    const number = index + 1;
+    if (!line) return;
+    const marker = MARKER.exec(line);
+    if (marker) {
+      band = null;
+      current = null;
+      fresh = true;
+      const label = marker[1]?.trim();
+      if (label) start(label, number);
+      return;
+    }
+    const heading = /^#{1,6}\s+(.*)$/.exec(line);
+    if (heading?.[1]) {
+      band = null;
+      start(heading[1], number);
+      return;
+    }
+    const score = scoreLine(line);
+    if (score) {
+      if (!current) {
+        problems.push({ kind: "noLabel", line: number });
+        return;
+      }
+      if (current.guidance.length >= MAX_BANDS) {
+        problems.push({ kind: "tooMany", line: number, label: current.label });
+        band = null;
+        return;
+      }
+      band = { min: score.min, max: score.max, body: score.rest };
+      current.guidance.push(band);
+      return;
+    }
+    const plain = line.replace(BULLET, "");
+    // a line before a score that starts over names the next criterion
+    const next = scoreLine(bodyOf(index));
+    const restarts = !!band && !!band.body && !!next && next.min <= band.max;
+    if (!current || fresh || restarts) {
+      fresh = false;
+      band = null;
+      start(plain, number);
+    } else if (band) {
+      band.body = band.body ? `${band.body}\n\n${plain}` : plain;
+    } else {
+      current.description = current.description ? `${current.description}\n\n${plain}` : plain;
+    }
+  });
+
+  function start(label: string, line: number) {
+    fresh = false;
+    current = { line, label: label.slice(0, 80), description: null, weight: null, guidance: [] };
+    criteria.push(current);
+  }
+
+  for (const criterion of criteria) {
+    if (criterion.description) criterion.description = criterion.description.slice(0, 2000);
+    criterion.guidance = sortBands(
+      criterion.guidance.map((each) => ({ ...each, body: each.body.slice(0, MAX_BAND_BODY) })),
+    );
+  }
+  if (!criteria.length) problems.push({ kind: "empty" });
+  return { criteria, problems };
+}
+
+/** Reads pasted criteria: a table (with tabs or a header the table reader knows) or rubric text. */
+export function readGuidancePaste(text: string): GuidanceImport {
+  if (!text.trim()) return { criteria: [], problems: [{ kind: "empty" }] };
+  const first = text.split(/\r?\n/).find((line) => line.trim()) ?? "";
+  if (first.includes("\t")) return readGuidanceTable(parseTable(text));
+  const table = readGuidanceTable(parseTable(text));
+  if (table.criteria.some((criterion) => criterion.guidance.length)) return table;
+  return readGuidanceText(text);
 }

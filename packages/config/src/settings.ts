@@ -1629,6 +1629,13 @@ export const settingsRegistry = {
         .boolean()
         .optional()
         .describe("Advancing the top N also takes every project still tied with the last one"),
+      guide: z
+        .object({
+          path: z.string().min(1).max(300),
+          name: z.string().trim().min(1).max(200),
+        })
+        .optional()
+        .describe("A PDF judges can read beside each project, stored in the submissions bucket"),
     }),
     fields: {
       blind: { label: say("setting.judging.blind") },

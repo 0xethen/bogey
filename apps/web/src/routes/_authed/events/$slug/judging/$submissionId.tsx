@@ -1,5 +1,5 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, notFound, useNavigate, useRouter } from "@tanstack/react-router";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   criteriaFor,
@@ -23,7 +23,6 @@ import {
 import {
   submissionDetailQueryOptions,
   submissionFormsQueryOptions,
-  type TeamSubmission,
 } from "@bogey/db/queries/submissions";
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
@@ -36,13 +35,16 @@ import { DeliberationPanel } from "#/components/event/judging/deliberation.tsx";
 import { FlagMenu } from "#/components/event/judging/flag-menu.tsx";
 import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
 import { DivisionPicker } from "#/components/event/judging/division-picker.tsx";
+import { GuideViewer, type JudgeGuide } from "#/components/event/judging/judge-guide.tsx";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { deliberationQueryOptions } from "@bogey/db/queries/deliberation";
 import { useCan } from "@bogey/db/permissions";
 import { Screen } from "@bogey/ui/components/screen";
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import { Kbd } from "@bogey/ui/components/kbd";
-import { Meter, MeterLabel } from "@bogey/ui/components/meter";
+import { Meter } from "@bogey/ui/components/meter";
+import { Skeleton } from "@bogey/ui/components/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bogey/ui/components/tabs";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -61,43 +63,40 @@ import {
 import { ProjectPanel } from "./-components/project-panel.tsx";
 import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
 import { msg, useT, type T } from "#/lib/translate.tsx";
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Fragment, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { readGuidance } from "@bogey/utils/guidance";
 
 export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionId")({
   staticData: { title: msg("judging.project") },
   loader: async ({ context, params }) => {
-    const [submission] = await Promise.all([
-      context.query.query({
-        ...submissionDetailQueryOptions(params.submissionId),
-        staleTime: "static",
-      }),
-      context.query.query({
-        ...submissionFormsQueryOptions(context.event.id),
-        staleTime: "static",
-      }),
-      context.query.query({
-        ...judgeProjectQueryOptions(params.submissionId),
-        staleTime: "static",
-      }),
-      context.query.query({ ...criteriaQueryOptions(context.event.id), staleTime: "static" }),
-      context.query.query({ ...rubricsQueryOptions(context.event.id), staleTime: "static" }),
-      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
-      context.query.query({
-        ...deliberationQueryOptions(params.submissionId),
-        staleTime: "static",
-      }),
-      context.query.query({ ...judgingRoundsQueryOptions(context.event.id), staleTime: "static" }),
-      context.query.query({
-        ...judgeSheetQueryOptions(context.event.id, params.submissionId),
-        staleTime: "static",
-      }),
-      context.query.query({ ...judgeQueueQueryOptions(context.event.id), staleTime: "static" }),
-      context.query.query({
-        ...settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
+    const query = context.query;
+    const { submissionId } = params;
+    const eventId = context.event.id;
+    // the project's own data loads behind skeletons, so J/K switch at once
+    const project = Promise.all([
+      query.prefetchQuery(submissionDetailQueryOptions(submissionId)),
+      query.prefetchQuery(judgeProjectQueryOptions(submissionId)),
+      query.prefetchQuery(deliberationQueryOptions(submissionId)),
+      query.prefetchQuery(judgeSheetQueryOptions(eventId, submissionId)),
+    ]);
+    const [queue] = await Promise.all([
+      query.query({ ...judgeQueueQueryOptions(eventId), staleTime: "static" }),
+      query.query({ ...submissionFormsQueryOptions(eventId), staleTime: "static" }),
+      query.query({ ...criteriaQueryOptions(eventId), staleTime: "static" }),
+      query.query({ ...rubricsQueryOptions(eventId), staleTime: "static" }),
+      query.query({ ...eventDivisionsQueryOptions(eventId), staleTime: "static" }),
+      query.query({ ...judgingRoundsQueryOptions(eventId), staleTime: "static" }),
+      query.query({ ...eventWindowsQueryOptions(eventId), staleTime: "static" }),
+      query.query({
+        ...settingsQueryOptions({ eventId }, ["judging"]),
         staleTime: "static",
       }),
     ]);
+    const item = queue.find((candidate) => candidate.submissionId === submissionId);
+    if (item) return { title: item.title };
+    // outside the queue (browsing), only a submitted project can be judged
+    await project;
+    const submission = query.getQueryData(submissionDetailQueryOptions(submissionId).queryKey);
     if (!submission || submission.status !== "submitted") throw notFound();
     return { title: submission.title };
   },
@@ -108,26 +107,20 @@ function RouteComponent() {
   const t = useT();
   const { event } = Route.useRouteContext();
   const { submissionId } = Route.useParams();
-  const { data: submission } = useSuspenseQuery(submissionDetailQueryOptions(submissionId));
-  const { data: criteria } = useSuspenseQuery(criteriaQueryOptions(event.id));
-  const { data: rubrics } = useSuspenseQuery(rubricsQueryOptions(event.id));
-  const { data: deliberation } = useSuspenseQuery(deliberationQueryOptions(submissionId));
-  const { data: sheet } = useSuspenseQuery(judgeSheetQueryOptions(event.id, submissionId));
   const { data: queue } = useSuspenseQuery(judgeQueueQueryOptions(event.id));
-  const { data: roundData } = useSuspenseQuery(judgingRoundsQueryOptions(event.id));
-  const { data: project } = useSuspenseQuery(judgeProjectQueryOptions(submissionId));
-  const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(event.id));
+  const { data: settings } = useSuspenseQuery(
+    settingsQueryOptions({ eventId: event.id }, ["judging"]),
+  );
+  const { data: criteria } = useSuspenseQuery(criteriaQueryOptions(event.id));
+  const submission = useQuery(submissionDetailQueryOptions(submissionId));
+  const deliberation = useQuery(deliberationQueryOptions(submissionId));
   const navigate = useNavigate();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const leaveProject = async () => {
     await queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey });
     await navigate({ to: "/events/$slug/judging", params: { slug: event.slug } });
   };
-  const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
-  const { data: settings } = useSuspenseQuery(
-    settingsQueryOptions({ eventId: event.id }, ["judging"]),
-  );
-  const manager = useCan("event.manage");
   const steps = judgingSteps({
     queue,
     deliberation: settings.judging.deliberation,
@@ -142,6 +135,18 @@ function RouteComponent() {
           params: { slug: event.slug, submissionId: id },
         })
       : undefined;
+  // the projects either side are loaded ahead, so moving to them shows them straight away
+  useEffect(() => {
+    for (const id of [previous, next]) {
+      if (!id) continue;
+      void router
+        .preloadRoute({
+          to: "/events/$slug/judging/$submissionId",
+          params: { slug: event.slug, submissionId: id },
+        })
+        .catch(() => undefined);
+    }
+  }, [router, event.slug, previous, next]);
   const hotkey = (name: string) => ({
     meta: { name, description: t("judging.shortcutNextHelp"), group: "Judging" },
   });
@@ -150,26 +155,12 @@ function RouteComponent() {
     ...hotkey(t("judging.previousProject")),
     enabled: !!previous,
   });
-  if (!submission) return null;
 
   const item = queue.find((candidate) => candidate.submissionId === submissionId);
-  const round = roundData.rounds.find((candidate) => candidate.id === sheet.roundId);
-  const open = isWindowOpen(windowByKey(windows, round?.windowKey ?? "judging"));
+  const title = item?.title ?? submission.data?.title;
   const flagging =
     (settings.judging.deliberation ?? "assigned") !== "off" &&
-    !(deliberation && !deliberation.flag.resolvedAt);
-  const rubricEditable = (manager || settings.judging.judgeRubric !== false) && (open || manager);
-  const divisionEditable =
-    (manager || settings.judging.judgeDivision !== false) && (open || manager);
-  // a move changes the team's division, so its rubric fallback and queue entry too
-  const onMoved = () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: judgeProjectQueryOptions(submissionId).queryKey }),
-      queryClient.invalidateQueries({
-        queryKey: judgeSheetQueryOptions(event.id, submissionId).queryKey,
-      }),
-      queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey }),
-    ]);
+    !(deliberation.data && !deliberation.data.flag.resolvedAt);
   // after marking done, the next unfinished project, or the queue's done state
   const onDone = () => {
     const after = nextToScore(
@@ -183,11 +174,11 @@ function RouteComponent() {
 
   return (
     <Screen
-      title={submission.title || t("judging.untitled")}
+      title={title === undefined ? "\u00a0" : title || t("judging.untitled")}
       description={
         index >= 0
-          ? t("judging.queuePosition", { index: index + 1, total: progress.total })
-          : submission.teamName
+          ? `${t("judging.queuePosition", { index: index + 1, total: progress.total })} · ${t("judging.progress", { done: progress.done, total: progress.total })}`
+          : (item?.teamName ?? submission.data?.teamName ?? "\u00a0")
       }
       width="superwide"
       actions={
@@ -229,88 +220,211 @@ function RouteComponent() {
       }
     >
       {progress.total > 0 && (
-        <Meter value={progress.done} max={progress.total} aria-label={t("judging.yourQueue")}>
-          <MeterLabel className="text-muted-fg">
-            {t("judging.progress", { done: progress.done, total: progress.total })}
-          </MeterLabel>
-        </Meter>
+        <Meter
+          value={progress.done}
+          max={progress.total}
+          aria-label={t("judging.progress", { done: progress.done, total: progress.total })}
+          className="-mt-2"
+        />
       )}
       <JudgingSplit
+        resetKey={submissionId}
+        guide={settings.judging.guide}
         project={
-          <div className="flex flex-col gap-6">
-            <DeliberationPanel submissionId={submissionId} criteria={criteria} />
-            <ProjectPanel
-              eventId={event.id}
-              timeZone={event.timezone}
-              submissionId={submissionId}
-              item={item}
-              blind={settings.judging.blind === true}
-            />
-          </div>
+          <Suspense key={submissionId} fallback={<ProjectSkeleton />}>
+            <div className="flex flex-col gap-6">
+              <DeliberationPanel submissionId={submissionId} criteria={criteria} />
+              <ProjectPanel
+                eventId={event.id}
+                timeZone={event.timezone}
+                submissionId={submissionId}
+                item={item}
+                blind={settings.judging.blind === true}
+              />
+            </div>
+          </Suspense>
         }
         score={
-          <div className="flex flex-col gap-5">
-            {/* blind judging hides teams, and so their division, from judges */}
-            {(manager || settings.judging.blind !== true) && (
-              <DivisionPicker
-                eventId={event.id}
-                submissionId={submissionId}
-                form={forms.find((form) => form.id === submission.form_id)}
-                value={project?.divisionId ?? null}
-                editable={divisionEditable}
-                onMoved={onMoved}
-              />
-            )}
-            {(!round || round.method === "rubric") && (
-              <RubricPicker
-                submissionId={submissionId}
-                rubrics={rubrics}
-                value={sheet.rubric}
-                editable={rubricEditable}
-                description={t("rubric.judgeHelp")}
-                onPicked={() =>
-                  queryClient.invalidateQueries({
-                    queryKey: judgeSheetQueryOptions(event.id, submissionId).queryKey,
-                  })
-                }
-              />
-            )}
-            {round && round.method !== "rubric" ? (
-              <MethodPanel
-                method={round.method}
-                formId={round.formId}
-                roundId={round.id}
-                submissionId={submissionId}
-              />
-            ) : (
-              <ScoreCard
-                key={`${submissionId}:${sheet.roundId}:${sheet.rubricId ?? ""}`}
-                eventId={event.id}
-                submission={submission}
-                criteria={criteriaFor(criteria, sheet.roundId, sheet.rubricId)}
-                sheet={sheet}
-                open={open}
-                onDone={onDone}
-              />
-            )}
-          </div>
+          <Suspense key={submissionId} fallback={<ScoreSkeleton />}>
+            <ScorePanel submissionId={submissionId} onDone={onDone} />
+          </Suspense>
         }
       />
     </Screen>
   );
 }
 
-/** Project on one side, scoring on the other; resizable on wide screens, stacked otherwise. */
-function JudgingSplit({ project, score }: { project: ReactNode; score: ReactNode }) {
+/** The division, rubric and scores for one project. */
+function ScorePanel({ submissionId, onDone }: { submissionId: string; onDone: () => unknown }) {
+  const t = useT();
+  const { event } = Route.useRouteContext();
+  const queryClient = useQueryClient();
+  const manager = useCan("event.manage");
+  const { data: submission } = useSuspenseQuery(submissionDetailQueryOptions(submissionId));
+  const { data: sheet } = useSuspenseQuery(judgeSheetQueryOptions(event.id, submissionId));
+  const { data: project } = useSuspenseQuery(judgeProjectQueryOptions(submissionId));
+  const { data: criteria } = useSuspenseQuery(criteriaQueryOptions(event.id));
+  const { data: rubrics } = useSuspenseQuery(rubricsQueryOptions(event.id));
+  const { data: roundData } = useSuspenseQuery(judgingRoundsQueryOptions(event.id));
+  const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(event.id));
+  const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
+  const { data: settings } = useSuspenseQuery(
+    settingsQueryOptions({ eventId: event.id }, ["judging"]),
+  );
+  const round = roundData.rounds.find((candidate) => candidate.id === sheet.roundId);
+  const open = isWindowOpen(windowByKey(windows, round?.windowKey ?? "judging"));
+  const rubricEditable = (manager || settings.judging.judgeRubric !== false) && (open || manager);
+  const divisionEditable =
+    (manager || settings.judging.judgeDivision !== false) && (open || manager);
+  // a move changes the team's division, so its rubric fallback and queue entry too
+  const onMoved = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: judgeProjectQueryOptions(submissionId).queryKey }),
+      queryClient.invalidateQueries({
+        queryKey: judgeSheetQueryOptions(event.id, submissionId).queryKey,
+      }),
+      queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey }),
+    ]);
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* blind judging hides teams, and so their division, from judges */}
+      {(manager || settings.judging.blind !== true) && (
+        <DivisionPicker
+          eventId={event.id}
+          submissionId={submissionId}
+          form={forms.find((form) => form.id === submission?.form_id)}
+          value={project?.divisionId ?? null}
+          editable={divisionEditable}
+          onMoved={onMoved}
+        />
+      )}
+      {(!round || round.method === "rubric") && (
+        <RubricPicker
+          submissionId={submissionId}
+          rubrics={rubrics}
+          value={sheet.rubric}
+          editable={rubricEditable}
+          description={t("rubric.judgeHelp")}
+          onPicked={() =>
+            queryClient.invalidateQueries({
+              queryKey: judgeSheetQueryOptions(event.id, submissionId).queryKey,
+            })
+          }
+        />
+      )}
+      {round && round.method !== "rubric" ? (
+        <MethodPanel
+          method={round.method}
+          formId={round.formId}
+          roundId={round.id}
+          submissionId={submissionId}
+        />
+      ) : (
+        <ScoreCard
+          key={`${submissionId}:${sheet.roundId}:${sheet.rubricId ?? ""}`}
+          eventId={event.id}
+          submissionId={submissionId}
+          criteria={criteriaFor(criteria, sheet.roundId, sheet.rubricId)}
+          sheet={sheet}
+          open={open}
+          onDone={onDone}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProjectSkeleton() {
+  return (
+    <div className="flex flex-col gap-6" aria-hidden>
+      <div className="grid max-w-sm grid-cols-[5rem_1fr] gap-x-6 gap-y-2.5">
+        {[0, 1, 2, 3].map((row) => (
+          <Fragment key={row}>
+            <Skeleton className="h-4 rounded-md" />
+            <Skeleton className="h-4 w-2/3 rounded-md" />
+          </Fragment>
+        ))}
+      </div>
+      <Skeleton className="h-8 w-28 rounded-pill" />
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-5 w-40 rounded-md" />
+        <Skeleton className="h-4 w-full rounded-md" />
+        <Skeleton className="h-4 w-5/6 rounded-md" />
+        <Skeleton className="h-4 w-3/4 rounded-md" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function ScoreSkeleton() {
+  return (
+    <div className="flex flex-col gap-5" aria-hidden>
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-4 w-20 rounded-md" />
+        <Skeleton className="h-4 w-28 rounded-md" />
+      </div>
+      <Skeleton className="h-6 w-32 rounded-md" />
+      {[0, 1, 2, 3].map((row) => (
+        <div key={row} className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-36 rounded-md" />
+          <Skeleton className="h-8 w-full max-w-sm rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type Side = "project" | "guide";
+
+/** Project (or the judges' guide) on one side, scoring on the other; resizable on wide screens, stacked otherwise. */
+function JudgingSplit({
+  project,
+  score,
+  guide,
+  resetKey,
+}: {
+  project: ReactNode;
+  score: ReactNode;
+  guide: JudgeGuide | undefined;
+  resetKey: string;
+}) {
+  const t = useT();
   const wide = useMinWidth("lg");
+  const [side, setSide] = useState<Side>("project");
+  const projectScroll = useRef<HTMLDivElement>(null);
+  const scoreScroll = useRef<HTMLDivElement>(null);
   const { defaultLayout, onLayoutChanged } = useResizableLayout({
     id: "bogey-judging",
     onlySaveAfterUserInteractions: true,
   });
+  // a new project starts at its top
+  useEffect(() => {
+    projectScroll.current?.scrollTo({ top: 0 });
+    scoreScroll.current?.scrollTo({ top: 0 });
+  }, [resetKey]);
+
+  const left = guide ? (
+    <Tabs value={side} onValueChange={(next: Side) => setSide(next)} className="h-full gap-4">
+      <TabsList variant="switch" aria-label={t("judgeGuide.view")}>
+        <TabsTrigger value="project">{t("judgeGuide.projectTab")}</TabsTrigger>
+        <TabsTrigger value="guide">{t("judgeGuide.tab")}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="project">{project}</TabsContent>
+      {/* stays mounted so the PDF keeps its page while moving between projects */}
+      <TabsContent value="guide" keepMounted className="min-h-0">
+        <GuideViewer guide={guide} className={wide ? "h-full" : "h-[80dvh]"} />
+      </TabsContent>
+    </Tabs>
+  ) : (
+    project
+  );
+
   if (!wide) {
     return (
       <div className="flex flex-col gap-10">
-        {project}
+        {left}
         {score}
       </div>
     );
@@ -320,14 +434,18 @@ function JudgingSplit({ project, score }: { project: ReactNode; score: ReactNode
       orientation="horizontal"
       defaultLayout={defaultLayout}
       onLayoutChanged={onLayoutChanged}
-      className="h-[calc(100dvh-var(--layout-offset)-12rem)] min-h-112"
+      className="h-[calc(100dvh-var(--layout-offset)-10rem)] min-h-112"
     >
       <ResizablePanel id="project" defaultSize="62%" minSize={320}>
-        <div className="h-full overflow-y-auto rounded-2xl border border-border p-5">{project}</div>
+        <div ref={projectScroll} className="h-full overflow-y-auto pr-6">
+          {left}
+        </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel id="score" defaultSize="38%" minSize={300}>
-        <div className="h-full overflow-y-auto rounded-2xl border border-border p-5">{score}</div>
+        <div ref={scoreScroll} className="h-full overflow-y-auto pl-6">
+          {score}
+        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
   );
@@ -352,11 +470,7 @@ function MethodPanel({
     <PluginSlot
       pluginKey={key}
       eventId={eventId}
-      missing={
-        <p className="rounded-2xl border border-border p-4 text-sm text-muted-fg">
-          {t("judging.methodMissing", { key })}
-        </p>
-      }
+      missing={<p className="text-sm text-muted-fg">{t("judging.methodMissing", { key })}</p>}
     >
       {({ slots, settings }) => {
         const Panel = slots.judgingPanel;
@@ -392,14 +506,14 @@ const sheetSchema = (t: T) =>
 
 function ScoreCard({
   eventId,
-  submission,
+  submissionId,
   criteria,
   sheet,
   open,
   onDone,
 }: {
   eventId: string;
-  submission: TeamSubmission;
+  submissionId: string;
   criteria: Tuple<Criterion>;
   sheet: JudgeSheet;
   open: boolean;
@@ -434,7 +548,7 @@ function ScoreCard({
       }
       const changes: SheetChanges = {
         eventId,
-        submissionId: submission.id,
+        submissionId: submissionId,
         scores: criteria.flatMap((criterion) => {
           const score = value.scores[criterion.id];
           return score == null ? [] : [{ criterionId: criterion.id, value: score }];
@@ -459,7 +573,7 @@ function ScoreCard({
       finish();
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: judgeSheetQueryOptions(eventId, submission.id).queryKey,
+          queryKey: judgeSheetQueryOptions(eventId, submissionId).queryKey,
         }),
         queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(eventId).queryKey }),
       ]);

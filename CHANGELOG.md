@@ -10,6 +10,11 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Criteria can be pasted in from a rubric written as text: each criterion's name, then its scores (`0 points.`, `1-3 pts:`) with what earns them, with lines like `Row A` starting a criterion. **Import criteria** on the criteria page is now an editor like the roster import's: paste a rubric or a spreadsheet, or drop a CSV, Excel or text file into it, check the criteria it found and any lines it couldn't read, then **Add to criteria**.
+- Organizers can upload a PDF under **Guide for judges** on the criteria page (`judging.guide`). Judges switch between **Project** and **Guide** beside the score sheet to read it. Only judges and organizers can open it.
+- Moving between projects with J and K, or the arrows, is immediate: the projects either side are loaded ahead, and a project that isn't shows its page with placeholders while it loads, instead of waiting on the old one.
+- The judging page's project and score columns are no longer boxed in; the divider between them still resizes them, and both start at the top for each project.
+
 ## 2.4.8 (2026-10-25)
 
 - Registration questions and submission items can be for chosen divisions and tags only, under **Only for** when editing one. People are asked a question when they're in one of its divisions or hold one of its tags; before they join, their division is the one their invite link puts them in. A team fills in an item when it's in one of its divisions or a member holds one of its tags. Deleting a division or tag drops it from these lists, and copying an event carries them over to the copy's divisions. The check-in kiosk asks walk-ins only the questions for everyone.

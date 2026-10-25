@@ -3124,20 +3124,39 @@ export const en = {
   "rubric.divisionsHelp":
     "Projects in these divisions are judged on it, or pick it when their division has several. Leave empty to offer it to every project.",
   "rubric.everyDivision": "Every division",
-  "criteriaImport.title": "Import from a file",
+  "criteriaImport.title": "Import criteria",
   "criteriaImport.help":
-    "A CSV or Excel sheet with a row per criterion and a column per score band (Criterion, 1-3, 4-6, 7-10), or a row per band (Criterion, From, To, Guidance). Criteria with the same name take the file's guidance; others are added. Nothing changes until you save.",
+    "Paste a rubric or a spreadsheet, or drop a CSV or Excel file. Criteria with the same name take its guidance; others are added. Nothing changes until you save.",
+  "criteriaImport.paste": "Rubric",
+  "criteriaImport.pasteLabel": "Rubric to import",
+  "criteriaImport.pasteHelp":
+    "As text: each criterion's name, then its scores (0 points., 1-3 pts:) with what earns them. Lines like Row A start a criterion.\nAs a table: a column per score band (Criterion, 1-3, 4-6, 7-10), or a row per band (Criterion, From, To, Guidance).",
+  "criteriaImport.found": "{count, plural, one {# criterion} other {# criteria}} to import",
+  "criteriaImport.bands": "{count, plural, one {# band} other {# bands}}",
+  "criteriaImport.noScores": "No scores",
+  "criteriaImport.updates": "Updates existing",
+  "criteriaImport.add": "Add to criteria",
   "criteriaImport.download": "Download as CSV",
   "criteriaImport.done":
     "{updated, plural, one {# criterion} other {# criteria}} updated, {added} added. Review them, then save.",
   "criteriaImport.readFailed": "Couldn't read {name}{error}",
-  "criteriaImport.empty": "The file is empty.",
+  "criteriaImport.empty": "Nothing to import.",
   "criteriaImport.noBands":
     "No score bands found. Name band columns like 1-3, or add From, To and Guidance columns.",
   "criteriaImport.badRange": 'Line {line}: "{text}" isn\'t a score range',
   "criteriaImport.noLabel": "Line {line}: no criterion name",
   "criteriaImport.badWeight": 'Line {line}: "{text}" isn\'t a weight',
   "criteriaImport.tooMany": "Line {line}: {label} has more than 20 bands",
+  "judgeGuide.title": "Guide for judges",
+  "judgeGuide.help":
+    "A PDF judges can read beside each project while they score, like your judging guidelines. Only judges and organizers can open it.",
+  "judgeGuide.notPdf": "{name} isn't a PDF",
+  "judgeGuide.uploadFailed": "Couldn't update the guide",
+  "judgeGuide.loadFailed": "Couldn't load the guide.",
+  "judgeGuide.openTab": "Open {name} in a new tab",
+  "judgeGuide.tab": "Guide",
+  "judgeGuide.projectTab": "Project",
+  "judgeGuide.view": "Project or guide",
   "deliberation.title": "Deliberation",
   "deliberation.manageHelp":
     "Judges flag projects they want to discuss. While a project is flagged, the judges deliberating see each other's scores and notes on it, then resolve the flag.",

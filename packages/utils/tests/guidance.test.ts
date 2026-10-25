@@ -6,7 +6,10 @@ import {
   overlappingBands,
   parseRange,
   readGuidance,
+  readGuidancePaste,
   readGuidanceTable,
+  readGuidanceText,
+  scoreLine,
   type GuidanceRow,
 } from "../src/guidance.ts";
 import { parseTable } from "../src/roster.ts";
@@ -147,4 +150,87 @@ test("a long table can name ranges in one column", () => {
 test("a table without bands says so", () => {
   expect(readGuidanceTable(rows("Name,Notes\nImpact,hi")).problems).toEqual([{ kind: "noBands" }]);
   expect(readGuidanceTable([]).problems).toEqual([{ kind: "empty" }]);
+});
+
+const RUBRIC = `Row A
+Practicality & Relevance
+0 points.
+
+Ex: Platform that segments tumor masses in X-rays.
+1 point.
+
+Ex: Text-to-speech app for medical appointments.
+Row B
+Creativity & Innovation
+0 points.
+
+Ex: Clone of an existing project.
+1 point.
+
+Ex: Standard medication reminder app.
+2 points.
+
+Ex: Medication reminder app that buzzes.`;
+
+test("score lines need a points word or a mark after the number", () => {
+  expect(scoreLine("0 points.")).toEqual({ min: 0, max: 0, rest: "" });
+  expect(scoreLine("7-8 pts: works end to end")).toEqual({
+    min: 7,
+    max: 8,
+    rest: "works end to end",
+  });
+  expect(scoreLine("- 3: strong")).toEqual({ min: 3, max: 3, rest: "strong" });
+  expect(scoreLine("3D printing")).toBeNull();
+  expect(scoreLine("3 teams tried")).toBeNull();
+});
+
+test("a rubric written as text reads with Row markers", () => {
+  const { criteria, problems } = readGuidanceText(RUBRIC);
+  expect(problems).toEqual([]);
+  expect(criteria.map((each) => each.label)).toEqual([
+    "Practicality & Relevance",
+    "Creativity & Innovation",
+  ]);
+  expect(criteria[0]!.guidance).toEqual([
+    { min: 0, max: 0, body: "Ex: Platform that segments tumor masses in X-rays." },
+    { min: 1, max: 1, body: "Ex: Text-to-speech app for medical appointments." },
+  ]);
+  expect(criteria[1]!.guidance.map((band) => band.max)).toEqual([0, 1, 2]);
+});
+
+test("without markers, a score that starts over begins the next criterion", () => {
+  const { criteria } = readGuidanceText(RUBRIC.replace(/^Row [AB]\n/gm, ""));
+  expect(criteria.map((each) => each.label)).toEqual([
+    "Practicality & Relevance",
+    "Creativity & Innovation",
+  ]);
+  expect(criteria[0]!.guidance).toHaveLength(2);
+});
+
+test("text between a name and its first score is its description", () => {
+  const { criteria } = readGuidanceText(
+    "## Impact\nDoes it matter?\n1-3: barely\n4-5 points: a lot\nmore so",
+  );
+  expect(criteria).toEqual([
+    {
+      line: 1,
+      label: "Impact",
+      description: "Does it matter?",
+      weight: null,
+      guidance: [
+        { min: 1, max: 3, body: "barely" },
+        { min: 4, max: 5, body: "a lot\n\nmore so" },
+      ],
+    },
+  ]);
+});
+
+test("a score before any name is a problem", () => {
+  expect(readGuidanceText("0 points.\nnothing").problems).toEqual([{ kind: "noLabel", line: 1 }]);
+});
+
+test("pasted tables still read as tables", () => {
+  const pasted = readGuidancePaste("Criterion\t1-3\t4-5\nImpact\tlow\thigh");
+  expect(pasted.criteria[0]!.guidance).toHaveLength(2);
+  expect(readGuidancePaste(RUBRIC).criteria).toHaveLength(2);
 });

@@ -16,6 +16,7 @@ import {
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { submissionFormsQueryOptions } from "@bogey/db/queries/submissions";
 import { requestFailure } from "@bogey/db/errors";
+import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { toCsv } from "@bogey/utils/csv";
 import {
   evenBands,
@@ -23,16 +24,12 @@ import {
   nextBand,
   overlappingBands,
   readGuidance,
-  readGuidanceTable,
   sortBands,
-  type GuidanceProblem,
-  type GuidanceRow,
+  type ImportedCriterion,
 } from "@bogey/utils/guidance";
-import { parseTable } from "@bogey/utils/roster";
 import { Badge } from "@bogey/ui/components/badge";
 import { Button } from "@bogey/ui/components/button";
 import { EditableList, EditableListItem } from "@bogey/ui/components/editable-list";
-import { FileDrop } from "@bogey/ui/components/file-drop";
 import { Screen } from "@bogey/ui/components/screen";
 import { IconDownload, IconPlus, IconTrash } from "@tabler/icons-react";
 import {
@@ -43,6 +40,8 @@ import {
   useAppForm,
 } from "@bogey/ui/lib/form";
 import { CriterionField } from "#/components/event/judging/criterion-field.tsx";
+import { CriteriaImport, type ImportOutcome } from "./-components/criteria-import.tsx";
+import { GuideUpload } from "./-components/guide-upload.tsx";
 import {
   prefetchSettingFields,
   SettingFields,
@@ -59,8 +58,12 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/crite
         id: "criteria",
       }),
       searchSection(t("criteriaImport.title"), {
-        keywords: ["upload", "csv", "spreadsheet", "excel", "xlsx"],
+        keywords: ["upload", "paste", "csv", "spreadsheet", "excel", "xlsx", "rubric"],
         id: "import",
+      }),
+      searchSection(t("judgeGuide.title"), {
+        keywords: ["pdf", "guidelines", "handbook", "instructions"],
+        id: "judge-guide",
       }),
       searchSection(t("rubric.title"), {
         keywords: ["themes", "divisions", "tracks"],
@@ -83,6 +86,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/crite
         ...submissionFormsQueryOptions(context.event.id),
         staleTime: "static",
       }),
+      context.query.query({
+        ...settingsQueryOptions({ eventId: context.event.id }, ["judging"]),
+        staleTime: "static",
+      }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "judging",
       ]),
@@ -94,7 +101,6 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/crite
 const MAX_CRITERIA = 60;
 const ROUND_ALL = "all";
 const RUBRIC_ALL = "all";
-const ACCEPT = ".csv,.tsv,.txt,.xlsx";
 
 const whole = (t: T) =>
   z.union([z.number(), z.nan()]).refine(Number.isInteger, t("guidance.whole"));
@@ -290,35 +296,6 @@ const shownBands = (bands: Tuple<BandValues>) =>
     (band) => Number.isInteger(band.min) && Number.isInteger(band.max) && band.body.trim(),
   );
 
-function problemText(problem: GuidanceProblem, t: T): string {
-  switch (problem.kind) {
-    case "empty":
-      return t("criteriaImport.empty");
-    case "noBands":
-      return t("criteriaImport.noBands");
-    case "badRange":
-      return t("criteriaImport.badRange", { line: problem.line, text: problem.text });
-    case "noLabel":
-      return t("criteriaImport.noLabel", { line: problem.line });
-    case "badWeight":
-      return t("criteriaImport.badWeight", { line: problem.line, text: problem.text });
-    case "tooMany":
-      return t("criteriaImport.tooMany", { line: problem.line, label: problem.label });
-  }
-}
-
-async function fileRows(file: File): Promise<GuidanceRow[]> {
-  if (!/\.xlsx$/i.test(file.name)) return parseTable(await file.text());
-  const { readSheet } = await import("read-excel-file/browser");
-  const rows = await readSheet(file);
-  return rows.map((row, index) => ({
-    line: index + 1,
-    cells: row.map((cell) =>
-      cell === null ? "" : cell instanceof Date ? cell.toISOString() : String(cell).trim(),
-    ),
-  }));
-}
-
 function download(name: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: "text/csv" }));
   const link = document.createElement("a");
@@ -339,13 +316,6 @@ function guidanceCsv(items: Tuple<CriterionValues>): string {
     ),
     { bom: true },
   );
-}
-
-interface ImportNote {
-  name: string;
-  updated: number;
-  added: number;
-  problems: string[];
 }
 
 function RouteComponent() {
@@ -378,8 +348,6 @@ function RouteComponent() {
   const multiRound = roundData.rounds.some((round) => round.ordinal > 1);
   const [removed, setRemoved] = useState<number | null>(null);
   const [active, setActive] = useState<string | null>(null);
-  const [reading, setReading] = useState(false);
-  const [note, setNote] = useState<ImportNote | null>(null);
 
   const form = useAppForm({
     ...appFormOptions.strictSchema(schema, {
@@ -421,7 +389,6 @@ function RouteComponent() {
       }).catch(requestFailure);
       if (!result.ok) return createValidationError(result.error.message);
       setRemoved(result.data);
-      setNote(null);
       await queryClient.invalidateQueries({
         queryKey: previewResultsQueryOptions(event.id).queryKey,
       });
@@ -438,74 +405,47 @@ function RouteComponent() {
     },
   });
 
-  // merges a file's criteria into the form: same-named ones take its guidance, others are added
-  const load = async (file: File) => {
-    setReading(true);
-    setNote(null);
-    try {
-      const { criteria: found, problems } = readGuidanceTable(await fileRows(file));
-      const items = [...form.getFieldValue("items")];
-      let updated = 0;
-      let added = 0;
-      for (const each of found) {
-        const bands = each.guidance.map((band) => ({ uid: crypto.randomUUID(), ...band }));
-        const low = Math.min(...each.guidance.map((band) => band.min));
-        const high = Math.max(...each.guidance.map((band) => band.max));
-        const at = items.findIndex(
-          (item) => item.label.trim().toLowerCase() === each.label.toLowerCase(),
-        );
-        if (at >= 0) {
-          const item = items[at]!;
-          const [from, to] = item.range;
-          items[at] = {
-            ...item,
-            description: each.description ?? item.description,
-            weight: each.weight === null ? item.weight : String(each.weight),
-            guidance: bands.length ? bands : item.guidance,
-            // widen the scores to fit the file's bands
-            range: bands.length
-              ? [Math.min(from, low), Math.max(to, high, Math.min(from, low) + 1)]
-              : item.range,
-          };
-          updated++;
-        } else if (items.length < MAX_CRITERIA) {
-          const min = bands.length ? Math.min(low, 100) : 0;
-          items.push({
-            ...blankCriterion(crypto.randomUUID()),
-            label: each.label,
-            description: each.description ?? "",
-            weight: each.weight === null ? "1" : String(each.weight),
-            range: bands.length ? [min, Math.max(high, min + 1)] : [0, 10],
-            guidance: bands,
-          });
-          added++;
-        }
+  // merges imported criteria into the form: same-named ones take their guidance, others are added
+  const merge = (found: Tuple<ImportedCriterion>): ImportOutcome => {
+    const items = [...form.getFieldValue("items")];
+    let updated = 0;
+    let added = 0;
+    for (const each of found) {
+      const bands = each.guidance.map((band) => ({ uid: crypto.randomUUID(), ...band }));
+      const low = Math.min(...each.guidance.map((band) => band.min));
+      const high = Math.max(...each.guidance.map((band) => band.max));
+      const at = items.findIndex(
+        (item) => item.label.trim().toLowerCase() === each.label.toLowerCase(),
+      );
+      if (at >= 0) {
+        const item = items[at]!;
+        const [from, to] = item.range;
+        items[at] = {
+          ...item,
+          description: each.description ?? item.description,
+          weight: each.weight === null ? item.weight : String(each.weight),
+          guidance: bands.length ? bands : item.guidance,
+          // widen the scores to fit the imported bands
+          range: bands.length
+            ? [Math.min(from, low), Math.max(to, high, Math.min(from, low) + 1)]
+            : item.range,
+        };
+        updated++;
+      } else if (items.length < MAX_CRITERIA) {
+        const min = bands.length ? Math.min(low, 100) : 0;
+        items.push({
+          ...blankCriterion(crypto.randomUUID()),
+          label: each.label,
+          description: each.description ?? "",
+          weight: each.weight === null ? "1" : String(each.weight),
+          range: bands.length ? [min, Math.max(high, min + 1)] : [0, 10],
+          guidance: bands,
+        });
+        added++;
       }
-      if (updated || added) form.setFieldValue("items", items);
-      setNote({
-        name: file.name,
-        updated,
-        added,
-        problems: [
-          ...problems.map((problem) => problemText(problem, t)),
-          ...(updated + added < found.length ? [t("manageJudging.atMostCriteria")] : []),
-        ],
-      });
-    } catch (error) {
-      setNote({
-        name: file.name,
-        updated: 0,
-        added: 0,
-        problems: [
-          t("criteriaImport.readFailed", {
-            name: file.name,
-            error: error instanceof Error ? `: ${error.message}` : "",
-          }),
-        ],
-      });
-    } finally {
-      setReading(false);
     }
+    if (updated || added) form.setFieldValue("items", items);
+    return { updated, added, full: updated + added < found.length };
   };
 
   return (
@@ -744,37 +684,9 @@ function RouteComponent() {
               </Button>
             }
           >
-            <FileDrop
-              files={note ? [{ id: note.name, name: note.name, sizeBytes: 0 }] : []}
-              accept={ACCEPT}
-              multiple={false}
-              busy={reading}
-              invalid={!!note && note.updated + note.added === 0}
-              onAdd={(files) => {
-                const [file] = files;
-                if (file) void load(file);
-              }}
-              onRemove={() => setNote(null)}
-            />
-            {note && (
-              <div className="flex flex-col gap-1 text-sm" role="status">
-                {note.updated + note.added > 0 && (
-                  <p>
-                    {t("criteriaImport.done", {
-                      updated: note.updated,
-                      added: note.added,
-                    })}
-                  </p>
-                )}
-                {note.problems.length > 0 && (
-                  <ul className="list-disc pl-5 text-destructive">
-                    {note.problems.map((problem) => (
-                      <li key={problem}>{problem}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
+            <form.Subscribe selector={(state) => state.values.items.map((item) => item.label)}>
+              {(labels) => <CriteriaImport existing={labels} onImport={merge} />}
+            </form.Subscribe>
           </Screen.Section>
 
           <Screen.Section
@@ -866,6 +778,14 @@ function RouteComponent() {
           <form.FormAlert title={t("manageJudging.saveFailed")} />
         </form.Form>
       </form.AppForm>
+
+      <Screen.Section
+        id="judge-guide"
+        title={t("judgeGuide.title")}
+        description={t("judgeGuide.help")}
+      >
+        <GuideUpload eventId={event.id} />
+      </Screen.Section>
 
       {rubrics.length > 0 && (
         <Screen.Section id="picking-rubrics" title={t("criteriaPage.picking")}>

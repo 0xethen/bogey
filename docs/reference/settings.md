@@ -336,6 +336,7 @@ Set at: instance, org, event.
 | `assignment` | group | `{"perProject":1,"rules":[],"exclude":[]}` | How Assign judges picks: judges per project, rules asking for judges with a tag, and tags kept out |
 | `tiebreakers` | list | `[]` | What decides between projects with the same score, in order: a criterion, the score before evening out judges, more judges, or submitted first |
 | `advanceTies` | on / off | `true` | Advancing the top N also takes every project still tied with the last one |
+| `guide` | group | — | A PDF judges can read beside each project, stored in the submissions bucket |
 
 ## Tags (`tags`)
 
