@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.5 (2026-10-25)
+
 - Every dependency is on its latest release, with no exact pins left in the catalogs or overrides: TanStack Router/Start/Query/Table/Virtual, React 19.3.1, Supabase JS 2.118, Recharts 3.10, nodemailer 10.2, TanStack Hotkeys 0.17, and the plugins repo on Vite+ 1.4. Contributors need pnpm 12.15.0 (downloaded automatically through `devEngines`). The Docker image now runs on Node 26. This prepares the release for the load testing discussed in "how can we stress test bogey...".
 - The keyboard shortcuts list and the devtools Hotkeys tab read TanStack Hotkeys' new single list of registrations; a shortcut that's turned off is still left out.
 
