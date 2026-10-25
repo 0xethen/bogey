@@ -231,26 +231,19 @@ function UnsavedTab() {
 }
 
 function HotkeysTab() {
-  const { hotkeys, sequences } = useHotkeyRegistrations();
+  const registrations = useHotkeyRegistrations();
   return (
     <Table
-      head={["Keys", "Name", "Group", "On? (ctx)", "Hit Count"]}
-      rows={[
-        ...hotkeys.map((hotkey) => [
-          formatForDisplay(hotkey.hotkey),
-          hotkey.options.meta?.name ?? "",
-          hotkey.options.meta?.group ?? "",
-          hotkey.options.enabled === false ? "no" : "yes",
-          hotkey.triggerCount,
-        ]),
-        ...sequences.map((sequence) => [
-          sequence.sequence.map((step) => formatForDisplay(step)).join(" "),
-          sequence.options.meta?.name ?? "",
-          sequence.options.meta?.group ?? "",
-          sequence.options.enabled === false ? "no" : "yes",
-          sequence.triggerCount,
-        ]),
-      ]}
+      head={["Keys", "Name", "Group", "Status", "Hit Count"]}
+      rows={registrations.map((registration) => [
+        registration.kind === "chord"
+          ? formatForDisplay(registration.hotkey)
+          : registration.hotkey.map((step) => formatForDisplay(step)).join(" "),
+        registration.options.meta?.name ?? "",
+        registration.options.meta?.group ?? "",
+        registration.status,
+        registration.triggerCount,
+      ])}
     />
   );
 }

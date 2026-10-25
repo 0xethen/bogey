@@ -2,7 +2,7 @@ import {
   normalizeHotkey,
   useHotkey,
   validateHotkey,
-  type Hotkey,
+  type HotkeyChord,
   type HotkeyCallback,
   type UseHotkeyOptions,
 } from "@tanstack/react-hotkeys";
@@ -18,7 +18,7 @@ export interface ShortcutDefinition {
   name: string;
   description: string;
   group: ShortcutGroup;
-  keys: Hotkey;
+  keys: HotkeyChord;
 }
 
 export const SHORTCUTS = {
@@ -50,13 +50,13 @@ export const SHORTCUT_IDS = Object.keys(SHORTCUTS).filter(
 
 const isBinding = (raw: Json): raw is string | false => raw === false || typeof raw === "string";
 
-function useBinding(namespace: string, key: string, fallback: Hotkey | null) {
+function useBinding(namespace: string, key: string, fallback: HotkeyChord | null) {
   const preference = usePreference<string | false>(namespace, key, fallback ?? false, isBinding);
   const stored = preference.value;
-  const keys: Hotkey | null =
+  const keys: HotkeyChord | null =
     stored === false ? null : validateHotkey(stored).valid ? normalizeHotkey(stored) : fallback;
   const custom = keys === null ? fallback !== null : keys !== normalizeHotkey(fallback ?? keys);
-  const set = (next: Hotkey | null) => preference.set(next ?? false);
+  const set = (next: HotkeyChord | null) => preference.set(next ?? false);
   return { keys, set, custom, error: preference.error, fallback };
 }
 

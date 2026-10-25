@@ -20,8 +20,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: voidzero-dev/setup-vp@v1.21.2
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1
         with:
           node-version: "22"
           cache: true
@@ -45,8 +45,8 @@ jobs:
     name: schema / pgTAP
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: voidzero-dev/setup-vp@v1.21.2
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1
         with:
           node-version: "22"
           cache: true
@@ -73,7 +73,7 @@ jobs:
     name: upgrade from the last release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: find the last release
@@ -82,7 +82,7 @@ jobs:
       - name: no release yet
         if: steps.release.outputs.tag == ''
         run: echo "No release tag yet, so there's nothing to upgrade from."
-      - uses: voidzero-dev/setup-vp@v1.21.2
+      - uses: voidzero-dev/setup-vp@v1
         if: steps.release.outputs.tag != ''
         with:
           node-version: "22"
@@ -108,7 +108,7 @@ jobs:
     name: docker image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7
       - run: docker build --tag bogey-web:ci .
       - name: health check
         run: |

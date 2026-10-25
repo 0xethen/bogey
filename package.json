@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@bogey/config": "workspace:*",
-    "concurrently": "^10.0.6",
+    "concurrently": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"
@@ -36,7 +36,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.17.0",
+      "version": "12.15.0",
       "onFail": "download"
     }
   },

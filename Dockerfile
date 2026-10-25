@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM ghcr.io/voidzero-dev/vite-plus:1.0.0-rc.1 AS build
+FROM ghcr.io/voidzero-dev/vite-plus:1 AS build
 WORKDIR /app
 COPY --chown=vp:vp . .
 RUN vp install --frozen-lockfile
@@ -10,7 +10,8 @@ RUN node tools/cli/src/bin.ts plugins install
 RUN cd apps/web && vp build
 RUN cd tools/cli && vp pack
 
-FROM node:24-slim
+# bookworm, not trixie: SparkCloud boxes run this node on Ubuntu 22.04's glibc
+FROM node:26-bookworm-slim
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 WORKDIR /app
 COPY --from=build --chown=node:node /app/apps/web/.output ./

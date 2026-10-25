@@ -47,29 +47,23 @@ export function ShortcutsHelp() {
 
 function ShortcutList() {
   const t = useT();
-  const { hotkeys, sequences } = useHotkeyRegistrations();
+  const registrations = useHotkeyRegistrations();
   const groups = new Map<string, Map<string, Row>>();
   const add = (group: string | undefined, row: Row) => {
     const rows = groups.get(group ?? "Other") ?? new Map<string, Row>();
     if (!rows.has(row.name)) rows.set(row.name, row);
     groups.set(group ?? "Other", rows);
   };
-  for (const hotkey of hotkeys) {
-    const meta = hotkey.options.meta;
-    if (!meta?.name || hotkey.options.enabled === false) continue;
+  for (const registration of registrations) {
+    const meta = registration.options.meta;
+    if (!meta?.name || registration.status === "disabled") continue;
     add(meta.group, {
       name: meta.name,
       description: meta.description,
-      keys: [formatForDisplay(hotkey.hotkey)],
-    });
-  }
-  for (const sequence of sequences) {
-    const meta = sequence.options.meta;
-    if (!meta?.name || sequence.options.enabled === false) continue;
-    add(meta.group, {
-      name: meta.name,
-      description: meta.description,
-      keys: sequence.sequence.map((step) => formatForDisplay(step)),
+      keys:
+        registration.kind === "chord"
+          ? [formatForDisplay(registration.hotkey)]
+          : registration.hotkey.map((step) => formatForDisplay(step)),
     });
   }
 

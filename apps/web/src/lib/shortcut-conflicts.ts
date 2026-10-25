@@ -1,4 +1,4 @@
-import { normalizeHotkey, validateHotkey, type Hotkey } from "@tanstack/react-hotkeys";
+import { normalizeHotkey, validateHotkey, type HotkeyChord } from "@tanstack/react-hotkeys";
 import type { T } from "#/lib/translate.tsx";
 
 const RESERVED: ReadonlySet<string> = new Set(
@@ -13,17 +13,17 @@ const RESERVED: ReadonlySet<string> = new Set(
     "Mod+Shift+N",
     "Mod+Tab",
     "F5",
-  ].map((keys) => normalizeHotkey(keys as Hotkey)),
+  ].map((keys) => normalizeHotkey(keys as HotkeyChord)),
 );
 
 export interface Binding {
   id: string;
   name: string;
-  keys: Hotkey | null;
+  keys: HotkeyChord | null;
 }
 
 export function bindingProblem(
-  keys: Hotkey,
+  keys: HotkeyChord,
   ownId: string,
   all: Tuple<Binding>,
   t: T,

@@ -20,8 +20,8 @@ jobs:
       E2E_JUDGE: judge@e2e.test
       E2E_EVENT: demo-hackathon
     steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: voidzero-dev/setup-vp@v1.21.2
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1
         with:
           node-version: "22"
           cache: true
