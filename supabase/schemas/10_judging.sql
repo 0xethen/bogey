@@ -586,6 +586,8 @@ as $$
     select pc.submission_id, pc.round_id,
       round(100 * sum(coalesce(pc.normalised, 0) * pc.weight) / nullif(sum(pc.weight), 0), 2) as score,
       round(100 * sum(coalesce(pc.raw_normalised, 0) * pc.weight) / nullif(sum(pc.weight), 0), 2) as raw_score,
+      100 * sum(coalesce(pc.normalised, 0) * pc.weight) / nullif(sum(pc.weight), 0) as exact,
+      100 * sum(coalesce(pc.raw_normalised, 0) * pc.weight) / nullif(sum(pc.weight), 0) as raw_exact,
       count(pc.normalised) filter (where pc.normalised is not null) as criteria_scored,
       (select count(distinct v.judge_id) from valid v
         where v.submission_id = pc.submission_id and v.round_id = pc.round_id) as judges,
@@ -597,24 +599,55 @@ as $$
     where en.method = 'rubric'
     group by pc.submission_id, pc.round_id
     union all
-    select ri.submission_id, ri.round_id, ri.score, ri.score, 0::bigint, 0::bigint, 0::bigint, ri.detail
+    select ri.submission_id, ri.round_id, ri.score, ri.score, ri.score, ri.score, 0::bigint, 0::bigint, 0::bigint,
+      ri.detail
     from public.ranking_inputs ri
     join entries en on en.submission_id = ri.submission_id and en.round_id = ri.round_id
     where en.method <> 'rubric' and en.method = ri.provider
   ),
+  -- judging.tiebreakers, in order; a missing value loses the tiebreak
+  breakers as (
+    select b.ord, b.value ->> 'by' as by, nullif(b.value ->> 'criterion', '')::uuid as criterion
+    from jsonb_array_elements(case when jsonb_typeof(private.event_setting(p_event, 'judging') -> 'tiebreakers') = 'array'
+      then private.event_setting(p_event, 'judging') -> 'tiebreakers' else '[]' end) with ordinality b(value, ord)
+  ),
+  keyed as (
+    select t.*,
+      array(
+        select coalesce(case b.by
+          when 'criterion' then (
+            select pc.normalised from per_criterion pc
+            where pc.submission_id = t.submission_id and pc.round_id = t.round_id and pc.criterion_id = b.criterion)
+          when 'raw' then t.raw_exact
+          when 'judges' then t.judges::numeric
+          when 'submitted' then -extract(epoch from s.submitted_at)
+        end, '-Infinity'::numeric)
+        from breakers b order by b.ord
+      ) as tiebreak
+    from totals t
+    join public.submissions s on s.id = t.submission_id
+  ),
   ranked as (
     select t.*, en.ordinal as round_ordinal, en.round_name, en.method, rb.name as rubric,
       s.team_id, s.title, s.form_id, f.title as form_title, tm.name as team_name, tm.division_id,
-      rank() over (partition by t.round_id order by t.score desc nulls last) as rank,
-      rank() over (partition by t.round_id, tm.division_id order by t.score desc nulls last) as division_rank
-    from totals t
+      rank() over (partition by t.round_id order by t.exact desc nulls last, t.tiebreak desc) as rank,
+      rank() over (partition by t.round_id, tm.division_id order by t.exact desc nulls last, t.tiebreak desc)
+        as division_rank,
+      case
+        when t.exact is null or count(*) over (partition by t.round_id, t.exact) = 1 then null
+        when count(*) over (partition by t.round_id, t.exact, t.tiebreak) > 1 then 'tied'
+        else 'broken'
+      end as tie
+    from keyed t
     join entries en on en.submission_id = t.submission_id and en.round_id = t.round_id
     join public.submissions s on s.id = t.submission_id
     join public.submission_forms f on f.id = s.form_id
     join public.teams tm on tm.id = s.team_id
     left join public.rubrics rb on rb.id = en.rubric_id
   )
-  select coalesce(jsonb_agg(to_jsonb(ranked) order by form_title, round_ordinal, rank), '[]') from ranked;
+  select coalesce(jsonb_agg(to_jsonb(ranked) - 'exact' - 'raw_exact' - 'tiebreak'
+    order by form_title, round_ordinal, rank, title, submission_id), '[]')
+  from ranked;
 $$;
 
 create function public.preview_results(p_event uuid)
@@ -1793,6 +1826,7 @@ declare
   v_ids uuid[];
   v_slug text;
   v_user uuid;
+  v_ties boolean;
 begin
   select * into v_round from public.judging_rounds where id = p_round;
   if v_round.id is null or not private.can_manage(v_round.event_id) then
@@ -1817,13 +1851,19 @@ begin
     if p_top < 1 or p_top > 500 then
       raise exception 'advance between 1 and 500 entries' using errcode = '22023';
     end if;
-    select array_agg((r ->> 'submission_id')::uuid) into v_ids
-    from (
-      select r from jsonb_array_elements(private.rank_submissions(v_round.event_id)) r
+    v_ties := coalesce((private.event_setting(v_round.event_id, 'judging') ->> 'advanceTies')::boolean, true);
+    -- rank_submissions already lists each round in rank order
+    with entries as (
+      select (r ->> 'submission_id')::uuid as id, (r ->> 'rank')::integer as place,
+        row_number() over (order by n) as pos
+      from jsonb_array_elements(private.rank_submissions(v_round.event_id)) with ordinality e(r, n)
       where (r ->> 'round_id')::uuid = p_round and (r ->> 'score') is not null
-      order by (r ->> 'rank')::integer
-      limit p_top
-    ) top;
+    )
+    select array_agg(id order by pos) into v_ids
+    from entries
+    where case when v_ties
+      then place <= coalesce((select place from entries where pos = p_top), 2147483647)
+      else pos <= p_top end;
   end if;
   if coalesce(cardinality(v_ids), 0) = 0 then
     raise exception 'nothing to advance' using errcode = '22023';

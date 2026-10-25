@@ -1065,6 +1065,8 @@ export interface ResultRow {
   conflicted: number;
   method: string;
   rubric: string | null;
+  // set when another entry in the round has the same full score
+  tie: "tied" | "broken" | null;
   detail: Record<string, Json | undefined>;
 }
 
@@ -1116,6 +1118,7 @@ function parseResults(rows: Json): ResultRow[] {
         conflicted: number("conflicted") ?? 0,
         method: text("method") || "rubric",
         rubric: text("rubric") || null,
+        tie: row.tie === "tied" || row.tie === "broken" ? row.tie : null,
         detail:
           row.detail && typeof row.detail === "object" && !Array.isArray(row.detail)
             ? row.detail

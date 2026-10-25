@@ -70,7 +70,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
       data-slot="table-cell"
       className={cn(
         // fixed row height so text, badges and small buttons all give the same row
-        "h-11 px-3 py-1.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        "h-12 px-3 py-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
         className,
       )}
       {...props}

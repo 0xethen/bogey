@@ -333,6 +333,8 @@ Set at: instance, org, event.
 | `demoJudges` | on / off | — | Show teams which judges sit on the panel they present their demo to |
 | `browseProjects` | on / off | — | Judges with assignments can also open and score projects outside them |
 | `assignment` | group | `{"perProject":1,"rules":[],"exclude":[]}` | How Assign judges picks: judges per project, rules asking for judges with a tag, and tags kept out |
+| `tiebreakers` | list | `[]` | What decides between projects with the same score, in order: a criterion, the score before evening out judges, more judges, or submitted first |
+| `advanceTies` | on / off | `true` | Advancing the top N also takes every project still tied with the last one |
 
 ## Tags (`tags`)
 

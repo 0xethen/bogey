@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { IconAlertTriangle, IconDownload } from "@tabler/icons-react";
 import {
+  criteriaQueryOptions,
   groupResults,
   judgingRoundsQueryOptions,
   previewResultsQueryOptions,
@@ -35,6 +36,7 @@ import { searchSection, searchSettings } from "#/components/settings/layout/sear
 import { msg, useT } from "#/lib/translate.tsx";
 import { AwardsEditor } from "../-components/awards-editor.tsx";
 import { OfflineScores } from "../-components/offline-scores.tsx";
+import { Tiebreakers } from "../-components/tiebreakers.tsx";
 
 const OFFLINE = "offline";
 
@@ -48,6 +50,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/resul
       }),
       searchSection(t("manageJudging.publishing"), { id: "publishing" }),
       ...searchSettings("judging", ["normalize", "minJudges", "showRankings", "shareWithTeams"], t),
+      searchSection(t("tiebreakers.title"), { keywords: ["ties", "tie"], id: "tiebreakers" }),
+      ...searchSettings("judging", ["advanceTies"], t),
       searchSection(t("manageJudging.vote"), {
         keywords: ["people's choice", "voting"],
         id: "popular-vote",
@@ -72,6 +76,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/judging/resul
         staleTime: "static",
       }),
       context.query.query({ ...offlineScoresQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...criteriaQueryOptions(context.event.id), staleTime: "static" }),
       context.query.query({
         ...eventSubmissionsQueryOptions(context.event.id),
         staleTime: "static",
@@ -103,6 +108,14 @@ function RouteComponent() {
           scope={{ scope: "event", eventId: event.id }}
           namespace="judging"
           keys={["normalize", "minJudges", "showRankings", "shareWithTeams"]}
+        />
+      </Screen.Section>
+      <Screen.Section id="tiebreakers" title={t("tiebreakers.title")}>
+        <Tiebreakers event={event} />
+        <SettingFields
+          scope={{ scope: "event", eventId: event.id }}
+          namespace="judging"
+          keys={["advanceTies"]}
         />
       </Screen.Section>
       <Screen.Section
@@ -288,6 +301,11 @@ function ResultsTable({
           ? t("manageJudging.raw", { score: row.rawScore })
           : null,
         row.conflicted > 0 ? t("manageJudging.leftOut", { count: row.conflicted }) : null,
+        row.tie === "tied"
+          ? t("tiebreakers.tied")
+          : row.tie === "broken"
+            ? t("tiebreakers.broken")
+            : null,
       ]
         .filter(Boolean)
         .join(" · ");

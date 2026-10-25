@@ -144,6 +144,16 @@ export const judgingAssignmentSchema = z.object({
 });
 export type JudgingAssignment = z.infer<typeof judgingAssignmentSchema>;
 
+// what breaks a tie in score, in order; a criterion compares its average after evening out
+export const tiebreakerSchema = z.discriminatedUnion("by", [
+  z.object({ by: z.literal("criterion"), criterion: z.uuid("Pick a criterion") }),
+  z.object({ by: z.literal("raw") }),
+  z.object({ by: z.literal("judges") }),
+  z.object({ by: z.literal("submitted") }),
+]);
+export type Tiebreaker = z.infer<typeof tiebreakerSchema>;
+export const TIEBREAKERS = ["criterion", "raw", "judges", "submitted"] as const;
+
 export const HOME_BUILT_IN_BLOCKS = [
   "next-steps",
   "agenda",
@@ -1538,6 +1548,8 @@ export const settingsRegistry = {
       holdFlagged: true,
       judgeExport: "off",
       assignment: { perProject: 1, rules: [], exclude: [] },
+      tiebreakers: [],
+      advanceTies: true,
     },
     schema: z.object({
       blind: z.boolean().optional().describe("Hide team names from judges"),
@@ -1601,6 +1613,17 @@ export const settingsRegistry = {
         .describe(
           "How Assign judges picks: judges per project, rules asking for judges with a tag, and tags kept out",
         ),
+      tiebreakers: z
+        .array(tiebreakerSchema)
+        .max(6)
+        .optional()
+        .describe(
+          "What decides between projects with the same score, in order: a criterion, the score before evening out judges, more judges, or submitted first",
+        ),
+      advanceTies: z
+        .boolean()
+        .optional()
+        .describe("Advancing the top N also takes every project still tied with the last one"),
     }),
     fields: {
       blind: { label: say("setting.judging.blind") },
@@ -1682,6 +1705,10 @@ export const settingsRegistry = {
         label: say("setting.judging.flagGap"),
         description: say("setting.judging.flagGap.help"),
         empty: "off",
+      },
+      advanceTies: {
+        label: say("setting.judging.advanceTies"),
+        description: say("setting.judging.advanceTies.help"),
       },
       holdFlagged: {
         label: say("setting.judging.holdFlagged"),

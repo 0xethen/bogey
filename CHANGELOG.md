@@ -10,6 +10,9 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Judging: tiebreakers. Under **Judging → Results → Tiebreakers**, organizers list what decides between projects with the same score, in order: a criterion, the score before evening out judges, more judges, or submitted first. Projects are now ranked on their full score rather than the rounded one, results mark ties as "tied" or "tie broken", and tied projects are listed in a fixed order. Advancing the top N takes everyone still tied for the last spot unless **Advance ties for the last spot** is turned off (before, it picked among them arbitrarily).
+- Manage pages are capped at a wide width instead of filling the screen, and table rows are a little taller.
+
 ## 2.4.3 (2026-10-24)
 
 - SparkCloud: `bogey-upgrade` no longer fails to build when `brand.theme` names one of the instance's own themes ("brand.theme: Invalid input"). `bogey themes` now runs without reading bogey.config.ts, since that config is checked against the theme list it writes.

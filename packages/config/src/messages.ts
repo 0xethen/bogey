@@ -2945,6 +2945,7 @@ export const en = {
     "People vote for their favorites while the Popular vote window is open (add it on the Agenda). The most-voted project is proposed as an award.",
   "manageJudging.voteCounts": "Vote counts",
   "manageJudging.perProject": "Judges per project",
+  "manageJudging.perProjectHelp": "Choose how many judges are assigned to each project.",
   "manageJudging.doneOf": "done of {total}",
   "manageJudging.noScores": "with no scores",
   "manageJudging.assigning": "Assigning",
@@ -2954,6 +2955,25 @@ export const en = {
   "manageJudging.spreads":
     "Tops up the {count, plural, one {# submitted project} other {# submitted projects}} to these numbers, spreading the work evenly and keeping existing assignments. Judges can still score anything.",
   "manageJudging.assignFailed": "Couldn't assign judges",
+  "tiebreakers.title": "Tiebreakers",
+  "tiebreakers.intro":
+    "Projects are ranked on their full score, not the rounded one shown. When two still have the same score, these decide, top first. Projects tied on all of them share a rank.",
+  "tiebreakers.none": "No tiebreakers. Projects with the same score share a rank.",
+  "tiebreakers.noun": "tiebreaker",
+  "tiebreakers.add": "Add a tiebreaker",
+  "tiebreakers.by": "Break ties by",
+  "tiebreakers.criterion": "Criterion",
+  "tiebreakers.pickCriterion": "Pick a criterion",
+  "tiebreakers.by.criterion": "Higher score on a criterion",
+  "tiebreakers.by.raw": "Higher score before evening out judges",
+  "tiebreakers.by.judges": "More judges",
+  "tiebreakers.by.submitted": "Submitted first",
+  "tiebreakers.onCriterion": "Higher score on {criterion}",
+  "tiebreakers.rawUnused": "Same as the score while judges aren't evened out",
+  "tiebreakers.atMost6": "Up to 6 tiebreakers",
+  "tiebreakers.saveFailed": "Couldn't save the tiebreakers",
+  "tiebreakers.tied": "tied",
+  "tiebreakers.broken": "tie broken",
   "assignRules.title": "Judging rules",
   "assignRules.intro":
     "Each rule asks for judges with a tag on every project, before anyone else is added. Rules can add more judges than the number above.",
@@ -3014,7 +3034,7 @@ export const en = {
   "manageJudging.savedRemoved":
     "Saved. {count, plural, one {# removed criterion and its scores are gone.} other {# removed criteria and their scores are gone.}}",
   "manageJudging.resultsHelp":
-    "The ranking as it stands: weighted averages of every judge's scores, evened out per judge if you turned that on. Publishing saves a snapshot participants see once the Results window opens.",
+    "The current ranking. The weighted averages of every judge's scores are evened out per judge if you turned that on. Publishing saves a snapshot participants see once the Results window opens.",
   "manageJudging.publishing2": "Publishing",
   "rubric.title": "Rubrics",
   "rubric.label": "Rubric",
@@ -4259,6 +4279,9 @@ export const en = {
   "setting.judging.flagGap": "Flag on disagreement",
   "setting.judging.flagGap.help":
     "Points out of 100 judges' totals for one project may differ by before it's flagged on its own.",
+  "setting.judging.advanceTies": "Advance ties for the last spot",
+  "setting.judging.advanceTies.help":
+    "When projects are still tied with the last one after the tiebreakers, advance all of them instead of picking.",
   "setting.judging.holdFlagged": "Hold results while flagged",
   "setting.judging.holdFlagged.help": "Publishing waits until every flagged project is resolved.",
   "setting.judging.demoJudges": "Show teams their demo judges",

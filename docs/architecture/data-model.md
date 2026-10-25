@@ -474,7 +474,9 @@ ones.
 - **`judge_conflicts`**: `(judge_id, team_id)`, `reason`. Written by `declare_conflict` (a
   judge) and `set_conflicts` (organizers); scores from a judge for that team are left out of
   `private.rank_submissions`, which also evens out each judge's scores per
-  `judging.normalize` and reports `raw_score` beside `score`.
+  `judging.normalize` and reports `raw_score` beside `score`. It ranks on the unrounded score,
+  then `judging.tiebreakers` in order, and marks each row's `tie` (`tied`, `broken` or null);
+  `advance_submissions` takes everyone tied for the last spot unless `judging.advanceTies` is off.
 - **`judge_pins`**: `(judge_id, team_id)`, the opposite of a conflict. Written by `pin_judge`
   (organizers; refused while a conflict exists, and it assigns the judge to the team's projects
   already in judging) and `unpin_judge`. `assign_round_robin` places pinned judges first, past

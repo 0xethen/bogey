@@ -339,6 +339,9 @@ holds the rest:
 4. Preview **results**. Under **Awards**, **Propose from rankings** drafts overall
    places (top three per form), each division's winner and the top entries of each
    prize; adjust them, and add special awards ("Best pitch") by picking a project.
+   Projects are ranked on their full score; for ones that still tie, add
+   **Tiebreakers** (a criterion, the score before evening out judges, more judges,
+   or submitted first), tried in order. Projects tied on all of them share a rank.
 5. Choose **Who sees the ranking** (organizers only by default; awards are always
    public), then publish. Participants see the awards, and the ranking if you allowed
    it, once the Results window opens, and each hears about it in the bell and by email;
@@ -464,7 +467,9 @@ Every judged form starts with one round holding every submitted project. To run 
 final, open **Manage → Judging → Rounds**, pick a round and **Advance** the top N:
 they move into the next round (created for you), their teams are told they're
 finalists, and from then on judges see and score them in that round. Scores from
-earlier rounds are kept, and each round is ranked on its own scores. Each round can
+earlier rounds are kept, and each round is ranked on its own scores. If projects are
+still tied for the last spot after the tiebreakers, all of them advance, unless
+**Advance ties for the last spot** is off. Each round can
 be renamed and can have a window of its own (say, a Finals window), so judges can
 score it only then. **Assign judges** works per round. A criterion can count in
 every round or just one. The final awards are proposed from each form's last round.

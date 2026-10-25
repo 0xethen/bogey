@@ -62,7 +62,8 @@ const assignmentSchema = (t: T) =>
       .int(t("eventForm.whole"))
       .min(1, t("eventForm.atLeast", { min: 1 }))
       .max(20, t("eventForm.atMost", { max: 20 }))
-      .meta({ label: t("manageJudging.perProject") }),
+      .meta({ label: t("manageJudging.perProject") })
+      .describe(t("manageJudging.perProjectHelp")),
     rules: z.array(ruleSchema(t)).max(10, t("assignRules.atMost10")),
     exclude: z
       .array(z.string())

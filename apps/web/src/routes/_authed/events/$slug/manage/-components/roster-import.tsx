@@ -34,13 +34,7 @@ import {
 } from "@bogey/ui/components/collapsible";
 import { FileDrop } from "@bogey/ui/components/file-drop";
 import { Button } from "@bogey/ui/components/button";
-import {
-  Field,
-  FieldDescription,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@bogey/ui/components/field";
+import { Field, FieldDescription, FieldLabel, FieldSet } from "@bogey/ui/components/field";
 import { OptSelect, type SelectOption } from "@bogey/ui/components/opt-select";
 import { RadioGroup, RadioGroupItem } from "@bogey/ui/components/radio-group";
 import { Screen } from "@bogey/ui/components/screen";
@@ -258,16 +252,6 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
     >
       <form.AppForm>
         <form.Form unsaved="draft" className="flex flex-col gap-4">
-          <form.Subscribe selector={(state) => state.values.text.trim() !== ""}>
-            {(hasText) => (
-              <GuessChoice
-                guess={guess}
-                locked={choices.started || hasText}
-                onPick={choices.pick}
-                onStartOver={startOver}
-              />
-            )}
-          </form.Subscribe>
           <FileDrop
             files={fileName ? [{ id: fileName, name: fileName, sizeBytes: 0 }] : []}
             accept={ACCEPT}
@@ -315,6 +299,17 @@ export function RosterImport({ eventId, maxTeamSize }: { eventId: string; maxTea
               </field.Field>
             )}
           </form.Field>
+
+          <form.Subscribe selector={(state) => state.values.text.trim() !== ""}>
+            {(hasText) => (
+              <GuessChoice
+                guess={guess}
+                locked={choices.started || hasText}
+                onPick={choices.pick}
+                onStartOver={startOver}
+              />
+            )}
+          </form.Subscribe>
 
           <form.Subscribe selector={(state) => state.values.text}>
             {(text) =>
@@ -413,8 +408,11 @@ function GuessChoice({
   }
   return (
     <FieldSet>
-      <FieldLegend variant="label">{t("rosterImport.guessing")}</FieldLegend>
-      <FieldDescription>{t("rosterImport.guessingHelp")}</FieldDescription>
+      {/* <FieldLegend variant="label">{t("rosterImport.guessing")}</FieldLegend> */}
+      <FieldDescription>
+        <span className="text-fg">{t("rosterImport.guessing")}</span>{" "}
+        {t("rosterImport.guessingHelp")}
+      </FieldDescription>
       <RadioGroup
         value={guess}
         onValueChange={(next) => {

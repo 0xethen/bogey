@@ -340,8 +340,8 @@ function RouteComponent() {
     <PreviewGate allowed={viewer ? manages(viewer) : false}>
       <SettingsLayout
         label={t("manageNav.label")}
-        // organizers' tables want the room; other settings layouts keep the cap
-        className="max-w-none"
+        // 6xl of content beside the sidebar, wider than other settings layouts
+        className="max-w-[90rem]"
         header={<EventSwitcher event={event} orgAdmin={orgAdmin} />}
         groups={allGroups}
       >
