@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- SparkCloud: `bogey-upgrade` keeps a custom logo (or any file in `public/brand`) whole. It was served cut off at the size of the image's own file.
+
 ## 2.4.10 (2026-10-25)
 
 - **Check in before using the event** (`checkin.requiredToEnter`, under Registration → Check-in): a participant who hasn't checked in sees only their badge, with a note to show it at the desk, and can't open teams, submissions, messages, the agenda or anything else in the event; the database refuses it too. The event opens on its own the moment they're checked in. It includes **Check in before competing**.

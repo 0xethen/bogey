@@ -84,6 +84,28 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Nitro serves public files with the size and etag it saw when it built; brand files copied in
+# afterwards (a custom logo) would be cut off at the old size, so their entries are updated
+keep_brand() {
+  [ -d "$IMG/web/app/public/brand" ] || return 0
+  mkdir -p "$1/app/public/brand" && cp -a "$IMG/web/app/public/brand/." "$1/app/public/brand/"
+  node -e '
+    const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
+    const app = process.argv[1], index = path.join(app, "server/index.mjs");
+    let source = fs.readFileSync(index, "utf8");
+    const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)]);
+    for (const file of walk(path.join(app, "public/brand"))) {
+      const body = fs.readFileSync(file);
+      const etag = `\\"${body.length.toString(16)}-${crypto.createHash("sha1").update(body).digest("base64").slice(0, 27)}\\"`;
+      const key = "/" + path.relative(path.join(app, "public"), file).split(path.sep).join("/");
+      const entry = new RegExp(`("${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}": \\{[^}]*?"etag": )"[^\n]*",([^}]*?"size": )\\d+`);
+      source = source.replace(entry, (_, head, middle) => `${head}"${etag}",${middle}${body.length}`);
+    }
+    fs.writeFileSync(index, source);
+  ' "$1/app"
+}
+
 psql_db() { "$PGBIN/psql" "${DATABASE_URL/@db:/@127.0.0.1:}" -XAtq "$@"; }
 
 # migrations the database has that an app folder doesn't ship
@@ -172,7 +194,7 @@ crane export --platform linux/amd64 "$REPO@$DIGEST" - | tar -x -C "$IMG/web.new"
 [ -f "$IMG/web.new/app/server/index.mjs" ] || die "the image has no app/server/index.mjs; not a Bogey image?"
 cp -a "$IMG/web/app/bogey.config.ts" "$IMG/web.new/app/bogey.config.ts"
 # keep any brand files added here, like a custom logo
-[ -d "$IMG/web/app/public/brand" ] && cp -a "$IMG/web/app/public/brand/." "$IMG/web.new/app/public/brand/"
+keep_brand "$IMG/web.new" || die "couldn't carry over the brand files"
 ok "unpacked to $IMG/web.new, with this instance's bogey.config.ts and brand files"
 
 # the release's box scripts, installed once the new app is in (releases before 2.5 don't have them)
@@ -209,6 +231,8 @@ if [ $BUILD_HERE = 1 ]; then
   cp "$IMG/web/app/bogey.config.ts" "$BUILD/src/bogey.config.ts"
   [ -f /srv/bogey/bogey.libraries.json ] && cp /srv/bogey/bogey.libraries.json "$BUILD/src/"
   [ -n "$THEMES" ] && cp "$THEMES_DIR"/*.theme.css "$BUILD/src/packages/ui/src/styles/themes/"
+  [ -d "$IMG/web/app/public/brand" ] && mkdir -p "$BUILD/src/apps/web/public/brand" \
+    && cp -a "$IMG/web/app/public/brand/." "$BUILD/src/apps/web/public/brand/"
 
   for s in $PAUSE_WHILE_BUILDING; do
     if [ -f "/run/bogey/$s.pid" ] && kill -0 "$(cat "/run/bogey/$s.pid")" 2>/dev/null; then
@@ -238,7 +262,7 @@ if [ $BUILD_HERE = 1 ]; then
   rm -rf "$IMG/web.new/app/server" "$IMG/web.new/app/public" "$IMG/web.new/opt/bogey/cli"
   cp -a "$BUILD/src/apps/web/.output/." "$IMG/web.new/app/"
   cp -a "$BUILD/src/tools/cli/dist" "$IMG/web.new/opt/bogey/cli"
-  [ -d "$IMG/web/app/public/brand" ] && cp -a "$IMG/web/app/public/brand/." "$IMG/web.new/app/public/brand/"
+  keep_brand "$IMG/web.new" || die "couldn't carry over the brand files"
   rm -rf "$IMG/web.new/app/packages/plugins/installed"
   cp -a "$BUILD/src/packages/plugins/installed" "$IMG/web.new/app/packages/plugins/installed"
   cp "$WANT_LOCK" "$IMG/web.new/app/bogey.plugins.lock"
