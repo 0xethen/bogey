@@ -56,7 +56,10 @@ stable
 security definer
 set search_path = ''
 as $$
-  select not coalesce((private.event_setting(p_event, 'checkin') ->> 'requiredToCompete')::boolean, false)
+  select not (
+      coalesce((private.event_setting(p_event, 'checkin') ->> 'requiredToCompete')::boolean, false)
+      or coalesce((private.event_setting(p_event, 'checkin') ->> 'requiredToEnter')::boolean, false)
+    )
     or private.event_role(p_event) is distinct from 'participant'
     or private.checked_in(p_event, (select auth.uid()));
 $$;

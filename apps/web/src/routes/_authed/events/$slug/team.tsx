@@ -10,6 +10,7 @@ import {
   newTeamCodeFn,
   renameTeamFn,
   type MyTeam,
+  invalidateMine,
 } from "@bogey/db/queries/teams";
 import { eventWindowsQueryOptions, isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import { requestFailure, unwrap } from "@bogey/db/errors";
@@ -64,8 +65,7 @@ function useTeamMutation<T>(run: (eventId: string, input: T) => Promise<unknown>
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: T) => run(eventId, input),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: myTeamQueryOptions(eventId).queryKey }),
+    onSuccess: () => invalidateMine(queryClient, eventId),
   });
 }
 
@@ -393,7 +393,7 @@ function RenameTeam({ mine }: { mine: MyTeam }) {
           : createValidationError(result.error.message);
       }
       formApi.reset({ name: result.data.name });
-      await queryClient.invalidateQueries({ queryKey: myTeamQueryOptions(eventId).queryKey });
+      await invalidateMine(queryClient, eventId);
       return undefined;
     },
   });

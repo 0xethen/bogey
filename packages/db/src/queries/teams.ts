@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createServerClient } from "../server.ts";
@@ -78,6 +78,20 @@ export const myTeamQueryOptions = (eventId: string) =>
     queryKey: ["my-team", eventId] as const,
     queryFn: async () => unwrap(await myTeamFn({ data: eventId })),
     retry: retryPolicy,
+  });
+
+/**
+ * After the viewer's team changes, everything read about them in the event ("my-*") may be stale.
+ * Pages not open now are refetched too, since their loaders read the cache as is.
+ */
+export const invalidateMine = (queryClient: QueryClient, eventId: string) =>
+  queryClient.invalidateQueries({
+    refetchType: "all",
+    predicate: ({ queryKey }) =>
+      (typeof queryKey[0] === "string" &&
+        queryKey[0].startsWith("my-") &&
+        queryKey[1] === eventId) ||
+      (queryKey[0] === "divisions" && queryKey[1] === eventId && queryKey[2] === "mine"),
   });
 
 export const createTeamFn = createServerFn({ method: "POST" })

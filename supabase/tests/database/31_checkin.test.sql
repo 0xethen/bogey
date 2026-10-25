@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(35);
 
 insert into public.orgs (id, slug, name) values (tests.u('org'), 'alpha', 'Alpha'), (tests.u('other'), 'beta', 'Beta');
 insert into public.events (id, org_id, slug, name, visibility, team_size_min, team_size_max, starts_at)
@@ -75,6 +75,22 @@ select is((select checked_in from public.check_in_walk_in(tests.u('ev'), (select
 reset role;
 select tests.as_user(tests.u('own2'));
 select throws_ok($$select * from public.badge_sheet(tests.u('ev'))$$, '42501', null, 'another org''s owner can''t print the badges');
+reset role;
+
+-- checkin.requiredToEnter: a participant who isn't checked in is gated out of the whole event
+select tests.create_user(tests.u('gated'), 'gated@t.test');
+insert into public.event_members (event_id, user_id, role) values (tests.u('ev'), tests.u('gated'), 'participant');
+update public.settings set value = '{"requiredToEnter":true}' where event_id = tests.u('ev') and namespace = 'checkin';
+select tests.as_user(tests.u('gated'));
+select is(public.event_gate(tests.u('ev')), 'checkin.required', 'a participant who hasn''t checked in is gated');
+select lives_ok($$select public.my_badge(tests.u('ev'))$$, 'but still has their badge to show at the desk');
+select throws_ok($$select public.create_team(tests.u('ev'), 'Gated')$$, null, null, 'and can''t make a team');
+reset role;
+select tests.as_user(tests.u('desk'));
+select lives_ok($$select public.check_in(tests.u('ev'), tests.u('gated'))$$, 'staff check them in');
+reset role;
+select tests.as_user(tests.u('gated'));
+select is(public.event_gate(tests.u('ev')), null, 'which opens the event to them');
 reset role;
 
 select * from finish();

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { requestFailure, unwrap } from "@bogey/db/errors";
-import { myTeamQueryOptions } from "@bogey/db/queries/teams";
+import { invalidateMine } from "@bogey/db/queries/teams";
 import {
   answerTeamRequestFn,
   inviteToTeamFn,
@@ -37,7 +37,7 @@ function useBoardRefresh() {
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ["team-board", eventId] }),
-      queryClient.invalidateQueries({ queryKey: myTeamQueryOptions(eventId).queryKey }),
+      invalidateMine(queryClient, eventId),
     ]);
 }
 

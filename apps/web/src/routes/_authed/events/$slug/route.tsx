@@ -33,6 +33,7 @@ import { eventWrapperPlugins, PluginEventWrappers } from "./-components/plugin-e
 import { NewAnnouncementDialog } from "#/components/event/messaging/announcement-composer.tsx";
 import { AnnouncementToasts } from "./-components/announcement-toasts.tsx";
 import { PluginHotkeys } from "./-components/plugin-hotkeys.tsx";
+import { CheckInGate } from "./-components/checkin-gate.tsx";
 import { networkStatusQueryOptions, settingsQueryOptions } from "@bogey/db/queries/settings";
 import { useEventChromeHidden } from "@bogey/plugins/chrome";
 import { msg, useT } from "#/lib/translate.tsx";
@@ -118,6 +119,9 @@ export const Route = createFileRoute("/_authed/events/$slug")({
   component: RouteComponent,
 });
 
+// the core gate (checkin.requiredToEnter); plugins' gates are "<plugin>.<reason>"
+const CHECK_IN_GATE = "checkin.required";
+
 function isEventHome(pathname: string, slug: string): boolean {
   return pathname === `/events/${slug}` || pathname === `/events/${slug}/`;
 }
@@ -145,6 +149,7 @@ function GateWatch({ slug }: { slug: string }) {
   const viewer = useEventViewer();
   const eventId = viewer?.event.id ?? "";
   const participant = viewer?.access.role === "participant";
+  const userId = Route.useRouteContext({ select: (context) => context.session.user?.id });
   // turning lockdown (or anything else) on reaches open pages at once, not on the next minute
   useLiveBroadcast(`settings:${eventId}`, ["settings"], { enabled: !!eventId });
   useLiveBroadcast(`settings:${eventId}`, eventGateQueryOptions(eventId).queryKey, {
@@ -153,6 +158,11 @@ function GateWatch({ slug }: { slug: string }) {
   useLiveInvalidate("event_windows", eventGateQueryOptions(eventId).queryKey, {
     filter: `event_id=eq.${eventId}`,
     enabled: participant,
+  });
+  // being checked in at the desk opens a check-in gate
+  useLiveInvalidate("checkins", eventGateQueryOptions(eventId).queryKey, {
+    filter: `user_id=eq.${userId}`,
+    enabled: participant && !!userId,
   });
   const last = useRef(gate);
   useEffect(() => {
@@ -177,6 +187,7 @@ function RouteComponent() {
   const t = useT();
   const { event, plugins, session, missing, announcements } = Route.useRouteContext();
   const viewer = useEventViewer();
+  const gate = useEventGate();
   const time = useEventTimeFormat(useTimeFormat(), event);
   const { data: network } = useQuery({
     ...networkStatusQueryOptions(event.id),
@@ -193,9 +204,13 @@ function RouteComponent() {
       )}
       {missing.length > 0 && <MissingPlugins missing={missing} slug={event.slug} />}
       <GateWatch slug={event.slug} />
-      <PluginEventWrappers plugins={plugins} eventId={event.id} session={session}>
-        <Outlet />
-      </PluginEventWrappers>
+      {gate === CHECK_IN_GATE ? (
+        <CheckInGate eventId={event.id} eventName={event.name} endsAt={event.ends_at} />
+      ) : (
+        <PluginEventWrappers plugins={plugins} eventId={event.id} session={session}>
+          <Outlet />
+        </PluginEventWrappers>
+      )}
       {viewer && announcements.toasts && (
         <AnnouncementToasts
           eventId={event.id}

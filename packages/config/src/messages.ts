@@ -344,6 +344,7 @@ export const en = {
   "account.language": "Language",
   "account.languageHelp": "The language Bogey is shown in. Other languages are from the community.",
   "common.saving": "Saving",
+  "common.refresh": "Refresh",
   "common.copy": "Copy",
   "common.copied": "Copied",
   "common.wentWrong": "Something went wrong",
@@ -4274,6 +4275,12 @@ export const en = {
   "setting.checkin.requiredToCompete": "Check in before competing",
   "setting.checkin.requiredToCompete.help":
     "Best for in-person events. Participants who haven't checked in can't change teams, submit or vote.",
+  "setting.checkin.requiredToEnter": "Check in before using the event",
+  "setting.checkin.requiredToEnter.help":
+    "Participants see only their badge until they're checked in at the desk: no team, submissions, messages or agenda. Includes checking in before competing.",
+  "checkinGate.title": "Check in to get started",
+  "checkinGate.body":
+    "Show this badge at the check-in desk. Once you're checked in, the rest of {event} opens here on its own.",
   "setting.gallery.banners": "Banners on project cards",
   "setting.gallery.teamBanners": "Teams choose their banner",
   "setting.gallery.teamBanners.help":

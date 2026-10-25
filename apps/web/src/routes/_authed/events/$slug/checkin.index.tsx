@@ -43,6 +43,7 @@ import {
   ItemDescription,
   ItemTitle,
 } from "@bogey/ui/components/item";
+import { RefreshButton } from "#/components/app/refresh-button.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/checkin/")({
   beforeLoad: ({ context, params }) => {
@@ -241,6 +242,7 @@ function Desk() {
       title={t("checkin.title")}
       description={t("checkin.present", { here: here.length, total: roster.length })}
       width="narrow"
+      actions={<RefreshButton queryKeys={[checkinRosterQueryOptions(event.id).queryKey]} />}
     >
       {last && (
         <Alert>

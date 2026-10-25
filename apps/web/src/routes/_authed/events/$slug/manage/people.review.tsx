@@ -37,6 +37,7 @@ import { PluginSettingSections } from "#/components/settings/sections/plugin-sec
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 import { BulkReview } from "./-components/bulk-review.tsx";
 import { fromLink, usePeopleMutation } from "./-components/people-shared.ts";
+import { RefreshButton } from "#/components/app/refresh-button.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/people/review")({
   staticData: {
@@ -111,6 +112,7 @@ function RouteComponent() {
     <Screen
       title={t("manageNav.review")}
       width="embedded"
+      actions={<RefreshButton queryKeys={[eventPeopleQueryOptions(event.id).queryKey]} />}
       description={
         link && (
           <>

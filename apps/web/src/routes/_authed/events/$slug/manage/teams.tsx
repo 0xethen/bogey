@@ -47,6 +47,7 @@ import {
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { TeamMatcher } from "./-components/team-matcher.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
+import { RefreshButton } from "#/components/app/refresh-button.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/teams")({
   staticData: {
@@ -280,6 +281,7 @@ function RouteComponent() {
       actions={
         !creating && (
           <>
+            <RefreshButton queryKeys={[options.queryKey]} />
             <Button
               size="sm"
               variant="outline"

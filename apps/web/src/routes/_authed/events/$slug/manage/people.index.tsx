@@ -64,6 +64,7 @@ import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { tagHoldersQueryOptions, tagsQueryOptions, type Tag } from "@bogey/db/queries/tags";
 import { TagPicker } from "#/components/tags/tags.tsx";
 import { isOrgAdmin } from "@bogey/db/auth";
+import { RefreshButton } from "#/components/app/refresh-button.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/people/")({
   staticData: {
@@ -333,6 +334,14 @@ function RouteComponent() {
     <Screen
       title={t("adminTab.people")}
       width="embedded"
+      actions={
+        <RefreshButton
+          queryKeys={[
+            eventPeopleQueryOptions(event.id).queryKey,
+            checkinRosterQueryOptions(event.id).queryKey,
+          ]}
+        />
+      }
       description={
         link && (
           <>

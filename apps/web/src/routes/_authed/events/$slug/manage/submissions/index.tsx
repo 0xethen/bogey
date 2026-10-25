@@ -39,6 +39,7 @@ import { searchSection, searchSettings } from "#/components/settings/layout/sear
 import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
+import { RefreshButton } from "#/components/app/refresh-button.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/")({
   // Old #gallery links, from before the gallery had its own subtab.
@@ -114,6 +115,7 @@ function RouteComponent() {
   const form = forms.find((candidate) => candidate.key === selectedKey) ?? forms[0];
   const editForms = (
     <>
+      <RefreshButton queryKeys={[options.queryKey]} />
       {form && (
         <>
           <ProjectExport

@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { updateProfileFn } from "@bogey/db/queries/profile";
-import { leaveTeamFn, myTeamQueryOptions } from "@bogey/db/queries/teams";
+import { leaveTeamFn, myTeamQueryOptions, invalidateMine } from "@bogey/db/queries/teams";
 import { isWindowOpen, windowByKey } from "@bogey/db/queries/windows";
 import {
   completeIdentitySetupFn,
@@ -234,8 +234,7 @@ function TeamStep({
   const team = useQuery(myTeamQueryOptions(eventId));
   const leave = useMutation({
     mutationFn: async () => unwrap(await leaveTeamFn({ data: eventId })),
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: myTeamQueryOptions(eventId).queryKey }),
+    onSettled: () => invalidateMine(queryClient, eventId),
   });
   if (team.isPending) return null;
 

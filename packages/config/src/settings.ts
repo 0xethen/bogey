@@ -1358,6 +1358,12 @@ export const settingsRegistry = {
         .boolean()
         .optional()
         .describe("Participants can't change teams, submit or vote until they've checked in"),
+      requiredToEnter: z
+        .boolean()
+        .optional()
+        .describe(
+          "Participants see only their badge until they've checked in: no teams, submissions, messages or anything else",
+        ),
     }),
     fields: {
       confirmName: { label: say("setting.checkin.confirmName") },
@@ -1377,6 +1383,10 @@ export const settingsRegistry = {
       requiredToCompete: {
         label: say("setting.checkin.requiredToCompete"),
         description: say("setting.checkin.requiredToCompete.help"),
+      },
+      requiredToEnter: {
+        label: say("setting.checkin.requiredToEnter"),
+        description: say("setting.checkin.requiredToEnter.help"),
       },
       takers: {
         label: say("setting.checkin.takers"),

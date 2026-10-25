@@ -223,6 +223,11 @@ begin
      or coalesce(private.real_org_role(private.event_org(p_event)) >= 'admin', false) then
     return null;
   end if;
+  -- checkin.requiredToEnter: nothing in the event until they're checked in at the desk
+  if coalesce((private.event_setting(p_event, 'checkin') ->> 'requiredToEnter')::boolean, false)
+     and not private.checked_in(p_event, (select auth.uid())) then
+    return 'checkin.required';
+  end if;
   for v_key in
     select jsonb_array_elements_text(s.value -> 'enabled')
     from public.settings s

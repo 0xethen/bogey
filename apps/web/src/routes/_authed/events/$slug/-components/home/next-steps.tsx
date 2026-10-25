@@ -8,7 +8,7 @@ import {
   withdrawFn,
 } from "@bogey/db/queries/registration";
 import { unwrap } from "@bogey/db/errors";
-import { myTeamQueryOptions } from "@bogey/db/queries/teams";
+import { myTeamQueryOptions, invalidateMine } from "@bogey/db/queries/teams";
 import { mySubmissionsQueryOptions } from "@bogey/db/queries/submissions";
 import { isWindowOpen, windowByKey, type EventWindow } from "@bogey/db/queries/windows";
 import type { Event } from "@bogey/db/queries/events";
@@ -54,7 +54,7 @@ export function NextSteps({
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: myRegistrationQueryOptions(event.id).queryKey }),
-        queryClient.invalidateQueries({ queryKey: myTeamQueryOptions(event.id).queryKey }),
+        invalidateMine(queryClient, event.id),
       ]),
   });
   const withdraw = useMutation({

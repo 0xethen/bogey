@@ -282,6 +282,7 @@ Set at: instance, org, event.
 | `badgeEmailHours` | whole number (0 to 336) | `24` | Email each person their check-in code this many hours before the event starts; 0 sends none |
 | `selfCheckIn` | on / off | — | Let people check themselves in with the venue code staff show on a screen |
 | `requiredToCompete` | on / off | `false` | Participants can't change teams, submit or vote until they've checked in |
+| `requiredToEnter` | on / off | — | Participants see only their badge until they've checked in: no teams, submissions, messages or anything else |
 
 ## Gallery (`gallery`)
 

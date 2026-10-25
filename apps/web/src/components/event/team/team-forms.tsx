@@ -5,10 +5,10 @@ import { z } from "zod";
 import {
   createTeamFn,
   joinTeamFn,
-  myTeamQueryOptions,
   teamNameTakenFn,
   teamPreviewFn,
   type TeamPreview,
+  invalidateMine,
 } from "@bogey/db/queries/teams";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import {
@@ -74,7 +74,7 @@ export function StartOrJoinTeam({ onDone }: { onDone?: () => Promise<void> | voi
   const { data: settings } = useQuery(settingsQueryOptions({ eventId }, ["teams"]));
   const organizersStart = settings?.teams.creation === "organizers";
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: myTeamQueryOptions(eventId).queryKey });
+    await invalidateMine(queryClient, eventId);
     await onDone?.();
   };
 

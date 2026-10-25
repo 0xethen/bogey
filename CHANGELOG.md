@@ -10,6 +10,14 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- **Check in before using the event** (`checkin.requiredToEnter`, under Registration → Check-in): a participant who hasn't checked in sees only their badge, with a note to show it at the desk, and can't open teams, submissions, messages, the agenda or anything else in the event; the database refuses it too. The event opens on its own the moment they're checked in. It includes **Check in before competing**.
+- Check-in, People, Review, Teams and Submissions have a refresh button that reloads their lists, for people and teams added since the page opened.
+- Creating, joining or leaving a team now updates everything else that depends on it, like the submission page, at once instead of after a reload.
+
+### Upgrade notes
+
+- Adds the `checkin_gate` migration; `bogey upgrade` applies it. It replaces `private.event_gate` and `private.check_in_ok`.
+
 ## 2.4.9 (2026-10-25)
 
 - Criteria can be pasted in from a rubric written as text: each criterion's name, then its scores (`0 points.`, `1-3 pts:`) with what earns them, with lines like `Row A` starting a criterion. **Import criteria** on the criteria page is now an editor like the roster import's: paste a rubric or a spreadsheet, or drop a CSV, Excel or text file into it, check the criteria it found and any lines it couldn't read, then **Add to criteria**.

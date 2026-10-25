@@ -55,6 +55,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/registration/
         "checkin",
         [
           "requiredToCompete",
+          "requiredToEnter",
           "confirmName",
           "allowWalkIns",
           "selfCheckIn",
@@ -116,6 +117,8 @@ function RouteComponent() {
           namespace="checkin"
           keys={[
             "requiredToCompete",
+            "requiredToEnter",
+            "requiredToEnter",
             "confirmName",
             "allowWalkIns",
             "selfCheckIn",
