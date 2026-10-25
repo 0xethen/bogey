@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.4 (2026-10-25)
+
 - Judging: tiebreakers. Under **Judging → Results → Tiebreakers**, organizers list what decides between projects with the same score, in order: a criterion, the score before evening out judges, more judges, or submitted first. Projects are now ranked on their full score rather than the rounded one, results mark ties as "tied" or "tie broken", and tied projects are listed in a fixed order. Advancing the top N takes everyone still tied for the last spot unless **Advance ties for the last spot** is turned off (before, it picked among them arbitrarily).
 - Manage pages are capped at a wide width instead of filling the screen, and table rows are a little taller.
 
