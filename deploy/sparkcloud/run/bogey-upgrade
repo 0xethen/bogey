@@ -250,6 +250,11 @@ else
 fi
 
 step "Migrating the database"
+# the release's node runs on this box's libraries, and Node 26 needs libatomic1
+if ldd "$IMG/web.new/usr/local/bin/node" | grep -q "libatomic.so.1 => not found"; then
+  { apt-get update -qq && apt-get install -y -qq libatomic1 >/dev/null; } || die "couldn't install libatomic1, which $TAG's node needs"
+  ok "installed libatomic1 for $TAG's node"
+fi
 NEW_CLI() {
   BOGEY_HOME=$IMG/web.new/app BOGEY_CONFIG=$IMG/web.new/app/bogey.config.ts \
     "$IMG/web.new/usr/local/bin/node" "$IMG/web.new/opt/bogey/cli/bin.mjs" "$@"
@@ -288,7 +293,15 @@ rm -rf "$IMG/web.prev"
 mv "$IMG/web" "$IMG/web.prev" && mv "$IMG/web.new" "$IMG/web"
 install_node() { cp "$1/usr/local/bin/node" /usr/local/bin/node.new && mv /usr/local/bin/node.new /usr/local/bin/node; }
 install_node "$IMG/web"
-$RUN/bogeyctl restart web
+# not bogeyctl restart: a rollback may have just put back an older bogeyctl that never sends SIGKILL
+restart_web() {
+  local p
+  p=$(cat /run/bogey/web.pid 2>/dev/null)
+  [ -n "$p" ] && kill "$p" 2>/dev/null || return 0
+  for _ in $(seq 1 20); do kill -0 "$p" 2>/dev/null || return 0; sleep 0.5; done
+  kill -9 "$p" 2>/dev/null
+}
+restart_web
 
 up() {
   for _ in $(seq 1 90); do
@@ -302,9 +315,12 @@ if ! up; then
   warn "web didn't come up on $TAG; putting the previous app back"
   rm -rf "$IMG/web.failed"
   mv "$IMG/web" "$IMG/web.failed" && mv "$IMG/web.prev" "$IMG/web"
-  [ -n "$CHANGED" ] && install_scripts "$RUN.prev" && warn "put the previous box scripts back"
+  if [ -n "$CHANGED" ]; then
+    for f in "$RUN.prev"/*; do cp -a "$f" "$RUN/.${f##*/}.new" && mv "$RUN/.${f##*/}.new" "$RUN/${f##*/}"; done
+    warn "put the previous box scripts back"
+  fi
   install_node "$IMG/web"
-  $RUN/bogeyctl restart web
+  restart_web
   up && warn "the previous app is running again" || warn "the previous app isn't answering either"
   die "the upgrade failed. Logs: bogeyctl logs web 200. The failed build is in $IMG/web.failed; backup: $BACKUP"
 fi

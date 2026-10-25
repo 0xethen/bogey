@@ -44,7 +44,7 @@ trap 'kill $KEEPALIVE 2>/dev/null' EXIT
 
 step "Tools"
 apt-get update -qq
-apt-get install -y -qq curl ca-certificates xz-utils procps iproute2 less jq >/dev/null
+apt-get install -y -qq curl ca-certificates xz-utils procps iproute2 less jq libatomic1 >/dev/null
 curl -fsSL "https://github.com/google/go-containerregistry/releases/download/$CRANE/go-containerregistry_Linux_x86_64.tar.gz" \
   | tar xz -C /usr/local/bin crane
 # Ubuntu's proot 5.1 doesn't translate statx, which node in the studio and meta images needs

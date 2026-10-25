@@ -141,9 +141,12 @@ export { VIEW_AS_ROLES, type ViewAsRole } from "./view-as.ts";
 
 let previewCache: ViewAsRole | null = null;
 const previewListeners = new Set<() => void>();
-// the cookie is shared by every tab, so they all follow a change
+// the cookie is shared by every tab, so they all follow a change; browser only, since an open
+// channel keeps the server process from exiting
 const previewChannel =
-  typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(VIEW_AS_COOKIE);
+  typeof window === "undefined" || typeof BroadcastChannel === "undefined"
+    ? null
+    : new BroadcastChannel(VIEW_AS_COOKIE);
 
 if (typeof window !== "undefined") {
   previewCache = viewAsCookie();

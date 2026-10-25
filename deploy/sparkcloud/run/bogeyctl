@@ -21,6 +21,17 @@ stop() {
   echo "$s stopped"
 }
 
+# like docker stop: SIGTERM, then SIGKILL if it hasn't exited in 10s (node can close its server and
+# still not exit); the restart loop starts it again
+restart() {
+  local p
+  p=$(pid_of "$1")
+  [ -n "$p" ] && kill -0 "$p" 2>/dev/null || { echo "$1 isn't running"; return 0; }
+  kill "$p"
+  for _ in $(seq 1 20); do kill -0 "$p" 2>/dev/null || return 0; sleep 0.5; done
+  kill -9 $(tree "$p") 2>/dev/null
+}
+
 start() {
   local s=$1
   if alive "$s"; then echo "$s is already running"; return 0; fi
@@ -30,7 +41,7 @@ start() {
 }
 
 case $1 in
-  restart) for s in "${@:2}"; do kill "$(pid_of "$s")"; done ;;
+  restart) for s in "${@:2}"; do restart "$s"; done ;;
   stop) for s in "${@:2}"; do stop "$s"; done ;;
   start) for s in "${@:2}"; do start "$s"; done ;;
   logs) tail -n "${3:-50}" -f "/srv/bogey/logs/$2.log" ;;
