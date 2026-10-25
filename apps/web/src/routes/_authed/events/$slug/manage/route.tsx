@@ -177,20 +177,15 @@ function RouteComponent() {
               // registrations waiting on a decision need you, like unanswered messages
               badgeVariant: summary.data?.pending ? "default" : "text",
             },
+            { key: "tags", label: t("tags.title"), icon: IconTags, to: `${base}/people/tags` },
           ],
         },
-        ...(event.team_size_max > 1
-          ? [{ key: "teams", label: t("facts.teams"), icon: IconUsersGroup, to: `${base}/teams` }]
-          : []),
+        { key: "teams", label: t("facts.teams"), icon: IconUsersGroup, to: `${base}/teams` },
         {
           key: "divisions",
           label: t("manageNav.divisions"),
           icon: IconCategory,
           to: `${base}/divisions`,
-          exact: true,
-          sub: [
-            { key: "tags", label: t("tags.title"), icon: IconTags, to: `${base}/divisions/tags` },
-          ],
         },
       ],
     },
@@ -205,16 +200,16 @@ function RouteComponent() {
           exact: true,
           sub: [
             {
-              key: "gallery",
-              label: t("manageSubs.gallery"),
-              icon: IconLayoutGrid,
-              to: `${base}/submissions/gallery`,
-            },
-            {
               key: "forms",
               label: t("manageNav.forms"),
               icon: IconForms,
               to: `${base}/submissions/forms`,
+            },
+            {
+              key: "gallery",
+              label: t("manageSubs.gallery"),
+              icon: IconLayoutGrid,
+              to: `${base}/submissions/gallery`,
             },
           ],
         },

@@ -1,3 +1,4 @@
+import type { Audience } from "./audience.ts";
 import { sayEnglish, type Say } from "./messages.ts";
 
 export const FIELD_KINDS = [
@@ -21,7 +22,7 @@ export type ShowWhen =
   | { field: string; in: Tuple<string | boolean> }
   | { field: string; ageUnder: number };
 
-export interface FormField {
+export interface FormField extends Audience {
   key: string;
   label: string;
   kind: FormFieldKind;
@@ -58,6 +59,10 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function isRecord(value: unknown): value is { [key: string]: unknown } {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function idList(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === "string") : [];
 }
 
 function isFileAnswer(value: unknown): value is FileAnswer {
@@ -110,6 +115,8 @@ export function readFields(raw: unknown): FormField[] {
         ...(typeof entry.min === "number" ? { min: entry.min } : {}),
         ...(typeof entry.max === "number" ? { max: entry.max } : {}),
         ...(showWhen ? { showWhen } : {}),
+        ...(idList(entry.divisionIds).length ? { divisionIds: idList(entry.divisionIds) } : {}),
+        ...(idList(entry.tagIds).length ? { tagIds: idList(entry.tagIds) } : {}),
       },
     ];
   });

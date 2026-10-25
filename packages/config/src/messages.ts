@@ -238,6 +238,8 @@ export const en = {
   "sub.nothingYet": "Nothing to submit yet.",
   "sub.noForm": "The organizers haven't set up a submission form. It shows here once they do.",
   "sub.teamCanEdit": "Everyone on {team} can edit this.",
+  "sub.teamCanEditInDivision":
+    "Everyone on {team} can edit this. Your team competes in {division}.",
   "sub.belongToTeam": "Submissions belong to a team.",
   "sub.teamFirst": "Start or join a team first.",
   "sub.goToTeam": "Go to team",
@@ -336,6 +338,8 @@ export const en = {
   "sub.reviewDivisionLabel": "Division",
   "sub.reviewDivisionFailed": "Couldn't move your team",
   "sub.reviewDivisionMove": "Move team",
+  "sub.reviewDivisionChosen":
+    "A teammate chose {name} for your team. Only they or an organizer can change it.",
 
   "account.language": "Language",
   "account.languageHelp": "The language Bogey is shown in. Other languages are from the community.",
@@ -478,6 +482,8 @@ export const en = {
   "notif.judging.assigned.help": "Projects were assigned to you.",
   "notif.judging.advanced": "Advanced to the next round",
   "notif.judging.advanced.help": "Your project is a finalist.",
+  "notif.judging.division_set": "Moved to another division",
+  "notif.judging.division_set.help": "A judge or organizer moved your project to another division.",
   "notif.submission.received": "Submission received",
   "notif.submission.received.help": "Your team's project was submitted.",
   "notif.submission.deadline": "Submission deadline",
@@ -688,6 +694,10 @@ export const en = {
   "judging.autosaveHelp": "Scores save as you go. Mark it done when you've scored everything.",
   "judging.factTeam": "Team",
   "judging.factDivision": "Division",
+  "judging.divisionHelp":
+    "The division this project competes and is ranked in. Moving it moves the whole team.",
+  "judging.divisionNone": "No division",
+  "judging.divisionFailed": "Couldn't move the project",
   "judging.factTable": "Table",
   "judging.factDemo": "Demo",
   "judging.factRound": "Round",
@@ -2406,6 +2416,35 @@ export const en = {
   "overview.regOpen": "Registration is open.",
   "overview.regClosed": "Registration is closed.",
   "overview.visibilityFailed": "Couldn't change visibility",
+  "phases.title": "Run your event",
+  "phases.before": "Before",
+  "phases.during": "During",
+  "phases.after": "After",
+  "phases.now": "now",
+  "phases.starts": "Starts {when}",
+  "phases.ends": "Ends {when}",
+  "phases.ended": "Ended {when}",
+  "phases.noDates": "Set the dates to see where you are.",
+  "phases.details": "Dates, place and description",
+  "phases.registration": "Who can sign up, and when",
+  "phases.reviewTitle": "Review registrations",
+  "phases.review": "Approve or turn down sign-ups",
+  "phases.agenda": "Sessions and deadlines",
+  "phases.homepage": "What people see first",
+  "phases.criteriaTitle": "Judging criteria",
+  "phases.criteria": "What judges score",
+  "phases.attendance": "Check people in",
+  "phases.announcements": "Post updates to everyone",
+  "phases.messages": "Answer questions",
+  "phases.submissions": "See what's been turned in",
+  "phases.judging": "Assign judges and follow scoring",
+  "phases.demos": "Run the demo schedule",
+  "phases.results": "Rankings and winners",
+  "phases.certificates": "Send certificates",
+  "phases.gallery": "Show off the projects",
+  "phases.winners": "Share the winners",
+  "phases.email": "Follow up with everyone",
+  "phases.people": "Everyone who took part",
   "eventExt.intro":
     "Extend Bogey's functionality with plugins. Add helpful pages, panels and settings to this event (made by the community).",
   "eventExt.notRunning": "Not running",
@@ -2437,12 +2476,15 @@ export const en = {
 
   "manageTeams.unassigned": "Not on a team",
   "manageTeams.rules": "What teams can do",
+  "manageTeams.size": "Team size",
+  "manageTeams.sizeHelp": "Set the largest team to 1 for a solo event.",
+  "manageTeams.sizeFailed": "Couldn't save the team size",
+  "manageTeams.soloIntro":
+    "Everyone takes part alone. Raise the largest team to let people team up.",
   "manageTeams.nameIt": "Name the team",
   "manageTeams.noTeam": "No team",
   "manageTeams.teamFor": "Team for {name}",
-  "manageTeams.sizeRange": "{min} to {max}",
-  "manageTeams.intro":
-    "Teams of {size}. Moves here ignore the team window and are recorded in the audit log.",
+  "manageTeams.intro": "Moves here ignore the team window and are recorded in the audit log.",
   "manageTeams.export": "Export CSV",
   "manageTeams.new": "New team",
   "manageTeams.changeFailed": "Couldn't change the team",
@@ -3465,6 +3507,8 @@ export const en = {
   "manageForms.none": "No forms yet.",
   "manageForms.newTitle": "New form",
   "manageForms.newIntro": "Name the form, choose when it opens, and add what teams fill in.",
+  "manageForms.editTitle": "Edit form",
+  "manageForms.editIntro": "Change when it opens, who submits it, and what teams fill in.",
   "manageForms.audience": "Who submits this",
   "manageForms.everyone": "Everyone",
   "manageForms.audienceHelp":
@@ -3522,6 +3566,13 @@ export const en = {
   "manageAgenda.pageHelp":
     "Gives the session a page of its own, linked from the agenda: an intro, a slide deck link. Sessions that take attendance always have one, where people check in.",
   "tags.title": "Tags",
+  "audience.label": "Only for",
+  "audience.everyone": "Everyone",
+  "audience.for": "For {names}",
+  "audience.questionHelp":
+    "Only people in these divisions or with these tags are asked. Before someone joins, their division is their invite link's.",
+  "audience.itemHelp":
+    "Only teams in these divisions, or with a member who has one of these tags, fill this in.",
   "tags.eventIntro":
     "Label people in this event, like Adult Judge or Mentor. A tag can give the people holding it more permissions, and judging rules can ask for judges by tag.",
   "tags.orgIntro":
@@ -3698,6 +3749,9 @@ export const en = {
   "manageDivisions.selectable": "Participants can pick it",
   "manageDivisions.selectableHelp": "Off, only organizers place people in it, from People.",
   "manageDivisions.switchable": "Participants can switch out of it",
+  "manageDivisions.visible": "Participants see it",
+  "manageDivisions.visibleHelp":
+    "Shown among the divisions participants choose from, though they can't pick it. Off, only the people in it see it.",
   "manageDivisions.rubrics": "Rubrics",
   "manageDivisions.rubricsHelp":
     "Its projects are judged on this rubric, or pick one of these when there are several. Leave empty for any rubric meant for every division.",
@@ -4264,6 +4318,9 @@ export const en = {
   "setting.judging.judgeRubric": "Judges pick the rubric",
   "setting.judging.judgeRubric.help":
     "A judge can pick or change a project's rubric on its score sheet. One pick per project, shared by all its judges.",
+  "setting.judging.judgeDivision": "Judges move projects between divisions",
+  "setting.judging.judgeDivision.help":
+    "A judge can move a project to another division on its score sheet. The whole team moves, and its members are notified.",
   "setting.judging.teamRubric": "Teams pick their rubric",
   "setting.judging.teamRubric.help":
     "Teams choose a rubric on their submission while they can still edit it.",
@@ -4423,6 +4480,7 @@ export const en = {
   "auditAction.judging.assigned": "assigned judges",
   "auditAction.judging.criteria_saved": "saved the judging criteria",
   "auditAction.judging.rubric_set": "picked a project's rubric",
+  "auditAction.judging.division_set": "moved a project to another division",
   "auditAction.judging.rubric_divisions_saved": "changed which divisions use which rubrics",
   "auditAction.judging.flagged": "flagged a project for deliberation",
   "auditAction.judging.flag_resolved": "resolved a flagged project",
@@ -4739,7 +4797,7 @@ export const en = {
   "pluginPresets.off": "Off",
   "pluginPresets.empty": "(empty)",
   "pluginPresets.teamSize": "Team size",
-  "pluginPresets.teamSizeHelp": "Also on Details",
+  "pluginPresets.teamSizeHelp": "Also on Teams",
   "pluginPresets.teamOne": "One person",
   "pluginPresets.teamExact": "{count} people",
   "pluginPresets.teamRange": "{min} to {max} people",

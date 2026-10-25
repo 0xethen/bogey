@@ -7,7 +7,7 @@ import { checkinRosterQueryOptions, walkInFn, type WalkInResult } from "@bogey/d
 import { requestFailure } from "@bogey/db/errors";
 import { can, useCan } from "@bogey/db/permissions";
 import { PreviewGate } from "#/components/app/PreviewGate.tsx";
-import { myRegistrationQueryOptions } from "@bogey/db/queries/registration";
+import { onboardingFormQueryOptions } from "@bogey/db/queries/invites";
 import { settingsQueryOptions } from "@bogey/db/queries/settings";
 import { Alert, AlertDescription, AlertTitle } from "@bogey/ui/components/alert";
 import { Button } from "@bogey/ui/components/button";
@@ -20,6 +20,7 @@ import {
 } from "@bogey/ui/lib/form";
 import { useExternalValue } from "@bogey/ui/hooks/external";
 import { isoToWallTime } from "@bogey/utils/time";
+import { hasAudience } from "@bogey/utils/audience";
 import { OnboardingForm } from "#/components/event/team/onboarding-form.tsx";
 import { LINK, Linked, SettingLink } from "#/components/settings/setting-link.tsx";
 import { msg, useT, type T } from "#/lib/translate.tsx";
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/_authed/events/$slug/checkin_/kiosk")({
         ...settingsQueryOptions({ eventId: context.event.id }, ["checkin"]),
         staleTime: "static",
       }),
-      context.query.query({ ...myRegistrationQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...onboardingFormQueryOptions(context.event.id), staleTime: "static" }),
     ]),
   component: RouteComponent,
 });
@@ -76,7 +77,9 @@ function Kiosk() {
   const { data: settings } = useSuspenseQuery(
     settingsQueryOptions({ eventId: event.id }, ["checkin"]),
   );
-  const { data: registration } = useSuspenseQuery(myRegistrationQueryOptions(event.id));
+  const { data: fields } = useSuspenseQuery(onboardingFormQueryOptions(event.id));
+  // a walk-in has no division or tags yet, like check_in_walk_in assumes
+  const questions = fields.filter((field) => !hasAudience(field));
   const queryClient = useQueryClient();
   const [who, setWho] = useState<Who | null>(null);
   const [done, setDone] = useState<WalkInResult | null>(null);
@@ -156,9 +159,9 @@ function Kiosk() {
       ) : who === null ? (
         <WhoForm
           key={visitor}
-          hasQuestions={registration.form.length > 0}
+          hasQuestions={questions.length > 0}
           onSubmit={async (person) => {
-            if (registration.form.length > 0) {
+            if (questions.length > 0) {
               setWho(person);
               return null;
             }
@@ -173,7 +176,7 @@ function Kiosk() {
           startsOn={
             event.starts_at ? isoToWallTime(event.starts_at, event.timezone).slice(0, 10) : null
           }
-          questions={registration.form}
+          questions={questions}
           submitLabel={t("kiosk.checkIn")}
           onSubmit={(answers) => submit(who, answers)}
         />

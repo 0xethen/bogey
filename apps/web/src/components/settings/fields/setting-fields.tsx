@@ -494,6 +494,7 @@ export function SettingRow({
     <FieldFrame
       id={anchor}
       layout={layout}
+      data-setting=""
       className="group/setting jump-target"
       label={<Label id={id} label={label} keyName={keyName} source={source} lock={lock} />}
       description={description}

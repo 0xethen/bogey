@@ -120,7 +120,7 @@ function LockedSettings({
   if (locked.length === 0) return null;
   const values: Record<string, Value> = readPluginSettings(manifest, resolved.data);
   return (
-    <FieldGroup>
+    <FieldGroup className="gap-10">
       {locked.map(([name, setting]) => {
         const id = `${manifest.key}-${name}-locked`;
         return (
@@ -211,7 +211,7 @@ export function PluginSettings({
   const shown = fields.filter(([name]) => isSettingVisible(manifest, name, draft));
   return (
     <div className="flex flex-col gap-4">
-      <FieldGroup>
+      <FieldGroup className="gap-10">
         {shown.map(([name, setting]) => {
           const id = `${manifest.key}-${name}`;
           const Custom = loadedPluginSlots().find((loaded) => loaded.key === manifest.key)?.slots

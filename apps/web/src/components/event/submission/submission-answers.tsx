@@ -12,6 +12,7 @@ import { Button } from "@bogey/ui/components/button";
 import { Markdown } from "@bogey/ui/components/markdown";
 import { pluginItemType } from "@bogey/plugins";
 import { isPluginAnswerKind } from "@bogey/utils/answers";
+import { hasAudience } from "@bogey/utils/audience";
 import { pluginItemInfo } from "./submission-item-field.tsx";
 import { IconDownload, IconEye } from "@tabler/icons-react";
 import { useT } from "#/lib/translate.tsx";
@@ -42,6 +43,8 @@ export function SubmissionAnswers({
         const itemFiles = files.filter((file) => file.item_key === item.key);
         const empty =
           item.kind === "file" ? itemFiles.length === 0 : value === undefined || value === "";
+        // an item for other divisions or tags wasn't asked of this team
+        if (empty && hasAudience(item)) return null;
         return (
           <div key={item.key} className="flex flex-col gap-1">
             <dt className="text-muted-fg">{item.label}</dt>

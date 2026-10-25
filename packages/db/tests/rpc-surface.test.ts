@@ -141,6 +141,10 @@ const SIGNED_IN = {
     "organizers place whole teams in a division; their members follow, and it's audited",
   post_announcement: "posts with its audience rows in one transaction and audits it",
   my_sessions: "the caller's own signed-in sessions, which live in the auth schema",
+  my_onboarding_form:
+    "the registration questions meant for the caller's division and tags, for someone who can see the event",
+  audience_tags:
+    "the tags that decide which submission items a team sees: its members' for the team and organizers, else the caller's own",
   end_my_session: "signs one of the caller's own sessions out of the auth schema",
   rename_passkey: "renames one of the caller's own passkeys, which live in the auth schema",
   set_password_login:
@@ -172,6 +176,8 @@ const SIGNED_IN = {
     "organizers' bulk clean-ups across tables, confirmed by the event's address and audited",
   set_submission_rubric:
     "checks who may pick a project's rubric (organizers, judges, its team) per the judging settings, and audits it",
+  set_submission_division:
+    "checks who may move a project to another division (organizers, judges per judging.judgeDivision), notifies its team and audits it",
   project_rubric:
     "a project's rubric pick, division fallback and choices, for its organizers, judges and team",
   set_division_rubrics: "organizers replace which rubrics divisions use, and it's audited",

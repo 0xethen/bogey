@@ -16,6 +16,13 @@ export function optionalId(value: unknown, field: string): string | undefined {
   return requireId(value, field);
 }
 
+export function idList(value: unknown, field: string, max = 50): string[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.length > max)
+    throw new Error(`${field} must be a list of UUIDs`);
+  return [...new Set(value.map((id) => requireId(id, field)))];
+}
+
 export function requireSlug(value: unknown, field: string): string {
   if (typeof value !== "string" || !SLUG.test(value) || value.length > 64) {
     throw new Error(`${field} must be a lowercase slug`);

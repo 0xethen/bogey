@@ -914,6 +914,7 @@ export type Database = {
           selectable: boolean;
           sort: number;
           switchable: boolean;
+          visible: boolean;
         };
         ComputedFields: never;
         Insert: {
@@ -925,6 +926,7 @@ export type Database = {
           selectable?: boolean;
           sort?: number;
           switchable?: boolean;
+          visible?: boolean;
         };
         Update: {
           created_at?: string;
@@ -935,6 +937,7 @@ export type Database = {
           selectable?: boolean;
           sort?: number;
           switchable?: boolean;
+          visible?: boolean;
         };
         Relationships: [
           {
@@ -3482,6 +3485,7 @@ export type Database = {
       submission_items: {
         Row: {
           config: NonNullable<Json>;
+          division_ids: string[];
           event_id: string;
           form_id: string;
           help: string | null;
@@ -3492,10 +3496,12 @@ export type Database = {
           options: Json | null;
           required: boolean;
           sort: number;
+          tag_ids: string[];
         };
         ComputedFields: never;
         Insert: {
           config?: NonNullable<Json>;
+          division_ids?: string[];
           event_id: string;
           form_id: string;
           help?: string | null;
@@ -3506,9 +3512,11 @@ export type Database = {
           options?: Json | null;
           required?: boolean;
           sort?: number;
+          tag_ids?: string[];
         };
         Update: {
           config?: NonNullable<Json>;
+          division_ids?: string[];
           event_id?: string;
           form_id?: string;
           help?: string | null;
@@ -3519,6 +3527,7 @@ export type Database = {
           options?: Json | null;
           required?: boolean;
           sort?: number;
+          tag_ids?: string[];
         };
         Relationships: [
           {
@@ -4004,6 +4013,7 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string | null;
+          division_chosen_by: string | null;
           division_id: string | null;
           event_id: string;
           id: string;
@@ -4016,6 +4026,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           created_by?: string | null;
+          division_chosen_by?: string | null;
           division_id?: string | null;
           event_id: string;
           id?: string;
@@ -4027,6 +4038,7 @@ export type Database = {
         Update: {
           created_at?: string;
           created_by?: string | null;
+          division_chosen_by?: string | null;
           division_id?: string | null;
           event_id?: string;
           id?: string;
@@ -4039,6 +4051,13 @@ export type Database = {
           {
             foreignKeyName: "teams_created_by_fkey";
             columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "teams_division_chosen_by_fkey";
+            columns: ["division_chosen_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -4390,6 +4409,7 @@ export type Database = {
         };
         Returns: number;
       };
+      audience_tags: { Args: { p_event: string; p_team?: string }; Returns: string[] };
       badge_sheet: {
         Args: { p_event: string; p_roles?: Database["public"]["Enums"]["event_role"][] };
         Returns: {
@@ -4543,6 +4563,7 @@ export type Database = {
         Returns: {
           created_at: string;
           created_by: string | null;
+          division_chosen_by: string | null;
           division_id: string | null;
           event_id: string;
           id: string;
@@ -4750,6 +4771,7 @@ export type Database = {
         Returns: {
           created_at: string;
           created_by: string | null;
+          division_chosen_by: string | null;
           division_id: string | null;
           event_id: string;
           id: string;
@@ -4825,6 +4847,7 @@ export type Database = {
         }[];
       };
       my_demo_slots: { Args: { p_event: string }; Returns: Json };
+      my_onboarding_form: { Args: { p_event: string }; Returns: Json };
       my_sessions: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -5149,6 +5172,10 @@ export type Database = {
         Returns: undefined;
       };
       set_sheet_done: { Args: { p_done: boolean; p_submission: string }; Returns: undefined };
+      set_submission_division: {
+        Args: { p_division: string; p_submission: string };
+        Returns: undefined;
+      };
       set_submission_rubric: {
         Args: { p_rubric?: string; p_submission: string };
         Returns: undefined;

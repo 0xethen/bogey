@@ -72,6 +72,8 @@ create table public.divisions (
   sort smallint not null default 0,
   selectable boolean not null default true,
   switchable boolean not null default true,
+  -- whether participants see it among the choices while they can't pick it
+  visible boolean not null default false,
   created_at timestamptz not null default now(),
   unique (event_id, name),
   unique (event_id, id)
@@ -341,8 +343,8 @@ begin
 
   if 'divisions' = any (p_include) then
     for r in select * from public.divisions where event_id = p_source order by sort, name loop
-      insert into public.divisions (event_id, name, description, sort, selectable, switchable)
-      values (v_new.id, r.name, r.description, r.sort, r.selectable, r.switchable)
+      insert into public.divisions (event_id, name, description, sort, selectable, switchable, visible)
+      values (v_new.id, r.name, r.description, r.sort, r.selectable, r.switchable, r.visible)
       returning id into v_id;
       v_divisions := v_divisions || jsonb_build_object(r.id::text, v_id);
     end loop;
@@ -354,8 +356,11 @@ begin
       values (v_new.id, r.key, r.title, r.description_md, r.window_key, r.judged, r.sort)
       returning id into v_id;
       v_forms := v_forms || jsonb_build_object(r.id::text, v_id);
-      insert into public.submission_items (event_id, form_id, key, label, help, kind, required, options, config, sort)
-      select v_new.id, v_id, key, label, help, kind, required, options, config, sort
+      insert into public.submission_items (event_id, form_id, key, label, help, kind, required, options, config, sort,
+        division_ids, tag_ids)
+      select v_new.id, v_id, key, label, help, kind, required, options, config, sort,
+        array(select (v_divisions ->> d::text)::uuid from unnest(division_ids) d where v_divisions ? d::text),
+        tag_ids
       from public.submission_items where form_id = r.id;
     end loop;
     insert into public.submission_form_divisions (event_id, form_id, division_id)
@@ -452,8 +457,16 @@ begin
     end;
 
   if 'onboarding' = any (p_include) then
+    -- divisions follow to their copies; the audience trigger drops whatever doesn't exist here
     insert into public.onboarding_forms (event_id, fields)
-    select v_new.id, fields from public.onboarding_forms where event_id = p_source;
+    select v_new.id, coalesce((
+      select jsonb_agg(case when jsonb_typeof(q -> 'divisionIds') = 'array'
+        then jsonb_set(q, '{divisionIds}', coalesce((
+          select jsonb_agg(v_divisions -> d) from jsonb_array_elements_text(q -> 'divisionIds') d
+          where v_divisions ? d), '[]'))
+        else q end order by n)
+      from jsonb_array_elements(f.fields) with ordinality as x(q, n)), '[]')
+    from public.onboarding_forms f where f.event_id = p_source;
   end if;
 
   if 'invites' = any (p_include) then

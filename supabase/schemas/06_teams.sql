@@ -4,6 +4,8 @@ create table public.teams (
   name text not null check (length(trim(name)) between 1 and 60),
   invite_code text not null unique default encode(extensions.gen_random_bytes(5), 'hex'),
   division_id uuid,
+  -- the participant who chose the team's division; teammates can't change it while they're on it
+  division_chosen_by uuid references public.profiles on delete set null,
   locked_at timestamptz,
   created_by uuid references public.profiles on delete set null,
   created_at timestamptz not null default now(),
@@ -23,8 +25,8 @@ set search_path = ''
 as $$
 begin
   if current_user = 'authenticated' and not private.can_manage(old.event_id)
-     and (new.event_id, new.invite_code, new.division_id, new.locked_at, new.created_by)
-       is distinct from (old.event_id, old.invite_code, old.division_id, old.locked_at, old.created_by) then
+     and (new.event_id, new.invite_code, new.division_id, new.division_chosen_by, new.locked_at, new.created_by)
+       is distinct from (old.event_id, old.invite_code, old.division_id, old.division_chosen_by, old.locked_at, old.created_by) then
     raise exception 'captains can only rename their team' using errcode = '42501';
   end if;
   return new;
@@ -577,6 +579,10 @@ begin
     raise exception 'you can''t switch out of your division; ask an organizer' using errcode = '42501';
   end if;
   perform private.move_to_division(p_event, (select auth.uid()), p_division);
+  -- a solo team's choice is the team's
+  update public.teams t set division_chosen_by = (select auth.uid())
+  from public.team_members tm
+  where tm.team_id = t.id and tm.event_id = p_event and tm.user_id = (select auth.uid());
   perform private.audit(p_event, 'division.chosen', 'division', p_division,
     jsonb_build_object('from', v_current));
 end;
@@ -615,6 +621,12 @@ begin
   if v_team.locked_at is not null then
     raise exception 'your team is locked; ask an organizer' using errcode = '42501';
   end if;
+  if v_team.division_chosen_by is distinct from (select auth.uid()) and exists (
+    select 1 from public.team_members where team_id = v_team.id and user_id = v_team.division_chosen_by
+  ) then
+    raise exception 'a teammate already chose your team''s division; ask them or an organizer'
+      using errcode = '42501';
+  end if;
   if not v_target.selectable then
     raise exception 'organizers place teams in %', v_target.name using errcode = '42501';
   end if;
@@ -628,7 +640,8 @@ begin
   ) then
     raise exception 'your team can''t switch out of its division; ask an organizer' using errcode = '42501';
   end if;
-  update public.teams set division_id = p_division where id = v_team.id;
+  update public.teams set division_id = p_division, division_chosen_by = (select auth.uid())
+  where id = v_team.id;
   update public.event_members set division_id = p_division
   where event_id = p_event
     and user_id in (select user_id from public.team_members where team_id = v_team.id);
@@ -715,6 +728,7 @@ to authenticated;
 create index team_members_event_id_team_id_fk_idx on public.team_members (event_id, team_id);
 create index teams_event_id_division_id_fk_idx on public.teams (event_id, division_id);
 create index teams_created_by_fk_idx on public.teams (created_by);
+create index teams_division_chosen_by_fk_idx on public.teams (division_chosen_by);
 
 alter table public.teams enable row level security;
 alter table public.team_members enable row level security;

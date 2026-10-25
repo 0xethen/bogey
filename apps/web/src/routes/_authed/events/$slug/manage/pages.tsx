@@ -196,6 +196,7 @@ function Tabs() {
             <Button
               type="button"
               size="icon-sm"
+              variant="outline"
               aria-label={t("ui.doneEditing", { name: tab.label })}
               tooltip={t("judging.done")}
               onClick={() => setSelected(null)}

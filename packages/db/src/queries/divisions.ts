@@ -57,6 +57,7 @@ export interface DivisionInput {
   description: string;
   selectable: boolean;
   switchable: boolean;
+  visible: boolean;
 }
 
 export const saveDivisionsFn = createServerFn({ method: "POST" })
@@ -73,6 +74,7 @@ export const saveDivisionsFn = createServerFn({ method: "POST" })
         description: optionalText(each.description, "Description", 300) ?? "",
         selectable: each.selectable === true,
         switchable: each.switchable === true,
+        visible: each.visible === true,
       };
     });
     return { eventId: requireId(raw.eventId, "eventId"), divisions };
@@ -98,6 +100,7 @@ export const saveDivisionsFn = createServerFn({ method: "POST" })
       description: division.description || null,
       selectable: division.selectable,
       switchable: division.switchable,
+      visible: division.visible,
       sort,
     }));
     const updates = rows.filter((row) => "id" in row);

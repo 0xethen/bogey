@@ -1952,6 +1952,64 @@ begin
 end;
 $$;
 
+-- Moves a project's team, and so all its entries and members, to another division (judging.judgeDivision).
+create function public.set_submission_division(p_submission uuid, p_division uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_sub public.submissions;
+  v_from uuid;
+  v_name text;
+  v_slug text;
+begin
+  select * into v_sub from public.submissions where id = p_submission;
+  if v_sub.id is null then
+    raise exception 'that project isn''t available' using errcode = '42501';
+  end if;
+  if not (
+    private.can_manage(v_sub.event_id)
+    or (
+      coalesce((private.event_setting(v_sub.event_id, 'judging') ->> 'judgeDivision')::boolean, true)
+      and private.has_permission(v_sub.event_id, 'judging.score')
+      and not private.has_conflict((select auth.uid()), p_submission)
+      and private.round_window_open(private.active_round(p_submission))
+    )
+  ) then
+    raise exception 'you can''t move this project to another division' using errcode = '42501';
+  end if;
+  select name into v_name from public.divisions where id = p_division and event_id = v_sub.event_id;
+  if v_name is null then
+    raise exception 'no such division' using errcode = 'P0002';
+  end if;
+  select division_id into v_from from public.teams where id = v_sub.team_id for update;
+  if v_from is not distinct from p_division then
+    return;
+  end if;
+  -- every form the team has entered must still be open to it
+  if exists (
+    select 1 from public.submissions s
+    join public.submission_form_divisions fd on fd.form_id = s.form_id
+    where s.team_id = v_sub.team_id
+    group by s.form_id
+    having not bool_or(fd.division_id = p_division)
+  ) then
+    raise exception 'this team has an entry on a form that isn''t open to %', v_name using errcode = '22023';
+  end if;
+  update public.teams set division_id = p_division where id = v_sub.team_id;
+  perform private.audit(v_sub.event_id, 'judging.division_set', 'submission', p_submission,
+    jsonb_build_object('division', p_division, 'from', v_from, 'team', v_sub.team_id));
+  select slug into v_slug from public.events where id = v_sub.event_id;
+  perform private.notify(
+    array(select user_id from public.team_members where team_id = v_sub.team_id),
+    v_sub.event_id, 'judging.division_set',
+    'Your project moved to ' || v_name, 'It now competes in ' || v_name || '.',
+    '/events/' || v_slug || '/submission');
+end;
+$$;
+
 -- a project's rubric pick, the division rubric it falls back to, and the rubrics it may pick
 create function public.project_rubric(p_submission uuid)
 returns jsonb
@@ -2302,6 +2360,7 @@ grant execute on function
   public.skip_submission(uuid, boolean),
   public.save_criteria(uuid, jsonb, jsonb),
   public.set_submission_rubric(uuid, uuid),
+  public.set_submission_division(uuid, uuid),
   public.project_rubric(uuid),
   public.set_division_rubrics(uuid, jsonb),
   public.flag_submission(uuid, text),

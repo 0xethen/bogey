@@ -76,7 +76,12 @@ function ScreenSection({
   return (
     <section
       id={id ?? toSlug(title)}
-      className={cn("jump-target flex scroll-mt-(--layout-offset) flex-col gap-4", className)}
+      className={cn(
+        "jump-target flex scroll-mt-(--layout-offset) flex-col gap-4",
+        // settings sit as far apart as they do directly on a screen
+        "[&>[data-setting]+[data-setting]]:mt-6",
+        className,
+      )}
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-0.5">

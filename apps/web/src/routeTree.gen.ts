@@ -166,12 +166,14 @@ import { Route as AuthedEventsSlugManageJudgingDemosRouteImport } from './routes
 import { Route as AuthedEventsSlugManageJudgingResultsRouteImport } from './routes/_authed/events/$slug/manage/judging/results'
 import { Route as AuthedEventsSlugManagePeopleIndexRouteImport } from './routes/_authed/events/$slug/manage/people.index'
 import { Route as AuthedEventsSlugManagePeopleReviewRouteImport } from './routes/_authed/events/$slug/manage/people.review'
+import { Route as AuthedEventsSlugManagePeopleTagsRouteImport } from './routes/_authed/events/$slug/manage/people.tags'
 import { Route as AuthedEventsSlugManageRegistrationIndexRouteImport } from './routes/_authed/events/$slug/manage/registration.index'
 import { Route as AuthedEventsSlugManageRegistrationFormRouteImport } from './routes/_authed/events/$slug/manage/registration.form'
 import { Route as AuthedEventsSlugManageSubmissionsIndexRouteImport } from './routes/_authed/events/$slug/manage/submissions/index'
 import { Route as AuthedEventsSlugManageSubmissionsGalleryRouteImport } from './routes/_authed/events/$slug/manage/submissions/gallery'
 import { Route as AuthedEventsSlugXKeySplatRouteImport } from './routes/_authed/events/$slug/x/$key/$'
 import { Route as AuthedEventsSlugManageSubmissionsFormsIndexRouteImport } from './routes/_authed/events/$slug/manage/submissions/forms/index'
+import { Route as AuthedEventsSlugManageSubmissionsFormsFormIdRouteImport } from './routes/_authed/events/$slug/manage/submissions/forms/$formId'
 import { Route as AuthedEventsSlugManageSubmissionsFormsNewRouteImport } from './routes/_authed/events/$slug/manage/submissions/forms/new'
 import { Route as AuthedEventsSlugManageXKeySplatRouteImport } from './routes/_authed/events/$slug/manage/x/$key/$'
 
@@ -1041,6 +1043,12 @@ const AuthedEventsSlugManagePeopleReviewRoute =
     path: '/people/review',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
+const AuthedEventsSlugManagePeopleTagsRoute =
+  AuthedEventsSlugManagePeopleTagsRouteImport.update({
+    id: '/people/tags',
+    path: '/people/tags',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
 const AuthedEventsSlugManageRegistrationIndexRoute =
   AuthedEventsSlugManageRegistrationIndexRouteImport.update({
     id: '/registration/',
@@ -1075,6 +1083,12 @@ const AuthedEventsSlugManageSubmissionsFormsIndexRoute =
   AuthedEventsSlugManageSubmissionsFormsIndexRouteImport.update({
     id: '/submissions/forms/',
     path: '/submissions/forms/',
+    getParentRoute: () => AuthedEventsSlugManageRouteRoute,
+  } as any)
+const AuthedEventsSlugManageSubmissionsFormsFormIdRoute =
+  AuthedEventsSlugManageSubmissionsFormsFormIdRouteImport.update({
+    id: '/submissions/forms/$formId',
+    path: '/submissions/forms/$formId',
     getParentRoute: () => AuthedEventsSlugManageRouteRoute,
   } as any)
 const AuthedEventsSlugManageSubmissionsFormsNewRoute =
@@ -1239,6 +1253,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/judging/demos': typeof AuthedEventsSlugManageJudgingDemosRoute
   '/events/$slug/manage/judging/results': typeof AuthedEventsSlugManageJudgingResultsRoute
   '/events/$slug/manage/people/review': typeof AuthedEventsSlugManagePeopleReviewRoute
+  '/events/$slug/manage/people/tags': typeof AuthedEventsSlugManagePeopleTagsRoute
   '/events/$slug/manage/registration/form': typeof AuthedEventsSlugManageRegistrationFormRoute
   '/events/$slug/manage/submissions/gallery': typeof AuthedEventsSlugManageSubmissionsGalleryRoute
   '/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
@@ -1251,6 +1266,7 @@ export interface FileRoutesByFullPath {
   '/events/$slug/manage/people/': typeof AuthedEventsSlugManagePeopleIndexRoute
   '/events/$slug/manage/registration/': typeof AuthedEventsSlugManageRegistrationIndexRoute
   '/events/$slug/manage/submissions/': typeof AuthedEventsSlugManageSubmissionsIndexRoute
+  '/events/$slug/manage/submissions/forms/$formId': typeof AuthedEventsSlugManageSubmissionsFormsFormIdRoute
   '/events/$slug/manage/submissions/forms/new': typeof AuthedEventsSlugManageSubmissionsFormsNewRoute
   '/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
   '/events/$slug/manage/submissions/forms/': typeof AuthedEventsSlugManageSubmissionsFormsIndexRoute
@@ -1390,6 +1406,7 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/judging/demos': typeof AuthedEventsSlugManageJudgingDemosRoute
   '/events/$slug/manage/judging/results': typeof AuthedEventsSlugManageJudgingResultsRoute
   '/events/$slug/manage/people/review': typeof AuthedEventsSlugManagePeopleReviewRoute
+  '/events/$slug/manage/people/tags': typeof AuthedEventsSlugManagePeopleTagsRoute
   '/events/$slug/manage/registration/form': typeof AuthedEventsSlugManageRegistrationFormRoute
   '/events/$slug/manage/submissions/gallery': typeof AuthedEventsSlugManageSubmissionsGalleryRoute
   '/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
@@ -1402,6 +1419,7 @@ export interface FileRoutesByTo {
   '/events/$slug/manage/people': typeof AuthedEventsSlugManagePeopleIndexRoute
   '/events/$slug/manage/registration': typeof AuthedEventsSlugManageRegistrationIndexRoute
   '/events/$slug/manage/submissions': typeof AuthedEventsSlugManageSubmissionsIndexRoute
+  '/events/$slug/manage/submissions/forms/$formId': typeof AuthedEventsSlugManageSubmissionsFormsFormIdRoute
   '/events/$slug/manage/submissions/forms/new': typeof AuthedEventsSlugManageSubmissionsFormsNewRoute
   '/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
   '/events/$slug/manage/submissions/forms': typeof AuthedEventsSlugManageSubmissionsFormsIndexRoute
@@ -1558,6 +1576,7 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/judging/demos': typeof AuthedEventsSlugManageJudgingDemosRoute
   '/_authed/events/$slug/manage/judging/results': typeof AuthedEventsSlugManageJudgingResultsRoute
   '/_authed/events/$slug/manage/people/review': typeof AuthedEventsSlugManagePeopleReviewRoute
+  '/_authed/events/$slug/manage/people/tags': typeof AuthedEventsSlugManagePeopleTagsRoute
   '/_authed/events/$slug/manage/registration/form': typeof AuthedEventsSlugManageRegistrationFormRoute
   '/_authed/events/$slug/manage/submissions/gallery': typeof AuthedEventsSlugManageSubmissionsGalleryRoute
   '/_authed/events/$slug/x/$key/$': typeof AuthedEventsSlugXKeySplatRoute
@@ -1570,6 +1589,7 @@ export interface FileRoutesById {
   '/_authed/events/$slug/manage/people/': typeof AuthedEventsSlugManagePeopleIndexRoute
   '/_authed/events/$slug/manage/registration/': typeof AuthedEventsSlugManageRegistrationIndexRoute
   '/_authed/events/$slug/manage/submissions/': typeof AuthedEventsSlugManageSubmissionsIndexRoute
+  '/_authed/events/$slug/manage/submissions/forms/$formId': typeof AuthedEventsSlugManageSubmissionsFormsFormIdRoute
   '/_authed/events/$slug/manage/submissions/forms/new': typeof AuthedEventsSlugManageSubmissionsFormsNewRoute
   '/_authed/events/$slug/manage/x/$key/$': typeof AuthedEventsSlugManageXKeySplatRoute
   '/_authed/events/$slug/manage/submissions/forms/': typeof AuthedEventsSlugManageSubmissionsFormsIndexRoute
@@ -1725,6 +1745,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/judging/demos'
     | '/events/$slug/manage/judging/results'
     | '/events/$slug/manage/people/review'
+    | '/events/$slug/manage/people/tags'
     | '/events/$slug/manage/registration/form'
     | '/events/$slug/manage/submissions/gallery'
     | '/events/$slug/x/$key/$'
@@ -1737,6 +1758,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/people/'
     | '/events/$slug/manage/registration/'
     | '/events/$slug/manage/submissions/'
+    | '/events/$slug/manage/submissions/forms/$formId'
     | '/events/$slug/manage/submissions/forms/new'
     | '/events/$slug/manage/x/$key/$'
     | '/events/$slug/manage/submissions/forms/'
@@ -1876,6 +1898,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/judging/demos'
     | '/events/$slug/manage/judging/results'
     | '/events/$slug/manage/people/review'
+    | '/events/$slug/manage/people/tags'
     | '/events/$slug/manage/registration/form'
     | '/events/$slug/manage/submissions/gallery'
     | '/events/$slug/x/$key/$'
@@ -1888,6 +1911,7 @@ export interface FileRouteTypes {
     | '/events/$slug/manage/people'
     | '/events/$slug/manage/registration'
     | '/events/$slug/manage/submissions'
+    | '/events/$slug/manage/submissions/forms/$formId'
     | '/events/$slug/manage/submissions/forms/new'
     | '/events/$slug/manage/x/$key/$'
     | '/events/$slug/manage/submissions/forms'
@@ -2043,6 +2067,7 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/judging/demos'
     | '/_authed/events/$slug/manage/judging/results'
     | '/_authed/events/$slug/manage/people/review'
+    | '/_authed/events/$slug/manage/people/tags'
     | '/_authed/events/$slug/manage/registration/form'
     | '/_authed/events/$slug/manage/submissions/gallery'
     | '/_authed/events/$slug/x/$key/$'
@@ -2055,6 +2080,7 @@ export interface FileRouteTypes {
     | '/_authed/events/$slug/manage/people/'
     | '/_authed/events/$slug/manage/registration/'
     | '/_authed/events/$slug/manage/submissions/'
+    | '/_authed/events/$slug/manage/submissions/forms/$formId'
     | '/_authed/events/$slug/manage/submissions/forms/new'
     | '/_authed/events/$slug/manage/x/$key/$'
     | '/_authed/events/$slug/manage/submissions/forms/'
@@ -3195,6 +3221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsSlugManagePeopleReviewRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
+    '/_authed/events/$slug/manage/people/tags': {
+      id: '/_authed/events/$slug/manage/people/tags'
+      path: '/people/tags'
+      fullPath: '/events/$slug/manage/people/tags'
+      preLoaderRoute: typeof AuthedEventsSlugManagePeopleTagsRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
     '/_authed/events/$slug/manage/registration/': {
       id: '/_authed/events/$slug/manage/registration/'
       path: '/registration'
@@ -3235,6 +3268,13 @@ declare module '@tanstack/react-router' {
       path: '/submissions/forms'
       fullPath: '/events/$slug/manage/submissions/forms/'
       preLoaderRoute: typeof AuthedEventsSlugManageSubmissionsFormsIndexRouteImport
+      parentRoute: typeof AuthedEventsSlugManageRouteRoute
+    }
+    '/_authed/events/$slug/manage/submissions/forms/$formId': {
+      id: '/_authed/events/$slug/manage/submissions/forms/$formId'
+      path: '/submissions/forms/$formId'
+      fullPath: '/events/$slug/manage/submissions/forms/$formId'
+      preLoaderRoute: typeof AuthedEventsSlugManageSubmissionsFormsFormIdRouteImport
       parentRoute: typeof AuthedEventsSlugManageRouteRoute
     }
     '/_authed/events/$slug/manage/submissions/forms/new': {
@@ -3434,6 +3474,7 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManageJudgingDemosRoute: typeof AuthedEventsSlugManageJudgingDemosRoute
   AuthedEventsSlugManageJudgingResultsRoute: typeof AuthedEventsSlugManageJudgingResultsRoute
   AuthedEventsSlugManagePeopleReviewRoute: typeof AuthedEventsSlugManagePeopleReviewRoute
+  AuthedEventsSlugManagePeopleTagsRoute: typeof AuthedEventsSlugManagePeopleTagsRoute
   AuthedEventsSlugManageRegistrationFormRoute: typeof AuthedEventsSlugManageRegistrationFormRoute
   AuthedEventsSlugManageSubmissionsGalleryRoute: typeof AuthedEventsSlugManageSubmissionsGalleryRoute
   AuthedEventsSlugManageAgendaIndexRoute: typeof AuthedEventsSlugManageAgendaIndexRoute
@@ -3444,6 +3485,7 @@ interface AuthedEventsSlugManageRouteRouteChildren {
   AuthedEventsSlugManagePeopleIndexRoute: typeof AuthedEventsSlugManagePeopleIndexRoute
   AuthedEventsSlugManageRegistrationIndexRoute: typeof AuthedEventsSlugManageRegistrationIndexRoute
   AuthedEventsSlugManageSubmissionsIndexRoute: typeof AuthedEventsSlugManageSubmissionsIndexRoute
+  AuthedEventsSlugManageSubmissionsFormsFormIdRoute: typeof AuthedEventsSlugManageSubmissionsFormsFormIdRoute
   AuthedEventsSlugManageSubmissionsFormsNewRoute: typeof AuthedEventsSlugManageSubmissionsFormsNewRoute
   AuthedEventsSlugManageXKeySplatRoute: typeof AuthedEventsSlugManageXKeySplatRoute
   AuthedEventsSlugManageSubmissionsFormsIndexRoute: typeof AuthedEventsSlugManageSubmissionsFormsIndexRoute
@@ -3495,6 +3537,8 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
       AuthedEventsSlugManageJudgingResultsRoute,
     AuthedEventsSlugManagePeopleReviewRoute:
       AuthedEventsSlugManagePeopleReviewRoute,
+    AuthedEventsSlugManagePeopleTagsRoute:
+      AuthedEventsSlugManagePeopleTagsRoute,
     AuthedEventsSlugManageRegistrationFormRoute:
       AuthedEventsSlugManageRegistrationFormRoute,
     AuthedEventsSlugManageSubmissionsGalleryRoute:
@@ -3515,6 +3559,8 @@ const AuthedEventsSlugManageRouteRouteChildren: AuthedEventsSlugManageRouteRoute
       AuthedEventsSlugManageRegistrationIndexRoute,
     AuthedEventsSlugManageSubmissionsIndexRoute:
       AuthedEventsSlugManageSubmissionsIndexRoute,
+    AuthedEventsSlugManageSubmissionsFormsFormIdRoute:
+      AuthedEventsSlugManageSubmissionsFormsFormIdRoute,
     AuthedEventsSlugManageSubmissionsFormsNewRoute:
       AuthedEventsSlugManageSubmissionsFormsNewRoute,
     AuthedEventsSlugManageXKeySplatRoute: AuthedEventsSlugManageXKeySplatRoute,

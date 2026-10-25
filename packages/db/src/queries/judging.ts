@@ -141,6 +141,24 @@ export const setSubmissionRubricFn = createServerFn({ method: "POST" })
     return ok(null);
   });
 
+export const setSubmissionDivisionFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => {
+    const raw = (input ?? {}) as { submissionId?: unknown; divisionId?: unknown };
+    return {
+      submissionId: requireId(raw.submissionId, "submissionId"),
+      divisionId: requireId(raw.divisionId, "divisionId"),
+    };
+  })
+  .handler(async ({ data }): Promise<DbResult<null>> => {
+    const supabase = createServerClient();
+    const { error } = await supabase.rpc("set_submission_division", {
+      p_submission: data.submissionId,
+      p_division: data.divisionId,
+    });
+    if (error) return toFailure(error, "moving the project");
+    return ok(null);
+  });
+
 export interface RubricDivision {
   rubricId: string;
   divisionId: string;
@@ -531,6 +549,7 @@ export const judgeQueueQueryOptions = (eventId: string) =>
 
 export interface JudgeProject {
   teamName: string;
+  divisionId: string | null;
   divisionName: string | null;
   /** Every submitted entry of the project's team, the judged one first. */
   submissions: TeamSubmission[];
@@ -565,7 +584,7 @@ export const judgeProjectFn = createServerFn({ method: "GET" })
     const submissions = (entries.data ?? [])
       .map(({ submission_files, ...row }) => ({ ...row, teamName, files: submission_files ?? [] }))
       .sort((a, b) => Number(b.id === submissionId) - Number(a.id === submissionId));
-    return ok({ teamName, divisionName: division.data?.name ?? null, submissions });
+    return ok({ teamName, divisionId, divisionName: division.data?.name ?? null, submissions });
   });
 
 export const judgeProjectQueryOptions = (submissionId: string) =>

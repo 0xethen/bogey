@@ -713,7 +713,7 @@ settingsPresets: [
 ```
 
 `page` is named as a section's is. `values` must fit the plugin's settings, and `teamSize` (smallest first, as an event
-type's) also sets the event's team size, which is otherwise on Details. Presets show at the event level only.
+type's) also sets the event's team size, which is otherwise on Teams. Presets show at the event level only.
 
 ## Notifications and email
 

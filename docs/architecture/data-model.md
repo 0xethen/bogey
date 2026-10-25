@@ -442,6 +442,10 @@ ones.
   (`judging.judgeRubric`), or its team while it can edit the submission (`judging.teamRubric`).
   Ranking, `team_scores` and the gap check count only shared criteria and the project's rubric's
   (`private.submission_rubric`: the pick, else its division's only rubric).
+- **Moving a project between divisions**: `set_submission_division(submission, division)` moves the
+  project's team (and so its members) for organizers, or judges who may score it while its round is open
+  (`judging.judgeDivision`). It refuses a division one of the team's forms isn't open to, audits
+  `judging.division_set` and notifies the team.
 - **`rubric_divisions`**: `rubric_id`, `division_id`. A rubric with divisions is offered only to
   their projects (`set_submission_rubric` refuses others); one with none, to every project. Saved by
   `save_criteria` (a rubric's `division_ids`) or `set_division_rubrics(event, items)`.

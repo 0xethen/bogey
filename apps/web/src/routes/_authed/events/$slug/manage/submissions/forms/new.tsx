@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
+import { tagsQueryOptions } from "@bogey/db/queries/tags";
 import { Screen } from "@bogey/ui/components/screen";
 import { msg, useT } from "#/lib/translate.tsx";
 import { FormEditor } from "./-components/form-editor.tsx";
@@ -11,6 +12,10 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/f
     Promise.all([
       context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
       context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...tagsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
+        staleTime: "static",
+      }),
     ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" layout="settings" />,

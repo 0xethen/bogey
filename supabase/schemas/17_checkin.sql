@@ -338,7 +338,7 @@ begin
   insert into public.registrations (event_id, email, full_name, source, role, status, reviewed_by, reviewed_at, answers)
   values (p_event, v_email, nullif(btrim(p_name), ''), 'import', 'participant', 'approved', (select auth.uid()), now(),
     case when p_answers = '{}'::jsonb then '{}'::jsonb
-      else private.clean_registration_answers(p_event, coalesce(v_fields, '[]'), p_answers, (select auth.uid())) end)
+      else private.clean_registration_answers(p_event, private.fields_for(v_fields, null, '{}'), p_answers, (select auth.uid())) end)
   on conflict (event_id, email) do update set status = 'approved',
     answers = case when p_answers = '{}'::jsonb then public.registrations.answers else excluded.answers end
     where public.registrations.status in ('pending', 'rejected', 'withdrawn', 'waitlisted')

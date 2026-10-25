@@ -324,6 +324,7 @@ Set at: instance, org, event.
 | `shareWithTeams` | `none` · `feedback` · `scores` | `feedback` | What teams see from judges once results are published |
 | `showRankings` | `organizers` · `everyone` | `organizers` | Who sees the full ranking when results are published; awards are always public |
 | `judgeRubric` | on / off | `true` | Judges can pick or change a project's rubric |
+| `judgeDivision` | on / off | `true` | Judges can move a project to another division |
 | `teamRubric` | on / off | `false` | Teams pick their own rubric on their submission |
 | `teamRubricShows` | `name` · `criteria` | `name` | What teams see of the rubrics they pick from |
 | `deliberation` | `off` · `assigned` · `all` | `assigned` | Who discusses a flagged project |

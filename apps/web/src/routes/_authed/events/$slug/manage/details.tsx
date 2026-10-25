@@ -23,7 +23,7 @@ import {
   SettingFields,
 } from "#/components/settings/fields/setting-fields.tsx";
 import { useViewerSession } from "#/lib/viewer.ts";
-import { checkEventRanges, eventFields, slugSchema, slugTaken } from "#/lib/event-form.ts";
+import { checkDates, detailFields, slugSchema, slugTaken } from "#/lib/event-form.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import {
   searchFields,
@@ -35,7 +35,7 @@ import { PluginSettingSections } from "#/components/settings/sections/plugin-sec
 const detailsSchema = (t: T) =>
   z
     .object({
-      ...eventFields(t),
+      ...detailFields(t),
       shortName: z
         .string()
         .trim()
@@ -55,7 +55,7 @@ const detailsSchema = (t: T) =>
         .union([z.literal(""), z.url({ protocol: /^https?$/, error: t("details.needHttp") })])
         .meta({ label: t("details.website"), placeholder: "https://" }),
     })
-    .superRefine(checkEventRanges(t));
+    .superRefine(checkDates(t));
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/details")({
   staticData: {
@@ -107,8 +107,6 @@ function RouteComponent() {
       timezone: zone,
       startsAt: isoToWallTime(event.starts_at, zone),
       endsAt: isoToWallTime(event.ends_at, zone),
-      teamMin: event.team_size_min,
-      teamMax: event.team_size_max,
     },
     errorVisibility,
     validators: [rewardEarlyPunishLate(schema)],
@@ -124,8 +122,6 @@ function RouteComponent() {
           timezone: value.timezone,
           startsAt: wallTimeToIso(value.startsAt, value.timezone),
           endsAt: wallTimeToIso(value.endsAt, value.timezone),
-          teamSizeMin: value.teamMin,
-          teamSizeMax: value.teamMax,
         },
       }).catch(requestFailure);
       if (!result.ok) {
@@ -239,26 +235,6 @@ function RouteComponent() {
             <div className="grid gap-4 sm:grid-cols-2">
               <form.Field name="startsAt">{(field) => <field.DateTimeField stacked />}</form.Field>
               <form.Field name="endsAt">{(field) => <field.DateTimeField stacked />}</form.Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <form.Field name="teamMin">
-                {(field) => (
-                  <field.Field>
-                    <field.Label />
-                    <field.NumberInput min={1} max={50} />
-                    <field.Error />
-                  </field.Field>
-                )}
-              </form.Field>
-              <form.Field name="teamMax">
-                {(field) => (
-                  <field.Field>
-                    <field.Label />
-                    <field.NumberInput min={1} max={50} />
-                    <field.Error />
-                  </field.Field>
-                )}
-              </form.Field>
             </div>
             <form.FormAlert title={t("details.failed")} />
           </FieldGroup>

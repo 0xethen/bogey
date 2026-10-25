@@ -36,6 +36,9 @@ create table public.submission_items (
   options jsonb check (options is null or jsonb_typeof(options) = 'array'),
   config jsonb not null default '{}' check (jsonb_typeof(config) = 'object'),
   sort smallint not null default 0,
+  -- an item with neither reaches everyone; otherwise teams in one of the divisions, or with a member holding one of the tags
+  division_ids uuid[] not null default '{}' check (cardinality(division_ids) <= 50),
+  tag_ids uuid[] not null default '{}' check (cardinality(tag_ids) <= 50),
   unique (form_id, key),
   foreign key (event_id, form_id) references public.submission_forms (event_id, id) on delete cascade
 );
@@ -242,17 +245,22 @@ as $$
     select array_agg(i.label order by i.sort)
     from public.submission_items i
     where i.form_id = s.form_id and i.required and i.kind <> 'file'
+      and private.audience_reaches(i.division_ids, i.tag_ids, team.division_id, team.tags)
       and coalesce(s.answers ->> i.key, '') in ('', 'false')
   ), '{}') || coalesce((
     select array_agg(i.label order by i.sort)
     from public.submission_items i
     where i.form_id = s.form_id and i.required and i.kind = 'file'
+      and private.audience_reaches(i.division_ids, i.tag_ids, team.division_id, team.tags)
       and not exists (
         select 1 from public.submission_files sf where sf.submission_id = s.id and sf.item_key = i.key
       )
   ), '{}')
   from public.submissions s
   join public.events e on e.id = s.event_id
+  left join lateral (
+    select t.division_id, private.team_tags(t.id) as tags from public.teams t where t.id = s.team_id
+  ) team on true
   where s.id = p_submission;
 $$;
 grant execute on function private.submission_problems(uuid) to authenticated;
@@ -464,15 +472,18 @@ begin
   where form_id = v_form.id
     and key not in (select item ->> 'key' from jsonb_array_elements(p_items) item);
 
-  insert into public.submission_items (event_id, form_id, key, label, help, kind, required, options, config, sort)
+  insert into public.submission_items (event_id, form_id, key, label, help, kind, required, options, config, sort,
+    division_ids, tag_ids)
   select p_event, v_form.id, item ->> 'key', item ->> 'label', nullif(item ->> 'help', ''),
     item ->> 'kind', coalesce((item ->> 'required')::boolean, false),
     case when jsonb_typeof(item -> 'options') = 'array' then item -> 'options' end,
-    coalesce(item -> 'config', '{}'), (ordinality - 1)::smallint
+    coalesce(item -> 'config', '{}'), (ordinality - 1)::smallint,
+    private.uuid_list(item -> 'division_ids'), private.uuid_list(item -> 'tag_ids')
   from jsonb_array_elements(p_items) with ordinality as t(item, ordinality)
   on conflict (form_id, key) do update set
     label = excluded.label, help = excluded.help, kind = excluded.kind, required = excluded.required,
-    options = excluded.options, config = excluded.config, sort = excluded.sort;
+    options = excluded.options, config = excluded.config, sort = excluded.sort,
+    division_ids = excluded.division_ids, tag_ids = excluded.tag_ids;
 
   perform private.audit(p_event, 'form.saved', 'submission_form', v_form.id,
     jsonb_build_object('title', v_form.title, 'items', jsonb_array_length(p_items)));

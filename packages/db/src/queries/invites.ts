@@ -5,7 +5,7 @@ import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../erro
 import type { Json, Tables } from "../types.ts";
 import { parseForm, FIELD_KINDS, type FormField } from "./registration.ts";
 import { fieldsProblem } from "@bogey/utils/registration-form";
-import { requireId, requireText } from "./validate.ts";
+import { idList, requireId, requireText } from "./validate.ts";
 
 const TOKEN = /^[0-9a-f]{24}$/;
 
@@ -220,6 +220,8 @@ function fieldToJson(field: FormField): Json {
               : { field: field.showWhen.field, in: [...field.showWhen.in] },
         }
       : {}),
+    ...(field.divisionIds?.length ? { divisionIds: [...field.divisionIds] } : {}),
+    ...(field.tagIds?.length ? { tagIds: [...field.tagIds] } : {}),
   };
 }
 
@@ -241,6 +243,8 @@ export const saveOnboardingFormFn = createServerFn({ method: "POST" })
       const showWhen = readShowWhen(field.showWhen);
       const text =
         typeof field.text === "string" && field.text.trim() ? field.text.trim().slice(0, 5000) : "";
+      const divisionIds = idList(field.divisionIds, "Divisions");
+      const tagIds = idList(field.tagIds, "Tags");
       return {
         key,
         label: requireText(field.label, "Question", 200),
@@ -254,6 +258,8 @@ export const saveOnboardingFormFn = createServerFn({ method: "POST" })
         ...(kind === "number" && min !== undefined ? { min } : {}),
         ...(kind === "number" && max !== undefined ? { max } : {}),
         ...(showWhen ? { showWhen } : {}),
+        ...(divisionIds.length ? { divisionIds } : {}),
+        ...(tagIds.length ? { tagIds } : {}),
       };
     });
     const problem = fieldsProblem(fields);

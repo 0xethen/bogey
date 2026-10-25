@@ -107,6 +107,14 @@ export const NOTIFICATION_KINDS = {
     transactional: false,
     emailKind: "judging.advanced",
   },
+  "judging.division_set": {
+    label: "Moved to another division",
+    description: "A judge or organizer moved your project to another division.",
+    group: "Judging",
+    channels: { inApp: true, email: false },
+    transactional: false,
+    emailKind: "notification",
+  },
   "submission.received": {
     label: "Submission received",
     description: "Your team's project was submitted.",

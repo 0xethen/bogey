@@ -99,6 +99,7 @@ export const ACTION_LABELS: Record<CoreAction, string> = {
   "judging.assigned": "assigned judges",
   "judging.criteria_saved": "saved the judging criteria",
   "judging.rubric_set": "picked a project's rubric",
+  "judging.division_set": "moved a project to another division",
   "judging.rubric_divisions_saved": "changed which divisions use which rubrics",
   "judging.flagged": "flagged a project for deliberation",
   "judging.flag_resolved": "resolved a flagged project",

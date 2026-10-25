@@ -476,7 +476,9 @@ as $$
       and (l.capacity is null or (
         select count(*) from public.registrations r where r.invite_link_id = l.id
       ) < l.capacity),
-    coalesce(f.fields, '[]'),
+    private.fields_for(f.fields,
+      coalesce(private.registrant_division(e.id, (select auth.uid())), l.division_id),
+      private.held_tags(e.id, (select auth.uid()))),
     (e.starts_at at time zone e.timezone)::date
   from public.invite_links l
   join public.events e on e.id = l.event_id
@@ -837,7 +839,11 @@ begin
   end if;
 
   select * into v_form from public.onboarding_forms where event_id = p_event;
-  v_answers := private.clean_registration_answers(p_event, coalesce(v_form.fields, '[]'), p_answers, v_uid);
+  v_answers := private.clean_registration_answers(p_event,
+    private.fields_for(v_form.fields,
+      coalesce(private.registrant_division(p_event, v_uid), v_link.division_id),
+      private.held_tags(p_event, v_uid)),
+    p_answers, v_uid);
 
   insert into public.registrations (
     event_id, email, full_name, user_id, source, invite_link_id, division_id,

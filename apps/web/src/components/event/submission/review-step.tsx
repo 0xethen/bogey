@@ -127,7 +127,12 @@ export function ReviewStep({
       </Screen.Section>
 
       {divisions.length > 0 && (
-        <TeamDivision form={form} divisions={divisions} current={division} />
+        <TeamDivision
+          form={form}
+          divisions={divisions}
+          current={division}
+          chosenByTeammate={team.divisionChosenByTeammate}
+        />
       )}
 
       {visibility}
@@ -139,10 +144,12 @@ function TeamDivision({
   form,
   divisions,
   current,
+  chosenByTeammate,
 }: {
   form: SubmissionForm;
   divisions: Tuple<Division>;
   current: Division | undefined;
+  chosenByTeammate: boolean;
 }) {
   const t = useT();
   const eventId = useEvent().id;
@@ -165,6 +172,15 @@ function TeamDivision({
     },
   });
   if (!canChange) return null;
+  if (chosenByTeammate) {
+    return (
+      <Screen.Section title={t("sub.reviewDivisionTitle")}>
+        <p className="text-sm text-muted-fg">
+          {t("sub.reviewDivisionChosen", { name: current?.name ?? "" })}
+        </p>
+      </Screen.Section>
+    );
+  }
 
   return (
     <Screen.Section title={t("sub.reviewDivisionTitle")} description={t("sub.reviewDivisionHelp")}>

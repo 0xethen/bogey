@@ -48,6 +48,7 @@ export const CORE_AUDIT_ACTIONS = [
   "judging.criteria_saved",
   "judging.demo_moved",
   "judging.demos_scheduled",
+  "judging.division_set",
   "judging.flag_resolved",
   "judging.flagged",
   "judging.format_set",

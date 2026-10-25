@@ -167,7 +167,11 @@ pictures. Changes save from the save bar. The event's pages are listed under the
   Besides text, choices and checkboxes, a question can be a date, a number, a
   phone number, multiple choice, an agreement people must accept, or a file
   upload. A question can depend on an earlier one, so it only shows for some
-  answers.
+  answers. **Only for** asks a question only of people in chosen divisions or
+  holding chosen tags; before someone joins, their division is the one their
+  invite link puts them in, so a division-only question isn't asked of people
+  who register without one. The check-in kiosk asks walk-ins only the questions
+  for everyone.
 
 Who sees the answers: organizers and staff in **Manage → People**. Uploaded files
 open from there; only the registrant and people who can see the event's people
@@ -251,6 +255,9 @@ merged.
 
 Pick **Autocorrect values** (none, some, or as much as possible, the default) before you paste or drop a roster. It applies to every row of that import and can't change partway: once rows are in it shows as a summary, and **Start over...** clears the import so you can pick again. Your last pick is remembered as the default for the next import in that browser. None uses only exact column and division, session and team names; some adds common headers and near matches; as much as possible also guesses from contents and shared words and merges similar team names.
 
+**Manage → Teams → Team size** sets the smallest and largest team. A largest
+team of 1 makes the event solo, and Teams then shows only this section.
+
 **Manage → Teams** lists the teams in a table you can search, sort and filter by division. Open a team to
 rename, lock or disband it and move people between teams. A team's division belongs to the team: set it in the
 **Division** column, or check several teams and use **Set division...**, and everyone on the team follows.
@@ -298,10 +305,12 @@ enter** caps how many. The prizes show on the event home (add the **Prizes** blo
 **Manage → Submission forms** defines what teams hand in. An event can have
 several forms (a proposal, then a final project), each with its own window
 and items: short and long text, Markdown, links, videos, Drive links, files,
-choices, checkboxes and numbers. **New form** opens its own page. **Who submits
+choices, checkboxes and numbers. **New form** and each form open their own page. **Who submits
 this** sends a form to every team (leave it empty) or only to teams in chosen
 divisions; other teams don't see it. A team that moves out of a form's divisions
-keeps a draft it already started but can't submit it. On the same page:
+keeps a draft it already started but can't submit it. An item's **Only for**
+asks it only of teams in chosen divisions, or with a member holding a chosen
+tag; other teams don't see it and don't need it to submit. On the forms list:
 
 - **Submit complete drafts at close** submits drafts that have every required
   item.

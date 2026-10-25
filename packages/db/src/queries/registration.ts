@@ -39,11 +39,12 @@ export const myRegistrationFn = createServerFn({ method: "GET" })
         .eq("event_id", eventId)
         .eq("user_id", userData.user.id)
         .maybeSingle(),
-      supabase.from("onboarding_forms").select("fields").eq("event_id", eventId).maybeSingle(),
+      // only the questions meant for the caller's division and tags
+      supabase.rpc("my_onboarding_form", { p_event: eventId }),
     ]);
     const error = registration.error ?? form.error;
     if (error) return toFailure(error, "loading your registration");
-    return ok({ registration: registration.data, form: parseForm(form.data?.fields) });
+    return ok({ registration: registration.data, form: parseForm(form.data) });
   });
 
 export const myRegistrationQueryOptions = (eventId: string) =>

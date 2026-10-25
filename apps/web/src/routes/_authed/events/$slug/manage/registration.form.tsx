@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { onboardingFormQueryOptions, saveOnboardingFormFn } from "@bogey/db/queries/invites";
+import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
+import { tagsQueryOptions } from "@bogey/db/queries/tags";
 import { FIELD_KINDS, type FormField, type FormFieldKind } from "@bogey/db/queries/registration";
 import { requestFailure } from "@bogey/db/errors";
 import { cleanOptions } from "@bogey/utils/answers";
@@ -21,6 +23,8 @@ import {
 } from "@bogey/ui/lib/form";
 import { OnboardingFieldPreview } from "#/components/event/team/onboarding-form.tsx";
 import { searchSection } from "#/components/settings/layout/search-entries.ts";
+import { audienceLabel, audienceOf, audienceOptions, audienceValues } from "#/lib/audience.ts";
+import { itemFooter } from "#/components/event/item-footer.tsx";
 import { msg, useT, type PlainKey, type T } from "#/lib/translate.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
 
@@ -35,7 +39,14 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/registration/
     ],
   },
   loader: ({ context }) =>
-    context.query.query({ ...onboardingFormQueryOptions(context.event.id), staleTime: "static" }),
+    Promise.all([
+      context.query.query({ ...onboardingFormQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({
+        ...tagsQueryOptions({ orgId: context.event.org_id, eventId: context.event.id }),
+        staleTime: "static",
+      }),
+    ]),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
 });
@@ -106,6 +117,10 @@ const questionSchema = (t: T) =>
       .meta({ label: t("manageReg.youngerThan") })
       .describe(t("manageReg.youngerThanHelp")),
     whenIn: z.array(z.string()).meta({ label: t("manageReg.whenAnswer") }),
+    audience: z
+      .array(z.string())
+      .meta({ label: t("audience.label"), placeholder: t("audience.everyone") })
+      .describe(t("audience.questionHelp")),
   });
 
 const wholeNumber = (value: string) => value.trim() === "" || Number.isFinite(Number(value));
@@ -170,6 +185,7 @@ function toDraft(field: FormField): Draft {
     when: when?.field ?? ALWAYS,
     whenAge: when && "ageUnder" in when ? String(when.ageUnder) : "18",
     whenIn: when && "in" in when ? when.in.map(String) : [],
+    audience: audienceValues(field),
   };
 }
 
@@ -216,6 +232,7 @@ function fieldOf(draft: Draft, key: string): FormField {
     ...(draft.kind === "consent" && draft.text.trim() ? { text: draft.text.trim() } : {}),
     ...(draft.kind === "number" && min !== undefined ? { min } : {}),
     ...(draft.kind === "number" && max !== undefined ? { max } : {}),
+    ...audienceOf(draft.audience),
   };
 }
 
@@ -261,6 +278,7 @@ const BLANK: Omit<Draft, "uid"> = {
   when: ALWAYS,
   whenAge: "18",
   whenIn: [],
+  audience: [],
 };
 
 function conditionChoices(target: Draft, t: T): Tuple<{ value: string; label: string }> {
@@ -367,6 +385,11 @@ function OnboardingEditor() {
   const { event } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const { data: fields } = useSuspenseQuery(onboardingFormQueryOptions(event.id));
+  const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(event.id));
+  const { data: tags } = useSuspenseQuery(
+    tagsQueryOptions({ orgId: event.org_id, eventId: event.id }),
+  );
+  const audiences = audienceOptions(divisions, tags, t);
   const [active, setActive] = useState<string | null>(null);
 
   const form = useOnboardingForm(fields, async (questions) => {
@@ -406,13 +429,11 @@ function OnboardingEditor() {
                       editing={active === question.uid || unfinished(question)}
                       onEdit={() => setActive(question.uid)}
                       onDone={() => setActive(null)}
-                      footer={
-                        question.key && (
-                          <>
-                            {t("manageReg.savedAs")} <code>{question.key}</code>
-                          </>
-                        )
-                      }
+                      footer={itemFooter(
+                        t,
+                        question.key,
+                        audienceLabel(audienceOf(question.audience), divisions, tags, t),
+                      )}
                     >
                       <form.Field name={`questions[${index}].label`}>
                         {(field) => (
@@ -463,6 +484,11 @@ function OnboardingEditor() {
                         {(field) => <field.TextField />}
                       </form.Field>
                       <Condition drafts={list.value} index={index} form={form} />
+                      {audiences.length > 0 && (
+                        <form.Field name={`questions[${index}].audience`}>
+                          {(field) => <field.MultiSelectField options={audiences} />}
+                        </form.Field>
+                      )}
                     </EditableListItem>
                   ))}
                 </EditableList>

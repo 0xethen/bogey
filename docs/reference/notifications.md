@@ -21,6 +21,7 @@ Plugins add their own as `<plugin>.<kind>`.
 | `team.answered` | Answers to requests and invitations | Teams | bell | can be turned off | A team or person answered your request or invitation. |
 | `judging.assigned` | Projects to judge | Judging | bell and email | can be turned off | Projects were assigned to you. |
 | `judging.advanced` | Advanced to the next round | Judging | bell and email | can be turned off | Your project is a finalist. |
+| `judging.division_set` | Moved to another division | Judging | bell | can be turned off | A judge or organizer moved your project to another division. |
 | `submission.received` | Submission received | Submissions | bell and email | can be turned off | Your team's project was submitted. |
 | `submission.deadline` | Submission deadline | Submissions | bell and email | can be turned off | Your team still has only a draft as the deadline nears. |
 | `results.published` | Results published | Submissions | bell and email | can be turned off | The results are out. |

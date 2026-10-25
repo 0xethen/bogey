@@ -280,7 +280,7 @@ function FieldFrame({
             {label}
             {about}
           </div>
-          <div className="flex flex-col @xl/field:items-end *:data-[slot=number-field]:w-full *:data-[slot=number-field]:max-w-44">
+          <div className="flex flex-col @xl/field:items-end *:data-[slot=combobox-chips]:w-full *:data-[slot=number-field]:w-full *:data-[slot=number-field]:max-w-44">
             {children}
           </div>
           {error && <div className="@xl/field:col-start-2 @xl/field:text-right">{error}</div>}

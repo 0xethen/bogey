@@ -150,6 +150,8 @@ function ParticipantSubmission() {
   const { form: selectedKey } = Route.useSearch();
   const { data } = useSuspenseQuery(mySubmissionsQueryOptions(event.id));
   const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
+  const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(event.id));
+  const division = divisions.find((each) => each.id === data.team?.divisionId);
   const entry = data.forms.find((item) => item.form.key === selectedKey) ?? data.forms[0];
   const open = (form: SubmissionForm) => isWindowOpen(windowByKey(windows, form.window_key));
   if (!entry) {
@@ -164,7 +166,11 @@ function ParticipantSubmission() {
     <Screen
       title={data.forms.length > 1 ? t("sub.titles") : entry.form.title}
       description={
-        data.team ? t("sub.teamCanEdit", { team: data.team.name }) : t("sub.belongToTeam")
+        data.team
+          ? division
+            ? t("sub.teamCanEditInDivision", { team: data.team.name, division: division.name })
+            : t("sub.teamCanEdit", { team: data.team.name })
+          : t("sub.belongToTeam")
       }
       width="wide"
     >

@@ -1541,6 +1541,7 @@ export const settingsRegistry = {
       minJudges: 2,
       shareWithTeams: "feedback",
       judgeRubric: true,
+      judgeDivision: true,
       teamRubric: false,
       teamRubricShows: "name",
       deliberation: "assigned",
@@ -1573,6 +1574,10 @@ export const settingsRegistry = {
         .optional()
         .describe("Who sees the full ranking when results are published; awards are always public"),
       judgeRubric: z.boolean().optional().describe("Judges can pick or change a project's rubric"),
+      judgeDivision: z
+        .boolean()
+        .optional()
+        .describe("Judges can move a project to another division"),
       teamRubric: z
         .boolean()
         .optional()
@@ -1676,6 +1681,10 @@ export const settingsRegistry = {
       judgeRubric: {
         label: say("setting.judging.judgeRubric"),
         description: say("setting.judging.judgeRubric.help"),
+      },
+      judgeDivision: {
+        label: say("setting.judging.judgeDivision"),
+        description: say("setting.judging.judgeDivision.help"),
       },
       teamRubric: {
         label: say("setting.judging.teamRubric"),

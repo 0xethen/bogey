@@ -34,7 +34,7 @@ export function Stepper({
             </span>
             <span
               className={cn(
-                "truncate text-sm",
+                "text-sm sm:truncate",
                 active ? "font-medium" : "text-muted-fg",
                 !active && "hidden sm:inline",
               )}
@@ -43,17 +43,24 @@ export function Stepper({
             </span>
           </>
         );
+        // on small screens the active step takes the room it needs and the others shrink to their marks
         return (
           <li
             key={step.key}
             aria-current={active ? "step" : undefined}
-            className="flex min-w-0 flex-1 items-center gap-2"
+            className={cn(
+              "flex items-center gap-2 sm:min-w-0 sm:flex-1",
+              active ? "flex-auto" : "min-w-0 flex-1",
+            )}
           >
             {onSelect ? (
               <button
                 type="button"
                 onClick={() => onSelect(index)}
-                className="flex min-w-0 items-center gap-2 rounded-lg hocus:text-fg"
+                className={cn(
+                  "flex items-center gap-2 rounded-lg text-start hocus:text-fg sm:min-w-0",
+                  !active && "min-w-0",
+                )}
               >
                 {mark}
               </button>

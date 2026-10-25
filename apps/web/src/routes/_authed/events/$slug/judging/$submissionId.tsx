@@ -35,6 +35,8 @@ import { CriterionField } from "#/components/event/judging/criterion-field.tsx";
 import { DeliberationPanel } from "#/components/event/judging/deliberation.tsx";
 import { FlagMenu } from "#/components/event/judging/flag-menu.tsx";
 import { RubricPicker } from "#/components/event/judging/rubric-picker.tsx";
+import { DivisionPicker } from "#/components/event/judging/division-picker.tsx";
+import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { deliberationQueryOptions } from "@bogey/db/queries/deliberation";
 import { useCan } from "@bogey/db/permissions";
 import { Screen } from "@bogey/ui/components/screen";
@@ -80,6 +82,7 @@ export const Route = createFileRoute("/_authed/events/$slug/judging/$submissionI
       }),
       context.query.query({ ...criteriaQueryOptions(context.event.id), staleTime: "static" }),
       context.query.query({ ...rubricsQueryOptions(context.event.id), staleTime: "static" }),
+      context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
       context.query.query({
         ...deliberationQueryOptions(params.submissionId),
         staleTime: "static",
@@ -112,6 +115,8 @@ function RouteComponent() {
   const { data: sheet } = useSuspenseQuery(judgeSheetQueryOptions(event.id, submissionId));
   const { data: queue } = useSuspenseQuery(judgeQueueQueryOptions(event.id));
   const { data: roundData } = useSuspenseQuery(judgingRoundsQueryOptions(event.id));
+  const { data: project } = useSuspenseQuery(judgeProjectQueryOptions(submissionId));
+  const { data: forms } = useSuspenseQuery(submissionFormsQueryOptions(event.id));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const leaveProject = async () => {
@@ -154,6 +159,17 @@ function RouteComponent() {
     (settings.judging.deliberation ?? "assigned") !== "off" &&
     !(deliberation && !deliberation.flag.resolvedAt);
   const rubricEditable = (manager || settings.judging.judgeRubric !== false) && (open || manager);
+  const divisionEditable =
+    (manager || settings.judging.judgeDivision !== false) && (open || manager);
+  // a move changes the team's division, so its rubric fallback and queue entry too
+  const onMoved = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: judgeProjectQueryOptions(submissionId).queryKey }),
+      queryClient.invalidateQueries({
+        queryKey: judgeSheetQueryOptions(event.id, submissionId).queryKey,
+      }),
+      queryClient.invalidateQueries({ queryKey: judgeQueueQueryOptions(event.id).queryKey }),
+    ]);
   // after marking done, the next unfinished project, or the queue's done state
   const onDone = () => {
     const after = nextToScore(
@@ -234,6 +250,17 @@ function RouteComponent() {
         }
         score={
           <div className="flex flex-col gap-5">
+            {/* blind judging hides teams, and so their division, from judges */}
+            {(manager || settings.judging.blind !== true) && (
+              <DivisionPicker
+                eventId={event.id}
+                submissionId={submissionId}
+                form={forms.find((form) => form.id === submission.form_id)}
+                value={project?.divisionId ?? null}
+                editable={divisionEditable}
+                onMoved={onMoved}
+              />
+            )}
             {(!round || round.method === "rubric") && (
               <RubricPicker
                 submissionId={submissionId}

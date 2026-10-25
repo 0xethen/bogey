@@ -13,7 +13,7 @@ import {
   type RosterTeam,
 } from "@bogey/db/queries/roster";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
-import { eventPeopleQueryOptions } from "@bogey/db/queries/manage";
+import { eventPeopleQueryOptions, updateEventFn } from "@bogey/db/queries/manage";
 import { useLiveInvalidate } from "@bogey/db/realtime";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import { NameAvatar } from "@bogey/ui/components/avatar";
@@ -37,8 +37,13 @@ import {
   prefetchSettingFields,
   SettingFields,
 } from "#/components/settings/fields/setting-fields.tsx";
-import { inEvent } from "#/lib/viewer.ts";
-import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
+import { checkTeamSizes, teamSizeFields } from "#/lib/event-form.ts";
+import { useEventRefresh } from "#/lib/refresh.ts";
+import {
+  searchFields,
+  searchSection,
+  searchSettings,
+} from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type T } from "#/lib/translate.tsx";
 import { TeamMatcher } from "./-components/team-matcher.tsx";
 import { PluginSettingSections } from "#/components/settings/sections/plugin-sections.tsx";
@@ -46,8 +51,9 @@ import { PluginSettingSections } from "#/components/settings/sections/plugin-sec
 export const Route = createFileRoute("/_authed/events/$slug/manage/teams")({
   staticData: {
     title: msg("facts.teams"),
-    command: { when: inEvent(({ event }) => event.team_size_max > 1) },
     settings: (t) => [
+      searchSection(t("manageTeams.size"), { id: "team-size" }),
+      ...searchFields(teamSizeSchema(t), "team-size"),
       searchSection(t("manageTeams.unassigned"), { id: "not-on-a-team" }),
       searchSection(t("manageTeams.rules"), { id: "rules" }),
       ...searchSettings(
@@ -72,6 +78,8 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/teams")({
 const NO_TEAM = "none";
 const NO_DIVISION = "none";
 const KEEP = "keep";
+
+const teamSizeSchema = (t: T) => z.object(teamSizeFields(t)).superRefine(checkTeamSizes(t));
 
 const nameSchema = (t: T) =>
   z.object({
@@ -255,15 +263,19 @@ function RouteComponent() {
     [t, divisions],
   );
 
+  // a solo event only needs the way to allow teams
+  if (event.team_size_max === 1) {
+    return (
+      <Screen title={t("facts.teams")} description={t("manageTeams.soloIntro")} width="embedded">
+        <TeamSizeSection />
+      </Screen>
+    );
+  }
+
   return (
     <Screen
       title={t("facts.teams")}
-      description={t("manageTeams.intro", {
-        size:
-          event.team_size_min === event.team_size_max
-            ? String(event.team_size_max)
-            : t("manageTeams.sizeRange", { min: event.team_size_min, max: event.team_size_max }),
-      })}
+      description={t("manageTeams.intro")}
       width="embedded"
       actions={
         !creating && (
@@ -383,6 +395,7 @@ function RouteComponent() {
         )}
       </TeamActionsContext>
 
+      <TeamSizeSection />
       <Screen.Section id="rules" title={t("manageTeams.rules")}>
         <SettingFields
           scope={{ scope: "event", eventId: event.id }}
@@ -392,6 +405,63 @@ function RouteComponent() {
       </Screen.Section>
       <PluginSettingSections page="teams" />
     </Screen>
+  );
+}
+
+function TeamSizeSection() {
+  const t = useT();
+  const schema = useMemo(() => teamSizeSchema(t), [t]);
+  const { event } = Route.useRouteContext();
+  const refresh = useEventRefresh(event.id);
+  const form = useAppForm({
+    ...appFormOptions.strictSchema(schema, {
+      defaultValues: { teamMin: event.team_size_min, teamMax: event.team_size_max },
+      errorVisibility,
+      validators: [rewardEarlyPunishLate(schema)],
+    }),
+    onSubmit: async ({ value, formApi, createValidationError }) => {
+      const result = await updateEventFn({
+        data: { eventId: event.id, teamSizeMin: value.teamMin, teamSizeMax: value.teamMax },
+      }).catch(requestFailure);
+      if (!result.ok) return createValidationError(result.error.message);
+      formApi.reset(value);
+      await refresh();
+      return undefined;
+    },
+  });
+
+  return (
+    <Screen.Section
+      id="team-size"
+      title={t("manageTeams.size")}
+      description={t("manageTeams.sizeHelp")}
+    >
+      <form.AppForm>
+        <form.Form unsaved="save" anchor="team-size">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <form.Field name="teamMin">
+              {(field) => (
+                <field.Field>
+                  <field.Label />
+                  <field.NumberInput min={1} max={50} />
+                  <field.Error />
+                </field.Field>
+              )}
+            </form.Field>
+            <form.Field name="teamMax">
+              {(field) => (
+                <field.Field>
+                  <field.Label />
+                  <field.NumberInput min={1} max={50} />
+                  <field.Error />
+                </field.Field>
+              )}
+            </form.Field>
+          </div>
+          <form.FormAlert title={t("manageTeams.sizeFailed")} />
+        </form.Form>
+      </form.AppForm>
+    </Screen.Section>
   );
 }
 

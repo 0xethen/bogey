@@ -10,6 +10,24 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Registration questions and submission items can be for chosen divisions and tags only, under **Only for** when editing one. People are asked a question when they're in one of its divisions or hold one of its tags; before they join, their division is the one their invite link puts them in. A team fills in an item when it's in one of its divisions or a member holds one of its tags. Deleting a division or tag drops it from these lists, and copying an event carries them over to the copy's divisions. The check-in kiosk asks walk-ins only the questions for everyone.
+- Submission forms open on their own page from **Submissions → Forms** instead of expanding in the list.
+- **Smallest team** and **Largest team** moved from **Details** to a **Team size** section on **Teams**. **Teams** is always in the menu now; for a solo event it holds just that section.
+- The overview's **At a glance** numbers come first on the page, and each opens its page (People, Teams, Submissions, Judging).
+- Judges can move a project to another division from its score sheet, under **Division**. The whole team moves, its members get a notification, and the move is audited. Only divisions the project's form is open to are offered. Turn it off with **Judges move projects between divisions** in the judging settings (`judging.judgeDivision`, on by default). Teams see their division at the top of their submission page.
+- A division participants can't pick has a new **Participants see it** switch (off by default). Off, it's left out of the divisions participants choose from, except for the people already in it.
+- Once a participant chooses their team's division, their teammates can't change it; only they or an organizer can, until they leave the team.
+- **Tags** moved under **People** on the manage page (`/manage/people/tags`; the old links redirect), and **Public gallery** comes after **Submission forms**.
+- Steps in a stepper no longer cut off the current step's name on narrow screens.
+- The done button on an item being edited in a reorderable list is outlined.
+- Multi-select fields shown beside their label (like a tag's **Also lets them**) fill their column instead of shrinking to a sliver.
+
+### Upgrade notes
+
+- Adds the `audiences` migration; `bogey upgrade` applies it. It adds `division_ids` and `tag_ids` to `submission_items`, and replaces `register_for_event`, `invite_link_view`, `check_in_walk_in`, `save_submission_form`, `clone_event` and `private.submission_problems`.
+- Adds the `judge_division` migration; `bogey upgrade` applies it. It adds `set_submission_division` and a `judging.division_set` notification kind.
+- Adds the `division_choices` migration; `bogey upgrade` applies it. It adds `divisions.visible` and `teams.division_chosen_by`, and replaces `choose_division`, `choose_team_division`, `clone_event` and `private.guard_team_update`.
+
 ## 2.4.7 (2026-10-25)
 
 - Faster reads for big events: row-level security asked "may this person manage (or view people in) this event?" once for every row it checked, so reading an event's members as a participant took most of a second at 400 members and grew with the event. Policies now work out the caller's events once per query (`private.events_where`); reading 50 members of a 400-person event went from about 860 ms to 6 ms, and profile lists from about 270 ms to 70 ms. The challenges plugin's organizer checks do the same.

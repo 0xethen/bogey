@@ -17,7 +17,13 @@ const teamSize = (t: T) =>
     .min(1, t("eventForm.atLeast", { min: 1 }))
     .max(50, t("eventForm.atMost", { max: 50 }));
 
-export const eventFields = (t: T) => ({
+export const teamSizeFields = (t: T) => ({
+  teamMin: teamSize(t).meta({ label: t("eventForm.teamMin") }),
+  teamMax: teamSize(t).meta({ label: t("eventForm.teamMax") }),
+});
+
+/** Everything about an event but its team size, which the Teams page edits. */
+export const detailFields = (t: T) => ({
   name: z
     .string()
     .trim()
@@ -32,9 +38,23 @@ export const eventFields = (t: T) => ({
     .describe(t("eventForm.zoneHelp")),
   startsAt: z.string().meta({ label: t("eventForm.starts") }),
   endsAt: z.string().meta({ label: t("eventForm.ends") }),
-  teamMin: teamSize(t).meta({ label: t("eventForm.teamMin") }),
-  teamMax: teamSize(t).meta({ label: t("eventForm.teamMax") }),
 });
+
+export const eventFields = (t: T) => ({ ...detailFields(t), ...teamSizeFields(t) });
+
+export const checkDates =
+  (t: T) => (value: { startsAt: string; endsAt: string }, ctx: z.RefinementCtx) => {
+    if (value.startsAt && value.endsAt && value.endsAt <= value.startsAt) {
+      ctx.addIssue({ code: "custom", path: ["endsAt"], message: t("eventForm.endAfter") });
+    }
+  };
+
+export const checkTeamSizes =
+  (t: T) => (value: { teamMin: number; teamMax: number }, ctx: z.RefinementCtx) => {
+    if (value.teamMax < value.teamMin) {
+      ctx.addIssue({ code: "custom", path: ["teamMax"], message: t("eventForm.teamOrder") });
+    }
+  };
 
 export const checkEventRanges =
   (t: T) =>
@@ -42,12 +62,8 @@ export const checkEventRanges =
     value: { startsAt: string; endsAt: string; teamMin: number; teamMax: number },
     ctx: z.RefinementCtx,
   ) => {
-    if (value.startsAt && value.endsAt && value.endsAt <= value.startsAt) {
-      ctx.addIssue({ code: "custom", path: ["endsAt"], message: t("eventForm.endAfter") });
-    }
-    if (value.teamMax < value.teamMin) {
-      ctx.addIssue({ code: "custom", path: ["teamMax"], message: t("eventForm.teamOrder") });
-    }
+    checkDates(t)(value, ctx);
+    checkTeamSizes(t)(value, ctx);
   };
 
 export async function slugTaken(

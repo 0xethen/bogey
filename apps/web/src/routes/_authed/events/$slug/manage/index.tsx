@@ -29,13 +29,15 @@ import { searchSection } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT, type PlainKey } from "#/lib/translate.tsx";
 import { PluginSlot } from "#/components/plugins/plugin-slot.tsx";
 import { VisibilityPicker } from "./-components/visibility-picker.tsx";
+import { PhaseNavigator } from "./-components/phase-navigator.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/")({
   staticData: {
     title: msg("adminTab.overview"),
     settings: (t) => [
-      searchSection(t("overview.needsYou"), { id: "needs-you" }),
       searchSection(t("overview.glance"), { id: "at-a-glance" }),
+      searchSection(t("phases.title"), { id: "phases" }),
+      searchSection(t("overview.needsYou"), { id: "needs-you" }),
     ],
   },
   loader: ({ context }) =>
@@ -57,7 +59,7 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/")({
         }),
         staleTime: "static",
       }),
-    ]),
+    ]).then(() => ({ loadedAt: Date.now() })),
   component: RouteComponent,
   pendingComponent: () => <Screen.Skeleton width="embedded" />,
 });
@@ -72,6 +74,7 @@ const VIEW_AS: Tuple<{ value: "self" | (typeof VIEW_AS_ROLES)[number]; label: Pl
 function RouteComponent() {
   const t = useT();
   const { event, plugins, session } = Route.useRouteContext();
+  const { loadedAt } = Route.useLoaderData();
   const { data: summary } = useSuspenseQuery(manageSummaryQueryOptions(event.id));
   const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
   const { data: questions } = useSuspenseQuery(eventConversationsQueryOptions(event.id));
@@ -187,7 +190,50 @@ function RouteComponent() {
         />
       }
     >
+      <Screen.Section id="at-a-glance" title={t("overview.glance")}>
+        <StatGroup>
+          <Stat
+            icon={IconUser}
+            label={t("badges.participants")}
+            value={summary.participants}
+            render={<Link to="/events/$slug/manage/people" params={params} />}
+          />
+          {event.team_size_max > 1 && (
+            <Stat
+              icon={IconUsersGroup}
+              label={t("facts.teams")}
+              value={summary.teams}
+              render={<Link to="/events/$slug/manage/teams" params={params} />}
+            />
+          )}
+          <Stat
+            icon={IconFileCheck}
+            label={t("overview.submitted")}
+            value={summary.submitted}
+            render={<Link to="/events/$slug/manage/submissions" params={params} />}
+          />
+          <Stat
+            icon={IconGavel}
+            label={t("overview.judges")}
+            value={summary.judges}
+            render={<Link to="/events/$slug/manage/judging" params={params} />}
+          />
+        </StatGroup>
+      </Screen.Section>
+
       {!setupDone && <Steps title={t("overview.setup")} steps={steps} />}
+
+      <PhaseNavigator
+        id="phases"
+        event={event}
+        counts={{
+          pending: summary.pending,
+          openQuestions,
+          submitted: summary.submitted,
+          certificatesToSetUp,
+        }}
+        loadedAt={loadedAt}
+      />
 
       <Screen.Section id="needs-you" title={t("overview.needsYou")}>
         {attention.length > 0 ? (
@@ -195,17 +241,6 @@ function RouteComponent() {
         ) : (
           <p className="text-sm text-muted-fg">{t("overview.nothing")}</p>
         )}
-      </Screen.Section>
-
-      <Screen.Section id="at-a-glance" title={t("overview.glance")}>
-        <StatGroup>
-          <Stat icon={IconUser} label={t("badges.participants")} value={summary.participants} />
-          {event.team_size_max > 1 && (
-            <Stat icon={IconUsersGroup} label={t("facts.teams")} value={summary.teams} />
-          )}
-          <Stat icon={IconFileCheck} label={t("overview.submitted")} value={summary.submitted} />
-          <Stat icon={IconGavel} label={t("overview.judges")} value={summary.judges} />
-        </StatGroup>
       </Screen.Section>
 
       {plugins.map((plugin) => (

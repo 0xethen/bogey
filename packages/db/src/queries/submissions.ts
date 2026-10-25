@@ -8,11 +8,12 @@ import {
   loadPluginAnswerValidator,
   type AnswerKind,
 } from "@bogey/utils/answers";
+import { audienceReaches, type Audience, type Member } from "@bogey/utils/audience";
 import { KEBAB } from "@bogey/utils/keys";
 import { createServerClient } from "../server.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
 import type { Json, Tables } from "../types.ts";
-import { requireId, requireText } from "./validate.ts";
+import { idList, requireId, requireText } from "./validate.ts";
 import { plural } from "@bogey/utils/text";
 
 export type Submission = Tables<"submissions">;
@@ -20,7 +21,7 @@ export type SubmissionFile = Tables<"submission_files">;
 export type SubmissionItemKind = AnswerKind;
 export type SubmissionFormRow = Tables<"submission_forms">;
 
-export interface SubmissionItem {
+export interface SubmissionItem extends Audience {
   key: string;
   label: string;
   help: string | null;
@@ -78,7 +79,14 @@ function parseItem(row: Tables<"submission_items">): SubmissionItem {
     maxMb: number(config.maxMb),
     namesPeople: config.namesPeople === true || undefined,
     config: pluginConfig(config),
+    ...(row.division_ids.length ? { divisionIds: row.division_ids } : {}),
+    ...(row.tag_ids.length ? { tagIds: row.tag_ids } : {}),
   };
+}
+
+/** The form as this team (or teamless participant) sees it: only the items meant for them. */
+function formFor(form: SubmissionForm, member: Member): SubmissionForm {
+  return { ...form, items: form.items.filter((item) => audienceReaches(item, member)) };
 }
 
 async function loadForms(eventId: string): Promise<DbResult<SubmissionForm[]>> {
@@ -116,7 +124,14 @@ export const submissionFormsQueryOptions = (eventId: string) =>
   });
 
 export interface MySubmissions {
-  team: { id: string; name: string; members: number; divisionId: string | null } | null;
+  team: {
+    id: string;
+    name: string;
+    members: number;
+    divisionId: string | null;
+    /** A teammate chose the team's division, so only they or an organizer change it. */
+    divisionChosenByTeammate: boolean;
+  } | null;
   forms: { form: SubmissionForm; submission: Submission | null; files: SubmissionFile[] }[];
 }
 
@@ -131,7 +146,7 @@ export const mySubmissionsFn = createServerFn({ method: "GET" })
       loadForms(eventId),
       supabase
         .from("team_members")
-        .select("team_id, teams(name, division_id)")
+        .select("team_id, teams(name, division_id, division_chosen_by)")
         .eq("event_id", eventId)
         .eq("user_id", userData.user.id)
         .maybeSingle(),
@@ -147,24 +162,26 @@ export const mySubmissionsFn = createServerFn({ method: "GET" })
     if (loadError) return toFailure(loadError, "loading your submissions");
     if (!membership.data) {
       const division = member.data?.division_id ?? null;
+      const tags = await supabase.rpc("audience_tags", { p_event: eventId });
+      if (tags.error) return toFailure(tags.error, "loading your submissions");
+      const own = { divisionId: division, tagIds: tags.data ?? [] };
       return ok({
         team: null,
         forms: forms.data
           .filter((form) => formReaches(form, division))
-          .map((form) => ({ form, submission: null, files: [] })),
+          .map((form) => ({ form: formFor(form, own), submission: null, files: [] })),
       });
     }
     const division = membership.data.teams?.division_id ?? null;
+    const chooser = membership.data.teams?.division_chosen_by ?? null;
 
     const teamId = membership.data.team_id;
-    const [submissions, members] = await Promise.all([
+    const [submissions, members, tags] = await Promise.all([
       supabase.from("submissions").select("*").eq("event_id", eventId).eq("team_id", teamId),
-      supabase
-        .from("team_members")
-        .select("user_id", { count: "exact", head: true })
-        .eq("team_id", teamId),
+      supabase.from("team_members").select("user_id").eq("team_id", teamId),
+      supabase.rpc("audience_tags", { p_event: eventId, p_team: teamId }),
     ]);
-    const error = submissions.error ?? members.error;
+    const error = submissions.error ?? members.error ?? tags.error;
     if (error) return toFailure(error, "loading your submissions");
 
     const ids = (submissions.data ?? []).map((row) => row.id);
@@ -177,15 +194,19 @@ export const mySubmissionsFn = createServerFn({ method: "GET" })
       team: {
         id: teamId,
         name: membership.data.teams?.name ?? "Your team",
-        members: members.count ?? 1,
+        members: members.data?.length || 1,
         divisionId: division,
+        divisionChosenByTeammate:
+          !!chooser &&
+          chooser !== userData.user.id &&
+          (members.data ?? []).some((member) => member.user_id === chooser),
       },
       forms: forms.data.flatMap((form) => {
         const submission = submissions.data?.find((row) => row.form_id === form.id) ?? null;
         // a draft started before the team changed divisions stays visible
         if (!submission && !formReaches(form, division)) return [];
         return {
-          form,
+          form: formFor(form, { divisionId: division, tagIds: tags.data ?? [] }),
           submission,
           files: submission
             ? (files ?? []).filter((file) => file.submission_id === submission.id)
@@ -566,6 +587,8 @@ export const saveSubmissionFormFn = createServerFn({ method: "POST" })
         maxMb: positive(item.maxMb),
         namesPeople: item.namesPeople === true || undefined,
         config: isPluginAnswerKind(kind) ? primitiveConfig(item.config) : undefined,
+        divisionIds: idList(item.divisionIds, "Item divisions"),
+        tagIds: idList(item.tagIds, "Item tags"),
       };
     });
     return {
@@ -601,6 +624,8 @@ export const saveSubmissionFormFn = createServerFn({ method: "POST" })
         ...(item.namesPeople ? { namesPeople: true } : {}),
         ...(item.config ?? {}),
       },
+      division_ids: [...(item.divisionIds ?? [])],
+      tag_ids: [...(item.tagIds ?? [])],
     }));
     const { data: row, error } = await supabase.rpc("save_submission_form", {
       p_event: data.eventId,

@@ -66,11 +66,15 @@ export function DivisionChoices({
   const t = useT();
   const now = divisions.find((division) => division.id === current);
   const picked = divisions.find((division) => division.id === value);
+  // a division participants can't pick shows only when organizers say so, or to the people in it
+  const shown = divisions.filter(
+    (division) => division.selectable || division.visible || division.id === current,
+  );
   return (
     <FieldSet>
       <FieldLegend>{label ?? t("division.yours")}</FieldLegend>
       <RadioGroup value={value ?? ""} onValueChange={(next) => onChange(String(next))}>
-        {divisions.map((division) => {
+        {shown.map((division) => {
           const id = `${idPrefix}-${division.id}`;
           const allowed = canMoveTo(now, division);
           return (

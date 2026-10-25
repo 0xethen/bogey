@@ -499,6 +499,7 @@ export function EditableListItem({
         <Button
           type="button"
           size="icon-sm"
+          variant="outline"
           aria-label={t("ui.doneEditing", { name: label })}
           tooltip={t("judging.done")}
           onClick={onDone}

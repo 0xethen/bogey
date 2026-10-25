@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { submissionFormsQueryOptions } from "@bogey/db/queries/submissions";
-import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
 import { Button } from "@bogey/ui/components/button";
-import { DisclosureRow, RowList } from "@bogey/ui/components/row";
+import { LinkRow, RowList } from "@bogey/ui/components/row";
 import { Screen } from "@bogey/ui/components/screen";
 import { IconPlus } from "@tabler/icons-react";
 import { windowLabel } from "#/lib/windows.ts";
@@ -14,7 +13,6 @@ import {
 } from "#/components/settings/fields/setting-fields.tsx";
 import { searchSection, searchSettings } from "#/components/settings/layout/search-entries.ts";
 import { msg, useT } from "#/lib/translate.tsx";
-import { FormEditor } from "./-components/form-editor.tsx";
 
 export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/forms/")({
   staticData: {
@@ -34,7 +32,6 @@ export const Route = createFileRoute("/_authed/events/$slug/manage/submissions/f
         ...submissionFormsQueryOptions(context.event.id),
         staleTime: "static",
       }),
-      context.query.query({ ...eventWindowsQueryOptions(context.event.id), staleTime: "static" }),
       context.query.query({ ...eventDivisionsQueryOptions(context.event.id), staleTime: "static" }),
       prefetchSettingFields(context.query, { scope: "event", eventId: context.event.id }, [
         "submissions",
@@ -83,13 +80,17 @@ function RouteComponent() {
       ) : (
         <RowList>
           {forms.map((form) => (
-            <DisclosureRow
+            <LinkRow
               key={form.id}
+              render={
+                <Link
+                  to="/events/$slug/manage/submissions/forms/$formId"
+                  params={{ slug: event.slug, formId: form.id }}
+                />
+              }
               title={form.title}
               meta={`${t("manageForms.items", { count: form.items.length })} · ${t("manageForms.opensWith", { window: windowLabel({ key: form.window_key }, t) })}${form.judged ? "" : ` · ${t("manageForms.notJudged")}`}${audience(form.divisionIds)}`}
-            >
-              <FormEditor form={form} />
-            </DisclosureRow>
+            />
           ))}
         </RowList>
       )}

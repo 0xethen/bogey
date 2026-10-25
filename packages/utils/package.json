@@ -10,6 +10,7 @@
     "./time": "./src/time.ts",
     "./user-agent": "./src/user-agent.ts",
     "./answers": "./src/answers.ts",
+    "./audience": "./src/audience.ts",
     "./roster": "./src/roster.ts",
     "./roster-rules": "./src/roster-rules.ts",
     "./network": "./src/network.ts",

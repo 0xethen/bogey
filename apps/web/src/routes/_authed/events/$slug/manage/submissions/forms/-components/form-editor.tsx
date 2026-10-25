@@ -12,6 +12,7 @@ import {
 import { setWindowsFn } from "@bogey/db/queries/manage";
 import { eventWindowsQueryOptions } from "@bogey/db/queries/windows";
 import { eventDivisionsQueryOptions } from "@bogey/db/queries/divisions";
+import { tagsQueryOptions } from "@bogey/db/queries/tags";
 import { requestFailure, unwrap } from "@bogey/db/errors";
 import { Button } from "@bogey/ui/components/button";
 import { EditableList, EditableListItem } from "@bogey/ui/components/editable-list";
@@ -29,6 +30,8 @@ import {
 import { windowLabel } from "#/lib/windows.ts";
 import { SubmissionItemPreview } from "#/components/event/submission/submission-item-field.tsx";
 import { useEventRefresh } from "#/lib/refresh.ts";
+import { audienceLabel, audienceOf, audienceOptions, audienceValues } from "#/lib/audience.ts";
+import { itemFooter } from "#/components/event/item-footer.tsx";
 import {
   answerKind,
   cleanOptions,
@@ -108,6 +111,10 @@ const itemSchema = (t: T) =>
       .meta({ label: t("manageForms.namesPeople") })
       .describe(t("manageForms.namesPeopleHelp")),
     config: z.record(z.string(), z.string()),
+    audience: z
+      .array(z.string())
+      .meta({ label: t("audience.label"), placeholder: t("audience.everyone") })
+      .describe(t("audience.itemHelp")),
   });
 
 const formSchema = (t: T) =>
@@ -179,6 +186,7 @@ function toDraft(item: SubmissionItem): ItemDraft {
     config: Object.fromEntries(
       Object.entries(item.config ?? {}).map(([name, value]) => [name, String(value)]),
     ),
+    audience: audienceValues(item),
   };
 }
 
@@ -223,6 +231,7 @@ function toItems(drafts: Tuple<ItemDraft>, types: Tuple<MountedItemType>): Submi
       maxMb: draft.kind === "file" && draft.maxMb ? Number(draft.maxMb) : undefined,
       namesPeople: draft.namesPeople || undefined,
       config: configOf(draft, types),
+      ...audienceOf(draft.audience),
     };
   });
 }
@@ -278,12 +287,24 @@ const BLANK: Omit<ItemDraft, "uid"> = {
   maxMb: "",
   namesPeople: false,
   config: {},
+  audience: [],
 };
 
 const FIRST_ITEM: ItemDraft = { ...BLANK, uid: "first", kind: "markdown" };
 
-/** Edits a form, or creates one when `form` is null; `onDone` runs once it is created, and on Cancel. */
-export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDone?: () => void }) {
+/**
+ * Edits a form, or creates one when `form` is null; `onDone` runs once it is created, and on Cancel.
+ * `onDeleted` runs once the form is deleted.
+ */
+export function FormEditor({
+  form,
+  onDone,
+  onDeleted,
+}: {
+  form: SubmissionForm | null;
+  onDone?: () => void;
+  onDeleted?: () => Promise<void> | void;
+}) {
   const t = useT();
   const schema = useMemo(() => formSchema(t), [t]);
   const { event, plugins } = eventRoute.useRouteContext();
@@ -316,6 +337,10 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
   const refreshEvent = useEventRefresh(event.id);
   const { data: windows } = useSuspenseQuery(eventWindowsQueryOptions(event.id));
   const { data: divisions } = useSuspenseQuery(eventDivisionsQueryOptions(event.id));
+  const { data: tags } = useSuspenseQuery(
+    tagsQueryOptions({ orgId: event.org_id, eventId: event.id }),
+  );
+  const audiences = audienceOptions(divisions, tags, t);
   const [active, setActive] = useState<string | null>(null);
   const refresh = () =>
     Promise.all([
@@ -387,15 +412,16 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
 
   const remove = useMutation({
     mutationFn: async (id: string) => unwrap(await deleteSubmissionFormFn({ data: id })),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      // leave a page about this form before its loader runs again
+      await onDeleted?.();
+      await refresh();
+    },
   });
 
   return (
     <editor.AppForm>
-      <editor.Form
-        unsaved="save"
-        className={form ? "flex flex-col gap-6 pl-1" : "flex flex-col gap-6"}
-      >
+      <editor.Form unsaved="save" className="flex flex-col gap-6">
         <FieldGroup>
           <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
             <editor.Field name="title">{(field) => <field.TextField required />}</editor.Field>
@@ -447,13 +473,11 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
                     editing={active === item.uid || unfinished(item)}
                     onEdit={() => setActive(item.uid)}
                     onDone={() => setActive(null)}
-                    footer={
-                      item.key && (
-                        <>
-                          {t("manageReg.savedAs")} <code>{item.key}</code>
-                        </>
-                      )
-                    }
+                    footer={itemFooter(
+                      t,
+                      item.key,
+                      audienceLabel(audienceOf(item.audience), divisions, tags, t),
+                    )}
                   >
                     <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
                       <editor.Field name={`items[${index}].label`}>
@@ -550,6 +574,11 @@ export function FormEditor({ form, onDone }: { form: SubmissionForm | null; onDo
                     <editor.Field name={`items[${index}].namesPeople`}>
                       {(field) => <field.SwitchField />}
                     </editor.Field>
+                    {audiences.length > 0 && (
+                      <editor.Field name={`items[${index}].audience`}>
+                        {(field) => <field.MultiSelectField options={audiences} />}
+                      </editor.Field>
+                    )}
                   </EditableListItem>
                 ))}
               </EditableList>

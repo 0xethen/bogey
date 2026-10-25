@@ -87,6 +87,10 @@ const divisionSchema = (t: T) =>
       .boolean()
       .meta({ label: t("manageDivisions.selectable") })
       .describe(t("manageDivisions.selectableHelp")),
+    visible: z
+      .boolean()
+      .meta({ label: t("manageDivisions.visible") })
+      .describe(t("manageDivisions.visibleHelp")),
     switchable: z
       .boolean()
       .meta({ label: t("manageDivisions.switchable") })
@@ -129,6 +133,7 @@ const toValues = (division: Division, links: Tuple<RubricDivision>): DivisionVal
   description: division.description ?? "",
   selectable: division.selectable,
   switchable: division.switchable,
+  visible: division.visible,
   rubricIds: links.filter((link) => link.divisionId === division.id).map((link) => link.rubricId),
 });
 
@@ -244,6 +249,11 @@ function RouteComponent() {
                           <form.Field name={`items[${index}].selectable`}>
                             {(field) => <field.SwitchField />}
                           </form.Field>
+                          {!item.selectable && (
+                            <form.Field name={`items[${index}].visible`}>
+                              {(field) => <field.SwitchField />}
+                            </form.Field>
+                          )}
                           <form.Field name={`items[${index}].switchable`}>
                             {(field) => <field.SwitchField />}
                           </form.Field>
@@ -269,6 +279,7 @@ function RouteComponent() {
                           description: "",
                           selectable: true,
                           switchable: true,
+                          visible: false,
                           rubricIds: [],
                         });
                         setActive(uid);
