@@ -8,4 +8,4 @@ export LOCALE_ARCHIVE=/nix/var/nix/profiles/default/lib/locale/locale-archive
 export PGPORT=5432 POSTGRES_PORT=5432 PGPASSWORD=$POSTGRES_PASSWORD PGDATABASE=postgres JWT_EXP=$JWT_EXPIRY
 mkdir -p /var/run/postgresql && chown postgres:postgres /var/run/postgresql
 exec docker-entrypoint.sh postgres -D /etc/postgresql -c config_file=/etc/postgresql/postgresql.conf \
-  -c log_min_messages=fatal -c listen_addresses=127.0.0.1
+  -c log_min_messages=fatal -c max_parallel_workers_per_gather=0 -c max_parallel_maintenance_workers=0 -c listen_addresses=127.0.0.1

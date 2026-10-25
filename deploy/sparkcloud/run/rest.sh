@@ -5,4 +5,6 @@ export PGRST_DB_URI=postgres://authenticator:$POSTGRES_PASSWORD@db:5432/postgres
 export PGRST_SERVER_HOST=127.0.0.1 PGRST_SERVER_PORT=3002 PGRST_ADMIN_SERVER_HOST=127.0.0.1 PGRST_ADMIN_SERVER_PORT=3001
 export PGRST_DB_SCHEMAS=public PGRST_DB_MAX_ROWS=1000 PGRST_DB_EXTRA_SEARCH_PATH=public PGRST_DB_ANON_ROLE=anon
 export PGRST_JWT_SECRET=$JWT_SECRET PGRST_DB_USE_LEGACY_GUCS=false PGRST_APP_SETTINGS_JWT_EXP=$JWT_EXPIRY
+# two capabilities, not one per core: each runtime thread counts against the box's 200 tasks
+export GHCRTS=-N2 PGRST_DB_POOL=8
 exec /srv/img/rest/bin/postgrest

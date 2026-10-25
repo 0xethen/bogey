@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { getPublicEnv, serviceRoleKey } from "./env.ts";
+import { getPublicEnv, serverSupabaseUrl, serviceRoleKey } from "./env.ts";
 import { timeoutFetch } from "./fetch.ts";
 import type { Database } from "./types.ts";
 
@@ -8,7 +8,8 @@ export function createAdminClient() {
     throw new Error("createAdminClient() must never run in the browser");
   }
 
-  const { supabaseUrl: url, supabaseKey: publishable } = getPublicEnv();
+  const { supabaseKey: publishable } = getPublicEnv();
+  const url = serverSupabaseUrl();
   const key = serviceRoleKey();
 
   if (key.startsWith("sb_publishable_") || key === publishable) {

@@ -6,7 +6,7 @@ import {
   type ArchiveData,
   type RestAccess,
 } from "@bogey/db/archive";
-import { getPublicEnv } from "@bogey/db/env";
+import { getPublicEnv, serverSupabaseUrl } from "@bogey/db/env";
 import { createServerClient } from "@bogey/db/server";
 import { getOrgFn } from "@bogey/db/tenant";
 import { SLUG } from "@bogey/utils/keys";
@@ -40,8 +40,8 @@ export async function archiveResponse(slug: string): Promise<Response> {
   if (error) return refuse(500, "Couldn't look up the event.");
   if (!event) return refuse(404, "There's no event at this address.");
 
-  const { supabaseUrl, supabaseKey } = getPublicEnv();
-  const access: RestAccess = { url: supabaseUrl, apikey: supabaseKey, bearer: token };
+  const { supabaseKey } = getPublicEnv();
+  const access: RestAccess = { url: serverSupabaseUrl(), apikey: supabaseKey, bearer: token };
   let data: ArchiveData;
   try {
     data = await readArchive(access, event.id);

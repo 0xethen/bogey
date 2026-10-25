@@ -274,6 +274,29 @@ as $$
   select private.has_permission(p_event, 'event.manage');
 $$;
 
+-- The events where the caller holds a permission. Policies test `event_id = any ((select
+-- private.events_where(...))::uuid[])`, which runs once per statement; `(select private.has_permission(event_id,
+-- ...))` names a column, so it runs once per row. Only events where the caller could hold anything are
+-- asked: those in orgs they administer and those they're an active member of.
+create function private.events_where(p_permission text)
+returns uuid[]
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(array_agg(c.id), '{}')
+  from (
+    select e.id from public.events e
+    join public.org_members m on m.org_id = e.org_id
+    where m.user_id = (select auth.uid()) and m.role >= 'admin'
+    union
+    select em.event_id from public.event_members em
+    where em.user_id = (select auth.uid()) and em.status = 'active'
+  ) c
+  where private.has_permission(c.id, p_permission);
+$$;
+
 create function private.window_open(p_event uuid, p_key text)
 returns boolean
 language sql
@@ -378,7 +401,8 @@ as $$
   );
 $$;
 
-create function private.can_see_profile(p_user uuid)
+-- p_people_view is private.events_where('people.view'), passed in so a policy works it out once
+create function private.can_see_profile(p_user uuid, p_people_view uuid[])
 returns boolean
 language sql
 stable
@@ -403,11 +427,11 @@ as $$
     )
     or exists (
       select 1 from public.event_members theirs
-      where theirs.user_id = p_user and private.has_permission(theirs.event_id, 'people.view')
+      where theirs.user_id = p_user and theirs.event_id = any (p_people_view)
     )
     or exists (
       select 1 from public.registrations r
-      where r.user_id = p_user and private.has_permission(r.event_id, 'people.view')
+      where r.user_id = p_user and r.event_id = any (p_people_view)
     );
 $$;
 
@@ -427,6 +451,7 @@ grant execute on function
   private.event_gate(uuid),
   private.has_permission(uuid, text),
   private.can_manage(uuid),
+  private.events_where(text),
   private.window_open(uuid, text),
   private.can_view_event(uuid),
   private.section_open(uuid, text),
@@ -434,6 +459,6 @@ grant execute on function
   private.my_team(uuid),
   private.is_team_member(uuid),
   private.shares_org(uuid),
-  private.can_see_profile(uuid)
+  private.can_see_profile(uuid, uuid[])
 to anon, authenticated, service_role;
 grant execute on function public.event_gate(uuid) to authenticated;

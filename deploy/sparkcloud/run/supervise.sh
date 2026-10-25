@@ -1,6 +1,7 @@
 #!/bin/bash
 # Runs every service in a restart loop; logs in /srv/bogey/logs, pids in /run/bogey.
-SERVICES=${*:-"db auth rest realtime storage web caddy meta studio"}
+# Studio and pg-meta take ~25 of the box's 200 tasks, so they start only with bogeyctl start meta studio
+SERVICES=${*:-"db auth rest realtime storage web caddy"}
 mkdir -p /srv/bogey/logs /run/bogey
 grep -q " db auth " /etc/hosts || echo "127.0.0.1 db auth rest kong web storage realtime-dev.supabase-realtime host.docker.internal" >> /etc/hosts
 

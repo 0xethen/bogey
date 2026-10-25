@@ -375,7 +375,7 @@ create policy org_domains_write_delete on public.org_domains for delete to authe
   using ((select private.is_platform_admin()));
 
 create policy profiles_select on public.profiles for select to authenticated
-  using ((select private.can_see_profile(id)));
+  using (private.can_see_profile(id, (select private.events_where('people.view'))::uuid[]));
 create policy profiles_update on public.profiles for update to authenticated
   using (id = (select auth.uid()))
   with check (id = (select auth.uid()));

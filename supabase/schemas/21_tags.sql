@@ -141,7 +141,7 @@ alter table public.tag_holders enable row level security;
 create policy tags_select on public.tags for select to authenticated
   using (
     (event_id is null and (select private.is_org_member(org_id)))
-    or (event_id is not null and (select private.has_permission(event_id, 'event.view')))
+    or (event_id is not null and (event_id = any ((select private.events_where('event.view'))::uuid[])))
     or (select private.is_org_admin(org_id))
   );
 create policy tags_insert on public.tags for insert to authenticated
@@ -156,7 +156,7 @@ create policy tag_holders_select on public.tag_holders for select to authenticat
   using (
     user_id = (select auth.uid())
     or (event_id is null and (select private.is_org_member(org_id)))
-    or (event_id is not null and (select private.has_permission(event_id, 'people.view')))
+    or (event_id is not null and (event_id = any ((select private.events_where('people.view'))::uuid[])))
     or (select private.is_org_admin(org_id))
   );
 

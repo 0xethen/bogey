@@ -562,7 +562,7 @@ create policy settings_select on public.settings for select to anon, authenticat
       when 'org' then private.is_public_namespace(namespace) or (select private.is_org_member(org_id))
       when 'event' then (select private.can_view_event(event_id))
         and (private.is_public_namespace(namespace)
-          or (select private.has_permission(event_id, 'event.view'))
+          or (event_id = any ((select private.events_where('event.view'))::uuid[]))
           or (namespace = 'about' and (select private.section_open(event_id, 'about')))
           or (private.is_gate_namespace(namespace)
             and (select private.holds_permission(event_id, 'event.view'))))

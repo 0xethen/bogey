@@ -599,22 +599,22 @@ alter table public.clarification_archives enable row level security;
 
 create policy announcements_select on public.announcements for select to authenticated
   using (
-    (select private.can_manage(event_id))
+    (event_id = any ((select private.events_where('event.manage'))::uuid[]))
     or (
       deleted_at is null
       and publish_at <= now()
-      and (select private.has_permission(event_id, 'event.view'))
+      and (event_id = any ((select private.events_where('event.view'))::uuid[]))
       and (everyone or private.in_announcement_audience(id, event_id))
     )
   );
 create policy announcements_write_update on public.announcements for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy announcements_write_delete on public.announcements for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy announcement_audiences_select on public.announcement_audiences for select to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy announcement_reads_own on public.announcement_reads for all to authenticated
   using (user_id = (select auth.uid()))
@@ -622,7 +622,7 @@ create policy announcement_reads_own on public.announcement_reads for all to aut
 
 create policy chat_blocks_select on public.chat_blocks for select to authenticated
   using (
-    (select private.can_manage(event_id))
+    (event_id = any ((select private.events_where('event.manage'))::uuid[]))
     or user_id = (select auth.uid())
     or (team_id is not null and private.is_team_member(team_id))
   );
@@ -636,9 +636,9 @@ create policy clarifications_insert on public.clarifications for insert to authe
       (
         audience = 'staff'
         and (select private.chat_allows(event_id, 'staff'))
-        and ((select private.can_manage(event_id)) or (select private.event_role(event_id)) = 'judge')
+        and ((event_id = any ((select private.events_where('event.manage'))::uuid[])) or (select private.event_role(event_id)) = 'judge')
       )
-      or (audience <> 'staff' and (select private.can_manage(event_id)))
+      or (audience <> 'staff' and (event_id = any ((select private.events_where('event.manage'))::uuid[])))
       or (
         audience = 'judges'
         and team_id is not null
@@ -646,7 +646,7 @@ create policy clarifications_insert on public.clarifications for insert to authe
         and (select private.chat_allows(event_id, 'judges'))
       )
       or (
-        (select private.has_permission(event_id, 'event.compete'))
+        (event_id = any ((select private.events_where('event.compete'))::uuid[]))
         and not (select private.chat_blocked(event_id))
         and (select private.chat_allows(event_id, 'participants'))
         and (audience = 'organizers' or (audience = 'judges' and (select private.chat_allows(event_id, 'judges'))))
@@ -654,14 +654,14 @@ create policy clarifications_insert on public.clarifications for insert to authe
     )
   );
 create policy clarifications_manage on public.clarifications for update to authenticated
-  using ((select private.can_manage(event_id)) or (select private.has_permission(event_id, 'clarifications.answer')));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])) or (event_id = any ((select private.events_where('clarifications.answer'))::uuid[])));
 
 create policy clarification_messages_select on public.clarification_messages for select to authenticated
-  using ((select private.can_see_clarification(clarification_id)) and (deleted_at is null or (select private.can_manage(event_id))));
+  using ((select private.can_see_clarification(clarification_id)) and (deleted_at is null or (event_id = any ((select private.events_where('event.manage'))::uuid[]))));
 create policy clarification_messages_insert on public.clarification_messages for insert to authenticated
   with check ((select private.can_write_clarification(clarification_id)));
 create policy clarification_messages_moderate on public.clarification_messages for update to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy clarification_archives_own on public.clarification_archives for all to authenticated
   using (user_id = (select auth.uid()))

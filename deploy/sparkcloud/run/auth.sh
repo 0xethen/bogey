@@ -26,4 +26,10 @@ export GOTRUE_SAML_ENABLED=${SAML_ENABLED:-false} GOTRUE_SAML_PRIVATE_KEY=$SAML_
 # passkeys as a second factor, for the main host only
 export GOTRUE_MFA_WEB_AUTHN_ENROLL_ENABLED=true GOTRUE_MFA_WEB_AUTHN_VERIFY_ENABLED=true
 export GOTRUE_WEBAUTHN_RP_ID=$BOGEY_HOST GOTRUE_WEBAUTHN_RP_ORIGINS=$SITE_URL GOTRUE_WEBAUTHN_RP_DISPLAY_NAME=${SMTP_SENDER_NAME:-Bogey}
+# rate limits as in the all-in-one, keyed on the visitor's address (the Caddyfile's X-Forwarded-For);
+# without a header GoTrue doesn't limit per address at all
+export GOTRUE_RATE_LIMIT_HEADER=X-Forwarded-For GOTRUE_RATE_LIMIT_EMAIL_SENT=${AUTH_RATE_LIMIT_EMAIL_SENT:-500}
+export GOTRUE_RATE_LIMIT_OTP=${AUTH_RATE_LIMIT_OTP:-500} GOTRUE_RATE_LIMIT_VERIFY=${AUTH_RATE_LIMIT_VERIFY:-500}
+export GOTRUE_RATE_LIMIT_TOKEN_REFRESH=${AUTH_RATE_LIMIT_TOKEN_REFRESH:-1000}
+export GOMAXPROCS=2 GOMEMLIMIT=1GiB GOTRUE_DB_MAX_POOL_SIZE=8
 exec /srv/img/auth/usr/local/bin/auth

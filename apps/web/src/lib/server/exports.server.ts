@@ -1,3 +1,4 @@
+import { publicSupabaseUrl } from "@bogey/db/env";
 import { createServerClient } from "@bogey/db/server";
 import { getOrgFn } from "@bogey/db/tenant";
 import { previewResultsFn } from "@bogey/db/queries/judging";
@@ -141,7 +142,7 @@ async function registrations(supabase: Client, event: Event): Promise<Response> 
       .from("registrations")
       .createSignedUrls(paths, LINK_SECONDS);
     for (const entry of signed.data ?? []) {
-      if (entry.path && entry.signedUrl) links.set(entry.path, entry.signedUrl);
+      if (entry.path && entry.signedUrl) links.set(entry.path, publicSupabaseUrl(entry.signedUrl));
     }
   }
 

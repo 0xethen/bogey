@@ -35,7 +35,7 @@ alter table public.badge_emails enable row level security;
 -- people.checkin and sessions.attendance come from checkin.takers (private.holds_permission)
 
 create policy checkins_select on public.checkins for select to authenticated
-  using (user_id = (select auth.uid()) or (select private.has_permission(event_id, 'people.checkin')));
+  using (user_id = (select auth.uid()) or (event_id = any ((select private.events_where('people.checkin'))::uuid[])));
 
 create function private.checked_in(p_event uuid, p_user uuid)
 returns boolean

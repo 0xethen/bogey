@@ -45,7 +45,8 @@ and webhooks.
 | `bogeyctl logs web 100`               | follows a service's log                     |
 | `bogey-upgrade` (`bogeyctl upgrade`)  | moves to the newest release; see below      |
 | `bogey <command>`                     | the CLI, with `.env` loaded                 |
-| `ssh -N -L 54323:127.0.0.1:54323 ...` | Supabase Studio at http://localhost:54323   |
+| `bogeyctl start meta studio`          | starts Supabase Studio (off by default)     |
+| `ssh -N -L 54323:127.0.0.1:54323 ...` | then Studio is at http://localhost:54323    |
 
 The files:
 
@@ -103,8 +104,17 @@ app keeps running.
 
 ## Limits
 
-- The box caps processes and threads at 200, and the services use about 150.
-  The upgrade pauses Studio and pg-meta while it builds.
+- The box caps processes and threads at 200 (`/sys/fs/cgroup/pids.max`). When
+  it runs out, Postgres can't start a connection and pages fail with 500s, so
+  the service scripts keep runtimes to two threads per kind instead of one per
+  core, and Studio and pg-meta (about 25) start only when asked. `bogeyctl
+  stop meta studio` when you're done with them; the upgrade pauses them while it
+  builds. `cat /sys/fs/cgroup/pids.current` shows how many are in use, and
+  `pids.events` how often the cap was hit.
+- The web app reaches Supabase through Caddy on the box (`SUPABASE_INTERNAL_URL`),
+  not out through SparkCloud's proxy and back. Caddy passes each service the
+  visitor's address as the only `X-Forwarded-For` entry, which Bogey's network
+  limits and GoTrue's rate limits use.
 - SparkCloud sleeps the box after about 10 quiet minutes, and SSH traffic
   doesn't count. Requests to the site do. Anything long you start over SSH
   should curl the site every minute or so, as the installer and the upgrade do.

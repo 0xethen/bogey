@@ -549,39 +549,39 @@ grant execute on function private.gallery_open(uuid) to anon, authenticated;
 
 create policy submission_forms_select on public.submission_forms for select to anon, authenticated
   using (
-    (select private.has_permission(event_id, 'event.view'))
+    (event_id = any ((select private.events_where('event.view'))::uuid[]))
     or (select private.gallery_open(event_id))
   );
 create policy submission_forms_write_insert on public.submission_forms for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy submission_forms_write_update on public.submission_forms for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy submission_forms_write_delete on public.submission_forms for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy submission_form_divisions_select on public.submission_form_divisions for select to anon, authenticated
   using (
-    (select private.has_permission(event_id, 'event.view'))
+    (event_id = any ((select private.events_where('event.view'))::uuid[]))
     or (select private.gallery_open(event_id))
   );
 create policy submission_form_divisions_write_insert on public.submission_form_divisions for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy submission_form_divisions_write_delete on public.submission_form_divisions for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy submission_items_select on public.submission_items for select to anon, authenticated
   using (
-    (select private.has_permission(event_id, 'event.view'))
+    (event_id = any ((select private.events_where('event.view'))::uuid[]))
     or (select private.gallery_open(event_id))
   );
 create policy submission_items_write_insert on public.submission_items for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy submission_items_write_update on public.submission_items for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy submission_items_write_delete on public.submission_items for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy submissions_select on public.submissions for select to anon, authenticated
   using (private.can_read_submission(event_id, team_id, status, is_public));
@@ -594,7 +594,7 @@ create policy submissions_insert on public.submissions for insert to authenticat
       and (select private.form_reaches_team(form_id, team_id))
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 create policy submissions_update on public.submissions for update to authenticated
   using (
@@ -604,7 +604,7 @@ create policy submissions_update on public.submissions for update to authenticat
       and (select private.team_write_allowed(form_id))
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   )
   with check (
     (
@@ -613,10 +613,10 @@ create policy submissions_update on public.submissions for update to authenticat
       and (select private.team_write_allowed(form_id))
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 create policy submissions_manage_delete on public.submissions for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy submission_tracks_select on public.submission_tracks for select to anon, authenticated
   using (exists (
@@ -624,12 +624,12 @@ create policy submission_tracks_select on public.submission_tracks for select to
       and private.can_read_submission(s.event_id, s.team_id, s.status, s.is_public)
   ));
 create policy submission_tracks_write_insert on public.submission_tracks for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy submission_tracks_write_update on public.submission_tracks for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy submission_tracks_write_delete on public.submission_tracks for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy submission_files_select on public.submission_files for select to anon, authenticated
   using (exists (
@@ -776,7 +776,7 @@ create table public.votes (
 create index votes_event_id_submission_id_fk_idx on public.votes (event_id, submission_id);
 alter table public.votes enable row level security;
 create policy votes_select_own on public.votes for select to authenticated
-  using (voter_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (voter_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create function public.cast_vote(p_submission uuid)
 returns void
@@ -954,7 +954,7 @@ create table public.gallery_likes (
 create index gallery_likes_event_id_submission_id_fk_idx on public.gallery_likes (event_id, submission_id);
 alter table public.gallery_likes enable row level security;
 create policy gallery_likes_select_own on public.gallery_likes for select to authenticated
-  using (user_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (user_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create table public.gallery_comments (
   id uuid primary key default gen_random_uuid(),
@@ -969,7 +969,7 @@ create index gallery_comments_event_id_submission_id_fk_idx on public.gallery_co
 create index gallery_comments_author_id_fk_idx on public.gallery_comments (author_id);
 alter table public.gallery_comments enable row level security;
 create policy gallery_comments_select_own on public.gallery_comments for select to authenticated
-  using (author_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (author_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 -- The public project a visitor is reacting to, and that the event's gallery settings allow it
 create function private.gallery_target(p_submission uuid, p_setting text)

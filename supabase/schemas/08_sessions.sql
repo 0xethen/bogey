@@ -685,7 +685,7 @@ create policy session_categories_select on public.session_categories for select 
 create policy event_sessions_select on public.event_sessions for select to anon, authenticated
   using ((select private.can_see_session(event_id, id, visibility)));
 create policy session_hosts_select on public.session_hosts for select to authenticated
-  using ((select private.has_permission(event_id, 'event.view')));
+  using ((event_id = any ((select private.events_where('event.view'))::uuid[])));
 create policy session_signups_select on public.session_signups for select to authenticated
   using (user_id = (select auth.uid()) or (select private.takes_attendance(event_id, session_id)));
 create policy session_attendance_select on public.session_attendance for select to authenticated

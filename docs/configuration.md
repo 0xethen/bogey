@@ -12,15 +12,16 @@ Each kind of setting has one home.
 
 See `.env.example` for the full list.
 
-| Variable                           | Used by              |                                                                        |
-| ---------------------------------- | -------------------- | ---------------------------------------------------------------------- |
-| `SUPABASE_URL`                     | server, browser, CLI | Must be reachable from both the server and visitors' browsers.         |
-| `SUPABASE_PUBLISHABLE_KEY`         | server, browser      | The publishable (anon) key.                                            |
-| `SUPABASE_SERVICE_ROLE_KEY`        | server, CLI          | Secret. Never exposed to the browser.                                  |
-| `SMTP_*`, `SEND_EMAIL_HOOK_SECRET` | server               | Sign-in email; see [Email](self-hosting/email.md).                     |
-| `BOGEY_TRUST_PROXY`                | server               | `1` is the same as `network.trustProxy: true` in `bogey.config.ts`.    |
-| `BOGEY_UPDATE_CHECK`               | server               | `false` stops the release, security advisory and plugin update checks. |
-| `BOGEY_PASSKEY_HOST`               | server, browser      | The host passkeys work on; must match GoTrue's WebAuthn RP ID.         |
+| Variable                           | Used by              |                                                                                                                                                                   |
+| ---------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_URL`                     | server, browser, CLI | Must be reachable from both the server and visitors' browsers.                                                                                                    |
+| `SUPABASE_INTERNAL_URL`            | server               | Optional. Where the server reaches Supabase instead of `SUPABASE_URL`, such as a gateway on the same machine; browsers and auth cookies still use `SUPABASE_URL`. |
+| `SUPABASE_PUBLISHABLE_KEY`         | server, browser      | The publishable (anon) key.                                                                                                                                       |
+| `SUPABASE_SERVICE_ROLE_KEY`        | server, CLI          | Secret. Never exposed to the browser.                                                                                                                             |
+| `SMTP_*`, `SEND_EMAIL_HOOK_SECRET` | server               | Sign-in email; see [Email](self-hosting/email.md).                                                                                                                |
+| `BOGEY_TRUST_PROXY`                | server               | `1` is the same as `network.trustProxy: true` in `bogey.config.ts`.                                                                                               |
+| `BOGEY_UPDATE_CHECK`               | server               | `false` stops the release, security advisory and plugin update checks.                                                                                            |
+| `BOGEY_PASSKEY_HOST`               | server, browser      | The host passkeys work on; must match GoTrue's WebAuthn RP ID.                                                                                                    |
 
 Nothing is inlined into the browser bundle at build time: the server reads
 these when it starts and hands the browser only the URL, publishable key and passkey host.

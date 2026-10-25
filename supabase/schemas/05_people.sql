@@ -939,12 +939,12 @@ alter table public.invite_links enable row level security;
 alter table public.registrations enable row level security;
 
 create policy event_members_insert on public.event_members for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_members_update on public.event_members for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_members_delete on public.event_members for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy roles_select on public.roles for select to anon, authenticated
   using (true);
@@ -953,14 +953,14 @@ create policy role_permissions_select on public.role_permissions for select to a
   using (true);
 
 create policy event_role_grants_select on public.event_role_grants for select to authenticated
-  using (user_id = (select auth.uid()) or (select private.has_permission(event_id, 'people.view')));
+  using (user_id = (select auth.uid()) or (event_id = any ((select private.events_where('people.view'))::uuid[])));
 create policy event_role_grants_write_insert on public.event_role_grants for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_role_grants_write_update on public.event_role_grants for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_role_grants_write_delete on public.event_role_grants for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 -- Extension roles a member holds on top of their event role, replaced as a set.
 create function public.set_role_grants(p_event uuid, p_user uuid, p_roles text[])
@@ -987,28 +987,28 @@ grant execute on function public.set_role_grants(uuid, uuid, text[]) to authenti
 create policy onboarding_forms_select on public.onboarding_forms for select to anon, authenticated
   using ((select private.can_view_event(event_id)));
 create policy onboarding_forms_write_insert on public.onboarding_forms for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy onboarding_forms_write_update on public.onboarding_forms for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy onboarding_forms_write_delete on public.onboarding_forms for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy invite_links_manage on public.invite_links for all to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy registrations_select on public.registrations for select to authenticated
   using (
     user_id = (select auth.uid())
-    or (select private.has_permission(event_id, 'people.view'))
+    or (event_id = any ((select private.events_where('people.view'))::uuid[]))
   );
 create policy registrations_write_insert on public.registrations for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy registrations_write_update on public.registrations for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy registrations_write_delete on public.registrations for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 alter publication supabase_realtime add table public.registrations;

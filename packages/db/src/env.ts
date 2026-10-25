@@ -40,6 +40,25 @@ export function publicEnvScript(env: PublicEnv): string {
   return `window.__BOGEY_ENV__=${json};`;
 }
 
+// Server code reaches Supabase here. SUPABASE_INTERNAL_URL skips the public hostname (and any proxy in front
+// of it) when the app runs next to Supabase; what browsers get stays on SUPABASE_URL.
+export function serverSupabaseUrl(): string {
+  return process.env.SUPABASE_INTERNAL_URL || required("SUPABASE_URL");
+}
+
+// a URL Supabase built from serverSupabaseUrl(), as a browser has to see it
+export function publicSupabaseUrl(url: string): string {
+  const internal = process.env.SUPABASE_INTERNAL_URL?.replace(/\/+$/, "");
+  if (!internal || !url.startsWith(internal)) return url;
+  return required("SUPABASE_URL").replace(/\/+$/, "") + url.slice(internal.length);
+}
+
+// supabase-js names the auth cookie after the URL's host; pin it to the public one so the browser and
+// the server agree whichever URL the server uses
+export function authCookieName(): string {
+  return `sb-${new URL(required("SUPABASE_URL")).hostname.split(".")[0]}-auth-token`;
+}
+
 export function serviceRoleKey(): string {
   return required("SUPABASE_SERVICE_ROLE_KEY");
 }

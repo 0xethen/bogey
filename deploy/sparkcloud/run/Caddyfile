@@ -31,25 +31,44 @@
 	request_header @useapikey Authorization "Bearer {header.apikey}"
 }
 
+# The visitor's address, which every service gets as the only X-Forwarded-For entry (Bogey's network
+# limits and GoTrue's rate limits read it): the web app's x-bogey-client-ip on the app's own requests
+# (from 127.0.0.1), otherwise what SparkCloud's proxy reports.
+(client) {
+	vars client_ip {client_ip}
+	@fromapp {
+		remote_ip 127.0.0.1
+		header X-Bogey-Client-Ip *
+	}
+	vars @fromapp client_ip {header.X-Bogey-Client-Ip}
+}
+
 :80 {
 	encode zstd gzip
+	import client
 
 	@auth_open path /auth/v1/verify* /auth/v1/callback* /auth/v1/authorize* /auth/v1/.well-known/jwks.json /auth/v1/sso/saml/acs /auth/v1/sso/saml/metadata
 	handle @auth_open {
 		import cors
 		uri strip_prefix /auth/v1
-		reverse_proxy 127.0.0.1:9999
+		reverse_proxy 127.0.0.1:9999 {
+			header_up X-Forwarded-For {vars.client_ip}
+		}
 	}
 	handle /auth/v1/* {
 		import cors
 		import keyed
 		import authz
 		uri strip_prefix /auth/v1
-		reverse_proxy 127.0.0.1:9999
+		reverse_proxy 127.0.0.1:9999 {
+			header_up X-Forwarded-For {vars.client_ip}
+		}
 	}
 	handle /.well-known/oauth-authorization-server {
 		import cors
-		reverse_proxy 127.0.0.1:9999
+		reverse_proxy 127.0.0.1:9999 {
+			header_up X-Forwarded-For {vars.client_ip}
+		}
 	}
 
 	handle /rest/v1/ {
@@ -58,14 +77,18 @@
 		respond @notservice `{"message":"You cannot consume this service"}` 403
 		import authz
 		rewrite * /
-		reverse_proxy 127.0.0.1:3002
+		reverse_proxy 127.0.0.1:3002 {
+			header_up X-Forwarded-For {vars.client_ip}
+		}
 	}
 	handle /rest/v1/* {
 		import cors
 		import keyed
 		import authz
 		uri strip_prefix /rest/v1
-		reverse_proxy 127.0.0.1:3002
+		reverse_proxy 127.0.0.1:3002 {
+			header_up X-Forwarded-For {vars.client_ip}
+		}
 	}
 
 	handle /realtime/v1/api/openapi* {
@@ -80,6 +103,7 @@
 		import authz
 		uri strip_prefix /realtime/v1
 		reverse_proxy 127.0.0.1:4000 {
+			header_up X-Forwarded-For {vars.client_ip}
 			header_up Host realtime-dev.supabase-realtime
 		}
 	}
@@ -89,6 +113,7 @@
 		request_header x-api-key {query.apikey}
 		uri replace /realtime/v1/ /socket/ 1
 		reverse_proxy 127.0.0.1:4000 {
+			header_up X-Forwarded-For {vars.client_ip}
 			header_up Host realtime-dev.supabase-realtime
 		}
 	}
@@ -99,10 +124,14 @@
 		@emptyauth expression `{header.Authorization}.matches("^\\s*$")`
 		request_header @emptyauth -Authorization
 		uri strip_prefix /storage/v1
-		reverse_proxy 127.0.0.1:5000
+		reverse_proxy 127.0.0.1:5000 {
+			header_up X-Forwarded-For {vars.client_ip}
+		}
 	}
 
 	handle {
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy 127.0.0.1:3000 {
+			header_up X-Forwarded-For {vars.client_ip}
+		}
 	}
 }

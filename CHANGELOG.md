@@ -10,6 +10,17 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+- Faster reads for big events: row-level security asked "may this person manage (or view people in) this event?" once for every row it checked, so reading an event's members as a participant took most of a second at 400 members and grew with the event. Policies now work out the caller's events once per query (`private.events_where`); reading 50 members of a 400-person event went from about 860 ms to 6 ms, and profile lists from about 270 ms to 70 ms. The challenges plugin's organizer checks do the same.
+- `SUPABASE_INTERNAL_URL` (optional) is where the server reaches Supabase, such as a gateway on the same machine, instead of going out to `SUPABASE_URL` and back. Browsers, auth cookies and the links Bogey hands out keep using `SUPABASE_URL`.
+- SparkCloud: the box stays under its 200-task cap. At about 170 tasks idle, a few dozen visitors were enough for Postgres to fail to start connections, so pages returned 500s and GoTrue and PostgREST crashed. Runtimes now use two threads of each kind instead of one per core, Postgres runs no parallel query workers, and Studio and pg-meta start only with `bogeyctl start meta studio`; the box idles at about 100.
+- SparkCloud: the web app talks to Supabase through Caddy on the box instead of out through SparkCloud's proxy and back. Caddy gives every service the visitor's address as the only `X-Forwarded-For` entry, so network limits see the visitor rather than the proxy, and GoTrue now rate-limits sign-ins, codes and token refreshes per visitor (it didn't limit them per address at all before), with the all-in-one's limits.
+- SparkCloud: Realtime has the all-in-one's limits, 500 connections, 250 joins and 500 messages a second, instead of Realtime's defaults of 200, 100 and 100, which turned away the 201st open tab and dropped messages.
+
+### Upgrade notes
+
+- Adds the `permission_event_sets` migration (and the challenges plugin's `12_permission_event_sets`); `bogey upgrade` applies them. It replaces about 100 policies with equivalent ones and changes `private.can_see_profile` to take the caller's events; a plugin that calls `private.can_see_profile(uuid)` itself needs updating.
+- SparkCloud: Studio and pg-meta no longer start on their own. Start them with `bogeyctl start meta studio` when you need them.
+
 ## 2.4.6 (2026-10-25)
 
 - The web server exits when it's told to stop. Since 2.4.1 a channel opened for "View as" kept the process alive after it closed its server, so a restart without a forced kill left the app down: on SparkCloud, `bogeyctl restart web` and `bogey-upgrade` waited forever and the site returned 502; under Docker, stopping the container took the full 10 seconds.

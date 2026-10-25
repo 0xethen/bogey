@@ -27,7 +27,7 @@ alter table public.certificate_templates enable row level security;
 create policy certificate_templates_select on public.certificate_templates for select to authenticated
   using (
     (select private.is_org_admin(org_id))
-    or (event_id is not null and (select private.can_manage(event_id)))
+    or (event_id is not null and (event_id = any ((select private.events_where('event.manage'))::uuid[])))
     or (event_id is null and (select private.manages_org_event(org_id)))
   );
 
@@ -51,7 +51,7 @@ create index certificates_award_id_fk_idx on public.certificates (award_id);
 create index certificates_issued_by_fk_idx on public.certificates (issued_by);
 alter table public.certificates enable row level security;
 create policy certificates_select on public.certificates for select to authenticated
-  using (user_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (user_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 select private.hide_suspended_org('public.certificate_templates');
 select private.hide_suspended_org('public.certificates');

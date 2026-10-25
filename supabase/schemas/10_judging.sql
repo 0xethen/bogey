@@ -46,7 +46,7 @@ create index ranking_inputs_event_id_round_id_fk_idx on public.ranking_inputs (e
 create index ranking_inputs_event_id_submission_id_fk_idx on public.ranking_inputs (event_id, submission_id);
 alter table public.ranking_inputs enable row level security;
 create policy ranking_inputs_select on public.ranking_inputs for select to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create function private.check_round_method()
 returns trigger
@@ -2342,26 +2342,26 @@ alter table public.awards enable row level security;
 alter table public.result_publications enable row level security;
 
 create policy judge_conflicts_select on public.judge_conflicts for select to authenticated
-  using (judge_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (judge_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy judge_pins_select on public.judge_pins for select to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 -- the run of show is for organizers and judges; teams read their own slot through my_demo_slots
 create policy judging_panels_select on public.judging_panels for select to authenticated
-  using ((select private.can_manage(event_id)) or (select private.has_permission(event_id, 'judging.score')));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])) or (event_id = any ((select private.events_where('judging.score'))::uuid[])));
 create policy panel_judges_select on public.panel_judges for select to authenticated
-  using ((select private.can_manage(event_id)) or (select private.has_permission(event_id, 'judging.score')));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])) or (event_id = any ((select private.events_where('judging.score'))::uuid[])));
 create policy panel_slots_select on public.panel_slots for select to authenticated
-  using ((select private.can_manage(event_id)) or (select private.has_permission(event_id, 'judging.score')));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])) or (event_id = any ((select private.events_where('judging.score'))::uuid[])));
 
 create policy judging_rounds_select on public.judging_rounds for select to anon, authenticated
   using ((select private.can_view_event(event_id)));
 create policy judging_rounds_update on public.judging_rounds for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy round_entries_select on public.round_entries for select to authenticated
   using (
-    (select private.can_manage(event_id))
-    or (select private.has_permission(event_id, 'judging.score'))
+    (event_id = any ((select private.events_where('event.manage'))::uuid[]))
+    or (event_id = any ((select private.events_where('judging.score'))::uuid[]))
     or exists (
       select 1 from public.submissions s where s.id = submission_id and private.is_team_member(s.team_id))
   );
@@ -2369,12 +2369,12 @@ create policy round_entries_select on public.round_entries for select to authent
 create policy criteria_select on public.criteria for select to anon, authenticated
   using ((select private.can_view_event(event_id)));
 create policy criteria_write_insert on public.criteria for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy criteria_write_update on public.criteria for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy criteria_write_delete on public.criteria for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy rubrics_select on public.rubrics for select to anon, authenticated
   using ((select private.can_view_event(event_id)));
@@ -2382,8 +2382,8 @@ create policy rubric_divisions_select on public.rubric_divisions for select to a
   using ((select private.can_view_event(event_id)));
 create policy submission_rubrics_select on public.submission_rubrics for select to authenticated
   using (
-    (select private.can_manage(event_id))
-    or (select private.has_permission(event_id, 'judging.score'))
+    (event_id = any ((select private.events_where('event.manage'))::uuid[]))
+    or (event_id = any ((select private.events_where('judging.score'))::uuid[]))
     or exists (
       select 1 from public.submissions s where s.id = submission_id and private.is_team_member(s.team_id))
   );
@@ -2395,40 +2395,40 @@ create policy deliberation_notes_select on public.deliberation_notes for select 
     where f.id = flag_id and private.may_deliberate(f.event_id, f.submission_id)));
 
 create policy judge_assignments_select on public.judge_assignments for select to authenticated
-  using (judge_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (judge_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy judge_assignments_update on public.judge_assignments for update to authenticated
   using (
     (judge_id = (select auth.uid()))
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   )
   with check (
     (judge_id = (select auth.uid()))
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 create policy judge_assignments_manage_insert on public.judge_assignments for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy judge_assignments_manage_delete on public.judge_assignments for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy scores_select on public.scores for select to authenticated
   using (
     judge_id = (select auth.uid())
-    or (select private.can_manage(event_id))
+    or (event_id = any ((select private.events_where('event.manage'))::uuid[]))
     or private.in_deliberation(event_id, submission_id)
   );
 create policy scores_insert on public.scores for insert to authenticated
   with check (
     (
       judge_id = (select auth.uid())
-      and (select private.has_permission(event_id, 'judging.score'))
+      and (event_id = any ((select private.events_where('judging.score'))::uuid[]))
       and (select private.round_window_open(round_id))
       and not (select private.has_conflict(judge_id, submission_id))
       and exists (select 1 from public.submissions s where s.id = submission_id and s.status = 'submitted')
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 create policy scores_update on public.scores for update to authenticated
   using (
@@ -2437,18 +2437,18 @@ create policy scores_update on public.scores for update to authenticated
       and (select private.round_window_open(round_id))
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   )
   with check (
     (
       judge_id = (select auth.uid())
-      and (select private.has_permission(event_id, 'judging.score'))
+      and (event_id = any ((select private.events_where('judging.score'))::uuid[]))
       and (select private.round_window_open(round_id))
       and not (select private.has_conflict(judge_id, submission_id))
       and exists (select 1 from public.submissions s where s.id = submission_id and s.status = 'submitted')
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 create policy scores_delete on public.scores for delete to authenticated
   using (
@@ -2457,13 +2457,13 @@ create policy scores_delete on public.scores for delete to authenticated
       and (select private.round_window_open(round_id))
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 
 create policy feedback_select on public.feedback for select to authenticated
   using (
     judge_id = (select auth.uid())
-    or (select private.can_manage(event_id))
+    or (event_id = any ((select private.events_where('event.manage'))::uuid[]))
     or private.in_deliberation(event_id, submission_id)
     or (
       visibility = 'team'
@@ -2477,43 +2477,43 @@ create policy feedback_insert on public.feedback for insert to authenticated
   with check (
     (
       judge_id = (select auth.uid())
-      and (select private.has_permission(event_id, 'judging.score'))
+      and (event_id = any ((select private.events_where('judging.score'))::uuid[]))
       and (select private.round_window_open(round_id))
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 create policy feedback_update on public.feedback for update to authenticated
   using (
     (judge_id = (select auth.uid()) and (select private.round_window_open(round_id)))
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   )
   with check (
     (
       judge_id = (select auth.uid())
-      and (select private.has_permission(event_id, 'judging.score'))
+      and (event_id = any ((select private.events_where('judging.score'))::uuid[]))
       and (select private.round_window_open(round_id))
     )
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 create policy feedback_delete on public.feedback for delete to authenticated
   using (
     (judge_id = (select auth.uid()) and (select private.round_window_open(round_id)))
     or
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
   );
 
 create policy awards_select on public.awards for select to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy result_publications_select on public.result_publications for select to anon, authenticated
   using (
-    (select private.can_manage(event_id))
+    (event_id = any ((select private.events_where('event.manage'))::uuid[]))
     or (
       (select private.window_open(event_id, 'results'))
-      and ((select private.is_public_event(event_id)) or (select private.has_permission(event_id, 'event.view')))
+      and ((select private.is_public_event(event_id)) or (event_id = any ((select private.events_where('event.view'))::uuid[])))
       and id = (select private.latest_publication(event_id))
     )
   );
@@ -2536,7 +2536,7 @@ create index sheet_completions_event_id_round_id_fk_idx on public.sheet_completi
 
 alter table public.sheet_completions enable row level security;
 create policy sheet_completions_select on public.sheet_completions for select to authenticated
-  using (judge_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (judge_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create function public.set_sheet_done(p_submission uuid, p_done boolean)
 returns void

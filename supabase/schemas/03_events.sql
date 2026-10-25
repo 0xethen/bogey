@@ -127,7 +127,7 @@ alter table public.event_pages enable row level security;
 alter table public.event_visitors enable row level security;
 
 create policy event_visitors_select on public.event_visitors for select to authenticated
-  using (user_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (user_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy events_select on public.events for select to anon, authenticated
   using ((select private.can_view_event(id)));
@@ -141,51 +141,51 @@ create policy events_delete on public.events for delete to authenticated
 create policy event_windows_select on public.event_windows for select to anon, authenticated
   using ((select private.can_view_event(event_id)));
 create policy event_windows_write_insert on public.event_windows for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_windows_write_update on public.event_windows for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_windows_write_delete on public.event_windows for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy divisions_select on public.divisions for select to anon, authenticated
   using ((select private.can_view_event(event_id)));
 create policy divisions_write_insert on public.divisions for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy divisions_write_update on public.divisions for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy divisions_write_delete on public.divisions for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy tracks_select on public.tracks for select to anon, authenticated
   using ((select private.section_open(event_id, 'tracks')));
 create policy tracks_write_insert on public.tracks for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy tracks_write_update on public.tracks for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy tracks_write_delete on public.tracks for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy event_pages_select on public.event_pages for select to anon, authenticated
   using (
-    (select private.can_manage(event_id))
+    (event_id = any ((select private.events_where('event.manage'))::uuid[]))
     or (
       (window_key is null or (select private.window_open(event_id, window_key)))
       and (
         (audience = 'public' and (select private.is_public_event(event_id)))
-        or (select private.has_permission(event_id, 'event.view'))
+        or (event_id = any ((select private.events_where('event.view'))::uuid[]))
       )
     )
   );
 create policy event_pages_write_insert on public.event_pages for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_pages_write_update on public.event_pages for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy event_pages_write_delete on public.event_pages for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create function public.open_event(p_org uuid, p_slug text)
 returns setof public.events

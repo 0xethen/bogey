@@ -1,5 +1,5 @@
 import { createAdminClient } from "@bogey/db/admin";
-import { getPublicEnv } from "@bogey/db/env";
+import { getPublicEnv, serverSupabaseUrl } from "@bogey/db/env";
 
 export type CheckName = "database" | "auth" | "realtime" | "email";
 
@@ -39,8 +39,8 @@ async function time(probe: Probe): Promise<Check> {
 }
 
 async function reachable(path: string): Promise<string | null> {
-  const { supabaseUrl, supabaseKey } = getPublicEnv();
-  const response = await fetch(`${supabaseUrl.replace(/\/+$/, "")}${path}`, {
+  const { supabaseKey } = getPublicEnv();
+  const response = await fetch(`${serverSupabaseUrl().replace(/\/+$/, "")}${path}`, {
     headers: { apikey: supabaseKey },
     signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
   });

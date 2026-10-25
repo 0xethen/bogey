@@ -9,16 +9,16 @@ import {
 } from "@bogey/config/sign-in";
 import { captchaToken } from "../auth.ts";
 import { createAdminClient } from "../admin.ts";
-import { getPublicEnv } from "../env.ts";
+import { getPublicEnv, serverSupabaseUrl } from "../env.ts";
 import { timeoutFetch } from "../fetch.ts";
 import { createServerClient } from "../server.ts";
 import { getOrgFn } from "../tenant.ts";
 
 async function authEnabled(): Promise<Set<SignInProvider>> {
-  const { supabaseUrl, supabaseKey } = getPublicEnv();
+  const { supabaseKey } = getPublicEnv();
   const enabled = new Set<SignInProvider>();
   try {
-    const response = await timeoutFetch()(`${supabaseUrl}/auth/v1/settings`, {
+    const response = await timeoutFetch()(`${serverSupabaseUrl()}/auth/v1/settings`, {
       headers: { apikey: supabaseKey },
     });
     if (!response.ok) return enabled;

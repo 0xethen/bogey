@@ -174,7 +174,7 @@ create index webhooks_event_id_fk_idx on public.webhooks (event_id);
 create index webhooks_created_by_fk_idx on public.webhooks (created_by);
 alter table public.webhooks enable row level security;
 create policy webhooks_select on public.webhooks for select to authenticated
-  using ((select private.is_org_admin(org_id)) or (event_id is not null and (select private.can_manage(event_id))));
+  using ((select private.is_org_admin(org_id)) or (event_id is not null and (event_id = any ((select private.events_where('event.manage'))::uuid[]))));
 
 create table public.webhook_secrets (
   webhook_id uuid primary key references public.webhooks on delete cascade,
@@ -205,7 +205,7 @@ create index webhook_deliveries_sending_idx on public.webhook_deliveries (sent_a
 create index webhook_deliveries_org_id_idx on public.webhook_deliveries (org_id);
 alter table public.webhook_deliveries enable row level security;
 create policy webhook_deliveries_select on public.webhook_deliveries for select to authenticated
-  using ((select private.is_org_admin(org_id)) or (event_id is not null and (select private.can_manage(event_id))));
+  using ((select private.is_org_admin(org_id)) or (event_id is not null and (event_id = any ((select private.events_where('event.manage'))::uuid[]))));
 
 create function private.can_manage_webhook(p_org uuid, p_event uuid)
 returns boolean

@@ -1,13 +1,14 @@
 import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
 import { getCookies, getRequestIP, setCookie } from "@tanstack/react-start/server";
 import { trustProxy } from "@bogey/config";
-import { getPublicEnv } from "./env.ts";
+import { authCookieName, getPublicEnv, serverSupabaseUrl } from "./env.ts";
 import { timeoutFetch } from "./fetch.ts";
 import type { Database } from "./types.ts";
 import { parseViewAs, VIEW_AS_COOKIE, VIEW_AS_HEADER } from "./view-as.ts";
 
 export function createServerClientFor<D>() {
-  const { supabaseUrl: url, supabaseKey: key } = getPublicEnv();
+  const { supabaseKey: key } = getPublicEnv();
+  const url = serverSupabaseUrl();
 
   const clientIp = getRequestIP({
     xForwardedFor: trustProxy || process.env.BOGEY_TRUST_PROXY === "1",
@@ -23,6 +24,7 @@ export function createServerClientFor<D>() {
         ...(viewAs ? { [VIEW_AS_HEADER]: viewAs } : {}),
       },
     },
+    cookieOptions: { name: authCookieName() },
     cookies: {
       getAll() {
         return Object.entries(getCookies()).map(([name, value]) => ({

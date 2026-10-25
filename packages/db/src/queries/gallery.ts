@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { excerpt } from "@bogey/utils/text";
 import { resolveSettings, type ResolvedValue } from "@bogey/config/settings";
+import { publicSupabaseUrl } from "../env.ts";
 import { createServerClient } from "../server.ts";
 import { getOrgFn } from "../tenant.ts";
 import { fail, ok, retryPolicy, toFailure, unwrap, type DbResult } from "../errors.ts";
@@ -166,7 +167,9 @@ export const galleryFn = createServerFn({ method: "GET" })
       : null;
     const urlByPath = new Map(
       (signed?.data ?? []).flatMap((entry) =>
-        entry.path && entry.signedUrl ? [[entry.path, entry.signedUrl] as const] : [],
+        entry.path && entry.signedUrl
+          ? [[entry.path, publicSupabaseUrl(entry.signedUrl)] as const]
+          : [],
       ),
     );
     const wins = new Map<string, GalleryWin[]>();

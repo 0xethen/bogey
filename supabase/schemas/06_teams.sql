@@ -737,9 +737,9 @@ grant execute on function private.hides_team_names(uuid) to anon, authenticated;
 
 create policy teams_select on public.teams for select to anon, authenticated
   using (
-    (select private.can_manage(event_id))
+    (event_id = any ((select private.events_where('event.manage'))::uuid[]))
     or (
-      (select private.has_permission(event_id, 'event.view'))
+      (event_id = any ((select private.events_where('event.view'))::uuid[]))
       and not (select private.hides_team_names(event_id))
     )
     or (
@@ -749,10 +749,10 @@ create policy teams_select on public.teams for select to anon, authenticated
     )
   );
 create policy teams_manage_insert on public.teams for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy teams_update on public.teams for update to authenticated
   using (
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
     or
     (
       locked_at is null
@@ -765,7 +765,7 @@ create policy teams_update on public.teams for update to authenticated
     )
   )
   with check (
-    ((select private.can_manage(event_id)))
+    ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
     or
     (
       locked_at is null
@@ -777,25 +777,25 @@ create policy teams_update on public.teams for update to authenticated
     )
   );
 create policy teams_manage_delete on public.teams for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy team_members_select on public.team_members for select to authenticated
   using (
     (select private.is_team_member(team_id))
-    or (select private.has_permission(event_id, 'people.view'))
+    or (event_id = any ((select private.events_where('people.view'))::uuid[]))
   );
 create policy team_members_manage_insert on public.team_members for insert to authenticated
-  with check ((select private.can_manage(event_id)));
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy team_members_manage_update on public.team_members for update to authenticated
-  using ((select private.can_manage(event_id)))
-  with check ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])))
+  with check ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 create policy team_members_manage_delete on public.team_members for delete to authenticated
-  using ((select private.can_manage(event_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create policy event_members_select on public.event_members for select to authenticated
   using (
     user_id = (select auth.uid())
-    or (select private.has_permission(event_id, 'people.view'))
+    or (event_id = any ((select private.events_where('people.view'))::uuid[]))
     or exists (
       select 1 from public.team_members mine
       join public.team_members theirs on theirs.team_id = mine.team_id
@@ -845,7 +845,7 @@ create table public.team_seekers (
 create index team_seekers_event_id_looking_idx on public.team_seekers (event_id) where looking;
 alter table public.team_seekers enable row level security;
 create policy team_seekers_select on public.team_seekers for select to authenticated
-  using (user_id = (select auth.uid()) or (select private.can_manage(event_id)));
+  using (user_id = (select auth.uid()) or (event_id = any ((select private.events_where('event.manage'))::uuid[])));
 
 create table public.team_openings (
   event_id uuid not null,
@@ -881,7 +881,7 @@ create index team_requests_event_id_user_id_fk_idx on public.team_requests (even
 create index team_requests_created_by_fk_idx on public.team_requests (created_by);
 alter table public.team_requests enable row level security;
 create policy team_requests_select on public.team_requests for select to authenticated
-  using ((select private.can_manage(event_id)) or user_id = (select auth.uid()) or (select private.is_team_member(team_id)));
+  using ((event_id = any ((select private.events_where('event.manage'))::uuid[])) or user_id = (select auth.uid()) or (select private.is_team_member(team_id)));
 
 create function private.assert_team_board(p_event uuid)
 returns void
