@@ -10,6 +10,8 @@ advisory (see docs/contributing.md#security-releases). -->
 
 ## Unreleased
 
+## 2.4.7 (2026-10-25)
+
 - Faster reads for big events: row-level security asked "may this person manage (or view people in) this event?" once for every row it checked, so reading an event's members as a participant took most of a second at 400 members and grew with the event. Policies now work out the caller's events once per query (`private.events_where`); reading 50 members of a 400-person event went from about 860 ms to 6 ms, and profile lists from about 270 ms to 70 ms. The challenges plugin's organizer checks do the same.
 - `SUPABASE_INTERNAL_URL` (optional) is where the server reaches Supabase, such as a gateway on the same machine, instead of going out to `SUPABASE_URL` and back. Browsers, auth cookies and the links Bogey hands out keep using `SUPABASE_URL`.
 - SparkCloud: the box stays under its 200-task cap. At about 170 tasks idle, a few dozen visitors were enough for Postgres to fail to start connections, so pages returned 500s and GoTrue and PostgREST crashed. Runtimes now use two threads of each kind instead of one per core, Postgres runs no parallel query workers, and Studio and pg-meta start only with `bogeyctl start meta studio`; the box idles at about 100.
